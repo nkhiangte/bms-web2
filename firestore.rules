@@ -1,0 +1,225 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------
+    // Helper Functions
+    // ---------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isStaff() {
+      return isSignedIn() &&
+            (hasRole('admin') ||
+             hasRole('user')  ||
+             hasRole('warden'));
+    }
+
+    function isParent() {
+      return hasRole('parent');
+    }
+
+    function isWardenOrAdmin() {
+      return hasRole('admin') || hasRole('warden');
+    }
+
+    // Returns parent studentIds or [] when unavailable
+    function getParentStudentIds() {
+      return (
+        !isSignedIn() || 
+        !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      )
+      ? []
+      : (
+          get(/databases/$(database)/documents/users/$(request.auth.uid))
+            .data.studentIds != null
+          ? get(/databases/$(database)/documents/users/$(request.auth.uid))
+              .data.studentIds
+          : []
+        );
+    }
+
+    function canAccessStudent(studentId) {
+      return isStaff() ||
+             (isParent() && studentId in getParentStudentIds());
+    }
+
+    // ---------------------------
+    // Online Admissions
+    // ---------------------------
+    match /online_admissions/{admissionId} {
+      allow create: if true; // Public can submit forms
+      allow read, update, delete: if isAdmin(); // Only admins can manage submissions
+    }
+    
+    // ---------------------------
+    // User Profiles
+    // ---------------------------
+    match /users/{userId} {
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow get, update: if isSignedIn() && request.auth.uid == userId;
+      allow read, list, delete: if isAdmin();
+
+      match /prefs/{prefId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // ---------------------------
+    // Public Website Data
+    // ---------------------------
+    match /news/{newsId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Config collection (Fees, GradeDefs, Sitemap) - Public Read required for website
+    match /config/{configDoc} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /staff/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /calendarEvents/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Routines (Class & Exam)
+    // ---------------------------
+    match /examRoutines/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /classRoutines/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Settings & Config
+    // ---------------------------
+    match /settings/academic {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------
+    // Student Records
+    // ---------------------------
+    match /students/{studentId} {
+      allow list: if isStaff();
+      allow get: if canAccessStudent(studentId);
+      allow create, update, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // TC Records
+    // ---------------------------
+    match /tcRecords/{docId} {
+      allow read, write, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Service Certificates
+    // ---------------------------
+    match /serviceCertificates/{docId} {
+      allow read, write, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Conduct Logs
+    // ---------------------------
+    match /conductLog/{docId} {
+      allow list: if isStaff();
+      allow get: if isStaff() || (isParent() && resource.data.studentId in getParentStudentIds());
+      allow create, update, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Attendance
+    // ---------------------------
+    match /studentAttendance/{docId} {
+      // Parents need to read attendance to see their child's status
+      allow read: if isStaff() || isParent();
+      allow write, delete: if isStaff();
+    }
+
+    match /staffAttendance/{docId} {
+      // Parents view teacher attendance logs
+      allow read: if isStaff() || isParent();
+      allow write, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Inventory System
+    // ---------------------------
+    match /inventory/{docId} {
+      allow read, write, delete: if isStaff();
+    }
+
+    // ---------------------------
+    // Hostel Management
+    // ---------------------------
+    match /hostelResidents/{docId} {
+      allow read, write, delete: if isWardenOrAdmin();
+    }
+
+    match /hostelStaff/{docId} {
+      allow read, write, delete: if isWardenOrAdmin();
+    }
+
+    match /hostelInventory/{docId} {
+      allow read, write, delete: if isWardenOrAdmin();
+    }
+
+    match /stockLogs/{docId} {
+      allow read, write, delete: if isWardenOrAdmin();
+    }
+
+    match /choreRoster/{docId} {
+      allow read, write, delete: if isWardenOrAdmin();
+    }
+
+    match /hostelDisciplineLog/{docId} {
+      allow list: if isWardenOrAdmin();
+      allow get: if isWardenOrAdmin() ||
+                 (isParent() && resource.data.studentId in getParentStudentIds());
+      allow create, update, delete: if isWardenOrAdmin();
+    }
+    
+    // ---------------------------
+    // Archives (Dynamic Collections)
+    // ---------------------------
+    match /{archiveCollection}/{document=**} {
+       allow read, write: if isAdmin() && archiveCollection.matches('^archive_.*');
+    }
+
+    // ---------------------------
+    // Fallback Rule (Deny everything else)
+    // ---------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

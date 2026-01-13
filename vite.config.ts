@@ -9,6 +9,7 @@ export default defineConfig({
     'process.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(process.env.VITE_RAZORPAY_KEY_ID),
   },
   plugins: [react()],
+  publicDir: false,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('.', import.meta.url)),

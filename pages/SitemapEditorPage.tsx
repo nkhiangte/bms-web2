@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon } from '../components/Icons';
@@ -37,7 +38,7 @@ const SitemapEditorPage: React.FC<SitemapEditorPageProps> = ({ initialContent, o
                     Back
                 </button>
                 <a
-                    href="/#/sitemap.xml"
+                    href="/sitemap.xml"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-semibold text-slate-600 hover:text-slate-800"

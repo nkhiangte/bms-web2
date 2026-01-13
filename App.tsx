@@ -1,13 +1,18 @@
 
+
+
+
+
 import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Corrected import paths
 import { auth, db, firebase } from './firebaseConfig';
 import { 
     User, Student, Staff, Grade, GradeDefinition, FeeStructure,
     InventoryItem, HostelResident, HostelStaff, StockLog, HostelDisciplineEntry, HostelInventoryItem, 
     StaffAttendanceRecord, StudentAttendanceRecord, DailyStudentAttendance, 
     CalendarEvent, ConductEntry, NewsItem, ChoreRoster, ServiceCertificateRecord, FeePayments, StudentStatus, TcRecord,
-    Exam, AttendanceStatus, ExamRoutine, DailyRoutine
+    Exam, AttendanceStatus, ExamRoutine, DailyRoutine, OnlineAdmission
 } from './types';
 import { 
     GRADE_DEFINITIONS, DEFAULT_FEE_STRUCTURE,
@@ -100,6 +105,7 @@ const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
 const NewsPage = lazy(() => import('./pages/public/NewsPage'));
 const AboutPage = lazy(() => import('./pages/public/AboutPage'));
 const AdmissionsPage = lazy(() => import('./pages/public/AdmissionsPage'));
+const OnlineAdmissionPage = lazy(() => import('./pages/public/OnlineAdmissionPage'));
 const FeesPage = lazy(() => import('./pages/public/FeesPage'));
 const StudentLifePage = lazy(() => import('./pages/public/StudentLifePage'));
 const FacilitiesPage = lazy(() => import('./pages/public/FacilitiesPage'));
@@ -119,7 +125,7 @@ const GalleryPage = lazy(() => import('./pages/public/GalleryPage'));
 const SitemapPage = lazy(() => import('./pages/public/SitemapPage'));
 const SitemapXmlPage = lazy(() => import('./pages/public/SitemapXmlPage'));
 const PublicStaffDetailPage = lazy(() => import('./pages/public/PublicStaffDetailPage'));
-const QuizClubPage = lazy(() => import('./pages/public/QuizPage'));
+const QuizClubPage = lazy(() => import('./pages/public/QuizClubPage'));
 const AcademicsPage = lazy(() => import('./pages/public/AcademicsPage'));
 const CurriculumPage = lazy(() => import('./pages/public/CurriculumPage'));
 const AcademicAchievementsPage = lazy(() => import('./pages/public/AcademicAchievementsPage'));
@@ -131,7 +137,6 @@ const ScienceTourPage = lazy(() => import('./pages/public/ScienceTourPage'));
 const IncentiveAwardsPage = lazy(() => import('./pages/public/IncentiveAwardsPage'));
 const MathematicsCompetitionPage = lazy(() => import('./pages/public/MathematicsCompetitionPage'));
 const SitemapEditorPage = lazy(() => import('./pages/SitemapEditorPage'));
-// FIX: Added lazy import for ProgressReportPage to resolve 'Cannot find name' error.
 const ProgressReportPage = lazy(() => import('./pages/ProgressReportPage'));
 
 
@@ -491,7 +496,6 @@ const App: React.FC = () => {
 
     const assignedGrade = useMemo(() => {
         if (!staffProfile) return null;
-        // FIX: Explicitly typing the destructured variable to satisfy TypeScript's strict inference.
         const gradeEntry = Object.entries(gradeDefinitions).find(([, def]: [string, GradeDefinition]) => def.classTeacherId === staffProfile.id);
         return gradeEntry ? (gradeEntry[0] as Grade) : null;
     }, [staffProfile, gradeDefinitions]);
@@ -646,7 +650,6 @@ const App: React.FC = () => {
 
         batch.set(staffRef, staffData, { merge: true });
 
-        // FIX: Explicitly cast 'def' to GradeDefinition to fix type inference.
         const currentAssignment = Object.entries(gradeDefinitions).find(([,def]: [string, GradeDefinition]) => def.classTeacherId === staffRef.id)?.[0];
         
         if (currentAssignment !== assignedGradeKey) { 
@@ -931,6 +934,10 @@ const App: React.FC = () => {
         }
     };
 
+    const handleOnlineAdmissionSubmit = async (data: Omit<OnlineAdmission, 'id' | 'submissionDate'>) => {
+        return handleSave('online_admissions', { ...data, submissionDate: new Date().toISOString() }, undefined, 'Admission form submitted successfully!');
+    };
+
     // ... (Auth handlers - no changes)
     const handleAuthAction = async (action: Promise<any>, successMessage: string, navigateTo: string, state?: object) => {
         setAuthError('');
@@ -1185,6 +1192,7 @@ const App: React.FC = () => {
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/admissions" element={<AdmissionsPage />} />
+            <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
             <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
             <Route path="/student-life" element={<StudentLifePage />} />
             <Route path="/ncc" element={<NccPage />} />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -22,6 +21,12 @@ const AdmissionsPage: React.FC = () => {
                         <p className="mt-1 text-md italic text-slate-500">“Service to God &amp; Men”</p>
                     </div>
 
+                    <div className="text-center my-8">
+                        <Link to="/admissions/online" className="btn btn-primary !text-lg !font-bold !px-8 !py-4 transition transform hover:scale-105">
+                            Apply Online Now (2026-27)
+                        </Link>
+                    </div>
+
                     <div className="mt-12 space-y-8 text-slate-700 leading-relaxed">
                         <p>Admissions are open from Nursery to Class X.</p>
 
@@ -36,7 +41,8 @@ const AdmissionsPage: React.FC = () => {
                         <section>
                             <h2 className="text-2xl font-bold text-slate-800 mb-3 border-b pb-2">How to Apply</h2>
                             <ul className="list-disc list-inside space-y-2">
-                                <li>Collect and fill the admission form from the school office or <Link to="/contact" className="text-sky-600 hover:underline font-semibold">inquire online here</Link>.</li>
+                                <li>Click the "Apply Online" button above to fill out the form digitally.</li>
+                                <li>Alternatively, collect and fill the admission form from the school office.</li>
                                 <li>Submit the form with required documents.</li>
                                 <li>Appear for entrance test/interview for Class IX. (No new admission to Class - X)</li>
                                 <li>Admission is confirmed after selection &amp; fee payment.</li>

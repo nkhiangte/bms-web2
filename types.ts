@@ -4,6 +4,8 @@
 
 
 
+
+
 // Add Razorpay to the window object for global access
 declare global {
     interface Window {
@@ -230,7 +232,6 @@ export interface Staff {
 
     // 5. Payroll Details
     salaryGrade?: string;
-    // FIX: Changed to allow null for new staff members.
     basicSalary?: number | null;
     bankAccountNumber?: string;
     bankName?: string;
@@ -242,7 +243,6 @@ export interface Staff {
     emergencyContactNumber: string;
     medicalConditions?: string;
     
-    // FIX: Added for subject teacher assignments
     assignedSubjects?: SubjectAssignment[];
 }
 
@@ -250,7 +250,6 @@ export interface Staff {
 // UPDATED: GradeDefinition now only contains an optional class teacher ID.
 export interface GradeDefinition {
   classTeacherId?: string;
-  // FIX: Added subjects array for curriculum management.
   subjects: SubjectDefinition[];
 }
 
@@ -310,8 +309,48 @@ export interface Student {
   status: StudentStatus;
   transferDate?: string; // YYYY-MM-DD
 
-  // FIX: Added for academic records.
   academicPerformance?: Exam[];
+}
+
+export interface OnlineAdmission {
+    id: string;
+    status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+    submissionDate: string; // ISO String
+    
+    // Form fields
+    admissionGrade: Grade;
+    academicYear: string;
+    studentName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    studentAadhaar: string;
+    fatherName: string;
+    motherName: string;
+    fatherOccupation: string;
+    motherOccupation: string;
+    parentAadhaar: string;
+    guardianName: string;
+    guardianRelationship: string;
+    permanentAddress: string;
+    presentAddress: string;
+    contactNumber: string;
+    penNumber: string;
+    motherTongue: string;
+    isCWSN: 'Yes' | 'No';
+    bloodGroup?: BloodGroup;
+    email: string;
+    lastSchoolAttended: string;
+    lastDivision: string;
+    generalBehaviour: 'Mild' | 'Normal' | 'Hyperactive';
+    siblingsInSchool: number;
+    achievements: string;
+    healthIssues: string;
+
+    // Document URLs
+    transferCertificateUrl?: string;
+    birthCertificateUrl?: string;
+    reportCardUrl?: string;
+    paymentScreenshotUrl: string;
 }
 
 // --- NEW: Fee Structure Types ---

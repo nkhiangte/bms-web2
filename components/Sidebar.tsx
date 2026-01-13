@@ -107,7 +107,7 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
             <nav className="mt-6 flex-1 px-2 space-y-1">
                 <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Website Info</h3>
                 {publicNavLinks.map(item => (
-                    <a key={item.name} href={`/#${item.path}`} target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:bg-slate-200 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-semibold rounded-md">
+                    <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:bg-slate-200 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-semibold rounded-md">
                         <span className="truncate">{item.name}</span>
                     </a>
                 ))}

@@ -1,0 +1,23 @@
+{
+  "name": "Bethel Mission School - Student Database",
+  "short_name": "BMS DB",
+  "description": "A web application to manage student records for Bethel Mission School. Users can add, view, edit, search, and filter student information by grade.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

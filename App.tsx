@@ -99,6 +99,7 @@ const TransferManagementPage = lazy(() => import('./pages/TransferManagementPage
 const GenerateTcPage = lazy(() => import('./pages/GenerateTcPage'));
 const TcRecordsPage = lazy(() => import('./pages/TcRecordsPage'));
 const PrintTcPage = lazy(() => import('./pages/PrintTcPage'));
+const OnlineAdmissionsListPage = lazy(() => import('./pages/OnlineAdmissionsListPage'));
 
 // Public Pages
 const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
@@ -195,6 +196,7 @@ const App: React.FC = () => {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [sitemapContent, setSitemapContent] = useState<string>('');
     const [calendarPrefs, setCalendarPrefs] = useState({ notificationDaysBefore: -1 });
+    const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
     const [isReminderServiceActive, setIsReminderServiceActive] = useState(() => {
         try {
             return localStorage.getItem('isReminderServiceActive') === 'true';
@@ -329,28 +331,21 @@ const App: React.FC = () => {
         // Exam Routines
         db.collection('examRoutines').onSnapshot((snapshot: any) => {
             const data = (safeArray(snapshot.docs) as any[]).map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
-            // Always set the data from the DB, even if empty. 
-            // This allows the user to delete all routines if desired.
             setExamSchedules(data);
         }, (error: any) => {
             console.log("Firestore error (examRoutines):", error.message);
-            // Fallback is already set in initial state, so we just log the error
         });
 
         // Class Routines
         db.collection('classRoutines').onSnapshot((snapshot: any) => {
             const data: Record<string, DailyRoutine> = {};
             const docs = safeArray(snapshot.docs) as any[];
-            
-            // Always process docs, even if empty (which results in empty data object)
             docs.forEach((doc: any) => {
                 data[doc.id] = doc.data().routine;
             });
-            
             setClassSchedules(data);
         }, (error: any) => {
             console.log("Firestore error (classRoutines):", error.message);
-            // Fallback is already set in initial state
         });
 
         
@@ -409,6 +404,7 @@ const App: React.FC = () => {
     
         if (user && academicYear) {
             const studentNormalizer = (data: any) => ({ ...data, status: data.status || StudentStatus.ACTIVE });
+            const onlineAdmissionNormalizer = (data: any) => ({ ...data, status: data.status || 'pending' });
             const todayDocId = new Date().toISOString().split('T')[0];
     
             switch (user.role) {
@@ -443,6 +439,7 @@ const App: React.FC = () => {
                     if (user.role === 'admin') {
                         addListener(db.collection('inventory'), setInventory, 'inventory');
                         addListener(db.collection('serviceCertificates'), setServiceCerts, 'service certificates');
+                        addListener(db.collection('online_admissions'), setOnlineAdmissions, 'online admissions', onlineAdmissionNormalizer);
                         addListener(db.collection('users'), (data: (User & { id: string })[]) => {
                             const safeData = safeArray(data);
                             setAllUsers(safeData.map(d => ({...d, uid: d.id })));
@@ -480,7 +477,7 @@ const App: React.FC = () => {
             setHostelInventory([]); setStockLogs([]); setHostelDisciplineLog([]);
             setStaffAttendance({}); setStudentAttendance(null); setConductLog([]);
             setChoreRoster({}); setServiceCerts([]); setTcRecords([]); setAllUsers([]);
-            setCalendarPrefs({ notificationDaysBefore: -1 });
+            setOnlineAdmissions([]); setCalendarPrefs({ notificationDaysBefore: -1 });
         }
     
         return () => unsubscribers.forEach(unsub => unsub());
@@ -935,7 +932,18 @@ const App: React.FC = () => {
     };
 
     const handleOnlineAdmissionSubmit = async (data: Omit<OnlineAdmission, 'id' | 'submissionDate'>) => {
-        return handleSave('online_admissions', { ...data, submissionDate: new Date().toISOString() }, undefined, 'Admission form submitted successfully!');
+        const dataToSave = { ...data, status: 'pending', submissionDate: new Date().toISOString() };
+        return handleSave('online_admissions', dataToSave, undefined, 'Admission form submitted successfully!');
+    };
+
+    const handleUpdateAdmissionStatus = async (id: string, status: OnlineAdmission['status']) => {
+        try {
+            await db.collection('online_admissions').doc(id).update({ status });
+            addNotification(`Admission status updated to ${status}.`, 'success');
+        } catch (e) {
+            console.error("Error updating admission status:", e);
+            addNotification('Failed to update status.', 'error');
+        }
     };
 
     // ... (Auth handlers - no changes)
@@ -1268,6 +1276,7 @@ const App: React.FC = () => {
                              isReminderServiceActive={isReminderServiceActive}
                              onToggleReminderService={handleToggleReminderService}
                              calendarEvents={calendarEvents}
+                             onlineAdmissions={onlineAdmissions}
                           />
                       } />
                       <Route path="parent-dashboard" element={
@@ -1573,6 +1582,7 @@ const App: React.FC = () => {
 
                       {userWithProfilePhoto.role === 'admin' && (
                           <>
+                            <Route path="admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={handleUpdateAdmissionStatus} />} />
                             <Route path="news-management" element={
                                 <ManageNewsPage 
                                     news={news} 

@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon } from '../components/Icons';
+import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon } from '../components/Icons';
 import AcademicYearForm from '../components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType } from '../types';
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, OnlineAdmission } from '../types';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -19,6 +18,7 @@ interface DashboardPageProps {
   isReminderServiceActive: boolean;
   onToggleReminderService: (isActive: boolean) => void;
   calendarEvents: CalendarEvent[];
+  onlineAdmissions: OnlineAdmission[];
 }
 
 const DashboardCard: React.FC<{
@@ -125,7 +125,7 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, studentCount, academicYear, onSetAcademicYear, allUsers, assignedGrade, assignedSubjects, isReminderServiceActive, onToggleReminderService, calendarEvents }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, studentCount, academicYear, onSetAcademicYear, allUsers, assignedGrade, assignedSubjects, isReminderServiceActive, onToggleReminderService, calendarEvents, onlineAdmissions }) => {
   const [isChangingYear, setIsChangingYear] = useState(false);
   
   if (user.role === 'pending' || user.role === 'pending_parent') {
@@ -149,6 +149,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
 
   const isAdmin = user.role === 'admin';
   const pendingUserCount = allUsers.filter(u => u.role === 'pending' || u.role === 'pending_parent').length;
+  const pendingAdmissionsCount = onlineAdmissions.filter(a => a.status === 'pending').length;
   
   const upcomingEvents = useMemo(() => {
     if (!calendarEvents) return [];
@@ -331,6 +332,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
             {/* Admin-only cards */}
             {isAdmin && (
                 <>
+                    <DashboardCard
+                        title="Online Admissions"
+                        description="Review and process new student applications."
+                        icon={<InboxArrowDownIcon className="w-7 h-7" />}
+                        count={pendingAdmissionsCount}
+                        color="violet"
+                        action={<Link to="/portal/admissions">Review Applications</Link>}
+                    />
                     <DashboardCard
                         title="News Management"
                         description="Create and manage school news."

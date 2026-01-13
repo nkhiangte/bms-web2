@@ -23,8 +23,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error: error };
   }
 
-  // FIX: Converted to a standard class method. Arrow functions are not needed for lifecycle methods
-  // as React binds `this` automatically, and using them as class properties was causing a type inference issue.
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
     this.setState({ errorInfo: errorInfo });
@@ -61,8 +59,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     });
   }
   
-  // FIX: Converted to a standard class method. The `render` lifecycle method doesn't need to be an arrow function.
-  // Using it as a class property was causing a type inference issue with `this.props`.
   render() {
     if (this.state.hasError) {
       return (

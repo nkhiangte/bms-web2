@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, Grade, GradeDefinition, EmploymentStatus, SubjectAssignment } from '../types';
@@ -65,7 +66,6 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
 
   const assignedClass = useMemo(() => {
     if (!staffMember) return null;
-// FIX: Explicitly type the destructured `def` variable to `GradeDefinition` to fix type inference issues where it was being treated as `unknown`.
     const entry = Object.entries(gradeDefinitions).find(([, def]: [string, GradeDefinition]) => def.classTeacherId === staffMember.id);
     return entry ? entry[0] as Grade : null;
   }, [staffMember, gradeDefinitions]);
@@ -184,7 +184,6 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
                         <DetailItem label="Subject Assignments">
                            {subjectsByGrade && Object.keys(subjectsByGrade).length > 0 ? (
                                <div className="space-y-2 mt-1">
-{/* FIX: Explicitly typed the destructured arguments in the map function to resolve type inference issues. */}
                                    {Object.entries(subjectsByGrade).map(([grade, subjects]: [string, string[]]) => (
                                        <div key={grade}>
                                            <span className="font-semibold text-slate-700">{grade}:</span>

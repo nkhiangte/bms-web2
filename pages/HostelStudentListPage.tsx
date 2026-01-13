@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { HostelResident, Student, User } from '../types';
@@ -11,7 +12,6 @@ interface HostelStudentListPageProps {
     residents: HostelResident[];
     students: Student[];
     onAdd: () => void;
-    // FIX: Changed return type to Promise to match async implementation.
     onAddById: (studentId: string) => Promise<{ success: boolean, message?: string }>;
     onEdit: (resident: HostelResident) => void;
     onDelete: (resident: HostelResident) => void;
@@ -36,7 +36,6 @@ const HostelStudentListPage: React.FC<HostelStudentListPageProps> = ({ residents
         }).sort((a, b) => a.studentName.localeCompare(b.studentName));
     }, [residents, students, academicYear]);
 
-    // FIX: Made function async and awaited the result of onAddById.
     const handleSearchSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSearchError('');

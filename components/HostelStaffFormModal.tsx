@@ -1,10 +1,8 @@
 
 
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-// FIX: Replaced HostelBlock with HostelDormitory as it is the correct type.
 import { HostelStaff, Gender, HostelStaffRole, HostelDormitory, PaymentStatus, Qualification, BloodGroup } from '../types';
 import { UserIcon, ChevronDownIcon, ChevronUpIcon, SpinnerIcon } from './Icons';
-// FIX: Replaced HOSTEL_BLOCK_LIST with HOSTEL_DORMITORY_LIST as it is the correct constant name.
 import { GENDER_LIST, HOSTEL_STAFF_ROLE_LIST, HOSTEL_DORMITORY_LIST, QUALIFICATION_LIST, BLOOD_GROUP_LIST } from '../constants';
 import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '../utils';
 

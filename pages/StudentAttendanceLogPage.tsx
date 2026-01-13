@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '../types';
@@ -187,7 +188,6 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
             <button onClick={() => changeMonth(1)} className="btn btn-secondary !p-2"><ChevronRightIcon className="w-5 h-5"/></button>
         </div>
         <div className="flex flex-wrap gap-4 text-sm font-semibold">
-{/* FIX: Use correct property access with enum values as keys. */}
             <span>Present: <span className="font-bold text-emerald-600">{attendanceSummary[StudentAttendanceStatus.PRESENT]}</span></span>
             <span>Absent: <span className="font-bold text-rose-600">{attendanceSummary[StudentAttendanceStatus.ABSENT]}</span></span>
             <span>Leave: <span className="font-bold text-amber-600">{attendanceSummary[StudentAttendanceStatus.LEAVE]}</span></span>

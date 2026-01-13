@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-// FIX: Imported the missing `SubjectDefinition` type to resolve a TypeScript error.
 import { Student, Grade, StudentStatus, Gender, Category, BloodGroup, SubjectDefinition } from '../types';
 import { createDefaultFeePayments } from '../utils';
 import { ArrowUpOnSquareIcon, XIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, InboxArrowDownIcon } from './Icons';
@@ -82,7 +81,6 @@ export const ImportMarksModal: React.FC<ImportMarksModalProps> = ({ isOpen, onCl
             const json: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
 
             const headerRow = json[0] || [];
-            // FIX: Explicitly typed the Map to ensure correct type inference for its values.
             const studentMapByRoll = new Map<number, Student>(classStudents.map(s => [s.rollNo, s]));
             
             const expectedHeaders = ['Roll No', 'Student Name', ...subjectHeaders.map(h => h.label)];

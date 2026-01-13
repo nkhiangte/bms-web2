@@ -22,7 +22,6 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
         const newResults = results.map(r => {
             if (r.subject === subjectName) {
                 if (field === 'grade') {
-                    // FIX: Argument of type '(SubjectMark | { grade: string; subject: string; marks?: number; examMarks?: number; activityMarks?: number; activityLog?: ActivityLog; })[]' is not assignable to parameter of type 'SubjectMark[]'.
                     // Ensure the 'grade' property conforms to the SubjectMark type.
                     // An empty string from the select should result in an undefined grade.
                     return { ...r, grade: value ? (value as 'O' | 'A' | 'B' | 'C') : undefined };

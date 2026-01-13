@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance } from '../types';
@@ -98,7 +99,6 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
             if (r.marks != null) { newResult.marks = r.marks; hasData = true; }
             if (r.examMarks != null) { newResult.examMarks = r.examMarks; hasData = true; }
             if (r.activityMarks != null) { newResult.activityMarks = r.activityMarks; hasData = true; }
-            // FIX: Removed invalid comparison `r.grade !== ''`. The type for `grade` is `'O' | 'A' | 'B' | 'C' | undefined` and cannot be an empty string, so `!= null` is sufficient.
             if (r.grade != null) { newResult.grade = r.grade; hasData = true; }
             if (r.activityLog != null) { newResult.activityLog = r.activityLog; hasData = true; }
             
@@ -292,6 +292,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                     isEditing={isEditing}
                     canEdit={canEdit}
                     onUpdateExamData={handleUpdateExamData}
+                    // FIX: Corrected the prop name passed to ExamPerformanceCard from 'onOpenActivityLog' to 'handleOpenActivityLog' to match the function defined in the component, resolving a 'Cannot find name' error.
                     onOpenActivityLog={handleOpenActivityLog}
                     academicYear={academicYear}
                 />

@@ -11,7 +11,6 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // FIX: __dirname is not available in ES modules. Using import.meta.url is the modern way to get the current file's path.
       '@': fileURLToPath(new URL('.', import.meta.url)),
     },
   },

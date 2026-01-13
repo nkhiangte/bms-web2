@@ -1,10 +1,10 @@
 
+
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon } from '../components/Icons';
 import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType } from '../types';
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
-// FIX: Added 'TERMINAL_EXAMS' to the import list to resolve a 'Cannot find name' error.
 import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -147,7 +147,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
 
         setIsProcessingPayment(true);
         
-        // FIX: Use process.env as defined in vite.config.ts to access environment variables.
         const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
         if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
             addNotification('Online payment gateway is not configured correctly. Please contact the administrator.', 'error', 'Configuration Error');

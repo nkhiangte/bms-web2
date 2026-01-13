@@ -3,7 +3,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BackIcon, UserIcon } from '../../components/Icons';
-// FIX: Imported missing constants and types.
 import { DISTINCTION_HOLDERS_BY_YEAR } from '../../constants';
 import { DistinctionHolder } from '../../types';
 

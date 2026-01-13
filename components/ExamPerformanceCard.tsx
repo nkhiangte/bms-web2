@@ -87,7 +87,6 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
     
             gradedSubjects.forEach(sd => {
                 const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-                // FIX: Removed invalid comparison `r.grade !== ''`. The type for `grade` is `'O' | 'A' | 'B' | 'C' | undefined` and cannot be an empty string, so `!= null` is a sufficient and correct check.
                 if (result?.grade != null && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
             });
             

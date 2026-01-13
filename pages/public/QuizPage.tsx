@@ -2,8 +2,7 @@
 
 import React from 'react';
 
-// FIX: Renamed component to match filename.
-const QuizClubPage: React.FC = () => {
+const QuizPage: React.FC = () => {
     return (
         <div className="relative py-16">
             <div 
@@ -69,4 +68,4 @@ const QuizClubPage: React.FC = () => {
     );
 };
 
-export default QuizClubPage;
+export default QuizPage;

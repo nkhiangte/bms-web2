@@ -1,11 +1,6 @@
 
-
-
-
-
 import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Corrected import paths
 import { auth, db, firebase } from './firebaseConfig';
 import { 
     User, Student, Staff, Grade, GradeDefinition, FeeStructure,

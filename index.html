@@ -1,139 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <script>
-      // Most aggressive script: unregister ALL service workers AND clear ALL caches.
-      // This is to forcefully remove any old, buggy service worker that is serving stale
-      // application code and data, which can cause UI elements to disappear.
-      // A session storage flag prevents potential reload loops.
-      if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-unregistered-v3')) {
-        try {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            if (registrations.length > 0) {
-              console.log('Found active service workers, unregistering...');
-              const unregisterPromises = registrations.map(r => r.unregister());
-              
-              return Promise.all(unregisterPromises).then(() => {
-                console.log('Service workers unregistered. Now clearing all caches...');
-                return caches.keys();
-              }).then(function(cacheNames) {
-                  return Promise.all(
-                      cacheNames.map(function(cacheName) {
-                          console.log('Deleting cache:', cacheName);
-                          return caches.delete(cacheName);
-                      })
-                  );
-              }).then(() => {
-                console.log('All caches cleared. Forcing a hard reload to ensure clean state.');
-                sessionStorage.setItem('sw-unregistered-v3', 'true'); // Set new flag
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- Cache control -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Aggressive Service Worker Cleanup -->
+  <script>
+    if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-unregistered-v3')) {
+      try {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          if (registrations.length > 0) {
+            const unregisterPromises = registrations.map(r => r.unregister());
+            Promise.all(unregisterPromises)
+              .then(() => caches.keys())
+              .then(cacheNames => Promise.all(cacheNames.map(c => caches.delete(c))))
+              .then(() => {
+                sessionStorage.setItem('sw-unregistered-v3', 'true');
                 window.location.reload();
               });
-            }
-          }).catch(function(err) {
-            console.warn('Service Worker cleanup warning: ', err);
-          });
-        } catch (e) {
-          console.warn('Service Worker API not available or restricted: ', e);
-        }
+          }
+        });
+      } catch (e) {
+        console.warn(e);
       }
-    </script>
-    <link rel="icon" href="https://fav.farm/🏫" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Bethel Mission School, Champhai - Service to God & Men. A premier educational institution in Mizoram offering quality education from Nursery to Class X. Founded in 1996." />
-    <meta name="keywords" content="Bethel Mission School, Champhai, Mizoram, BMS Champhai, Best School in Champhai, MBSE, High School Mizoram, Bethel Veng School" />
-    <meta name="author" content="Bethel Mission School" />
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://bms04.netlify.app/" />
-    <meta property="og:title" content="Bethel Mission School, Champhai" />
-    <meta property="og:description" content="Service to God & Men. Providing holistic education and academic excellence in Champhai, Mizoram." />
-    <meta property="og:image" content="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" />
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://bms04.netlify.app/" />
-    <meta property="twitter:title" content="Bethel Mission School, Champhai" />
-    <meta property="twitter:description" content="Service to God & Men. Providing holistic education and academic excellence in Champhai, Mizoram." />
-    <meta property="twitter:image" content="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" />
-
-    <!-- PWA additions -->
-    <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#0ea5e9" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BMS DB">
-    <link rel="apple-touch-icon" href="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png">
-    <!-- End PWA additions -->
-    
-    <title>Bethel Mission School, Champhai - Official Website</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
-    <!-- JSON-LD Structured Data for Google -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "School",
-      "name": "Bethel Mission School",
-      "url": "https://bms04.netlify.app/",
-      "logo": "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
-      "foundingDate": "1996",
-      "slogan": "Service to God & Men",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Bethel Veng",
-        "addressLocality": "Champhai",
-        "addressRegion": "Mizoram",
-        "postalCode": "796321",
-        "addressCountry": "IN"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+91-9862148342",
-        "contactType": "admissions",
-        "email": "bmschamphai@gmail.com"
-      },
-      "sameAs": [
-        "https://www.facebook.com/bethel.ms",
-        "https://www.instagram.com/bms_champhai/",
-        "https://www.youtube.com/@BethelMissionSchoolChamphai"
-      ]
     }
-    </script>
+  </script>
+
+  <link rel="icon" href="https://fav.farm/🏫" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ================= SEO CORE ================= -->
+
+  <title>Bethel Mission School | HSLC Excellence & Holistic Education in Champhai, Mizoram</title>
+
+  <meta name="description" content="Bethel Mission School, Champhai is a leading MBSE-affiliated institution with excellent HSLC results, multiple top-ten achievers, over 160 distinctions, national-level science and mathematics achievements, NCC facilities, rich cultural programs, and a peaceful campus with sports infrastructure." />
+
+  <meta name="keywords" content="
+  Bethel Mission School,
+  Bethel Mission School Champhai,
+  Best HSLC School Mizoram,
+  MBSE Top Performing School,
+  HSLC Top Ten School Mizoram,
+  Distinction Results School Champhai,
+  Science Excellence School Mizoram,
+  Children Science Congress School,
+  RBVP School Mizoram,
+  National Level Science Competition School,
+  Mathematics Competition School Mizoram,
+  NCC School Champhai,
+  School with NCC Facilities Mizoram,
+  Holistic Education School Mizoram,
+  Peaceful Campus School,
+  Basketball Facilities School Mizoram
+  " />
+
+  <meta name="author" content="Bethel Mission School" />
+  <link rel="canonical" href="https://bms04.netlify.app/" />
+
+  <!-- Google Site Verification -->
+  <meta name="google-site-verification" content="y3MgJE9LjcHe6shq0pFI16BXxfGHM6qILGcqkQ4dq5s" />
+
+  <!-- ================= OPEN GRAPH ================= -->
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://bms04.netlify.app/" />
+  <meta property="og:title" content="Bethel Mission School, Champhai" />
+  <meta property="og:description" content="MBSE-affiliated school with outstanding HSLC results, science excellence, NCC facilities, and holistic education in Champhai, Mizoram." />
+  <meta property="og:image" content="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" />
+
+  <!-- ================= TWITTER ================= -->
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://bms04.netlify.app/" />
+  <meta name="twitter:title" content="Bethel Mission School, Champhai" />
+  <meta name="twitter:description" content="Academic excellence, HSLC top results, science & NCC programs at Bethel Mission School, Champhai." />
+  <meta name="twitter:image" content="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" />
+
+  <!-- ================= PWA ================= -->
+
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bethel Mission School" />
+  <link rel="apple-touch-icon" href="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" />
+
+  <!-- ================= STRUCTURED DATA ================= -->
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "School",
+    "name": "Bethel Mission School",
+    "url": "https://bms04.netlify.app/",
+    "logo": "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
+    "foundingDate": "1996",
+    "slogan": "Service to God & Men",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Bethel Veng",
+      "addressLocality": "Champhai",
+      "addressRegion": "Mizoram",
+      "postalCode": "796321",
+      "addressCountry": "IN"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+91-9862148342",
+      "contactType": "Admissions",
+      "email": "bmschamphai@gmail.com"
+    },
+    "sameAs": [
+      "https://www.facebook.com/bethel.ms",
+      "https://www.instagram.com/bms_champhai/",
+      "https://www.youtube.com/@BethelMissionSchoolChamphai"
+    ]
+  }
+  </script>
+
+  <!-- ================= IMPORT MAP ================= -->
 
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "react/": "https://esm.sh/react@^19.1.1/",
     "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
     "react-router-dom": "https://esm.sh/react-router-dom@6.25.1",
     "@google/genai": "https://esm.sh/@google/genai",
     "xlsx": "https://esm.sh/xlsx@0.18.5",
     "jspdf": "https://esm.sh/jspdf@2.5.1",
     "html2canvas": "https://esm.sh/html2canvas@1.4.1",
-    "vite": "https://aistudiocdn.com/vite@^7.1.5",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.3.0/",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "url": "https://aistudiocdn.com/url@^0.11.4"
+    "firebase/": "https://esm.sh/firebase@^12.7.0/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
-<link rel="stylesheet" href="./index.css">
+
+  <link rel="stylesheet" href="./index.css" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 </head>
-<meta name="google-site-verification" content="y3MgJE9LjcHe6shq0pFI16BXxfGHM6qILGcqkQ4dq5s" />
-  <body class="antialiased" style="background-color: var(--body-bg); color: var(--text-main);">
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0"></script>
-    <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  </body>
+
+<body class="antialiased" style="background-color: var(--body-bg); color: var(--text-main);">
+  <div id="fb-root"></div>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0"></script>
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
+</body>
 </html>

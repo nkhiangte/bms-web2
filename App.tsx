@@ -325,20 +325,32 @@ const App: React.FC = () => {
         // Routine Listeners (Available to all)
         // Exam Routines
         db.collection('examRoutines').onSnapshot((snapshot: any) => {
-            const data = (safeArray(snapshot.docs) as any[]).map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
-            setExamSchedules(data);
+            const docs = safeArray(snapshot.docs);
+            if (docs.length > 0) {
+                const data = docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
+                setExamSchedules(data);
+            } else {
+                 setExamSchedules(defaultExamRoutines.map((r, idx) => ({ id: `default-${idx}`, ...r })));
+            }
         }, (error: any) => {
             console.log("Firestore error (examRoutines):", error.message);
         });
 
         // Class Routines
         db.collection('classRoutines').onSnapshot((snapshot: any) => {
-            const data: Record<string, DailyRoutine> = {};
+            const dbData: Record<string, DailyRoutine> = {};
             const docs = safeArray(snapshot.docs) as any[];
             docs.forEach((doc: any) => {
-                data[doc.id] = doc.data().routine;
+                const routine = doc.data().routine;
+                // Only use DB data if it's valid and not empty. 
+                // This prevents an accidentally saved empty schedule (e.g. from a blank edit form) 
+                // from overwriting the default timetable data, ensuring the schedule is always visible.
+                if (routine && Array.isArray(routine) && routine.length > 0) {
+                    dbData[doc.id] = routine;
+                }
             });
-            setClassSchedules(data);
+            // Merge DB data over default data
+            setClassSchedules({ ...timetableData, ...dbData });
         }, (error: any) => {
             console.log("Firestore error (classRoutines):", error.message);
         });
@@ -479,8 +491,8 @@ const App: React.FC = () => {
     
     }, [user, academicYear, addNotification]);
 
-    // ... (SMS Notification and Reminder Service useEffect hooks - no changes)
-
+    // ... (rest of the file remains unchanged)
+    
     const staffProfile = useMemo(() => {
         if (!user || !user.email) return null;
         return staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase());

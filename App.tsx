@@ -119,7 +119,6 @@ const InfrastructurePage = lazy(() => import('./pages/public/InfrastructurePage'
 const HostelPage = lazy(() => import('./pages/public/HostelPage'));
 const GalleryPage = lazy(() => import('./pages/public/GalleryPage'));
 const SitemapPage = lazy(() => import('./pages/public/SitemapPage'));
-const SitemapXmlPage = lazy(() => import('./pages/public/SitemapXmlPage'));
 const PublicStaffDetailPage = lazy(() => import('./pages/public/PublicStaffDetailPage'));
 const QuizClubPage = lazy(() => import('./pages/public/QuizClubPage'));
 const AcademicsPage = lazy(() => import('./pages/public/AcademicsPage'));
@@ -1223,7 +1222,6 @@ const App: React.FC = () => {
             <Route path="/hostel" element={<HostelPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/sitemap" element={<SitemapPage />} />
-            <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
             <Route path="/achievements/quiz" element={<QuizClubPage />} />
             <Route path="/academics" element={<AcademicsPage />} />
             <Route path="/academics/curriculum" element={<CurriculumPage gradeDefinitions={gradeDefinitions} />} />

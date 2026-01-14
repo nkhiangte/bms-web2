@@ -1,16 +1,16 @@
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { URL, fileURLToPath } from 'url'
 
 export default defineConfig({
-  base: './',
+  base: '/',
   define: {
     // This makes environment variables available in the client-side code.
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
     'process.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(process.env.VITE_RAZORPAY_KEY_ID),
   },
   plugins: [react()],
-  publicDir: false,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('.', import.meta.url)),

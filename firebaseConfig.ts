@@ -21,16 +21,21 @@ const app = firebase.initializeApp(firebaseConfig);
 // Initialize services
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// Apply settings to force long polling, which fixes "Backend didn't respond within 10 seconds" errors
+// in environments where WebSockets are restricted or unstable.
+db.settings({ experimentalForceLongPolling: true });
+
 const storage = firebase.storage();
 
-// Enable persistence for offline functionality
-db.enablePersistence().catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code == 'unimplemented') {
-        console.log('The current browser doesn\'t support persistence.');
-    }
-});
+// Disable persistence temporarily to rule out initialization locks in flaky environments
+// db.enablePersistence().catch((err) => {
+//     if (err.code == 'failed-precondition') {
+//         console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+//     } else if (err.code == 'unimplemented') {
+//         console.log('The current browser doesn\'t support persistence.');
+//     }
+// });
 
 export { auth, db, storage, firebase, firebaseConfig };
 export default app;

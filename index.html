@@ -11,37 +11,41 @@
       // application code and data, which can cause UI elements to disappear.
       // A session storage flag prevents potential reload loops.
       if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-unregistered-v3')) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          if (registrations.length > 0) {
-            console.log('Found active service workers, unregistering...');
-            const unregisterPromises = registrations.map(r => r.unregister());
-            
-            return Promise.all(unregisterPromises).then(() => {
-              console.log('Service workers unregistered. Now clearing all caches...');
-              return caches.keys();
-            }).then(function(cacheNames) {
-                return Promise.all(
-                    cacheNames.map(function(cacheName) {
-                        console.log('Deleting cache:', cacheName);
-                        return caches.delete(cacheName);
-                    })
-                );
-            }).then(() => {
-              console.log('All caches cleared. Forcing a hard reload to ensure clean state.');
-              sessionStorage.setItem('sw-unregistered-v3', 'true'); // Set new flag
-              window.location.reload();
-            });
-          }
-        }).catch(function(err) {
-          console.error('Service Worker cleanup failed: ', err);
-        });
+        try {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            if (registrations.length > 0) {
+              console.log('Found active service workers, unregistering...');
+              const unregisterPromises = registrations.map(r => r.unregister());
+              
+              return Promise.all(unregisterPromises).then(() => {
+                console.log('Service workers unregistered. Now clearing all caches...');
+                return caches.keys();
+              }).then(function(cacheNames) {
+                  return Promise.all(
+                      cacheNames.map(function(cacheName) {
+                          console.log('Deleting cache:', cacheName);
+                          return caches.delete(cacheName);
+                      })
+                  );
+              }).then(() => {
+                console.log('All caches cleared. Forcing a hard reload to ensure clean state.');
+                sessionStorage.setItem('sw-unregistered-v3', 'true'); // Set new flag
+                window.location.reload();
+              });
+            }
+          }).catch(function(err) {
+            console.warn('Service Worker cleanup warning: ', err);
+          });
+        } catch (e) {
+          console.warn('Service Worker API not available or restricted: ', e);
+        }
       }
     </script>
     <link rel="icon" href="https://fav.farm/🏫" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- PWA additions -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#0ea5e9" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -72,13 +76,13 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+<link rel="stylesheet" href="./index.css">
 </head>
 <meta name="google-site-verification" content="y3MgJE9LjcHe6shq0pFI16BXxfGHM6qILGcqkQ4dq5s" />
   <body class="antialiased" style="background-color: var(--body-bg); color: var(--text-main);">
     <div id="fb-root"></div>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0"></script>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

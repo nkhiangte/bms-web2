@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { URL, fileURLToPath } from 'url'
 
 export default defineConfig({
+  base: './',
   define: {
     // This makes environment variables available in the client-side code.
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),

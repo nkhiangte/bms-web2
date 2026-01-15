@@ -259,20 +259,25 @@ const App: React.FC = () => {
                         setAcademicYear(year);
                       } else {
                         addNotification('Critical: Academic year setting is missing.', 'error');
+                        // Ensure we don't get stuck in loading state if settings are missing
+                        setLoading(false); 
                       }
                     } else {
                       addNotification('Critical: Could not find academic year settings.', 'error');
+                      setLoading(false);
                     }
                   } catch (error) {
                     console.error('Error fetching user data or settings:', error);
                     addNotification('Failed to fetch user profile or settings.', 'error');
                     auth.signOut();
+                    setLoading(false); // Ensure loading stops on error
                   }
                 },
                 (error) => {
                   console.error('Error listening to user document:', error);
                   addNotification('Failed to listen for user profile updates.', 'error');
                   auth.signOut();
+                  setLoading(false);
                 }
               );
           } else {
@@ -290,125 +295,105 @@ const App: React.FC = () => {
     
     // Data Listeners
     useEffect(() => {
-        const unsubscribers: (() => void)[] = [];
-    
-        const addListener = (query: any, setter: React.Dispatch<any>, collectionName: string, normalizer?: (data: any) => any) => {
-            const unsub = query.onSnapshot(
-                (snapshot: firebase.firestore.DocumentSnapshot | firebase.firestore.QuerySnapshot) => {
-                    try {
-                        if ('docs' in snapshot) { // Type guard for QuerySnapshot
-                            const docs = safeArray(snapshot.docs);
-                            const data = docs.map((doc: firebase.firestore.QueryDocumentSnapshot) => normalizer ? normalizer({ id: doc.id, ...doc.data() }) : ({ id: doc.id, ...doc.data() }));
-                            setter(data);
-                        } else { // DocumentSnapshot
-                            const data = snapshot.exists ? snapshot.data() : null;
-                            if (collectionName === 'user calendar prefs') {
-                                const prefsData = (typeof data === 'object' && data !== null) ? data : {};
-                                setter({ notificationDaysBefore: -1, ...prefsData });
-                            } else {
-                                setter(data);
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Error processing ${collectionName}:`, error);
-                    }
-                },
-                (err: any) => {
-                    console.error(`Error fetching ${collectionName}:`, err.message);
-                    addNotification(`Failed to load ${collectionName}.`, 'error');
-                }
-            );
-            unsubscribers.push(unsub);
-        };
-        
-        // Routine Listeners (Available to all)
-        // Exam Routines
-        db.collection('examRoutines').onSnapshot((snapshot: any) => {
-            const docs = safeArray(snapshot.docs);
-            if (docs.length > 0) {
-                const data = docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
-                setExamSchedules(data);
-            } else {
-                 setExamSchedules(defaultExamRoutines.map((r, idx) => ({ id: `default-${idx}`, ...r })));
-            }
-        }, (error: any) => {
-            console.log("Firestore error (examRoutines):", error.message);
-        });
-
-        // Class Routines
-        db.collection('classRoutines').onSnapshot((snapshot: any) => {
-            const dbData: Record<string, DailyRoutine> = {};
-            const docs = safeArray(snapshot.docs) as any[];
-            docs.forEach((doc: any) => {
-                const routine = doc.data().routine;
-                // Only use DB data if it's valid and not empty. 
-                // This prevents an accidentally saved empty schedule (e.g. from a blank edit form) 
-                // from overwriting the default timetable data, ensuring the schedule is always visible.
-                if (routine && Array.isArray(routine) && routine.length > 0) {
-                    dbData[doc.id] = routine;
-                }
-            });
-            // Merge DB data over default data
-            setClassSchedules({ ...timetableData, ...dbData });
-        }, (error: any) => {
-            console.log("Firestore error (classRoutines):", error.message);
-        });
-
-        
-        const staffNormalizer = (data: any) => ({ ...data, status: data.status || 'Active', staffType: data.staffType || 'Teaching' });
-        const feeSetter = (data: FeeStructure | null) => setFeeStructure(data || DEFAULT_FEE_STRUCTURE);
-        const newsSetter = (data: NewsItem[]) => {
-            const safeData = safeArray(data);
-            setNews(safeData.sort((a,b) => (b.date || '').localeCompare(a.date || '')));
-        };
-        const sitemapSetter = (data: {xml: string} | null) => setSitemapContent(data?.xml || '');
-        const calendarSetter = (data: CalendarEvent[]) => {
-            const safeData = safeArray(data);
-            setCalendarEvents(safeData.sort((a,b) => (a.date || '').localeCompare(b.date || '')));
-        };
-        
-        const gradeDefSetter = (doc: firebase.firestore.DocumentSnapshot) => {
-            const dbGrades = doc.exists ? doc.data()?.grades || {} : {};
-            const newDefinitions = JSON.parse(JSON.stringify(GRADE_DEFINITIONS));
-            GRADES_LIST.forEach(gradeKey => {
-                if (dbGrades[gradeKey]) newDefinitions[gradeKey] = { ...newDefinitions[gradeKey], ...dbGrades[gradeKey] };
-            });
-
-            if (newDefinitions[Grade.NURSERY]) {
-                newDefinitions[Grade.NURSERY].subjects = GRADE_DEFINITIONS[Grade.NURSERY].subjects;
-            }
-
-            setGradeDefinitions(newDefinitions);
-        };
-
-        if (user && ['admin', 'user', 'warden'].includes(user.role)) {
-            addListener(db.collection('staff'), setStaff, 'staff', staffNormalizer);
-            addListener(db.collection('config').doc('feeStructure'), feeSetter, 'fee structure');
-            addListener(db.collection('news'), newsSetter, 'news');
-            addListener(db.doc('config/sitemap'), sitemapSetter, 'sitemap');
-            unsubscribers.push(db.collection('config').doc('gradeDefinitions').onSnapshot(gradeDefSetter));
-            addListener(db.collection('calendarEvents'), calendarSetter, 'calendar events');
-        } else {
-            db.collection('staff').get().then(snap => {
-                const docs = safeArray(snap.docs);
-                setStaff(docs.map((d: any) => staffNormalizer({ id: d.id, ...d.data() })));
-            }).catch(e => console.warn(`Public staff fetch failed: ${e.message}`));
-            
-            db.collection('config').doc('feeStructure').get().then(d => feeSetter(d.exists ? d.data() as FeeStructure : null)).catch(e => console.warn(`Public fee structure fetch failed: ${e.message}`));
-            db.collection('news').get().then(snap => {
-                const docs = safeArray(snap.docs);
-                newsSetter(docs.map((d: any) => ({ id: d.id, ...d.data() })) as NewsItem[]);
-            }).catch(e => console.warn(`Public news fetch failed: ${e.message}`));
-            
-            db.doc('config/sitemap').get().then(d => sitemapSetter(d.exists ? d.data() as {xml: string} : null)).catch(e => console.warn(`Public sitemap fetch failed: ${e.message}`));
-            db.collection('config').doc('gradeDefinitions').get().then(gradeDefSetter).catch(e => console.warn(`Public grade definitions fetch failed: ${e.message}`));
-            db.collection('calendarEvents').get().then(snap => {
-                const docs = safeArray(snap.docs);
-                calendarSetter(docs.map((d: any) => ({ id: d.id, ...d.data() })) as CalendarEvent[]);
-            }).catch(e => console.warn(`Public calendar events fetch failed: ${e.message}`));
-        }
-    
+        // Only run data listeners if we have a valid user and an academic year
+        // We set loading to false here to signal that data fetching has initiated/completed
         if (user && academicYear) {
+            const unsubscribers: (() => void)[] = [];
+        
+            const addListener = (query: any, setter: React.Dispatch<any>, collectionName: string, normalizer?: (data: any) => any) => {
+                const unsub = query.onSnapshot(
+                    (snapshot: firebase.firestore.DocumentSnapshot | firebase.firestore.QuerySnapshot) => {
+                        try {
+                            if ('docs' in snapshot) { // Type guard for QuerySnapshot
+                                const docs = safeArray(snapshot.docs);
+                                const data = docs.map((doc: firebase.firestore.QueryDocumentSnapshot) => normalizer ? normalizer({ id: doc.id, ...doc.data() }) : ({ id: doc.id, ...doc.data() }));
+                                setter(data);
+                            } else { // DocumentSnapshot
+                                const data = snapshot.exists ? snapshot.data() : null;
+                                if (collectionName === 'user calendar prefs') {
+                                    const prefsData = (typeof data === 'object' && data !== null) ? data : {};
+                                    setter({ notificationDaysBefore: -1, ...prefsData });
+                                } else {
+                                    setter(data);
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error processing ${collectionName}:`, error);
+                        }
+                    },
+                    (err: any) => {
+                        console.error(`Error fetching ${collectionName}:`, err.message);
+                        addNotification(`Failed to load ${collectionName}.`, 'error');
+                    }
+                );
+                unsubscribers.push(unsub);
+            };
+            
+            // Common Listeners for authenticated users
+             // Exam Routines
+            db.collection('examRoutines').onSnapshot((snapshot: any) => {
+                const docs = safeArray(snapshot.docs);
+                if (docs.length > 0) {
+                    const data = docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
+                    setExamSchedules(data);
+                } else {
+                     setExamSchedules(defaultExamRoutines.map((r, idx) => ({ id: `default-${idx}`, ...r })));
+                }
+            }, (error: any) => {
+                console.log("Firestore error (examRoutines):", error.message);
+            });
+
+            // Class Routines
+            db.collection('classRoutines').onSnapshot((snapshot: any) => {
+                const dbData: Record<string, DailyRoutine> = {};
+                const docs = safeArray(snapshot.docs) as any[];
+                docs.forEach((doc: any) => {
+                    const routine = doc.data().routine;
+                    if (routine && Array.isArray(routine) && routine.length > 0) {
+                        dbData[doc.id] = routine;
+                    }
+                });
+                setClassSchedules({ ...timetableData, ...dbData });
+            }, (error: any) => {
+                console.log("Firestore error (classRoutines):", error.message);
+            });
+
+            
+            const staffNormalizer = (data: any) => ({ ...data, status: data.status || 'Active', staffType: data.staffType || 'Teaching' });
+            const feeSetter = (data: FeeStructure | null) => setFeeStructure(data || DEFAULT_FEE_STRUCTURE);
+            const newsSetter = (data: NewsItem[]) => {
+                const safeData = safeArray(data);
+                setNews(safeData.sort((a,b) => (b.date || '').localeCompare(a.date || '')));
+            };
+            const sitemapSetter = (data: {xml: string} | null) => setSitemapContent(data?.xml || '');
+            const calendarSetter = (data: CalendarEvent[]) => {
+                const safeData = safeArray(data);
+                setCalendarEvents(safeData.sort((a,b) => (a.date || '').localeCompare(b.date || '')));
+            };
+            
+            const gradeDefSetter = (doc: firebase.firestore.DocumentSnapshot) => {
+                const dbGrades = doc.exists ? doc.data()?.grades || {} : {};
+                const newDefinitions = JSON.parse(JSON.stringify(GRADE_DEFINITIONS));
+                GRADES_LIST.forEach(gradeKey => {
+                    if (dbGrades[gradeKey]) newDefinitions[gradeKey] = { ...newDefinitions[gradeKey], ...dbGrades[gradeKey] };
+                });
+
+                if (newDefinitions[Grade.NURSERY]) {
+                    newDefinitions[Grade.NURSERY].subjects = GRADE_DEFINITIONS[Grade.NURSERY].subjects;
+                }
+
+                setGradeDefinitions(newDefinitions);
+            };
+
+            if (['admin', 'user', 'warden'].includes(user.role)) {
+                addListener(db.collection('staff'), setStaff, 'staff', staffNormalizer);
+                addListener(db.collection('config').doc('feeStructure'), feeSetter, 'fee structure');
+                addListener(db.collection('news'), newsSetter, 'news');
+                addListener(db.doc('config/sitemap'), sitemapSetter, 'sitemap');
+                unsubscribers.push(db.collection('config').doc('gradeDefinitions').onSnapshot(gradeDefSetter));
+                addListener(db.collection('calendarEvents'), calendarSetter, 'calendar events');
+            }
+        
             const studentNormalizer = (data: any) => ({ ...data, status: data.status || StudentStatus.ACTIVE });
             const onlineAdmissionNormalizer = (data: any) => ({ ...data, status: data.status || 'pending' });
             const todayDocId = new Date().toISOString().split('T')[0];
@@ -476,9 +461,15 @@ const App: React.FC = () => {
                 case 'pending_parent':
                     break;
             }
+            
+            // Mark loading as complete once listeners are set up for authenticated user
             setLoading(false);
+            
+            return () => unsubscribers.forEach(unsub => unsub());
     
         } else if (!user) {
+             // For public users, we also fetch some data but don't need real-time for everything
+             // Fetching is handled in the next block, this else if just clears sensitive data
             setStudents([]); setInventory([]); setHostelResidents([]); setHostelStaff([]);
             setHostelInventory([]); setStockLogs([]); setHostelDisciplineLog([]);
             setStaffAttendance({}); setStudentAttendance(null); setConductLog([]);
@@ -486,9 +477,70 @@ const App: React.FC = () => {
             setOnlineAdmissions([]); setCalendarPrefs({ notificationDaysBefore: -1 });
         }
     
-        return () => unsubscribers.forEach(unsub => unsub());
-    
     }, [user, academicYear, addNotification]);
+
+    // Public Data Fetching (Independent of Auth State)
+    useEffect(() => {
+        if (!user) {
+             const staffNormalizer = (data: any) => ({ ...data, status: data.status || 'Active', staffType: data.staffType || 'Teaching' });
+             const feeSetter = (data: FeeStructure | null) => setFeeStructure(data || DEFAULT_FEE_STRUCTURE);
+             const newsSetter = (data: NewsItem[]) => {
+                 const safeData = safeArray(data);
+                 setNews(safeData.sort((a,b) => (b.date || '').localeCompare(a.date || '')));
+             };
+             const sitemapSetter = (data: {xml: string} | null) => setSitemapContent(data?.xml || '');
+             const calendarSetter = (data: CalendarEvent[]) => {
+                 const safeData = safeArray(data);
+                 setCalendarEvents(safeData.sort((a,b) => (a.date || '').localeCompare(b.date || '')));
+             };
+              const gradeDefSetter = (doc: firebase.firestore.DocumentSnapshot) => {
+                const dbGrades = doc.exists ? doc.data()?.grades || {} : {};
+                const newDefinitions = JSON.parse(JSON.stringify(GRADE_DEFINITIONS));
+                GRADES_LIST.forEach(gradeKey => {
+                    if (dbGrades[gradeKey]) newDefinitions[gradeKey] = { ...newDefinitions[gradeKey], ...dbGrades[gradeKey] };
+                });
+                setGradeDefinitions(newDefinitions);
+            };
+
+            db.collection('staff').get().then(snap => {
+                const docs = safeArray(snap.docs);
+                setStaff(docs.map((d: any) => staffNormalizer({ id: d.id, ...d.data() })));
+            }).catch(e => console.warn(`Public staff fetch failed: ${e.message}`));
+            
+            db.collection('config').doc('feeStructure').get().then(d => feeSetter(d.exists ? d.data() as FeeStructure : null)).catch(e => console.warn(`Public fee structure fetch failed: ${e.message}`));
+            db.collection('news').get().then(snap => {
+                const docs = safeArray(snap.docs);
+                newsSetter(docs.map((d: any) => ({ id: d.id, ...d.data() })) as NewsItem[]);
+            }).catch(e => console.warn(`Public news fetch failed: ${e.message}`));
+            
+            db.doc('config/sitemap').get().then(d => sitemapSetter(d.exists ? d.data() as {xml: string} : null)).catch(e => console.warn(`Public sitemap fetch failed: ${e.message}`));
+            db.collection('config').doc('gradeDefinitions').get().then(gradeDefSetter).catch(e => console.warn(`Public grade definitions fetch failed: ${e.message}`));
+            db.collection('calendarEvents').get().then(snap => {
+                const docs = safeArray(snap.docs);
+                calendarSetter(docs.map((d: any) => ({ id: d.id, ...d.data() })) as CalendarEvent[]);
+            }).catch(e => console.warn(`Public calendar events fetch failed: ${e.message}`));
+            
+             db.collection('examRoutines').get().then(snap => {
+                const docs = safeArray(snap.docs);
+                if (docs.length > 0) {
+                    const data = docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ExamRoutine));
+                    setExamSchedules(data);
+                }
+             }).catch(e => console.warn(e));
+
+             db.collection('classRoutines').get().then(snap => {
+                const dbData: Record<string, DailyRoutine> = {};
+                const docs = safeArray(snap.docs) as any[];
+                docs.forEach((doc: any) => {
+                    const routine = doc.data().routine;
+                    if (routine && Array.isArray(routine) && routine.length > 0) {
+                        dbData[doc.id] = routine;
+                    }
+                });
+                setClassSchedules({ ...timetableData, ...dbData });
+            }).catch(e => console.warn(e));
+        }
+    }, [user]);
 
     // ... (rest of the file remains unchanged)
     

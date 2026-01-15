@@ -1,3 +1,4 @@
+
 // firebaseConfig.js
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
@@ -24,7 +25,17 @@ const db = firebase.firestore();
 
 // Apply settings to force long polling, which fixes "Backend didn't respond within 10 seconds" errors
 // in environments where WebSockets are restricted or unstable.
-db.settings({ experimentalForceLongPolling: true });
+// Wrapped in try-catch to prevent app crash if settings are already applied (e.g. during hot-reload)
+try {
+    db.settings({ 
+        experimentalForceLongPolling: true, 
+        experimentalAutoDetectLongPolling: false,
+        merge: true 
+    });
+} catch (error) {
+    // Ignore error if settings are already locked/applied
+    console.warn("Firestore settings could not be applied (likely already initialized):", error);
+}
 
 const storage = firebase.storage();
 

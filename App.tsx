@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
 import { 
     User, Student, Staff, Grade, GradeDefinition, FeeStructure,
@@ -26,8 +26,6 @@ import ConfirmationModal from './components/ConfirmationModal';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
 import { createDefaultFeePayments, getCurrentAcademicYear, getNextGrade, formatStudentId, normalizeSubjectName, parseSubjectAndTeacher, formatDateForDisplay } from './utils';
-
-const { Routes, Route, Navigate, useNavigate, useLocation } = ReactRouterDOM as any;
 
 // Lazy-loaded Modals
 const StaffFormModal = lazy(() => import('./components/StaffFormModal'));
@@ -252,31 +250,33 @@ const App: React.FC = () => {
                       });
                     }
 
-                    const settingsDoc = await db.collection('settings').doc('academic').get();
-                    if (settingsDoc.exists) {
-                      const year = settingsDoc.data()?.year;
-                      if (year) {
-                        setAcademicYear(year);
-                      } else {
-                        addNotification('Critical: Academic year setting is missing.', 'error');
-                        // Ensure we don't get stuck in loading state if settings are missing
-                        setLoading(false); 
-                      }
-                    } else {
-                      addNotification('Critical: Could not find academic year settings.', 'error');
-                      setLoading(false);
+                    try {
+                        const settingsDoc = await db.collection('settings').doc('academic').get();
+                        if (settingsDoc.exists) {
+                            const year = settingsDoc.data()?.year;
+                            if (year) {
+                                setAcademicYear(year);
+                            } else {
+                                setAcademicYear(getCurrentAcademicYear());
+                            }
+                        } else {
+                             setAcademicYear(getCurrentAcademicYear());
+                        }
+                    } catch (settingsError) {
+                        console.warn('Could not fetch academic year, using default:', settingsError);
+                        setAcademicYear(getCurrentAcademicYear());
                     }
+                    
                   } catch (error) {
-                    console.error('Error fetching user data or settings:', error);
-                    addNotification('Failed to fetch user profile or settings.', 'error');
-                    auth.signOut();
-                    setLoading(false); // Ensure loading stops on error
+                    console.error('Error in user profile handling:', error);
+                    addNotification('Network issue detected. Running in offline mode.', 'offline');
+                  } finally {
+                      setLoading(false);
                   }
                 },
                 (error) => {
                   console.error('Error listening to user document:', error);
-                  addNotification('Failed to listen for user profile updates.', 'error');
-                  auth.signOut();
+                  addNotification('Connection to user profile lost.', 'error');
                   setLoading(false);
                 }
               );
@@ -323,7 +323,10 @@ const App: React.FC = () => {
                     },
                     (err: any) => {
                         console.error(`Error fetching ${collectionName}:`, err.message);
-                        addNotification(`Failed to load ${collectionName}.`, 'error');
+                        // Optional: Only notify if it's not a permission error
+                        if (err.code !== 'permission-denied') {
+                             addNotification(`Failed to load ${collectionName} (Offline?)`, 'info');
+                        }
                     }
                 );
                 unsubscribers.push(unsub);
@@ -478,7 +481,7 @@ const App: React.FC = () => {
         }
     
     }, [user, academicYear, addNotification]);
-
+    
     // Public Data Fetching (Independent of Auth State)
     useEffect(() => {
         if (!user) {
@@ -542,8 +545,6 @@ const App: React.FC = () => {
         }
     }, [user]);
 
-    // ... (rest of the file remains unchanged)
-    
     const staffProfile = useMemo(() => {
         if (!user || !user.email) return null;
         return staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase());
@@ -1009,7 +1010,7 @@ const App: React.FC = () => {
         setAuthError('');
         try {
             await action;
-            if(navigateTo === '/login') sessionStorage.setItem('loginMessage', successMessage);
+            if(navigateTo.includes('login')) sessionStorage.setItem('loginMessage', successMessage);
             navigate(navigateTo, { state: { message: successMessage, ...state } });
             return { success: true, message: successMessage };
         } catch (err: any) {
@@ -1019,7 +1020,7 @@ const App: React.FC = () => {
     };
 
     const handleLogin = (email: string, password: string) => 
-        handleAuthAction(auth.signInWithEmailAndPassword(email, password), "Login successful!", "/portal");
+        handleAuthAction(auth.signInWithEmailAndPassword(email, password), "Login successful!", "/portal/dashboard");
 
     const handleSignUp = (name: string, email: string, password: string) => 
         handleAuthAction(
@@ -1320,6 +1321,9 @@ const App: React.FC = () => {
                     academicYear={academicYear}
                 >
                    <Routes>
+                      {/* Explicitly redirect /portal/ to /portal/dashboard */}
+                      <Route index element={<Navigate to="/portal/dashboard" replace />} />
+                      
                       <Route path="dashboard" element={
                           <DashboardPage 
                              user={userWithProfilePhoto} 
@@ -1682,6 +1686,9 @@ const App: React.FC = () => {
                               } />
                           </>
                       )}
+                      
+                      {/* Catch-all route within portal to redirect to dashboard */}
+                      <Route path="*" element={<Navigate to="/portal/dashboard" replace />} />
                    </Routes>
                 </DashboardLayout>
              } />
@@ -1699,6 +1706,7 @@ const App: React.FC = () => {
           
           <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           
+          {/* Global catch-all redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>

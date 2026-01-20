@@ -60,7 +60,7 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             }
             
             let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
-            let failedSubjectsCount_III_to_VIII = 0, failedSubjectsCount_IX_to_X = 0, gradedSubjectsPassed = 0;
+            let failedSubjectsCount_III_to_VIII = 0, failedSubjectsCount_IX_to_X = 0, failedSubjectsCount_N_to_II = 0, gradedSubjectsPassed = 0;
             const failedSubjects: string[] = [];
     
             numericSubjects.forEach(sd => {
@@ -80,6 +80,7 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     examTotal += totalSubjectMark;
                     subjectFullMarks = sd.examFullMarks;
                     if (isClassIXorX && totalSubjectMark < 33) { failedSubjectsCount_IX_to_X++; failedSubjects.push(sd.name); }
+                    if (isNurseryToII && totalSubjectMark < 35) { failedSubjectsCount_N_to_II++; failedSubjects.push(sd.name); }
                 }
                 grandTotal += totalSubjectMark;
                 fullMarksTotal += subjectFullMarks;
@@ -98,6 +99,8 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             else if (hasActivities && failedSubjectsCount_III_to_VIII === 1) resultStatus = 'SIMPLE PASS';
             else if (isClassIXorX && failedSubjectsCount_IX_to_X > 1) resultStatus = 'FAIL';
             else if (isClassIXorX && failedSubjectsCount_IX_to_X === 1) resultStatus = 'SIMPLE PASS';
+            else if (isNurseryToII && failedSubjectsCount_N_to_II > 0) resultStatus = 'FAIL';
+
     
             let division = '-';
             if (isClassIXorX && resultStatus === 'PASS') {
@@ -109,7 +112,10 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
     
             let academicGrade = '-';
             if (isNurseryToII) {
-                if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+                if (resultStatus === 'FAIL') academicGrade = 'E';
+                else {
+                    if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+                }
             } else {
                 if (resultStatus === 'FAIL') academicGrade = 'E';
                 else { if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D'; }
@@ -125,24 +131,20 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
         });
     
-        const eligibleForRanking = studentData.filter(s => s.result === 'PASS');
-        const notEligibleForRanking = studentData.filter(s => s.result !== 'PASS');
-        eligibleForRanking.sort((a, b) => b.grandTotal - a.grandTotal);
+        const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
         
-        const rankedEligible: (typeof studentData[0] & {rank: number})[] = [];
-        if (eligibleForRanking.length > 0) {
-            let currentRank = 1;
-            rankedEligible.push({ ...eligibleForRanking[0], rank: currentRank });
-            for (let i = 1; i < eligibleForRanking.length; i++) {
-                if (eligibleForRanking[i].grandTotal < eligibleForRanking[i - 1].grandTotal) {
-                    currentRank++;
-                }
-                rankedEligible.push({ ...eligibleForRanking[i], rank: currentRank });
+        const finalRankedData = new Map<string, typeof studentData[0] & { rank: number | '-' }>();
+        
+        studentData.forEach(s => {
+            if (s.result === 'FAIL') {
+                finalRankedData.set(s.id, { ...s, rank: '-' });
+            } else {
+                const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
+                const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
+                finalRankedData.set(s.id, { ...s, rank });
             }
-        }
+        });
         
-        const unrankedIneligible = notEligibleForRanking.map(s => ({ ...s, rank: '-' as const }));
-        const finalRankedData = new Map([...rankedEligible, ...unrankedIneligible].map(s => [s.id, s]));
         return finalRankedData.get(student.id);
     }, [exam, student, allStudents, gradeDefinitions, hasActivities, isClassIXorX, isNurseryToII]);
     

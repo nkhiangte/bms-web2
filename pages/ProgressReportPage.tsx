@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance } from '../types';
@@ -38,9 +39,6 @@ const calculateTermSummary = (
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classmates.map(s => {
-        // Find the exam data for this specific student (either 's' is the current student or a classmate)
-        // Note: 'exam' prop passed to function is for the specific student being reported on. 
-        // For classmates, we need to find their exam data from their record.
         const studentExam = s.id === student.id ? exam : s.academicPerformance?.find(e => e.id === examId);
         
         let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
@@ -120,27 +118,17 @@ const calculateTermSummary = (
         return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
     });
 
-    // Filter only 'PASS' for ranking to match Statement of Marks logic
-    const eligibleForRanking = studentData.filter(s => s.result === 'PASS');
-    eligibleForRanking.sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
     
     const rankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
-
-    if (eligibleForRanking.length > 0) {
-        let rank = 1;
-        rankedData.set(eligibleForRanking[0].id, {...eligibleForRanking[0], rank});
-        for (let i = 1; i < eligibleForRanking.length; i++) {
-            // Use Dense Ranking (1, 1, 2) to match Mark Statement
-            if (eligibleForRanking[i].grandTotal < eligibleForRanking[i - 1].grandTotal) {
-                rank++;
-            }
-            rankedData.set(eligibleForRanking[i].id, {...eligibleForRanking[i], rank});
-        }
-    }
     
     studentData.forEach(s => {
-        if (!rankedData.has(s.id)) {
+        if (s.result === 'FAIL') {
             rankedData.set(s.id, { ...s, rank: '-' });
+        } else {
+            const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
+            const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
+            rankedData.set(s.id, { ...s, rank });
         }
     });
     
@@ -342,7 +330,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
 };
 
 const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
-    // Fix: Cast untyped useParams call to specific type to resolve build error
     const { studentId, examId } = useParams() as { studentId: string; examId: string };
     const navigate = useNavigate();
 

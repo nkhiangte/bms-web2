@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Staff, TcRecord, ServiceCertificateRecord, Grade } from '../types';
@@ -53,6 +54,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ students, staff, tcRecords, s
     const isLast = index === pathnames.length - 1;
 
     let name = nameMapping[value] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+    let isLink = !isLast;
 
     const prevSegment = index > 0 ? pathnames[index - 1] : null;
     try {
@@ -75,11 +77,15 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ students, staff, tcRecords, s
         console.error("Error resolving breadcrumb name:", e);
     }
     
+    // The "Student" part of a URL like /student/:id should not be a link
+    if (value.toLowerCase() === 'student' && pathnames[index + 1]) {
+        isLink = false;
+    }
 
-    return isLast ? (
-      <span key={to} className="font-semibold text-slate-800" aria-current="page">{name}</span>
-    ) : (
+    return isLink ? (
       <Link key={to} to={to} className="text-sky-600 hover:underline">{name}</Link>
+    ) : (
+      <span key={to} className="font-semibold text-slate-800" aria-current="page">{name}</span>
     );
   });
 

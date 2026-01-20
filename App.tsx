@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-// Fix: Use namespace import for react-router-dom to resolve member export issues
+
+import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { auth, db } from './firebaseConfig';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -11,13 +11,19 @@ import ParentRegistrationPage from './pages/ParentRegistrationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
-import { User, NotificationType, Student } from './types';
+import { 
+    User, NotificationType, Student, Staff, NewsItem, CalendarEvent, 
+    ConductEntry, HostelResident, HostelStaff, HostelInventoryItem, 
+    StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
+    Grade, GradeDefinition, SubjectAssignment, OnlineAdmission 
+} from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
 import { SpinnerIcon } from './components/Icons';
 
-// Data
+// Data & Constants
 import { timetableData } from './timetableData';
+import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
 
 // Portal Pages
 import DashboardPage from './pages/DashboardPage';
@@ -115,35 +121,52 @@ import { examRoutines } from './constants';
 const { Routes, Route, Navigate, useNavigate } = ReactRouterDOM as any;
 
 const App: React.FC = () => {
+    const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
+    
+    // Core Data State
     const [students, setStudents] = useState<Student[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([]);
-    const navigate = useNavigate();
+    const [staff, setStaff] = useState<Staff[]>([]);
+    const [news, setNews] = useState<NewsItem[]>([]);
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+    const [conductLog, setConductLog] = useState<ConductEntry[]>([]);
+    const [tcRecords, setTcRecords] = useState<any[]>([]);
+    const [serviceCerts, setServiceCerts] = useState<any[]>([]);
+    const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
+    
+    // Hostel State
+    const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
+    const [hostelStaff, setHostelStaff] = useState<HostelStaff[]>([]);
+    const [hostelInventory, setHostelInventory] = useState<HostelInventoryItem[]>([]);
+    const [hostelStockLogs, setHostelStockLogs] = useState<StockLog[]>([]);
+    const [hostelDisciplineLog, setHostelDisciplineLog] = useState<HostelDisciplineEntry[]>([]);
+    const [hostelChoreRoster, setHostelChoreRoster] = useState<ChoreRoster>({});
+    
+    // Config State
+    const [academicYear, setAcademicYear] = useState<string>("2025-2026");
+    const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
+    const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
+    // Fix: Defined sitemapContent state to resolve the 'Cannot find name' errors on lines 331 and 398.
+    const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://bmscpi.netlify.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`);
 
-    // Placeholder data structures - these would normally be states synced with Firestore
-    const staff: any[] = [];
-    const gradeDefinitions: any = {};
-    const academicYear = "2025-2026";
-    const tcRecords: any[] = [];
-    const serviceCerts: any[] = [];
-    const onlineAdmissions: any[] = [];
-    const news: any[] = [];
-    const calendarEvents: any[] = [];
-    const conductLog: any[] = [];
-    const hostelDisciplineLog: any[] = [];
-    const hostelResidents: any[] = [];
-    const hostelStaff: any[] = [];
-    const hostelInventory: any[] = [];
-    const hostelStockLogs: any[] = [];
-    const hostelChoreRoster: any = {};
-    const feeStructure: any = {};
-    const assignedGrade: any = null;
-    const assignedSubjects: any[] = [];
-    const attendanceData: any = null;
-    const classSchedules: any = timetableData;
-    const sitemapContent = "";
+    // Derived User Properties
+    const staffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user?.email?.toLowerCase()), [staff, user?.email]);
+    const assignedGrade = useMemo(() => {
+        if (!staffProfile) return null;
+        const entry = Object.entries(gradeDefinitions).find(([, def]) => (def as any).classTeacherId === staffProfile.id);
+        return entry ? entry[0] as Grade : null;
+    }, [staffProfile, gradeDefinitions]);
+    const assignedSubjects = useMemo(() => staffProfile?.assignedSubjects || [], [staffProfile]);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -179,13 +202,7 @@ const App: React.FC = () => {
             } catch (error) {
                 console.error("Error fetching user data:", error);
                 if (firebaseUser) {
-                    setUser({
-                        uid: firebaseUser.uid,
-                        email: firebaseUser.email,
-                        displayName: firebaseUser.displayName,
-                        photoURL: firebaseUser.photoURL,
-                        role: 'pending'
-                    });
+                    setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
                 }
             } finally {
                 setLoading(false);
@@ -194,24 +211,49 @@ const App: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
+    // Global Public Data Sync
+    useEffect(() => {
+        const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
+        const unsubStaff = db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
+        const unsubCal = db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))));
+        
+        // Config sync
+        const unsubFees = db.collection('config').doc('feeStructure').onSnapshot(d => d.exists && setFeeStructure(d.data() as FeeStructure));
+        const unsubGradeDefs = db.collection('config').doc('gradeDefinitions').onSnapshot(d => d.exists && setGradeDefinitions(d.data() as any));
+        const unsubAcademic = db.collection('settings').doc('academic').onSnapshot(d => d.exists && setAcademicYear(d.data()?.currentYear || "2025-2026"));
+        // Fix: Added real-time synchronization for sitemapContent from Firestore 'config/sitemap' document.
+        const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(d => d.exists && setSitemapContent(d.data()?.content || sitemapContent));
+
+        return () => {
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap();
+        };
+    }, []);
+
+    // Authenticated Data Sync
     useEffect(() => {
         if (user) {
-             const unsubStudents = db.collection('students').onSnapshot(snapshot => {
-                 const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Student));
-                 setStudents(data);
-             }, error => console.error("Error fetching students:", error));
+             const unsubStudents = db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student))));
+             const unsubConduct = db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))));
+             const unsubTc = db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+             const unsubService = db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
              
              let unsubUsers = () => {};
+             let unsubAdmissions = () => {};
              if (user.role === 'admin') {
-                 unsubUsers = db.collection('users').onSnapshot(snapshot => {
-                     const data = snapshot.docs.map(d => ({ uid: d.id, ...d.data() } as User));
-                     setAllUsers(data);
-                 }, error => console.error("Error fetching users:", error));
+                 unsubUsers = db.collection('users').onSnapshot(s => setAllUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))));
+                 unsubAdmissions = db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission))));
              }
 
+             // Hostel Sync
+             const unsubResidents = db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident))));
+             const unsubHostelStaff = db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))));
+             const unsubHostelInv = db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem))));
+             const unsubHostelDisc = db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry))));
+             const unsubChores = db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setHostelChoreRoster(d.data() as ChoreRoster));
+
              return () => {
-                 unsubStudents();
-                 unsubUsers();
+                 unsubStudents(); unsubConduct(); unsubUsers(); unsubAdmissions(); unsubTc(); unsubService();
+                 unsubResidents(); unsubHostelStaff(); unsubHostelInv(); unsubHostelDisc(); unsubChores();
              }
         }
     }, [user?.uid, user?.role]);
@@ -238,6 +280,17 @@ const App: React.FC = () => {
         navigate('/', { replace: true });
     };
 
+    // Fix: Implemented handleSaveSitemap to provide actual saving functionality to SitemapEditorPage.
+    const handleSaveSitemap = async (newContent: string) => {
+        try {
+            await db.collection('config').doc('sitemap').set({ content: newContent });
+            addNotification("Sitemap updated successfully", 'success');
+        } catch (error: any) {
+            addNotification(error.message, 'error', 'Sitemap Update Failed');
+            throw error;
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -262,7 +315,7 @@ const App: React.FC = () => {
                     <Route path="/faculty" element={<FacultyPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/rules" element={<RulesPage />} />
                     <Route path="/admissions" element={<AdmissionsPage />} />
-                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={[]} academicYear={academicYear} onUpdateFeePayments={() => {}} addNotification={addNotification} />} />
+                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={() => {}} addNotification={addNotification} />} />
                     <Route path="/supplies" element={<SuppliesPage />} />
                     <Route path="/student-life" element={<StudentLifePage />} />
                     <Route path="/ncc" element={<NccPage />} />
@@ -288,7 +341,7 @@ const App: React.FC = () => {
                     <Route path="/achievements/science/incentive-awards" element={<IncentiveAwardsPage />} />
                     <Route path="/achievements/science/mathematics-competition" element={<MathematicsCompetitionPage />} />
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
-                    <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={classSchedules} user={user} />} />
+                    <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
                     
                     <Route path="/login" element={user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
@@ -319,7 +372,7 @@ const App: React.FC = () => {
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => {}} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => {}} user={user} />} />
                         <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => {}} academicYear={academicYear} onOpenImportModal={() => {}} onDelete={() => {}} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => {}} onUpdateBulkFeePayments={async () => {}} feeStructure={feeStructure} />} />
-                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={attendanceData} onUpdateAttendance={async () => {}} user={user} fetchStudentAttendanceForMonth={async () => ({})} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} />} />
+                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={null} onUpdateAttendance={async () => {}} user={user} fetchStudentAttendanceForMonth={async () => ({})} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={async () => ({})} user={user} />} />
                         <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => {}} gradeDefinitions={gradeDefinitions} />} />
@@ -365,7 +418,7 @@ const App: React.FC = () => {
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={() => {}} onDeleteUser={() => {}} onUpdateUser={async () => {}} onApproveParent={() => {}} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={async () => ({success: true})} />} />
-                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />
+                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={handleSaveSitemap} />} />
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                     </Route>
                 ) : (

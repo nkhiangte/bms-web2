@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { auth, db } from './firebaseConfig';
@@ -15,7 +14,8 @@ import {
     User, NotificationType, Student, Staff, NewsItem, CalendarEvent, 
     ConductEntry, HostelResident, HostelStaff, HostelInventoryItem, 
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
-    Grade, GradeDefinition, SubjectAssignment, OnlineAdmission 
+    Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
+    Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -149,15 +149,11 @@ const App: React.FC = () => {
     const [academicYear, setAcademicYear] = useState<string>("2025-2026");
     const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
     const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
-    // Fix: Defined sitemapContent state to resolve the 'Cannot find name' errors on lines 331 and 398.
-    const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://bmscpi.netlify.app/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>`);
+    const [sitemapContent, setSitemapContent] = useState<string>('');
+
+    // Attendance State
+    const [currentStudentAttendance, setCurrentStudentAttendance] = useState<Record<Grade, StudentAttendanceRecord> | null>(null);
+    const [currentStaffAttendance, setCurrentStaffAttendance] = useState<StaffAttendanceRecord | null>(null);
 
     // Derived User Properties
     const staffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user?.email?.toLowerCase()), [staff, user?.email]);
@@ -168,6 +164,12 @@ const App: React.FC = () => {
     }, [staffProfile, gradeDefinitions]);
     const assignedSubjects = useMemo(() => staffProfile?.assignedSubjects || [], [staffProfile]);
 
+    const addNotification = (message: string, type: NotificationType, title?: string) => {
+        const id = Math.random().toString(36).substring(7);
+        setNotifications(prev => [...prev, { id, message, type, title }]);
+    };
+
+    // Firebase Auth Setup
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
             try {
@@ -188,22 +190,14 @@ const App: React.FC = () => {
                             registrationDetails: userData?.registrationDetails
                         });
                     } else {
-                        setUser({
-                            uid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                            displayName: firebaseUser.displayName,
-                            photoURL: firebaseUser.photoURL,
-                            role: 'pending'
-                        });
+                        setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
                     }
                 } else {
                     setUser(null);
                 }
             } catch (error) {
                 console.error("Error fetching user data:", error);
-                if (firebaseUser) {
-                    setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
-                }
+                if (firebaseUser) setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
             } finally {
                 setLoading(false);
             }
@@ -211,25 +205,22 @@ const App: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
-    // Global Public Data Sync
+    // Core Global Real-time Sync
     useEffect(() => {
         const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
         const unsubStaff = db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
         const unsubCal = db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))));
-        
-        // Config sync
         const unsubFees = db.collection('config').doc('feeStructure').onSnapshot(d => d.exists && setFeeStructure(d.data() as FeeStructure));
         const unsubGradeDefs = db.collection('config').doc('gradeDefinitions').onSnapshot(d => d.exists && setGradeDefinitions(d.data() as any));
         const unsubAcademic = db.collection('settings').doc('academic').onSnapshot(d => d.exists && setAcademicYear(d.data()?.currentYear || "2025-2026"));
-        // Fix: Added real-time synchronization for sitemapContent from Firestore 'config/sitemap' document.
-        const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(d => d.exists && setSitemapContent(d.data()?.content || sitemapContent));
+        const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(d => d.exists && setSitemapContent(d.data()?.content || ''));
 
         return () => {
             unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap();
         };
     }, []);
 
-    // Authenticated Data Sync
+    // Authenticated Real-time Sync
     useEffect(() => {
         if (user) {
              const unsubStudents = db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student))));
@@ -244,6 +235,11 @@ const App: React.FC = () => {
                  unsubAdmissions = db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission))));
              }
 
+             // Attendance Today
+             const todayStr = new Date().toISOString().split('T')[0];
+             const unsubStuAtt = db.collection('studentAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStudentAttendance(d.data() as any));
+             const unsubStaAtt = db.collection('staffAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStaffAttendance(d.data() as StaffAttendanceRecord));
+
              // Hostel Sync
              const unsubResidents = db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident))));
              const unsubHostelStaff = db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))));
@@ -254,23 +250,55 @@ const App: React.FC = () => {
              return () => {
                  unsubStudents(); unsubConduct(); unsubUsers(); unsubAdmissions(); unsubTc(); unsubService();
                  unsubResidents(); unsubHostelStaff(); unsubHostelInv(); unsubHostelDisc(); unsubChores();
+                 unsubStuAtt(); unsubStaAtt();
              }
         }
     }, [user?.uid, user?.role]);
 
-    const addNotification = (message: string, type: NotificationType, title?: string) => {
-        const id = Math.random().toString(36).substring(7);
-        setNotifications(prev => [...prev, { id, message, type, title }]);
+    // HANDLERS
+    const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {
+        try {
+            await db.collection('students').doc(studentId).update({ academicPerformance: performance });
+            addNotification("Academic record updated", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error");
+        }
     };
 
-    const handleAuthAction = async (action: Promise<any>, successMsg: string) => {
+    const handleUpdateAttendance = async (grade: Grade, date: string, records: StudentAttendanceRecord) => {
         try {
-            await action;
-            addNotification(successMsg, 'success');
-            return { success: true };
-        } catch (error: any) {
-            addNotification(error.message, 'error', 'Authentication Failed');
-            return { success: false, message: error.message };
+            await db.collection('studentAttendance').doc(date).set({ [grade]: records }, { merge: true });
+        } catch (e: any) {
+            addNotification(e.message, "error");
+        }
+    };
+
+    const fetchStudentAttendanceForMonth = async (grade: Grade, year: number, month: number) => {
+        const start = `${year}-${String(month).padStart(2, '0')}-01`;
+        const end = `${year}-${String(month).padStart(2, '0')}-31`;
+        const snapshot = await db.collection('studentAttendance').where('__name__', '>=', start).where('__name__', '<=', end).get();
+        const data: any = {};
+        snapshot.docs.forEach(doc => {
+            if (doc.data()[grade]) data[doc.id] = doc.data()[grade];
+        });
+        return data;
+    };
+
+    const handleUpdateFeePayments = async (studentId: string, payments: FeePayments) => {
+        try {
+            await db.collection('students').doc(studentId).update({ feePayments: payments });
+            addNotification("Payment record updated", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error");
+        }
+    };
+
+    const handleMarkStaffAttendance = async (staffId: string, status: AttendanceStatus) => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        try {
+            await db.collection('staffAttendance').doc(todayStr).set({ [staffId]: status }, { merge: true });
+        } catch (e: any) {
+            addNotification(e.message, "error");
         }
     };
 
@@ -278,17 +306,6 @@ const App: React.FC = () => {
         auth.signOut();
         setUser(null);
         navigate('/', { replace: true });
-    };
-
-    // Fix: Implemented handleSaveSitemap to provide actual saving functionality to SitemapEditorPage.
-    const handleSaveSitemap = async (newContent: string) => {
-        try {
-            await db.collection('config').doc('sitemap').set({ content: newContent });
-            addNotification("Sitemap updated successfully", 'success');
-        } catch (error: any) {
-            addNotification(error.message, 'error', 'Sitemap Update Failed');
-            throw error;
-        }
     };
 
     if (loading) {
@@ -315,7 +332,7 @@ const App: React.FC = () => {
                     <Route path="/faculty" element={<FacultyPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/rules" element={<RulesPage />} />
                     <Route path="/admissions" element={<AdmissionsPage />} />
-                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={() => {}} addNotification={addNotification} />} />
+                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
                     <Route path="/supplies" element={<SuppliesPage />} />
                     <Route path="/student-life" element={<StudentLifePage />} />
                     <Route path="/ncc" element={<NccPage />} />
@@ -343,12 +360,10 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
-                    
-                    <Route path="/login" element={user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
-                    <Route path="/signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <SignUpPage onSignUp={async () => ({success: true})} />} />
-                    <Route path="/parent-registration" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentRegistrationPage />} />
-                    <Route path="/parent-signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentSignUpPage onSignUp={async () => ({success: true})} />} />
-                    
+                    <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} error="" notification="" />} />
+                    <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
+                    <Route path="/parent-registration" element={<ParentRegistrationPage />} />
+                    <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async () => ({success: true})} />} />
                     <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async () => ({success: true})} />} />
                     <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
@@ -372,16 +387,16 @@ const App: React.FC = () => {
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => {}} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => {}} user={user} />} />
                         <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => {}} academicYear={academicYear} onOpenImportModal={() => {}} onDelete={() => {}} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => {}} onUpdateBulkFeePayments={async () => {}} feeStructure={feeStructure} />} />
-                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={null} onUpdateAttendance={async () => {}} user={user} fetchStudentAttendanceForMonth={async () => ({})} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} />} />
-                        <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={async () => ({})} user={user} />} />
+                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} />} />
+                        <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user} />} />
                         <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => {}} gradeDefinitions={gradeDefinitions} />} />
-                        <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={{}} onMarkAttendance={() => {}} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} />} />
+                        <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} />} />
-                        <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={() => {}} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => {}} addNotification={addNotification} />} />
+                        <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => {}} addNotification={addNotification} />} />
                         <Route path="/portal/reports/academics" element={<ReportSearchPage students={students} academicYear={academicYear} />} />
-                        <Route path="/portal/student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={() => {}} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
-                        <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={async () => {}} />} />
+                        <Route path="/portal/student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
+                        <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} />} />
                         <Route path="/portal/insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
                         <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => {}} />} />
@@ -418,7 +433,7 @@ const App: React.FC = () => {
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={() => {}} onDeleteUser={() => {}} onUpdateUser={async () => {}} onApproveParent={() => {}} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={async () => ({success: true})} />} />
-                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={handleSaveSitemap} />} />
+                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                     </Route>
                 ) : (

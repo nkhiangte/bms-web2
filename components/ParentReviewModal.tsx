@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Student, StudentClaim } from '../types';
-import { formatStudentId, formatDateForDisplay } from '../utils';
+import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
 import { UserIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from './Icons';
 
 interface ParentReviewModalProps {
@@ -35,7 +35,8 @@ const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, students, a
         
         let status: 'match' | 'dob_mismatch' | 'not_found' | 'missing_dob' = 'not_found';
         if (student) {
-            if (claim.dob && student.dateOfBirth === claim.dob) {
+            // FIX: Normalize both dates to 'YYYY-MM-DD' before comparing to handle different input formats.
+            if (claim.dob && student.dateOfBirth && formatDateForStorage(student.dateOfBirth) === formatDateForStorage(claim.dob)) {
                 status = 'match';
             } else if (!claim.dob) {
                 status = 'missing_dob';

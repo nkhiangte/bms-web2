@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { User, Student, StudentClaim } from '../types';
 import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon } from '../components/Icons';
@@ -5,7 +6,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { firebase } from '../firebaseConfig';
 import ParentReviewModal from '../components/ParentReviewModal';
-import { formatDateForDisplay } from '../utils';
+import { formatDateForDisplay, formatStudentId } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -138,7 +139,7 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                         <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-center gap-2">
                                                 {user.role === 'pending_parent' && (
-                                                    <button onClick={() => setReviewingUser(user)} className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700">
+                                                    <button onClick={() => setReviewingUser(user)} className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition">
                                                         <CheckIcon className="w-4 h-4" /> Review
                                                     </button>
                                                 )}
@@ -168,15 +169,38 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                                         </div>
                                                         
                                                         <div className="space-y-2">
-                                                            <h5 className="text-lg font-bold text-slate-700">Claimed Students for Verification</h5>
-                                                            {(claims && claims.length > 0) ? claims.map((claim, index) => (
-                                                                <div key={index} className="p-3 bg-white border rounded-lg">
-                                                                    <p className="font-semibold">{claim.fullName}</p>
-                                                                    <p className="text-sm text-slate-600">ID: <span className="font-mono">{claim.studentId}</span></p>
-                                                                    <p className="text-sm text-slate-600">DOB: {formatDateForDisplay(claim.dob)}</p>
-                                                                    <p className="text-sm text-slate-600">Relationship: {claim.relationship}</p>
-                                                                </div>
-                                                            )) : <p className="text-sm text-slate-500 italic">No students were claimed during registration.</p>}
+                                                            {user.role === 'parent' ? (
+                                                                <>
+                                                                    <h5 className="text-lg font-bold text-slate-700">Linked Students</h5>
+                                                                    {(user.studentIds && user.studentIds.length > 0) ? (
+                                                                        user.studentIds.map(studentId => {
+                                                                            const student = students.find(s => s.id === studentId);
+                                                                            if (!student) return null;
+                                                                            return (
+                                                                                <div key={student.id} className="p-3 bg-white border rounded-lg">
+                                                                                    <p className="font-semibold">{student.name}</p>
+                                                                                    <p className="text-sm text-slate-600">ID: <span className="font-mono">{formatStudentId(student, academicYear)}</span></p>
+                                                                                    <p className="text-sm text-slate-600">Class: {student.grade}</p>
+                                                                                </div>
+                                                                            );
+                                                                        })
+                                                                    ) : (
+                                                                        <p className="text-sm text-slate-500 italic">No students are currently linked to this account.</p>
+                                                                    )}
+                                                                </>
+                                                            ) : ( // For pending_parent
+                                                                <>
+                                                                    <h5 className="text-lg font-bold text-slate-700">Claimed Students for Verification</h5>
+                                                                    {(claims && claims.length > 0) ? claims.map((claim, index) => (
+                                                                        <div key={index} className="p-3 bg-white border rounded-lg">
+                                                                            <p className="font-semibold">{claim.fullName}</p>
+                                                                            <p className="text-sm text-slate-600">ID: <span className="font-mono">{claim.studentId}</span></p>
+                                                                            <p className="text-sm text-slate-600">DOB: {formatDateForDisplay(claim.dob)}</p>
+                                                                            <p className="text-sm text-slate-600">Relationship: {claim.relationship}</p>
+                                                                        </div>
+                                                                    )) : <p className="text-sm text-slate-500 italic">No students were claimed during registration.</p>}
+                                                                </>
+                                                            )}
                                                         </div>
 
                                                         <div className="space-y-4">

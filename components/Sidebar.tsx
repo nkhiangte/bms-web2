@@ -33,7 +33,8 @@ const portalNavLinks = [
     { name: 'Communication', path: '/portal/communication', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
     { name: 'News Management', path: '/portal/news-management', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
-    { name: 'User Management', path: '/portal/users', icon: <UserGroupIcon className="w-5 h-5" />, roles: ['admin'] },
+    { name: 'Parents Management', path: '/portal/parents', icon: <UserGroupIcon className="w-5 h-5" />, roles: ['admin'] },
+    { name: 'Staff Users', path: '/portal/users', icon: <UserGroupIcon className="w-5 h-5" />, roles: ['admin'] },
 ];
 
 const publicNavLinks = [

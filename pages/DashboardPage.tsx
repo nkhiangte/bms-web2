@@ -148,7 +148,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
   }
 
   const isAdmin = user.role === 'admin';
-  const pendingUserCount = allUsers.filter(u => u.role === 'pending' || u.role === 'pending_parent').length;
+  const pendingStaffCount = allUsers.filter(u => u.role === 'pending').length;
+  const pendingParentCount = allUsers.filter(u => u.role === 'pending_parent').length;
   const pendingAdmissionsCount = onlineAdmissions.filter(a => a.status === 'pending').length;
   
   const upcomingEvents = useMemo(() => {
@@ -341,6 +342,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
                         action={<Link to="/portal/admissions">Review Applications</Link>}
                     />
                     <DashboardCard
+                        title="Parents Management"
+                        description="View parent biodata and approve new accounts."
+                        icon={<UserGroupIcon className="w-7 h-7" />}
+                        count={pendingParentCount}
+                        color="indigo"
+                        action={<Link to="/portal/parents">Manage Parents</Link>}
+                    />
+                    <DashboardCard
                         title="News Management"
                         description="Create and manage school news."
                         icon={<DocumentReportIcon className="w-7 h-7" />}
@@ -348,12 +357,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
                         action={<Link to="/portal/news-management">Manage News</Link>}
                     />
                     <DashboardCard
-                        title="User Management"
-                        description="Approve new user registrations."
+                        title="Staff Management"
+                        description="Approve new user registrations for staff."
                         icon={<UserGroupIcon className="w-7 h-7" />}
-                        count={pendingUserCount}
+                        count={pendingStaffCount}
                         color="teal"
-                        action={<Link to="/portal/users">Manage Users</Link>}
+                        action={<Link to="/portal/users">Manage Staff Users</Link>}
                     />
                 </>
             )}

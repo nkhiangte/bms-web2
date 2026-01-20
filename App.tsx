@@ -68,6 +68,7 @@ import CommunicationPage from './pages/CommunicationPage';
 import CalendarPage from './pages/CalendarPage';
 import ManageNewsPage from './pages/ManageNewsPage';
 import { UserManagementPage } from './pages/UserManagementPage';
+import ParentsManagementPage from './pages/ParentsManagementPage';
 import PromotionPage from './pages/PromotionPage';
 import { ManageSubjectsPage } from './pages/ManageSubjectsPage';
 import ReportSearchPage from './pages/ReportSearchPage';
@@ -513,7 +514,8 @@ const App: React.FC = () => {
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
+                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
+                        <Route path="/portal/parents" element={<ParentsManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />

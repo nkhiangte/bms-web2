@@ -193,7 +193,8 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                         </tr>
                                     )}
                                 </React.Fragment>
-                            )}}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

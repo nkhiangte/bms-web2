@@ -152,7 +152,16 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           daysPresent: studentExam?.attendance?.daysPresent ?? null,
       };
       subjectDefinitions.forEach(subjectDef => {
-        const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(subjectDef.name));
+        const normSubjName = normalizeSubjectName(subjectDef.name);
+        const result = studentExam?.results.find(r => {
+            const normResultName = normalizeSubjectName(r.subject);
+            if (normResultName === normSubjName) return true;
+            // Fallbacks for legacy data
+            if (normSubjName === 'english' && normResultName === 'english i') return true;
+            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
+            return false;
+        });
+        
         if (subjectDef.gradingSystem === 'OABC') {
             initialMarks[student.id][subjectDef.name] = result?.grade ?? null;
         } else if (hasActivities) {

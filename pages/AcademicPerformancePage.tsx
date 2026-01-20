@@ -48,9 +48,16 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
     const initialData = TERMINAL_EXAMS.map(examTemplate => {
       const existingExam = studentPerformance.find(e => e.id === examTemplate.id);
       const results: SubjectMark[] = subjects.map(sd => {
-        const existingResult = existingExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        const normSubjName = normalizeSubjectName(sd.name);
+        const existingResult = existingExam?.results.find(r => {
+            const normResultName = normalizeSubjectName(r.subject);
+            if (normResultName === normSubjName) return true;
+            // Fallbacks for legacy data
+            if (normSubjName === 'english' && normResultName === 'english i') return true;
+            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
+            return false;
+        });
         
-        // FIX: Legacy Data Mapping. If examMarks is missing but marks exists, it's old format data.
         return {
           subject: sd.name,
           marks: existingResult?.marks,

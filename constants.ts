@@ -82,7 +82,7 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     [Grade.III]: {
         subjects: [
             { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
@@ -94,7 +94,7 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     [Grade.IV]: {
         subjects: [
             { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
@@ -106,7 +106,7 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     [Grade.V]: {
         subjects: [
             { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },

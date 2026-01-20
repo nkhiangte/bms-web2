@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
 
-const { Link, useLocation } = ReactRouterDOM as any;
+const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
 
 interface LoginPageProps {
-  onLogin: (email: string, pass: string) => Promise<any>;
+  onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   error: string;
   notification: string;
 }
@@ -22,6 +21,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [loading, setLoading] = useState(false);
   
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const state = location.state as { message?: string } | null;
@@ -51,8 +51,13 @@ const LoginPage: React.FC<LoginPageProps> = ({
     setFormError("");
     setNotification("");
     setLoading(true);
-    await onLogin(email, password);
+    const result = await onLogin(email, password);
     setLoading(false);
+    
+    if (result && result.success) {
+        // Redirection logic. App.tsx also has Navigate rules, but explicit push is safer.
+        navigate('/portal/dashboard');
+    }
   };
 
   return (

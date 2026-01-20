@@ -495,7 +495,11 @@ const App: React.FC = () => {
                             academicYear={academicYear}
                         />
                     }>
-                        <Route path="/portal/dashboard" element={<DashboardPage user={user} onAddStudent={() => {}} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => {}} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => {}} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />} />
+                        <Route path="/portal/dashboard" element={
+                            user.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> :
+                            user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
+                            <DashboardPage user={user} onAddStudent={() => {}} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => {}} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => {}} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />}
+                        } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} />} />
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => {}} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => {}} />} />

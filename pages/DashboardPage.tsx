@@ -129,20 +129,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
   
-  useEffect(() => {
-    if (user.role === 'parent') {
-      navigate('/portal/parent-dashboard', { replace: true });
-    }
-  }, [user, navigate]);
-
-  if (user.role === 'parent') {
-    return (
-        <div className="flex items-center justify-center min-h-screen">
-            <SpinnerIcon className="w-10 h-10 text-sky-600" />
-        </div>
-    );
-  }
-  
   if (user.role === 'pending' || user.role === 'pending_parent') {
       return (
           <div className="text-center bg-white p-10 rounded-xl shadow-lg">

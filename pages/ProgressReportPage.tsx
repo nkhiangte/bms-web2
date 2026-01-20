@@ -46,7 +46,16 @@ const calculateTermSummary = (
         const failedSubjects: string[] = [];
 
         numericSubjects.forEach(sd => {
-            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const normSubjDefName = normalizeSubjectName(sd.name);
+            const result = studentExam?.results.find(r => {
+                const normResultName = normalizeSubjectName(r.subject);
+                if (normResultName === normSubjDefName) return true;
+                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                return false;
+            });
+
             let totalSubjectMark = 0, subjectFullMarks = 0;
 
             if (hasActivities) {
@@ -69,7 +78,15 @@ const calculateTermSummary = (
         });
 
         gradedSubjects.forEach(sd => {
-            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const normSubjDefName = normalizeSubjectName(sd.name);
+            const result = studentExam?.results.find(r => {
+                const normResultName = normalizeSubjectName(r.subject);
+                if (normResultName === normSubjDefName) return true;
+                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                return false;
+            });
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
         });
         
@@ -217,7 +234,15 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
                     </thead>
                     <tbody>
                         {gradeDef.subjects.map((sd) => {
-                            const result = exam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                            const normSubjDefName = normalizeSubjectName(sd.name);
+                            const result = exam?.results.find(r => {
+                                const normResultName = normalizeSubjectName(r.subject);
+                                if (normResultName === normSubjDefName) return true;
+                                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+                                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+                                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                                return false;
+                            });
                             const isGraded = sd.gradingSystem === 'OABC';
                             
                             return (

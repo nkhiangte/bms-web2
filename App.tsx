@@ -510,33 +510,33 @@ const App: React.FC = () => {
                         <Route path="/portal/dashboard" element={
                             user.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> :
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
-                            <DashboardPage user={user} onAddStudent={() => {}} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => {}} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => {}} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />}
+                            <DashboardPage user={user} onAddStudent={() => undefined} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => undefined} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => undefined} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />
                         } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} />} />
-                        <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => {}} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
-                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => {}} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => {}} />} />
-                        <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => {}} user={user} />} />
-                        <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => {}} academicYear={academicYear} onOpenImportModal={() => {}} onDelete={() => {}} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => {}} onUpdateBulkFeePayments={async () => {}} feeStructure={feeStructure} />} />
+                        <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
+                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => undefined} />} />
+                        <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />
+                        <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => undefined} academicYear={academicYear} onOpenImportModal={() => undefined} onDelete={() => undefined} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => undefined} onUpdateBulkFeePayments={async () => undefined} feeStructure={feeStructure} />} />
                         <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user} />} />
-                        <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => {}} gradeDefinitions={gradeDefinitions} />} />
+                        <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
+                        <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => undefined} gradeDefinitions={gradeDefinitions} />} />
                         <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} />} />
-                        <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => {}} addNotification={addNotification} />} />
+                        <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
                         <Route path="/portal/reports/academics" element={<ReportSearchPage students={students} academicYear={academicYear} />} />
                         <Route path="/portal/student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
                         <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} />} />
                         <Route path="/portal/insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
-                        <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => {}} />} />
+                        <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => undefined} />} />
                         <Route path="/portal/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
-                        <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={() => {}} user={user} onResetAllMarks={async () => {}} />} />
+                        <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={() => undefined} user={user} onResetAllMarks={async () => undefined} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />
-                        <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={async () => {}} user={user} />} />
+                        <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={async () => undefined} user={user} />} />
                         <Route path="/portal/staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user} />} />
-                        <Route path="/portal/staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={() => {}} user={user} />} />
+                        <Route path="/portal/staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={() => undefined} user={user} />} />
                         <Route path="/portal/staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />
                         <Route path="/portal/transfers" element={<TransferManagementPage />} />
                         <Route path="/portal/transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={async () => true} isSaving={false} />} />
@@ -546,27 +546,27 @@ const App: React.FC = () => {
                         <Route path="/progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
                         <Route path="/portal/reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
                         <Route path="/portal/hostel-dashboard" element={<HostelDashboardPage disciplineLog={hostelDisciplineLog} />} />
-                        <Route path="/portal/hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={() => {}} onAddById={async () => ({success: true})} onEdit={() => {}} onDelete={() => {}} user={user} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={() => undefined} onAddById={async () => ({success: true})} onEdit={() => undefined} onDelete={() => undefined} user={user} academicYear={academicYear} />} />
                         <Route path="/portal/hostel/rooms" element={<HostelRoomListPage residents={hostelResidents} students={students} />} />
                         <Route path="/portal/hostel/fees" element={<HostelFeePage />} />
                         <Route path="/portal/hostel/attendance" element={<HostelAttendancePage />} />
                         <Route path="/portal/hostel/mess" element={<HostelMessPage />} />
-                        <Route path="/portal/hostel/staff" element={<HostelStaffPage staff={hostelStaff} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/hostel/inventory" element={<HostelInventoryPage inventory={hostelInventory} stockLogs={hostelStockLogs} onUpdateStock={() => {}} user={user} />} />
-                        <Route path="/portal/hostel/discipline" element={<HostelDisciplinePage user={user} students={students} residents={hostelResidents} disciplineLog={hostelDisciplineLog} onSave={async () => {}} onDelete={() => {}} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/staff" element={<HostelStaffPage staff={hostelStaff} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
+                        <Route path="/portal/hostel/inventory" element={<HostelInventoryPage inventory={hostelInventory} stockLogs={hostelStockLogs} onUpdateStock={() => undefined} user={user} />} />
+                        <Route path="/portal/hostel/discipline" element={<HostelDisciplinePage user={user} students={students} residents={hostelResidents} disciplineLog={hostelDisciplineLog} onSave={async () => undefined} onDelete={() => undefined} academicYear={academicYear} />} />
                         <Route path="/portal/hostel/health" element={<HostelHealthPage />} />
                         <Route path="/portal/hostel/communication" element={<HostelCommunicationPage />} />
                         <Route path="/portal/hostel/settings" element={<HostelSettingsPage />} />
-                        <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={async () => {}} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={async () => undefined} academicYear={academicYear} />} />
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
-                        <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
-                        <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
+                        <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} notificationDaysBefore={-1} onUpdatePrefs={() => undefined} />} />
+                        <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
                         <Route path="/portal/parents" element={<ParentsManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
-                        <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
+                        <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => undefined} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
-                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />
-                        <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
+                        <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => undefined} />} />
+                        <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                     </Route>
                 ) : (
                     <Route path="/portal/*" element={<Navigate to="/login" replace />} />

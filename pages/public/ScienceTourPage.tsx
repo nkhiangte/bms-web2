@@ -35,3 +35,9 @@ const ScienceTourPage: React.FC = () => {
                         <p className="mt-4">At Bethel Mission School, we continue to celebrate these milestones with pride, confident that the seeds planted during these journeys will grow into the innovations of tomorrow.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+export default ScienceTourPage;

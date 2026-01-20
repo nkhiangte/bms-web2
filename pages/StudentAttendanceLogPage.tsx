@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '../types';
@@ -13,7 +12,8 @@ interface StudentAttendanceLogPageProps {
 }
 
 const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ students, fetchStudentAttendanceForMonth, user }) => {
-  const { studentId } = useParams<{ studentId: string }>();
+  // Fix: Cast untyped useParams call to specific type to resolve build error
+  const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
   const [currentDate, setCurrentDate] = useState(new Date());

@@ -18,7 +18,8 @@ const DetailItem: React.FC<{ label: string; value?: string | number }> = ({ labe
 
 
 const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
-    const { tcId } = useParams<{ tcId: string }>();
+    // Fix: Cast untyped useParams call to specific type to resolve build error
+    const { tcId } = useParams() as { tcId: string };
     const navigate = useNavigate();
 
     const record = tcRecords.find(r => r.id === tcId);

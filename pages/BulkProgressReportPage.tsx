@@ -163,7 +163,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                 <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
                                 <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
                                 <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
                             </tr>
                         </>
                     ) : ( // IX & X
@@ -294,7 +294,8 @@ interface BulkProgressReportPageProps {
 }
 
 const BulkProgressReportPage: React.FC<BulkProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
-    const { grade: encodedGrade, examId } = useParams<{ grade: string; examId: string }>();
+    // Fix: Cast untyped useParams call to specific type to resolve build error
+    const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
     const navigate = useNavigate();
 
     const grade = useMemo(() => encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined, [encodedGrade]);

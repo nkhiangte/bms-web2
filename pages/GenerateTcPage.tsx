@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus } from '../types';
@@ -52,7 +50,8 @@ const REASON_FOR_LEAVING_OPTIONS = [
 
 const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, isSaving, error }) => {
     const navigate = useNavigate();
-    const { studentId: paramStudentId } = useParams<{ studentId: string }>();
+    // Fix: Cast untyped useParams call to specific type to resolve build error
+    const { studentId: paramStudentId } = useParams() as { studentId: string };
 
     const [studentIdInput, setStudentIdInput] = useState<string>('');
     const [foundStudent, setFoundStudent] = useState<Student | null>(null);

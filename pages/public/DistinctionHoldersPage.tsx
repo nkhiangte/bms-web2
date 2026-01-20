@@ -23,7 +23,8 @@ const HolderCard: React.FC<{ holder: DistinctionHolder; isLarge?: boolean }> = (
 };
 
 const DistinctionHoldersPage: React.FC = () => {
-    const { year } = useParams<{ year: string }>();
+    // Fix: Cast untyped useParams call to specific type to resolve build error
+    const { year } = useParams() as { year: string };
     const navigate = useNavigate();
     const holders = (year && DISTINCTION_HOLDERS_BY_YEAR[year]) || [];
     const numericYear = year ? parseInt(year, 10) : 0;

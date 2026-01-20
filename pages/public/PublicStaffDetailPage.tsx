@@ -39,7 +39,8 @@ const DetailSection: React.FC<{ title: string; children: React.ReactNode }> = ({
 );
 
 const PublicStaffDetailPage: React.FC<PublicStaffDetailPageProps> = ({ staff, gradeDefinitions }) => {
-  const { staffId } = useParams<{ staffId: string }>();
+  // Fix: Cast untyped useParams call to specific type to resolve build error
+  const { staffId } = useParams() as { staffId: string };
   const navigate = useNavigate();
 
   // 🔹 Case-insensitive staff lookup

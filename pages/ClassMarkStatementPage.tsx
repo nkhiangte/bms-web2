@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -173,7 +172,8 @@ const MobileStudentList: React.FC<MobileStudentListProps> = ({ students, onEdit,
 };
 
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic }) => {
-  const { grade: encodedGrade, examId } = useParams<{ grade: string; examId: string }>();
+  // Fix: Cast untyped useParams call to specific type to resolve build error
+  const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
   const navigate = useNavigate();
   
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -399,9 +399,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         fullMarksTotal += subjectFullMarks;
       });
 
+      // Fix: Filter for OABC_GRADES to resolve potential TS error
       gradedSubjects.forEach(sd => {
-        const grade = studentMarks[sd.name];
-        if (grade && typeof grade === 'string' && OABC_GRADES.includes(grade as any)) {
+        const gradeValue = studentMarks[sd.name];
+        if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) {
             gradedSubjectsPassed++;
         }
       });

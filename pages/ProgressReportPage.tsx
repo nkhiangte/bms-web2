@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance } from '../types';
@@ -343,7 +342,8 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
 };
 
 const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
-    const { studentId, examId } = useParams<{ studentId: string; examId: string }>();
+    // Fix: Cast untyped useParams call to specific type to resolve build error
+    const { studentId, examId } = useParams() as { studentId: string; examId: string };
     const navigate = useNavigate();
 
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);

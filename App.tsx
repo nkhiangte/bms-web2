@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -24,6 +25,8 @@ import { SpinnerIcon } from './components/Icons';
 // Data & Constants
 import { timetableData } from './timetableData';
 import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
+// FIX: Import formatStudentId utility to be used in user management handlers.
+import { formatStudentId } from './utils';
 
 // Portal Pages
 import DashboardPage from './pages/DashboardPage';
@@ -324,6 +327,56 @@ const App: React.FC = () => {
         return { success: false, message: "No user is currently signed in." };
     };
 
+    // FIX: Implement user management handlers.
+    const handleUpdateUserRole = async (uid: string, newRole: 'admin' | 'user' | 'pending' | 'warden') => {
+        try {
+            await db.collection('users').doc(uid).update({ role: newRole });
+            addNotification("User role updated successfully", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Role Update Failed");
+        }
+    };
+
+    const handleDeleteUser = async (uid: string) => {
+        try {
+            // Deleting auth user should be done via a cloud function for security.
+            // Here we only delete the firestore record.
+            await db.collection('users').doc(uid).delete();
+            addNotification("User record deleted. Auth user may still exist.", "info");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Deletion Failed");
+        }
+    };
+    
+    const handleUpdateUser = async (uid: string, updates: Partial<User>) => {
+        try {
+            await db.collection('users').doc(uid).update(updates);
+            addNotification("User updated successfully.", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "User Update Failed");
+        }
+    };
+    
+    const handleApproveParent = async (uid: string, claimedStudentId: string) => {
+        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === claimedStudentId.toLowerCase());
+        
+        if (student) {
+            try {
+                await db.collection('users').doc(uid).update({
+                    role: 'parent',
+                    studentIds: firebase.firestore.FieldValue.arrayUnion(student.id),
+                    claimedStudentId: firebase.firestore.FieldValue.delete(),
+                    claimedDateOfBirth: firebase.firestore.FieldValue.delete(),
+                });
+                addNotification(`Parent approved and linked to ${student.name}.`, "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Approval Failed");
+            }
+        } else {
+             addNotification(`Student with ID ${claimedStudentId} not found.`, "error", "Approval Failed");
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -446,7 +499,7 @@ const App: React.FC = () => {
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={() => {}} onDeleteUser={() => {}} onUpdateUser={async () => {}} onApproveParent={() => {}} />} />
+                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} onApproveParent={handleApproveParent} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />

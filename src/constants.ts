@@ -1,3 +1,4 @@
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -10,7 +11,7 @@ export const DESIGNATION_LIST: Designation[] = Object.values(Designation);
 export const EMPLOYEE_TYPE_LIST: EmployeeType[] = Object.values(EmployeeType);
 export const BLOOD_GROUP_LIST: BloodGroup[] = Object.values(BloodGroup);
 export const EMPLOYMENT_STATUS_LIST: EmploymentStatus[] = Object.values(EmploymentStatus);
-export const STAFF_TYPE_LIST: StaffType[] = ['Teaching', 'Non-Teaching'];
+export const STAFF_TYPE_LIST: StaffType[] = [StaffType.TEACHING, StaffType.NON_TEACHING];
 
 export const GRADES_LIST: Grade[] = Object.values(Grade);
 export const GENDER_LIST: Gender[] = Object.values(Gender);

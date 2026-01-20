@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus } from '../types';
 import PhotoWithFallback from '../components/PhotoWithFallback';
-import { BookOpenIcon, CalendarDaysIcon } from '../components/Icons';
+import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon } from '../components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -68,13 +68,19 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                                 </div>
                                 <h3 className="text-2xl font-bold text-slate-800">{student.name}</h3>
                                 <p className="text-slate-600 font-semibold">{student.grade} - Roll No: {student.rollNo}</p>
-                                <div className="mt-6 w-full">
-                                    <div className="flex flex-col gap-2">
-                                        <Link to={`/portal/student/${student.id}`} className="btn btn-primary w-full">View Details</Link>
-                                        <Link to={`/portal/student/${student.id}/attendance-log`} className="btn btn-secondary w-full">
-                                            <CalendarDaysIcon className="w-5 h-5"/> Attendance Log
+                                <div className="mt-6 w-full space-y-2">
+                                    <Link to={`/portal/student/${student.id}`} className="btn btn-primary w-full">View Profile</Link>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Link to={`/portal/student/${student.id}/academics`} className="btn bg-indigo-600 hover:bg-indigo-700 text-white w-full text-sm">
+                                            <AcademicCapIcon className="w-4 h-4"/> Academics
+                                        </Link>
+                                        <Link to="/portal/fees" state={{ studentId: student.id }} className="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full text-sm">
+                                            <CurrencyDollarIcon className="w-4 h-4"/> Fees
                                         </Link>
                                     </div>
+                                    <Link to={`/portal/student/${student.id}/attendance-log`} className="btn btn-secondary w-full text-sm">
+                                        <CalendarDaysIcon className="w-4 h-4"/> Attendance Log
+                                    </Link>
                                 </div>
                             </div>
                         ))}

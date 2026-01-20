@@ -5,7 +5,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 const { Link } = ReactRouterDOM as any;
 
 interface ParentSignUpPageProps {
-  onSignUp: (name: string, email: string, password: string, studentId: string) => Promise<{ success: boolean, message?: string }>;
+  onSignUp: (name: string, email: string, password: string, studentId: string, dateOfBirth: string) => Promise<{ success: boolean, message?: string }>;
 }
 
 const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
@@ -13,6 +13,7 @@ const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,7 @@ const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
     setError('');
     setSuccessMessage('');
     setLoading(true);
-    const result = await onSignUp(name, email, password, studentId);
+    const result = await onSignUp(name, email, password, studentId, dateOfBirth);
     if (!result.success) {
         setError(result.message || 'An unknown error occurred.');
     } else {
@@ -60,7 +61,7 @@ const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
                 <fieldset disabled={loading}>
                     <div className="mb-4">
                     <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="name">
-                        Full Name
+                        Parent Full Name
                     </label>
                     <input
                         className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
@@ -70,7 +71,7 @@ const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
                     </div>
                      <div className="mb-4">
                         <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="studentId">
-                            Student ID
+                            Child's Student ID
                         </label>
                         <input
                             className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
@@ -83,8 +84,21 @@ const ParentSignUpPage: React.FC<ParentSignUpPageProps> = ({ onSignUp }) => {
                         />
                     </div>
                     <div className="mb-4">
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="dob">
+                            Child's Date of Birth (Verification)
+                        </label>
+                        <input
+                            className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                            id="dob"
+                            type="date"
+                            value={dateOfBirth}
+                            onChange={(e) => setDateOfBirth(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mb-4">
                     <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="email">
-                        Email
+                        Your Email
                     </label>
                     <input
                         className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"

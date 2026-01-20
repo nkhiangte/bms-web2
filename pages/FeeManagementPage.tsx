@@ -1,5 +1,4 @@
 
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon } from '../components/Icons';
@@ -7,7 +6,7 @@ import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet,
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
 import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link, useNavigate, useLocation } = ReactRouterDOM as any;
 
 interface FeeManagementPageProps {
   students: Student[];
@@ -39,6 +38,7 @@ const FeeDetailItem: React.FC<{ label: string; amount: number }> = ({ label, amo
 
 const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academicYear, onUpdateFeePayments, user, feeStructure, onUpdateFeeStructure, addNotification }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [studentIdInput, setStudentIdInput] = useState('');
   const [foundStudent, setFoundStudent] = useState<Student | null>(null);
   const [searchError, setSearchError] = useState('');
@@ -56,6 +56,24 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   useEffect(() => {
     setEditableStructure(feeStructure);
   }, [feeStructure]);
+
+  const getDefaultPayments = (): FeePayments => ({
+    admissionFeePaid: false,
+    tuitionFeesPaid: academicMonths.reduce((acc, month) => ({ ...acc, [month]: false }), {}),
+    examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
+  });
+
+  // Effect to handle navigation from dashboard (passing studentId)
+  useEffect(() => {
+      const stateStudentId = location.state?.studentId;
+      if (stateStudentId && students.length > 0) {
+          const student = students.find(s => s.id === stateStudentId);
+          if (student) {
+              setFoundStudent(student);
+              setPaymentData(student.feePayments || getDefaultPayments());
+          }
+      }
+  }, [location.state, students]);
 
   const handleStructureChange = (setKey: 'set1' | 'set2' | 'set3', feeKey: keyof FeeSet, value: string) => {
     const numericValue = parseInt(value, 10) || 0;
@@ -78,12 +96,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     setIsEditingStructure(false);
   };
 
-  const getDefaultPayments = (): FeePayments => ({
-    admissionFeePaid: false,
-    tuitionFeesPaid: academicMonths.reduce((acc, month) => ({ ...acc, [month]: false }), {}),
-    examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
-  });
-
   const handleStudentSearch = () => {
     setFoundStudent(null);
     setSearchError('');
@@ -104,6 +116,17 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     } else {
         setSearchError('Active student with this ID not found. Please check and try again.');
     }
+  };
+  
+  // Handler specifically for parents selecting their child from dropdown
+  const handleParentChildSelect = (childId: string) => {
+      setSearchError('');
+      setIsSaved(false);
+      const student = students.find(s => s.id === childId);
+      if (student) {
+          setFoundStudent(student);
+          setPaymentData(student.feePayments || getDefaultPayments());
+      }
   };
 
   const handlePaymentChange = (type: 'admission' | 'tuition' | 'exam', key: string, value: boolean) => {
@@ -176,7 +199,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             handler: async (response: any) => {
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
 
-                // CORRECTED: Only mark the fees as paid that were part of this transaction snapshot.
                 if (duesToPay.admissionFee) {
                     newPayments.admissionFeePaid = true;
                 }
@@ -197,6 +219,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     await onUpdateFeePayments(foundStudent.id, newPayments);
                     setFoundStudent(null); 
                     setStudentIdInput('');
+                    addNotification("Payment successful and records updated!", "success");
                 } catch (err) {
                      addNotification('Payment was successful but failed to update records. Please contact support.', 'error', 'Update Failed');
                 } finally {
@@ -204,7 +227,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 }
             },
             prefill: {
-                name: foundStudent.fatherName, // Prefill with parent's name
+                name: foundStudent.fatherName,
                 contact: foundStudent.contact,
             },
             notes: {
@@ -237,6 +260,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const dues = tempStudentForDues ? calculateDues(tempStudentForDues, feeStructure) : [];
 
   const isReadOnly = user.role !== 'admin';
+  const isParent = user.role === 'parent';
 
   return (
     <div className="space-y-8">
@@ -254,7 +278,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Object.keys(feeStructure).map(setKey => (
+                {(Object.keys(feeStructure) as Array<keyof FeeStructure>).map(setKey => (
                     <div key={setKey} className="bg-slate-50 p-4 rounded-lg border">
                         <h3 className="font-bold text-lg text-slate-800 capitalize">{setKey.replace('set', 'Set ')}</h3>
                         <p className="text-xs text-slate-600 mb-4 h-8">
@@ -295,20 +319,37 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         </div>
         
         <h1 className="text-3xl font-bold text-slate-800 mb-2">Student Fee Payment</h1>
-        <p className="text-slate-700 mb-8">Enter a student's ID to view their applicable fee structure and update payment status.</p>
+        <p className="text-slate-700 mb-8">View applicable fee structure and update payment status.</p>
 
-        <div className="mb-8 max-w-lg">
-            <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Enter Student ID</label>
-            <div className="flex gap-2 items-start">
-                <div className="flex-grow">
-                    <input id="student-id-input" type="text" placeholder="e.g., BMS250501" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" />
-                    {searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}
-                </div>
-                <button type="button" onClick={handleStudentSearch} className="px-6 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 h-[42px] flex items-center justify-center gap-2">
-                    <SearchIcon className="w-5 h-5" /> Find
-                </button>
+        {isParent ? (
+             <div className="mb-8 max-w-lg">
+                <label htmlFor="child-select" className="block text-sm font-bold text-slate-800 mb-2">Select Child</label>
+                <select
+                    id="child-select"
+                    className="form-select w-full"
+                    value={foundStudent?.id || ''}
+                    onChange={(e) => handleParentChildSelect(e.target.value)}
+                >
+                    <option value="" disabled>-- Select a Student --</option>
+                    {students.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.grade})</option>
+                    ))}
+                </select>
             </div>
-        </div>
+        ) : (
+            <div className="mb-8 max-w-lg">
+                <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Enter Student ID</label>
+                <div className="flex gap-2 items-start">
+                    <div className="flex-grow">
+                        <input id="student-id-input" type="text" placeholder="e.g., BMS250501" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" />
+                        {searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}
+                    </div>
+                    <button type="button" onClick={handleStudentSearch} className="px-6 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 h-[42px] flex items-center justify-center gap-2">
+                        <SearchIcon className="w-5 h-5" /> Find
+                    </button>
+                </div>
+            </div>
+        )}
         
         {foundStudent && feeDetails && paymentData && (
             <form onSubmit={handleSave} className="mt-8 space-y-6 animate-fade-in">
@@ -389,31 +430,31 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     </div>
                 </fieldset>
 
-                {!isReadOnly && (
-                    <div className="mt-8 flex flex-wrap justify-end items-center gap-4">
-                        {isSaved && (
-                            <div className="flex items-center gap-2 text-emerald-600 font-semibold animate-fade-in">
-                                <CheckIcon className="w-5 h-5" />
-                                <span>Saved!</span>
-                            </div>
-                        )}
-                         {duesSummary && duesSummary.total > 0 && (
-                            <button 
-                                type="button" 
-                                onClick={displayRazorpay} 
-                                disabled={isProcessingPayment}
-                                className="btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-400"
-                            >
-                                {isProcessingPayment ? <SpinnerIcon className="w-5 h-5" /> : <CurrencyDollarIcon className="w-5 h-5" />}
-                                <span>{isProcessingPayment ? 'Processing...' : `Accept Online Payment (₹${duesSummary.total})`}</span>
-                            </button>
-                         )}
+                <div className="mt-8 flex flex-wrap justify-end items-center gap-4">
+                    {isSaved && (
+                        <div className="flex items-center gap-2 text-emerald-600 font-semibold animate-fade-in">
+                            <CheckIcon className="w-5 h-5" />
+                            <span>Saved!</span>
+                        </div>
+                    )}
+                     {duesSummary && duesSummary.total > 0 && (
+                        <button 
+                            type="button" 
+                            onClick={displayRazorpay} 
+                            disabled={isProcessingPayment}
+                            className="btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-400"
+                        >
+                            {isProcessingPayment ? <SpinnerIcon className="w-5 h-5" /> : <CurrencyDollarIcon className="w-5 h-5" />}
+                            <span>{isProcessingPayment ? 'Processing...' : `Accept Online Payment (₹${duesSummary.total})`}</span>
+                        </button>
+                     )}
+                    {!isReadOnly && (
                         <button type="submit" className="btn btn-primary flex items-center gap-2">
                             <CheckIcon className="w-5 h-5"/>
                             Save Payment Status
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </form>
         )}
       </div>

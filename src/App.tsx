@@ -7,11 +7,11 @@ import PublicLayout from './layouts/PublicLayout';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ParentSignUpPage from './pages/ParentSignUpPage';
-import ParentRegistrationPage from './pages/ParentRegistrationPage'; // New Import
+import ParentRegistrationPage from './pages/ParentRegistrationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
-import { User, NotificationType } from './types';
+import { User, NotificationType, Student } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
 import { SpinnerIcon } from './components/Icons';
@@ -118,8 +118,11 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
 
+    // Real Data State for Admin Review features
+    const [students, setStudents] = useState<Student[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+
     // Placeholder data structures to allow compilation - in a real app these would be fetched from Firebase
-    const students: any[] = [];
     const staff: any[] = [];
     const gradeDefinitions: any = {};
     const academicYear = "2025-2026";
@@ -158,8 +161,12 @@ const App: React.FC = () => {
                             photoURL: firebaseUser.photoURL,
                             role: userData?.role || 'pending',
                             studentIds: userData?.studentIds,
+                            // Legacy support
                             claimedStudentId: userData?.claimedStudentId,
-                            claimedDateOfBirth: userData?.claimedDateOfBirth
+                            claimedDateOfBirth: userData?.claimedDateOfBirth,
+                            // New Support
+                            claimedStudents: userData?.claimedStudents,
+                            registrationDetails: userData?.registrationDetails
                         });
                     } else {
                         // Handle new user or user without doc
@@ -182,6 +189,31 @@ const App: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
+    // Fetch Global Data (Students & Users) for Admin features
+    useEffect(() => {
+        if (user) {
+             // Fetch Students
+             const unsubStudents = db.collection('students').onSnapshot(snapshot => {
+                 const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Student));
+                 setStudents(data);
+             }, error => console.error("Error fetching students:", error));
+             
+             // Fetch Users (only if admin)
+             let unsubUsers = () => {};
+             if (user.role === 'admin') {
+                 unsubUsers = db.collection('users').onSnapshot(snapshot => {
+                     const data = snapshot.docs.map(d => ({ uid: d.id, ...d.data() } as User));
+                     setAllUsers(data);
+                 }, error => console.error("Error fetching users:", error));
+             }
+
+             return () => {
+                 unsubStudents();
+                 unsubUsers();
+             }
+        }
+    }, [user?.uid, user?.role]);
+
     const addNotification = (message: string, type: NotificationType, title?: string) => {
         const id = Math.random().toString(36).substring(7);
         setNotifications(prev => [...prev, { id, message, type, title }]);
@@ -198,6 +230,28 @@ const App: React.FC = () => {
         }
         return { success: true };
     };
+
+    const handleUpdateUser = async (uid: string, updates: Partial<User>) => {
+        try {
+            await db.collection('users').doc(uid).update(updates);
+            addNotification('User updated successfully', 'success');
+        } catch (error: any) {
+            addNotification(error.message, 'error');
+        }
+    };
+
+    const handleDeleteUser = async (uid: string) => {
+        try {
+            await db.collection('users').doc(uid).delete();
+            addNotification('User deleted successfully', 'success');
+        } catch (error: any) {
+             addNotification(error.message, 'error');
+        }
+    };
+
+    const handleUpdateUserRole = (uid: string, role: string) => {
+        handleUpdateUser(uid, { role: role as any });
+    }
 
     const handleParentSignUp = async (name: string, email: string, password: string, studentId: string, dateOfBirth: string) => {
         return handleAuthAction(
@@ -378,7 +432,7 @@ const App: React.FC = () => {
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
                         <Route path="/portal/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={classSchedules} user={user} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/users" element={<UserManagementPage allUsers={[]} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={() => {}} onDeleteUser={() => {}} onApproveParent={() => {}} />} />
+                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} onApproveParent={() => {}} onUpdateUser={handleUpdateUser} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={async () => ({success: true})} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />

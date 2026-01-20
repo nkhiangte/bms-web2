@@ -10,7 +10,7 @@ interface InventoryTableProps {
 }
 
 const InventoryTable: React.FC<InventoryTableProps> = ({ items, onEdit, onDelete, user }) => {
-    const getStatusColor = (status: InventoryStatus): string => {
+    const getStatusColor = (status: InventoryStatus | string): string => {
         switch (status) {
         case InventoryStatus.GOOD:
             return 'bg-emerald-100 text-emerald-800';

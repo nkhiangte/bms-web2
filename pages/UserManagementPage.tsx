@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { User, Student } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, XCircleIcon, CheckCircleIcon, ExclamationTriangleIcon } from '../components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatStudentId } from '../utils';
+import { formatStudentId, formatDateForDisplay } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -39,6 +39,24 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ allUsers
         }
     };
 
+    // Helper to verify parent claims
+    const verifyClaim = (claimedId?: string, claimedDob?: string) => {
+        if (!claimedId) return { status: 'missing_id', student: null };
+        
+        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === claimedId.toLowerCase());
+        
+        if (!student) return { status: 'not_found', student: null };
+        
+        if (!claimedDob) return { status: 'missing_dob', student };
+
+        // Compare DOBs
+        if (student.dateOfBirth === claimedDob) {
+            return { status: 'match', student };
+        } else {
+            return { status: 'dob_mismatch', student };
+        }
+    };
+
     return (
         <>
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
@@ -61,24 +79,58 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ allUsers
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Role</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Role / Verification</th>
                                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
-                            {allUsers.map(user => (
+                            {allUsers.map(user => {
+                                const verification = user.role === 'pending_parent' ? verifyClaim(user.claimedStudentId, user.claimedDateOfBirth) : null;
+
+                                return (
                                     <tr key={user.uid}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{user.email}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    <td className="px-6 py-4 text-sm">
                                         {user.role === 'pending' ? (
                                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
                                                 Pending Staff
                                             </span>
                                         ) : user.role === 'pending_parent' ? (
-                                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
-                                                Pending Parent (For: {user.claimedStudentId})
-                                            </span>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                                        Parent Request
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">ID: {user.claimedStudentId}</span>
+                                                </div>
+                                                
+                                                {/* Verification Logic Display */}
+                                                {verification?.status === 'match' && (
+                                                    <div className="flex items-center gap-1 text-emerald-700 font-bold text-xs">
+                                                        <CheckCircleIcon className="w-4 h-4" />
+                                                        Matched: {verification.student?.name}
+                                                    </div>
+                                                )}
+                                                {verification?.status === 'dob_mismatch' && (
+                                                    <div className="flex items-center gap-1 text-red-600 font-bold text-xs">
+                                                        <XCircleIcon className="w-4 h-4" />
+                                                        DOB Mismatch ({verification.student?.name})
+                                                    </div>
+                                                )}
+                                                {verification?.status === 'not_found' && (
+                                                     <div className="flex items-center gap-1 text-red-600 font-bold text-xs">
+                                                        <XCircleIcon className="w-4 h-4" />
+                                                        Student ID Not Found
+                                                    </div>
+                                                )}
+                                                {verification?.status === 'missing_dob' && verification.student && (
+                                                     <div className="flex items-center gap-1 text-amber-600 font-bold text-xs">
+                                                        <ExclamationTriangleIcon className="w-4 h-4" />
+                                                        No DOB provided. Found: {verification.student.name}
+                                                    </div>
+                                                )}
+                                            </div>
                                         ) : user.role === 'parent' ? (
                                             <div>
                                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
@@ -126,7 +178,9 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ allUsers
                                             ) : user.role === 'pending_parent' && user.claimedStudentId ? (
                                                  <button
                                                     onClick={() => onApproveParent(user.uid, user.claimedStudentId!)}
-                                                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full hover:bg-emerald-700 transition"
+                                                    disabled={verification?.status === 'not_found' || verification?.status === 'dob_mismatch'}
+                                                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full hover:bg-emerald-700 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
+                                                    title={verification?.status === 'match' ? 'Approve Verified Request' : 'Verify Details Before Approving'}
                                                 >
                                                     <CheckIcon className="w-4 h-4" />
                                                     Approve Parent
@@ -144,7 +198,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ allUsers
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                     {allUsers.length === 0 && (

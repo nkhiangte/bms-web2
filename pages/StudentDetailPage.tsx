@@ -297,11 +297,15 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                         </ul>
                     </div>
                 )}
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || isOwner) && (
                     <div className="mt-4">
-                        <Link to="/portal/fees" className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-700 transition hover:-translate-y-0.5">
+                        <Link 
+                            to="/portal/fees" 
+                            state={{ studentId: student.id }} 
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-700 transition hover:-translate-y-0.5"
+                        >
                             <CurrencyDollarIcon className="w-5 h-5" />
-                            Go to Fee Management
+                            {user.role === 'admin' ? 'Go to Fee Management' : 'View Fees & Pay Online'}
                         </Link>
                     </div>
                 )}

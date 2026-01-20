@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance } from '../types';
+import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '../types';
 import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
-// Import SpinnerIcon to resolve the error on line 83
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '../components/Icons';
 import ActivityLogModal from '../components/ActivityLogModal';
 import ExamPerformanceCard from '../components/ExamPerformanceCard';
 import { normalizeSubjectName } from '../utils';
+import { db } from '../firebaseConfig';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -25,6 +26,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   const navigate = useNavigate();
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
+  const [classmates, setClassmates] = useState<Student[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [performanceData, setPerformanceData] = useState<Exam[]>([]);
   const [editingActivityLogFor, setEditingActivityLogFor] = useState<{ examId: string, subjectName: string } | null>(null);
@@ -35,6 +37,20 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   }, [assignedSubjects, student]);
 
   const canEdit = user.role === 'admin' || (student && student.grade === assignedGrade) || isSubjectTeacherForThisClass;
+
+  useEffect(() => {
+    if (student) {
+      const unsubscribe = db.collection('students')
+        .where('grade', '==', student.grade)
+        .where('status', '==', StudentStatus.ACTIVE)
+        .onSnapshot(snapshot => {
+          const fetchedClassmates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+          setClassmates(fetchedClassmates);
+        });
+      
+      return () => unsubscribe();
+    }
+  }, [student]);
 
   useEffect(() => {
     if (!student) return;
@@ -91,7 +107,6 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
     setIsEditing(false);
   };
 
-  // FIX: Using imported SpinnerIcon
   if (!student) return <div className="text-center py-20"><SpinnerIcon className="w-10 h-10 mx-auto text-sky-600"/></div>;
   
   return (
@@ -120,7 +135,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                     exam={exam}
                     student={student}
                     gradeDefinitions={gradeDefinitions}
-                    allStudents={students}
+                    allStudents={classmates}
                     isEditing={isEditing}
                     canEdit={canEdit}
                     onUpdateExamData={handleUpdateExamData}

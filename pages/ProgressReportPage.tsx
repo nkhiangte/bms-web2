@@ -1,10 +1,11 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance } from '../types';
 import { BackIcon, PrinterIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
+import { db } from '../firebaseConfig';
 
 interface ProgressReportPageProps {
   students: Student[];
@@ -39,7 +40,7 @@ const calculateTermSummary = (
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classmates.map(s => {
-        const studentExam = s.id === student.id ? exam : s.academicPerformance?.find(e => e.id === examId);
+        const studentExam = s.academicPerformance?.find(e => e.id === examId);
         
         let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
         let failedSubjectsCount_III_to_VIII = 0, failedSubjectsCount_IX_to_X = 0, failedSubjectsCount_N_to_II = 0, gradedSubjectsPassed = 0;
@@ -160,7 +161,10 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
 
     const currentTermId = examTemplate.id as 'terminal1' | 'terminal2' | 'terminal3';
     
-    const summary = useMemo(() => calculateTermSummary(student, exam, currentTermId, gradeDef, allStudents), [student, exam, currentTermId, gradeDef, allStudents]);
+    const summary = useMemo(() => {
+        if (allStudents.length === 0) return null;
+        return calculateTermSummary(student, exam, currentTermId, gradeDef, allStudents);
+    }, [student, exam, currentTermId, gradeDef, allStudents]);
 
     const classTeacher = useMemo(() => {
         if (!staff || !gradeDef?.classTeacherId) return null;
@@ -298,18 +302,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
                             <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">Percentage</td>
                             <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center font-bold">{summary?.percentage?.toFixed(2)}%</td>
                         </tr>
-                         {/* <tr className="border-t border-slate-300">
-                            <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">{isClassIXorX ? "Division" : "Grade"}</td>
-                            <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center font-bold">{isClassIXorX ? summary?.division : summary?.academicGrade}</td>
-                        </tr> */}
-                         {/* <tr className="border-t border-slate-300">
-                            <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">Rank</td>
-                            <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center font-bold">{summary?.rank}</td>
-                        </tr> */}
-                        {/* <tr className="border-t border-slate-300">
-                            <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">Attendance %</td>
-                            <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center font-bold">{getAttendancePercent(exam?.attendance)}</td>
-                        </tr> */}
                     </tbody>
                 </table>
             </div>
@@ -359,7 +351,22 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const navigate = useNavigate();
 
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
+    const [classmates, setClassmates] = useState<Student[]>([]);
     const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
+
+    useEffect(() => {
+        if (student) {
+            const unsubscribe = db.collection('students')
+                .where('grade', '==', student.grade)
+                .where('status', '==', StudentStatus.ACTIVE)
+                .onSnapshot(snapshot => {
+                    const fetchedClassmates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+                    setClassmates(fetchedClassmates);
+                });
+            
+            return () => unsubscribe();
+        }
+    }, [student]);
 
     // Logic to override gradeDef for IX/X
     const gradeDef = useMemo(() => {
@@ -457,7 +464,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                         gradeDef={gradeDef} 
                         exam={exam} 
                         examTemplate={examTemplate} 
-                        allStudents={students} 
+                        allStudents={classmates} 
                         academicYear={academicYear}
                         staff={staff}
                     />

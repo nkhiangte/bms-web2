@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon } from '../components/Icons';
+import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon } from '../components/Icons';
 import AcademicYearForm from '../components/AcademicYearForm';
 import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, OnlineAdmission } from '../types';
 
-const { Link } = ReactRouterDOM as any;
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface DashboardPageProps {
   user: User;
@@ -126,7 +126,22 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, studentCount, academicYear, onSetAcademicYear, allUsers, assignedGrade, assignedSubjects, isReminderServiceActive, onToggleReminderService, calendarEvents, onlineAdmissions }) => {
+  const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
+  
+  useEffect(() => {
+    if (user.role === 'parent') {
+      navigate('/portal/parent-dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user.role === 'parent') {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <SpinnerIcon className="w-10 h-10 text-sky-600" />
+        </div>
+    );
+  }
   
   if (user.role === 'pending' || user.role === 'pending_parent') {
       return (

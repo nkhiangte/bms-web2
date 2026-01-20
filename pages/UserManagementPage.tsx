@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { User, Student } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon } from '../components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { firebase } from '../firebaseConfig';
@@ -100,7 +101,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({
                 </div>
 
                 {activeTab === 'staff' && (
-                    <div className="overflow-x-auto border rounded-lg">
+                    <div className="overflow-x-auto border rounded-lg animate-fade-in">
                         <table className="min-w-full divide-y divide-slate-200">
                              <thead className="bg-slate-50">
                                 <tr>
@@ -146,7 +147,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({
                 )}
                 
                 {activeTab === 'parents' && (
-                     <div className="overflow-x-auto border rounded-lg">
+                     <div className="overflow-x-auto border rounded-lg animate-fade-in">
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead className="bg-slate-50">
                                 <tr>
@@ -163,7 +164,9 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{user.email}</td>
                                         <td className="px-6 py-4 text-sm">
                                             {user.role === 'pending_parent' ? (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">Pending Approval</span>
+                                                <div className="space-y-1">
+                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">Pending Approval</span>
+                                                </div>
                                             ) : (
                                                 <div>
                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">Approved Parent</span>

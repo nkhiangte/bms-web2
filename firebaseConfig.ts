@@ -1,4 +1,3 @@
-
 // firebaseConfig.js
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
@@ -22,21 +21,18 @@ const app = firebase.initializeApp(firebaseConfig);
 // Initialize services
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// Removed experimentalForceLongPolling settings as they can cause "Backend didn't respond" timeouts
-// in standard environments and conflicts with auto-detection.
-// Firestore will automatically fallback if WebSockets fail.
-
 const storage = firebase.storage();
 
-// Enable offline persistence to allow the app to load even if the backend is unreachable momentarily.
-db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code == 'unimplemented') {
-        console.log('The current browser doesn\'t support persistence.');
-    }
-});
+// Enable offline persistence only once
+if (typeof window !== 'undefined') {
+    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn('Multiple tabs open, persistence enabled in one tab.');
+        } else if (err.code === 'unimplemented') {
+            console.warn('The current browser doesn\'t support persistence.');
+        }
+    });
+}
 
 export { auth, db, storage, firebase, firebaseConfig };
 export default app;

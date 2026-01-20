@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
 
-const { Link, useLocation } = ReactRouterDOM as any;
+const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
 
 interface LoginPageProps {
-  onLogin: (email: string, pass: string) => Promise<any>;
+  onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   error: string;
   notification: string;
 }
@@ -22,6 +21,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [loading, setLoading] = useState(false);
   
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const state = location.state as { message?: string } | null;
@@ -51,8 +51,21 @@ const LoginPage: React.FC<LoginPageProps> = ({
     setFormError("");
     setNotification("");
     setLoading(true);
-    await onLogin(email, password);
-    setLoading(false);
+    
+    try {
+        const result = await onLogin(email, password);
+        if (result && result.success) {
+            // Explicitly push the user into the portal dashboard.
+            // Using replace ensures they can't go back to the login page.
+            navigate('/portal/dashboard', { replace: true });
+        } else if (result && result.message) {
+            setFormError(result.message);
+        }
+    } catch (err: any) {
+        setFormError(err.message || "An unexpected error occurred during login.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
@@ -150,7 +163,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
             </p>
             <p>
                 Parent or Student?{' '}
-                <Link to="/parent-signup" className="font-bold text-sky-600 hover:text-sky-800">Register Here</Link>
+                <Link to="/parent-registration" className="font-bold text-sky-600 hover:text-sky-800">Create Account</Link>
             </p>
             <p className="mt-4">
               <Link to="/" className="font-bold text-sm text-slate-600 hover:text-slate-800">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db } from './firebaseConfig';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
@@ -117,6 +117,7 @@ const App: React.FC = () => {
     const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([]);
+    const navigate = useNavigate();
 
     // Placeholder data structures - these would normally be states synced with Firestore
     const staff: any[] = [];
@@ -143,8 +144,8 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-            if (firebaseUser) {
-                try {
+            try {
+                if (firebaseUser) {
                     const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
                     if (userDoc.exists) {
                         const userData = userDoc.data();
@@ -169,13 +170,24 @@ const App: React.FC = () => {
                             role: 'pending'
                         });
                     }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
+                } else {
+                    setUser(null);
                 }
-            } else {
-                setUser(null);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                // Fallback for UI responsiveness
+                if (firebaseUser) {
+                   setUser({
+                        uid: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        displayName: firebaseUser.displayName,
+                        photoURL: firebaseUser.photoURL,
+                        role: 'pending'
+                    });
+                }
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         });
         return () => unsubscribe();
     }, []);
@@ -211,16 +223,17 @@ const App: React.FC = () => {
         try {
             await action;
             addNotification(successMsg, 'success');
+            return { success: true };
         } catch (error: any) {
             addNotification(error.message, 'error', 'Authentication Failed');
             return { success: false, message: error.message };
         }
-        return { success: true };
     };
 
     const handleLogout = () => {
         auth.signOut();
         setUser(null);
+        navigate('/', { replace: true });
     };
 
     if (loading) {
@@ -275,10 +288,13 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={classSchedules} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
-                    <Route path="/login" element={<LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
-                    <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
-                    <Route path="/parent-registration" element={<ParentRegistrationPage />} />
-                    <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async () => ({success: true})} />} />
+                    
+                    {/* Auth Pages - Auto Redirect if user exists */}
+                    <Route path="/login" element={user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
+                    <Route path="/signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <SignUpPage onSignUp={async () => ({success: true})} />} />
+                    <Route path="/parent-registration" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentRegistrationPage />} />
+                    <Route path="/parent-signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentSignUpPage onSignUp={async () => ({success: true})} />} />
+                    
                     <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async () => ({success: true})} />} />
                     <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async () => ({success: true})} />} />
                     <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
@@ -295,8 +311,7 @@ const App: React.FC = () => {
                             serviceCerts={serviceCerts} 
                             academicYear={academicYear}
                         >
-                            {/* Nested routes are rendered here by Outlet */}
-                            {null}
+                            {/* Outlet is inside DashboardLayout */}
                         </DashboardLayout>
                     }>
                         <Route path="/portal/dashboard" element={<DashboardPage user={user} onAddStudent={() => {}} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => {}} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => {}} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />} />

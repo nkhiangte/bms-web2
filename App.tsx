@@ -16,7 +16,8 @@ import {
     ConductEntry, HostelResident, HostelStaff, HostelInventoryItem, 
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
-    Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus
+    Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
+    StudentClaim
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -327,7 +328,6 @@ const App: React.FC = () => {
         return { success: false, message: "No user is currently signed in." };
     };
 
-    // FIX: Implement user management handlers.
     const handleUpdateUserRole = async (uid: string, newRole: 'admin' | 'user' | 'pending' | 'warden') => {
         try {
             await db.collection('users').doc(uid).update({ role: newRole });
@@ -339,8 +339,6 @@ const App: React.FC = () => {
 
     const handleDeleteUser = async (uid: string) => {
         try {
-            // Deleting auth user should be done via a cloud function for security.
-            // Here we only delete the firestore record.
             await db.collection('users').doc(uid).delete();
             addNotification("User record deleted. Auth user may still exist.", "info");
         } catch (e: any) {
@@ -356,24 +354,40 @@ const App: React.FC = () => {
             addNotification(e.message, "error", "User Update Failed");
         }
     };
-    
-    const handleApproveParent = async (uid: string, claimedStudentId: string) => {
-        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === claimedStudentId.toLowerCase());
-        
-        if (student) {
-            try {
-                await db.collection('users').doc(uid).update({
-                    role: 'parent',
-                    studentIds: firebase.firestore.FieldValue.arrayUnion(student.id),
-                    claimedStudentId: firebase.firestore.FieldValue.delete(),
-                    claimedDateOfBirth: firebase.firestore.FieldValue.delete(),
-                });
-                addNotification(`Parent approved and linked to ${student.name}.`, "success");
-            } catch (e: any) {
-                addNotification(e.message, "error", "Approval Failed");
+
+    const handleParentSignUp = async (name: string, email: string, password: string, studentId: string, dateOfBirth: string) => {
+        try {
+            const methods = await auth.fetchSignInMethodsForEmail(email);
+            if (methods.length > 0) {
+                return { success: false, message: "An account with this email already exists." };
             }
-        } else {
-             addNotification(`Student with ID ${claimedStudentId} not found.`, "error", "Approval Failed");
+            
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            if (user) {
+                await user.updateProfile({ displayName: name });
+                
+                const studentClaim: StudentClaim = {
+                    fullName: 'N/A', // This form doesn't capture student's name
+                    studentId: studentId,
+                    dob: dateOfBirth,
+                    relationship: 'Parent', // Assuming 'Parent' as it's not specified
+                };
+
+                await db.collection('users').doc(user.uid).set({
+                    displayName: name,
+                    email: email,
+                    role: 'pending_parent',
+                    claimedStudents: [studentClaim],
+                    createdAt: new Date().toISOString(),
+                });
+                
+                return { success: true, message: "Account created successfully! Please wait for admin approval. You will be notified once your account is active." };
+            }
+            return { success: false, message: "Failed to create user account. Please try again." };
+        } catch (error: any) {
+            console.error("Parent SignUp Error:", error);
+            return { success: false, message: error.message };
         }
     };
 
@@ -432,7 +446,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/parent-registration" element={<ParentRegistrationPage />} />
-                    <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async () => ({success: true})} />} />
+                    <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={handleParentSignUp} />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async () => ({success: true})} />} />
                     <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async () => ({success: true})} />} />
                     <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
@@ -499,7 +513,7 @@ const App: React.FC = () => {
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
-                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} onApproveParent={handleApproveParent} />} />
+                        <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />

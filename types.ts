@@ -1,4 +1,35 @@
 
+export interface StudentClaim {
+  fullName: string;
+  studentId: string;
+  dob: string;
+  relationship: string;
+}
+
+export interface RegistrationDetails {
+  fullName: string;
+  relationship: string;
+  contactNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  language: string;
+  communicationPreferences: {
+    sms: boolean;
+    email: boolean;
+    push: boolean;
+  };
+  securityQuestion: string;
+  securityAnswer: string;
+  agreements: {
+    terms: boolean;
+    privacy: boolean;
+    identity: boolean;
+    photoRelease: boolean;
+  };
+}
+
 export interface User {
   uid: string;
   displayName: string | null;
@@ -8,6 +39,8 @@ export interface User {
   studentIds?: string[];
   claimedStudentId?: string;
   claimedDateOfBirth?: string;
+  claimedStudents?: StudentClaim[];
+  registrationDetails?: RegistrationDetails;
 }
 
 export enum Grade {

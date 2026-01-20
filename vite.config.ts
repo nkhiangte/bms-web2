@@ -1,7 +1,5 @@
-
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { URL, fileURLToPath } from 'url'
 
 export default defineConfig({
   base: '/',
@@ -11,11 +9,6 @@ export default defineConfig({
     'process.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(process.env.VITE_RAZORPAY_KEY_ID),
   },
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('.', import.meta.url)),
-    },
-  },
   build: {
     rollupOptions: {
       external: ['jspdf', 'html2canvas'],

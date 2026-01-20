@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User, Student } from '../types';
 import { BackIcon, HomeIcon, CheckIcon, TrashIcon, XCircleIcon, CheckCircleIcon, ExclamationTriangleIcon } from '../components/Icons';
@@ -15,10 +14,21 @@ interface UserManagementPageProps {
   currentUser: User;
   onUpdateUserRole: (uid: string, newRole: 'admin' | 'user' | 'pending' | 'warden') => void;
   onDeleteUser: (uid: string) => void;
+  // FIX: Added onUpdateUser property to the interface.
+  onUpdateUser: (uid: string, updates: Partial<User>) => Promise<void>;
   onApproveParent: (uid: string, claimedStudentId: string) => void;
 }
 
-export const UserManagementPage: React.FC<UserManagementPageProps> = ({ allUsers, students, academicYear, currentUser, onUpdateUserRole, onDeleteUser, onApproveParent }) => {
+export const UserManagementPage: React.FC<UserManagementPageProps> = ({ 
+    allUsers, 
+    students, 
+    academicYear, 
+    currentUser, 
+    onUpdateUserRole, 
+    onDeleteUser, 
+    onUpdateUser, // FIX: Added onUpdateUser prop.
+    onApproveParent 
+}) => {
     const navigate = useNavigate();
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 

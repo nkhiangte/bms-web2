@@ -151,7 +151,7 @@ export const PrinterIcon: React.FC<IconProps> = ({ className }) => (
 
 export const CogIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5" />
     </svg>
 );
 
@@ -216,7 +216,6 @@ export const ArrowUpOnSquareIcon: React.FC<IconProps> = ({ className }) => (
     </svg>
 );
 
-// FIX: Added SaveIcon component.
 export const SaveIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
@@ -295,7 +294,7 @@ export const ClipboardDocumentListIcon: React.FC<IconProps> = ({ className }) =>
 
 export const CakeIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.75a3 3 0 01-3 3M21 15.75v-3.75a3 3 0 00-3-3h-1.5m-3 6.75a3 3 0 01-3 3M9 15.75v-3.75a3 3 0 00-3-3H4.5m16.5 6.75h-1.5a3 3 0 00-3 3v-3.75a3 3 0 013-3h1.5m-16.5 0h1.5a3 3 0 013 3v-3.75a3 3 0 00-3-3H4.5m6 15v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m10.5 0v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m16.5 0h-1.5a3 3 0 00-3 3M4.5 20.25h1.5a3 3 0 013 3m-3-3v-3.75a3 3 0 00-3-3H4.5m10.5 15h1.5a3 3 0 003-3m-3 3v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75" />
+      <path d="M21 15.75a3 3 0 01-3 3M21 15.75v-3.75a3 3 0 00-3-3h-1.5m-3 6.75a3 3 0 01-3 3M9 15.75v-3.75a3 3 0 00-3-3H4.5m16.5 6.75h-1.5a3 3 0 00-3 3v-3.75a3 3 0 013-3h1.5m-16.5 0h1.5a3 3 0 013 3v-3.75a3 3 0 00-3-3H4.5m6 15v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m10.5 0v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m16.5 0h-1.5a3 3 0 00-3 3M4.5 20.25h1.5a3 3 0 013 3m-3-3v-3.75a3 3 0 00-3-3H4.5m10.5 15h1.5a3 3 0 003-3m-3 3v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75" />
     </svg>
 );
 
@@ -364,5 +363,11 @@ export const UploadIcon: React.FC<IconProps> = ({ className }) => (
 export const FileDownloadIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
+);
+
+export const LockClosedIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
     </svg>
 );

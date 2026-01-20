@@ -1,10 +1,11 @@
-
-
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, UserIcon } from '../../components/Icons';
 import { DISTINCTION_HOLDERS_BY_YEAR } from '../../constants';
 import { DistinctionHolder } from '../../types';
+
+const { useParams, useNavigate } = ReactRouterDOM as any;
 
 const HolderCard: React.FC<{ holder: DistinctionHolder; isLarge?: boolean }> = ({ holder, isLarge }) => {
     const containerHeight = isLarge ? 'h-84' : 'h-56';

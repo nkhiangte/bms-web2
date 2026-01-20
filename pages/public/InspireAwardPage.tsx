@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon } from '../../components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 const Lightbox: React.FC<{ src: string; alt: string; onClose: () => void }> = ({ src, alt, onClose }) => {
     return (

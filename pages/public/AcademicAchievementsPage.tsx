@@ -1,5 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
+
+const { Link } = ReactRouterDOM as any;
 
 const hslcResults = [
   { year: 2025, appeared: 41, passed: 38, passPercentage: '92.68%', distinction: 9, firstDivision: 15, secondDivision: 13, thirdDivision: 1 },

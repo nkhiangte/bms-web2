@@ -1,10 +1,12 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+const { BrowserRouter } = ReactRouterDOM as any;
 
 // Service worker registration has been removed.
 // The sw.js file was not being served correctly (404 error), causing critical

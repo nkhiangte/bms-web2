@@ -1,9 +1,11 @@
-
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { NewsItem, User } from '../types';
 import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon, DocumentReportIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface ManageNewsPageProps {
     news: NewsItem[];

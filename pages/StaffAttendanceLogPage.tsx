@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade } from '../types';
 import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, CalendarDaysIcon } from '../components/Icons';
 import { exportAttendanceToCsv } from '../utils';
 import DateRangeExportModal from '../components/DateRangeExportModal';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface StaffAttendanceLogPageProps {
   staff: Staff[];

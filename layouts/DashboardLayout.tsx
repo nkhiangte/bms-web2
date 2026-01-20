@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord } from '../types';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import Breadcrumbs from '../components/Breadcrumbs';
 
+const { Outlet } = ReactRouterDOM as any;
+
 interface DashboardLayoutProps {
     user: User;
     onLogout: () => void;
-    children: React.ReactNode;
     students: Student[];
     staff: Staff[];
     tcRecords: TcRecord[];
@@ -15,7 +17,7 @@ interface DashboardLayoutProps {
     academicYear: string;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, children, students, staff, tcRecords, serviceCerts, academicYear }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, students, staff, tcRecords, serviceCerts, academicYear }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -31,7 +33,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, child
                         serviceCerts={serviceCerts}
                         academicYear={academicYear}
                     />
-                    {children}
+                    {/* The Outlet renders the current child route's element */}
+                    <Outlet />
                 </main>
             </div>
         </div>

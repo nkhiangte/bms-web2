@@ -1,6 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon } from '../../components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 const ScienceTourPage: React.FC = () => {
     return (
@@ -32,8 +35,3 @@ const ScienceTourPage: React.FC = () => {
                         <p className="mt-4">At Bethel Mission School, we continue to celebrate these milestones with pride, confident that the seeds planted during these journeys will grow into the innovations of tomorrow.</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
-};
-export default ScienceTourPage;

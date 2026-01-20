@@ -1,11 +1,11 @@
-
-
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '../../components/Icons';
-import { NewsItem } from '../../types';
-import { formatDateForNews } from '../../utils';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
+import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '../components/Icons';
+import { NewsItem } from '../types';
+import { formatDateForNews } from '../utils';
 
+const { Link } = ReactRouterDOM as any;
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string; }> = ({ icon, title, description, link }) => (
     <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2">

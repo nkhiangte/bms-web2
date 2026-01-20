@@ -1,11 +1,12 @@
-
-
 import React, { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, Grade, GradeDefinition } from '../../types';
 import { BackIcon, UserIcon, HomeIcon } from '../../components/Icons';
 import { formatDateForDisplay } from '../../utils';
 import PhotoWithFallback from '../../components/PhotoWithFallback';
+
+const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
 interface PublicStaffDetailPageProps {
   staff: Staff[];

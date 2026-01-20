@@ -1,6 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, AcademicCapIcon } from '../../components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string; }> = ({ icon, title, description, link }) => (
     <Link to={link} className="group block bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2">

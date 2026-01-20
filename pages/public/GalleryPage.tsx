@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { FolderIcon } from '../../components/Icons';
+
+const { useLocation } = ReactRouterDOM as any;
 
 // Data structure definitions
 interface GalleryImage {
@@ -108,6 +111,7 @@ const galleryData: GalleryFolder[] = [
                 { src: 'https://i.ibb.co/S71VDzzx/486969079-1071019221724120-4832506910434299230-n.jpg', alt: 'Cultural Program photo' },
                 { src: 'https://i.ibb.co/VkPGnCy/487054235-1071019118390797-8792701053921172051-n.jpg', alt: 'Cultural Program photo' },
                 { src: 'https://i.ibb.co/KpMhYKX9/487367981-1071019228390786-4555676267454479014-n.jpg', alt: 'Cultural Program photo' },
+                { src: 'https://i.ibb.co/zTWwd46v/510437859-24227474656876909-5106638019103131461-n.jpg', alt: 'Cultural Program photo' },
                 { src: 'https://i.ibb.co/zTWwd46v/510437859-24227474656876909-5106638019103131461-n.jpg', alt: 'Cultural Program photo' },
                 { src: 'https://i.ibb.co/cXMTZbGZ/510439662-24227472690210439-1781996875253238322-n.jpg', alt: 'Cultural Program photo' },
                 { src: 'https://i.ibb.co/sdr698Ds/510490190-24227472726877102-8288538556354951387-n.jpg', alt: 'Cultural Program photo' },

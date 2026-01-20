@@ -1,6 +1,9 @@
 import React, { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { ShieldCheckIcon, UsersIcon, BookOpenIcon, BuildingOfficeIcon, PhoneIcon, MailIcon } from '../../components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 // Local Icon Components for this page
 const ClockIcon: React.FC<{ className?: string }> = ({ className }) => (

@@ -1,5 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
+
+const { Link } = ReactRouterDOM as any;
 
 const ArtsCulturePage: React.FC = () => {
     return (

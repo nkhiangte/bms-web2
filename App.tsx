@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { auth, db } from './firebaseConfig';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
@@ -111,6 +112,8 @@ import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPag
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import { examRoutines } from './constants';
 
+const { Routes, Route, Navigate, useNavigate } = ReactRouterDOM as any;
+
 const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -175,9 +178,8 @@ const App: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching user data:", error);
-                // Fallback for UI responsiveness
                 if (firebaseUser) {
-                   setUser({
+                    setUser({
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
                         displayName: firebaseUser.displayName,
@@ -289,7 +291,6 @@ const App: React.FC = () => {
                     <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={classSchedules} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
                     
-                    {/* Auth Pages - Auto Redirect if user exists */}
                     <Route path="/login" element={user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
                     <Route path="/signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <SignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/parent-registration" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentRegistrationPage />} />
@@ -310,9 +311,7 @@ const App: React.FC = () => {
                             tcRecords={tcRecords} 
                             serviceCerts={serviceCerts} 
                             academicYear={academicYear}
-                        >
-                            {/* Outlet is inside DashboardLayout */}
-                        </DashboardLayout>
+                        />
                     }>
                         <Route path="/portal/dashboard" element={<DashboardPage user={user} onAddStudent={() => {}} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => {}} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => {}} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />} />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} />} />

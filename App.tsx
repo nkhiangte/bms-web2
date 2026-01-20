@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
-import { auth, db } from './firebaseConfig';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { auth, db, firebase } from './firebaseConfig';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
 import LoginPage from './pages/LoginPage';
@@ -117,8 +117,6 @@ import IncentiveAwardsPage from './pages/public/IncentiveAwardsPage';
 import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import { examRoutines } from './constants';
-
-const { Routes, Route, Navigate, useNavigate } = ReactRouterDOM as any;
 
 const App: React.FC = () => {
     const navigate = useNavigate();
@@ -307,6 +305,24 @@ const App: React.FC = () => {
         setUser(null);
         navigate('/', { replace: true });
     };
+    
+    const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+        const currentUser = auth.currentUser;
+        if (currentUser && currentUser.email) {
+            const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPassword);
+            try {
+                await currentUser.reauthenticateWithCredential(credential);
+                await currentUser.updatePassword(newPassword);
+                sessionStorage.setItem('loginMessage', 'Password changed successfully. Please log in again.');
+                handleLogout(); 
+                return { success: true, message: 'Password changed successfully. Please log in again.' };
+            } catch (error: any) {
+                console.error("Password change error:", error);
+                return { success: false, message: error.message };
+            }
+        }
+        return { success: false, message: "No user is currently signed in." };
+    };
 
     if (loading) {
         return (
@@ -432,7 +448,7 @@ const App: React.FC = () => {
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onUpdateUserRole={() => {}} onDeleteUser={() => {}} onUpdateUser={async () => {}} onApproveParent={() => {}} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => {}} />} />
-                        <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={async () => ({success: true})} />} />
+                        <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => {}} />} />
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user} />} />
                     </Route>

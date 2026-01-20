@@ -262,14 +262,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
-    const ranked = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    
     const finalData = studentData.map(s => {
-        const rankIndex = ranked.findIndex(r => r.id === s.id);
+        if (s.result === 'FAIL') {
+            return { ...s, rank: '-' as const };
+        }
+        // Find index of first student with same score to handle ties (standard competition ranking 1, 2, 2, 4).
+        const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
         return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
     });
-
+    
     return finalData.sort((a, b) => a.rollNo - b.rollNo);
-  }, [marksData, classStudents, subjectDefinitions, hasActivities]);
+  }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII]);
 
   const handleConfirmSave = async () => {
     if (!examDetails || changedStudents.size === 0) return;
@@ -348,6 +353,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Rank</th>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Result</th>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-l min-w-48 align-middle">Remark</th>
@@ -411,8 +417,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
                             <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{student.grandTotal}</td>
                             <td className="px-3 py-2 text-center border-l">{student.percentage.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center font-bold border-l">{student.rank}</td>
                             <td className="px-3 py-2 text-center border-l">{isClassIXorX ? student.division : '-'}</td>
-                            <td className={`px-3 py-2 text-center font-bold border-l ${student.result === 'PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
+                            <td className={`px-3 py-2 text-center font-bold border-l ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
                             <td className="px-3 py-2 text-sm border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
                                 <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />

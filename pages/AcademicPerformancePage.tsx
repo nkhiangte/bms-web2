@@ -54,6 +54,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
             if (normResultName === normSubjName) return true;
             // Fallbacks for legacy data
             if (normSubjName === 'english' && normResultName === 'english i') return true;
+            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
             return false;
         });

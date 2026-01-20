@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db } from './firebaseConfig';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
@@ -144,8 +144,8 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-            if (firebaseUser) {
-                try {
+            try {
+                if (firebaseUser) {
                     const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
                     if (userDoc.exists) {
                         const userData = userDoc.data();
@@ -170,9 +170,13 @@ const App: React.FC = () => {
                             role: 'pending'
                         });
                     }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                    // Still set user with basic info so app doesn't stay in loading state
+                } else {
+                    setUser(null);
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                // Fallback user state so app doesn't hang in loading
+                if (firebaseUser) {
                     setUser({
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
@@ -181,10 +185,9 @@ const App: React.FC = () => {
                         role: 'pending'
                     });
                 }
-            } else {
-                setUser(null);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         });
         return () => unsubscribe();
     }, []);
@@ -230,7 +233,7 @@ const App: React.FC = () => {
     const handleLogout = () => {
         auth.signOut();
         setUser(null);
-        navigate('/');
+        navigate('/', { replace: true });
     };
 
     if (loading) {
@@ -286,7 +289,7 @@ const App: React.FC = () => {
                     <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={classSchedules} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
                     
-                    {/* Auth Pages - with redirect if already logged in */}
+                    {/* Explicit handling for Auth paths when user is already logged in */}
                     <Route path="/login" element={user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={(e, p) => handleAuthAction(auth.signInWithEmailAndPassword(e, p), "Logged in")} error="" notification="" />} />
                     <Route path="/signup" element={user ? <Navigate to="/portal/dashboard" replace /> : <SignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/parent-registration" element={user ? <Navigate to="/portal/dashboard" replace /> : <ParentRegistrationPage />} />

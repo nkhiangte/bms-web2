@@ -51,12 +51,16 @@ const LoginPage: React.FC<LoginPageProps> = ({
     setFormError("");
     setNotification("");
     setLoading(true);
-    const result = await onLogin(email, password);
-    setLoading(false);
-    
-    if (result && result.success) {
-        // Redirection logic. App.tsx also has Navigate rules, but explicit push is safer.
-        navigate('/portal/dashboard');
+    try {
+      const result = await onLogin(email, password);
+      if (result && result.success) {
+        // Explicitly navigate to ensure the user is moved out of the login page
+        navigate('/portal/dashboard', { replace: true });
+      }
+    } catch (err: any) {
+      setFormError(err.message || "An unexpected error occurred during login.");
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,17 +1,16 @@
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: any;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
 }
 
 interface ErrorBoundaryProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
-// Fixed: Using React.Component explicitly to ensure inheritance works correctly and setState/props are recognized
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
@@ -23,9 +22,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error: error };
   }
 
-  componentDidCatch(error: any, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    // Fixed: setState is correctly inherited from React.Component
+    // Fix: setState is correctly inherited from React.Component via explicit inheritance
     this.setState({ errorInfo: errorInfo });
   }
 
@@ -110,7 +109,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    // Fixed: props is inherited from React.Component and is explicitly recognized when extending React.Component
+    // Fix: props is correctly inherited from Component by using the Component named import
     return this.props.children || null;
   }
 }

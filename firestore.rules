@@ -128,7 +128,7 @@ service cloud.firestore {
     // ---------------------------
     match /students/{studentId} {
       // `list` is restricted to staff to prevent broad queries.
-      // Parent `where in` queries are authorized by the `get` rule below.
+      // Parent `where in` queries on `documentId()` are authorized by the `get` rule below.
       allow list: if isStaff();
       allow get: if canAccessStudent(studentId);
       allow create, update, delete: if isStaff();
@@ -152,9 +152,8 @@ service cloud.firestore {
     // Conduct Logs
     // ---------------------------
     match /conductLog/{docId} {
-      // `list` is restricted to staff.
-      // Parent `where in` queries are authorized by the `get` rule below.
-      allow list: if isStaff();
+      // Parents can `list` only when using a `where` clause secured by the `get` rule.
+      allow list: if isStaff() || isParent();
       allow get: if isStaff() || (isParent() && resource.data.studentId in getParentStudentIds());
       allow create, update, delete: if isStaff();
     }
@@ -205,8 +204,8 @@ service cloud.firestore {
     }
 
     match /hostelDisciplineLog/{docId} {
-      // `list` is restricted. Parent queries are authorized by `get`.
-      allow list: if isWardenOrAdmin();
+      // Parents can `list` only when using a `where` clause secured by the `get` rule.
+      allow list: if isWardenOrAdmin() || isParent();
       allow get: if isWardenOrAdmin() ||
                  (isParent() && resource.data.studentId in getParentStudentIds());
       allow create, update, delete: if isWardenOrAdmin();

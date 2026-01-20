@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -385,7 +386,7 @@ const App: React.FC = () => {
         }
     };
 
-    const handleParentSignUp = async (name: string, email: string, password: string, studentId: string, dateOfBirth: string) => {
+    const handleParentSignUp = async (name: string, email: string, password: string, studentId: string, dateOfBirth: string, studentName: string, relationship: string) => {
         try {
             const methods = await auth.fetchSignInMethodsForEmail(email);
             if (methods.length > 0) {
@@ -398,10 +399,10 @@ const App: React.FC = () => {
                 await user.updateProfile({ displayName: name });
                 
                 const studentClaim: StudentClaim = {
-                    fullName: 'N/A', // This form doesn't capture student's name
+                    fullName: studentName,
                     studentId: studentId,
                     dob: dateOfBirth,
-                    relationship: 'Parent', // Assuming 'Parent' as it's not specified
+                    relationship: relationship,
                 };
 
                 await db.collection('users').doc(user.uid).set({

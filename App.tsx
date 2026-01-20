@@ -173,40 +173,52 @@ const App: React.FC = () => {
         setNotifications(prev => [...prev, { id, message, type, title }]);
     };
 
-    // Firebase Auth Setup
+    // Firebase Auth Setup with Real-time User Doc Sync
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-            try {
-                if (firebaseUser) {
-                    const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        setUser({
-                            uid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                            displayName: firebaseUser.displayName,
-                            photoURL: firebaseUser.photoURL,
-                            role: userData?.role || 'pending',
-                            studentIds: userData?.studentIds,
-                            claimedStudentId: userData?.claimedStudentId,
-                            claimedDateOfBirth: userData?.claimedDateOfBirth,
-                            claimedStudents: userData?.claimedStudents,
-                            registrationDetails: userData?.registrationDetails
-                        });
-                    } else {
-                        setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
+        let userDocUnsubscribe: () => void;
+
+        const authUnsubscribe = auth.onAuthStateChanged(firebaseUser => {
+            if (userDocUnsubscribe) userDocUnsubscribe(); // Unsubscribe from previous user listener
+
+            if (firebaseUser) {
+                userDocUnsubscribe = db.collection('users').doc(firebaseUser.uid).onSnapshot(
+                    userDoc => {
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            setUser({
+                                uid: firebaseUser.uid,
+                                email: firebaseUser.email,
+                                displayName: firebaseUser.displayName,
+                                photoURL: firebaseUser.photoURL,
+                                role: userData?.role || 'pending',
+                                studentIds: userData?.studentIds,
+                                claimedStudentId: userData?.claimedStudentId,
+                                claimedDateOfBirth: userData?.claimedDateOfBirth,
+                                claimedStudents: userData?.claimedStudents,
+                                registrationDetails: userData?.registrationDetails,
+                            });
+                        } else {
+                            // User is authenticated but doesn't have a user document yet (e.g., during signup)
+                            setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
+                        }
+                        setLoading(false);
+                    },
+                    error => {
+                        console.error("Error listening to user document:", error);
+                        setUser(null);
+                        setLoading(false);
                     }
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-                if (firebaseUser) setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
-            } finally {
+                );
+            } else {
+                setUser(null);
                 setLoading(false);
             }
         });
-        return () => unsubscribe();
+
+        return () => {
+            authUnsubscribe();
+            if (userDocUnsubscribe) userDocUnsubscribe();
+        };
     }, []);
 
     // Core Global Real-time Sync
@@ -309,7 +321,7 @@ const App: React.FC = () => {
     const fetchStudentAttendanceForMonth = async (grade: Grade, year: number, month: number) => {
         const start = `${year}-${String(month).padStart(2, '0')}-01`;
         const end = `${year}-${String(month).padStart(2, '0')}-31`;
-        const snapshot = await db.collection('studentAttendance').where('__name__', '>=', start).where('__name__', '<=', end).get();
+        const snapshot = await db.collection('studentAttendance').where(firebase.firestore.FieldPath.documentId(), '>=', start).where(firebase.firestore.FieldPath.documentId(), '<=', end).get();
         const data: any = {};
         snapshot.docs.forEach(doc => {
             if (doc.data()[grade]) data[doc.id] = doc.data()[grade];
@@ -518,6 +530,7 @@ const App: React.FC = () => {
                         <Route path="/portal/insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
                         <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => {}} />} />
+                        <Route path="/portal/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
                         <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={() => {}} user={user} onResetAllMarks={async () => {}} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />

@@ -138,10 +138,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
 
-  // FIX: Initialization logic should re-run if marksData is empty but classStudents are available.
+  // FIX: Initialization logic now fallbacks to 'marks' if 'examMarks' is missing for activity-based grades.
   useEffect(() => {
     if (classStudents.length === 0) return;
-    if (Object.keys(marksData).length > 0 && changedStudents.size > 0) return; // Don't wipe unsaved changes
+    if (Object.keys(marksData).length > 0 && changedStudents.size > 0) return;
 
     const initialMarks: MarksData = {};
     const initialAttendance: AttendanceData = {};
@@ -157,7 +157,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (subjectDef.gradingSystem === 'OABC') {
             initialMarks[student.id][subjectDef.name] = result?.grade ?? null;
         } else if (hasActivities) {
-            initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? null;
+            // FALLBACK: If examMarks is missing but marks exists, it's legacy data. Use marks as examMarks.
+            initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else {
             initialMarks[student.id][subjectDef.name] = result?.marks ?? null;

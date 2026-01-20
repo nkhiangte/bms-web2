@@ -6,6 +6,7 @@ import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRA
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '../components/Icons';
 import ActivityLogModal from '../components/ActivityLogModal';
 import ExamPerformanceCard from '../components/ExamPerformanceCard';
+import { normalizeSubjectName } from '../utils';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -48,10 +49,12 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
       const existingExam = studentPerformance.find(e => e.id === examTemplate.id);
       const results: SubjectMark[] = subjects.map(sd => {
         const existingResult = existingExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        
+        // FIX: Legacy Data Mapping. If examMarks is missing but marks exists, it's old format data.
         return {
           subject: sd.name,
           marks: existingResult?.marks,
-          examMarks: existingResult?.examMarks,
+          examMarks: existingResult?.examMarks ?? existingResult?.marks,
           activityMarks: existingResult?.activityMarks,
           activityLog: existingResult?.activityLog,
           grade: existingResult?.grade,

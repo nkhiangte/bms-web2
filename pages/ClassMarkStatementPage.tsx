@@ -138,7 +138,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
 
-  // FIX: Initialization logic now fallbacks to 'marks' if 'examMarks' is missing for activity-based grades.
   useEffect(() => {
     if (classStudents.length === 0) return;
     if (Object.keys(marksData).length > 0 && changedStudents.size > 0) return;
@@ -157,7 +156,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (subjectDef.gradingSystem === 'OABC') {
             initialMarks[student.id][subjectDef.name] = result?.grade ?? null;
         } else if (hasActivities) {
-            // FALLBACK: If examMarks is missing but marks exists, it's legacy data. Use marks as examMarks.
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else {
@@ -325,40 +323,82 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         
         <div className="mt-6 overflow-x-auto border rounded-lg">
             <table id="mark-statement-table" className="min-w-full text-sm">
-                <thead className="bg-slate-100">
+                 <thead className="bg-slate-100">
                     <tr>
-                        <th className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16">No</th>
-                        <th className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48">Student Name</th>
-                        {subjectDefinitions.map(sd => (
-                            <th key={sd.name} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">
-                                {sd.name}
-                            </th>
-                        ))}
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">Total</th>
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">Percentage</th>
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">{isClassIXorX ? 'Division' : 'Result'}</th>
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">Result</th>
-                        <th className="px-3 py-2 text-left font-bold text-slate-800 border-b border-l min-w-48">Remark</th>
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">Working Days</th>
-                        <th className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">Days Present</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
+                        
+                        {subjectDefinitions.map(sd => {
+                            if (hasActivities && sd.gradingSystem !== 'OABC') {
+                                return <th key={sd.name} colSpan={2} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">{sd.name}</th>;
+                            } else {
+                                return <th key={sd.name} rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{sd.name}</th>;
+                            }
+                        })}
+                        
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Result</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-l min-w-48 align-middle">Remark</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Working Days</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Days Present</th>
                     </tr>
+                    {hasActivities && (
+                        <tr>
+                            {subjectDefinitions.flatMap(sd => 
+                                sd.gradingSystem !== 'OABC' ? [
+                                    <th key={`${sd.name}-exam`} className="px-2 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l">Exam</th>,
+                                    <th key={`${sd.name}-activity`} className="px-2 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l border-r">Activity</th>
+                                ] : []
+                            )}
+                        </tr>
+                    )}
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map(student => (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
                             <td className="px-3 py-2 font-bold text-center border-r sticky left-0 bg-inherit">{student.rollNo}</td>
                             <td className="px-3 py-2 font-medium border-r">{student.name}</td>
-                            {subjectDefinitions.map(sd => (
-                                <td key={sd.name} className="px-1 py-1 border-l text-center">
-                                    <input
-                                        type="number"
-                                        value={marksData[student.id]?.[sd.name] ?? marksData[student.id]?.[sd.name + '_exam'] ?? ''}
-                                        onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, hasActivities ? 'exam' : 'total')}
-                                        className="form-input w-20 text-center"
-                                        placeholder="-"
-                                    />
-                                </td>
-                            ))}
+                            
+                            {subjectDefinitions.map(sd => {
+                                const isOABC = sd.gradingSystem === 'OABC';
+
+                                if (isOABC) {
+                                    return (
+                                        <td key={sd.name} colSpan={1} className="px-1 py-1 border-l text-center">
+                                            <select
+                                                value={marksData[student.id]?.[sd.name] as string ?? ''}
+                                                onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
+                                                className="form-select w-20 text-center"
+                                            >
+                                                <option value="">-</option>
+                                                {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                                            </select>
+                                        </td>
+                                    );
+                                }
+
+                                if (hasActivities) {
+                                    return (
+                                        <React.Fragment key={sd.name}>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                        </React.Fragment>
+                                    );
+                                }
+                                
+                                return (
+                                    <td key={sd.name} className="px-1 py-1 border-l text-center">
+                                        <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} className="form-input w-20 text-center" placeholder="-" />
+                                    </td>
+                                );
+                            })}
+
                             <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{student.grandTotal}</td>
                             <td className="px-3 py-2 text-center border-l">{student.percentage.toFixed(2)}</td>
                             <td className="px-3 py-2 text-center border-l">{isClassIXorX ? student.division : '-'}</td>

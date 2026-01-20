@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { User, Student } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronDownIcon } from '../components/Icons';
+import { User, Student, StudentClaim } from '../types';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon } from '../components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { firebase } from '../firebaseConfig';
@@ -20,7 +20,7 @@ interface ParentsManagementPageProps {
 
 const DetailItem: React.FC<{ label: string; value?: string | null }> = ({ label, value }) => (
     <div>
-        <dt className="text-xs font-semibold text-slate-500 uppercase">{label}</dt>
+        <dt className="text-xs font-semibold text-slate-500">{label}</dt>
         <dd className="text-sm text-slate-800">{value || '-'}</dd>
     </div>
 );
@@ -102,11 +102,20 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
-                            {parentUsers.map(user => (
+                            {parentUsers.map(user => {
+                                const claims: StudentClaim[] = user.claimedStudents || 
+                                (user.claimedStudentId ? [{
+                                    studentId: user.claimedStudentId,
+                                    dob: user.claimedDateOfBirth || '',
+                                    fullName: 'Legacy Claim',
+                                    relationship: 'Parent'
+                                }] : []);
+
+                                return (
                                 <React.Fragment key={user.uid}>
                                     <tr onClick={() => toggleExpand(user.uid)} className="cursor-pointer hover:bg-slate-50">
                                         <td className="px-2 py-3 text-center">
-                                            <ChevronDownIcon className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedUserId === user.uid ? 'rotate-180' : ''}`} />
+                                            <ChevronUpIcon className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedUserId === user.uid ? '' : 'rotate-180'}`} />
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
@@ -141,12 +150,12 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                     </tr>
                                     {expandedUserId === user.uid && (
                                         <tr>
-                                            <td colSpan={6} className="p-0 bg-slate-100">
+                                            <td colSpan={6} className="p-0">
                                                 <div className="p-6 bg-slate-50 border-y-2 border-sky-200 animate-fade-in">
-                                                    <h4 className="text-lg font-bold text-slate-800 mb-4">Full Parent Biodata</h4>
+                                                    <h4 className="text-xl font-bold text-slate-800 mb-4">Full Parent Biodata</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                         <div className="space-y-4">
-                                                            <h5 className="font-bold text-slate-700">Personal & Contact</h5>
+                                                            <h5 className="text-lg font-bold text-slate-700">Personal & Contact</h5>
                                                             <DetailItem label="Relationship to Student(s)" value={user.registrationDetails?.relationship} />
                                                             <DetailItem label="Full Address" value={user.registrationDetails ? `${user.registrationDetails.address}, ${user.registrationDetails.city}, ${user.registrationDetails.state} - ${user.registrationDetails.zip}` : ''} />
                                                             <DetailItem label="Preferred Language" value={user.registrationDetails?.language} />
@@ -159,8 +168,8 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                                         </div>
                                                         
                                                         <div className="space-y-2">
-                                                            <h5 className="font-bold text-slate-700">Claimed Students for Verification</h5>
-                                                            {(user.claimedStudents && user.claimedStudents.length > 0) ? user.claimedStudents.map((claim, index) => (
+                                                            <h5 className="text-lg font-bold text-slate-700">Claimed Students for Verification</h5>
+                                                            {(claims && claims.length > 0) ? claims.map((claim, index) => (
                                                                 <div key={index} className="p-3 bg-white border rounded-lg">
                                                                     <p className="font-semibold">{claim.fullName}</p>
                                                                     <p className="text-sm text-slate-600">ID: <span className="font-mono">{claim.studentId}</span></p>
@@ -171,7 +180,7 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                                         </div>
 
                                                         <div className="space-y-4">
-                                                            <h5 className="font-bold text-slate-700">Agreements & Security</h5>
+                                                            <h5 className="text-lg font-bold text-slate-700">Agreements & Security</h5>
                                                             <DetailItem label="Agreed to Terms" value={user.registrationDetails?.agreements?.terms ? 'Yes' : 'No'} />
                                                             <DetailItem label="Agreed to Privacy Policy" value={user.registrationDetails?.agreements?.privacy ? 'Yes' : 'No'} />
                                                             <DetailItem label="Identity Affirmed" value={user.registrationDetails?.agreements?.identity ? 'Yes' : 'No'} />
@@ -184,7 +193,7 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                         </tr>
                                     )}
                                 </React.Fragment>
-                            ))}
+                            )}}
                         </tbody>
                     </table>
                 </div>

@@ -225,38 +225,67 @@ const App: React.FC = () => {
 
     // Authenticated Real-time Sync
     useEffect(() => {
-        if (user) {
-             const unsubStudents = db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student))));
-             const unsubConduct = db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))));
-             const unsubTc = db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-             const unsubService = db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-             
-             let unsubUsers = () => {};
-             let unsubAdmissions = () => {};
-             if (user.role === 'admin') {
-                 unsubUsers = db.collection('users').onSnapshot(s => setAllUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))));
-                 unsubAdmissions = db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission))));
-             }
-
-             // Attendance Today
-             const todayStr = new Date().toISOString().split('T')[0];
-             const unsubStuAtt = db.collection('studentAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStudentAttendance(d.data() as any));
-             const unsubStaAtt = db.collection('staffAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStaffAttendance(d.data() as StaffAttendanceRecord));
-
-             // Hostel Sync
-             const unsubResidents = db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident))));
-             const unsubHostelStaff = db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))));
-             const unsubHostelInv = db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem))));
-             const unsubHostelDisc = db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry))));
-             const unsubChores = db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setHostelChoreRoster(d.data() as ChoreRoster));
-
-             return () => {
-                 unsubStudents(); unsubConduct(); unsubUsers(); unsubAdmissions(); unsubTc(); unsubService();
-                 unsubResidents(); unsubHostelStaff(); unsubHostelInv(); unsubHostelDisc(); unsubChores();
-                 unsubStuAtt(); unsubStaAtt();
-             }
+        if (!user) {
+            // Clear all data on logout
+            setStudents([]); setConductLog([]); setTcRecords([]); setServiceCerts([]);
+            setAllUsers([]); setOnlineAdmissions([]);
+            setCurrentStudentAttendance(null); setCurrentStaffAttendance(null);
+            setHostelResidents([]); setHostelStaff([]); setHostelInventory([]); setHostelDisciplineLog([]); setHostelChoreRoster({});
+            return;
+        };
+    
+        const isStaff = ['admin', 'user', 'warden'].includes(user.role);
+        const isAdmin = user.role === 'admin';
+        const isParent = user.role === 'parent';
+        const isWardenOrAdmin = isAdmin || user.role === 'warden';
+        
+        const unsubscribers: (() => void)[] = [];
+    
+        // STUDENT & CONDUCT DATA
+        if (isStaff) {
+            unsubscribers.push(db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student)))));
+            unsubscribers.push(db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))));
+        } else if (isParent && user.studentIds && user.studentIds.length > 0) {
+            unsubscribers.push(db.collection('students').where(firebase.firestore.FieldPath.documentId(), 'in', user.studentIds).onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student)))));
+            unsubscribers.push(db.collection('conductLog').where('studentId', 'in', user.studentIds).onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))));
         }
-    }, [user?.uid, user?.role]);
+    
+        // GENERAL STAFF-ONLY DATA
+        if (isStaff) {
+            unsubscribers.push(db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() })))));
+            unsubscribers.push(db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() })))));
+        }
+        
+        // ADMIN-ONLY DATA
+        if (isAdmin) {
+            unsubscribers.push(db.collection('users').onSnapshot(s => setAllUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User)))));
+            unsubscribers.push(db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))));
+        }
+    
+        // HOSTEL DATA
+        if (isWardenOrAdmin) {
+            unsubscribers.push(db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident)))));
+            unsubscribers.push(db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff)))));
+            unsubscribers.push(db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem)))));
+            unsubscribers.push(db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)))));
+            unsubscribers.push(db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setHostelChoreRoster(d.data() as ChoreRoster)));
+        } else if (isParent && user.studentIds && user.studentIds.length > 0) {
+            // Parents only get their children's discipline logs
+            unsubscribers.push(db.collection('hostelDisciplineLog').where('studentId', 'in', user.studentIds).onSnapshot(s => {
+                setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)));
+            }));
+        }
+    
+        // DATA FOR ALL AUTHENTICATED USERS (STAFF & PARENTS)
+        const todayStr = new Date().toISOString().split('T')[0];
+        unsubscribers.push(db.collection('studentAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStudentAttendance(d.data() as any)));
+        unsubscribers.push(db.collection('staffAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStaffAttendance(d.data() as StaffAttendanceRecord)));
+    
+        // Cleanup function
+        return () => {
+            unsubscribers.forEach(unsub => unsub());
+        };
+    }, [user]);
 
     // HANDLERS
     const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {

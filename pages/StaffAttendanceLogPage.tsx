@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade } from '../types';
-import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, CalendarDaysIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, DocumentReportIcon } from '../components/Icons';
 import { exportAttendanceToCsv } from '../utils';
 import DateRangeExportModal from '../components/DateRangeExportModal';
 
@@ -37,14 +36,11 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
             const childGrades = [...new Set(children.map(c => c.grade))];
             const teacherIds = new Set<string>();
 
-            // Get class teachers
             childGrades.forEach(grade => {
-                // FIX: Explicitly cast 'grade' to Grade to resolve index type error.
                 const classTeacherId = gradeDefinitions[grade as Grade]?.classTeacherId;
                 if (classTeacherId) teacherIds.add(classTeacherId);
             });
 
-            // Get subject teachers
             staff.forEach(staffMember => {
                 staffMember.assignedSubjects?.forEach(assignment => {
                     if (childGrades.includes(assignment.grade)) {
@@ -67,6 +63,10 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
     }, [selectedMonth]);
 
     useEffect(() => {
+        if (user.role === 'parent') {
+            setIsLoading(false);
+            return;
+        }
         const fetchData = async () => {
             setIsLoading(true);
             try {
@@ -80,7 +80,7 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
             }
         };
         fetchData();
-    }, [year, month, fetchStaffAttendanceForMonth]);
+    }, [year, month, fetchStaffAttendanceForMonth, user.role]);
 
     const handleRangeExport = async (startDate: string, endDate: string) => {
         try {
@@ -126,6 +126,21 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
             return { staffId: member.id, summary };
         });
     }, [staffToDisplay, attendanceData, daysInMonth, year, month]);
+    
+    if (user.role === 'parent') {
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <h1 className="text-2xl font-bold text-slate-800">Teacher Attendance Log</h1>
+            <p className="mt-4 text-slate-600">
+              This feature is currently unavailable for parents due to a security upgrade.
+            </p>
+            <p className="mt-2 text-slate-500">
+              Please contact the school office for any inquiries.
+            </p>
+            <button onClick={() => navigate(-1)} className="mt-6 btn btn-secondary">Go Back</button>
+          </div>
+        );
+    }
 
     return (
         <>
@@ -140,8 +155,8 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
             </div>
             <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">{user.role === 'parent' ? "Teacher Attendance Logs" : "Staff Attendance Logs"}</h1>
-                    <p className="text-slate-600 mt-1">{user.role === 'parent' ? "View monthly attendance records for your children's teachers." : "View monthly attendance records for all staff members."}</p>
+                    <h1 className="text-3xl font-bold text-slate-800">Staff Attendance Logs</h1>
+                    <p className="text-slate-600 mt-1">View monthly attendance records for all staff members.</p>
                 </div>
                  <div className="flex items-center gap-3">
                     <input 
@@ -166,8 +181,7 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
                     <span className="text-slate-600 font-semibold">Loading Attendance Data...</span>
                 </div>
             ) : (
-                staffToDisplay.length > 0 ? (
-                    <div className="overflow-x-auto border rounded-lg">
+                <div className="overflow-x-auto border rounded-lg">
                     <table className="min-w-full text-xs">
                         <thead className="bg-slate-100">
                             <tr>
@@ -202,12 +216,6 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
                         </tbody>
                     </table>
                 </div>
-                ) : (
-                    <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
-                        <p className="text-slate-700 text-lg font-semibold">No Teachers Found</p>
-                        <p className="text-slate-600 mt-2">Could not find any class teachers or subject teachers assigned to your children's grades.</p>
-                    </div>
-                )
             )}
         </div>
         <DateRangeExportModal

@@ -1,10 +1,12 @@
 
 
+
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
 // FIX: Added 'AcademicCapIcon' and 'CalendarDaysIcon' to the import list to resolve a 'Cannot find name' error.
-import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon } from './Icons';
+import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon, UserIcon } from './Icons';
 
 const { NavLink } = ReactRouterDOM as any;
 
@@ -16,6 +18,7 @@ interface SidebarProps {
 
 const portalNavLinks = [
     { name: 'Portal Home', path: '/portal/dashboard', parentPath: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden', 'pending_parent'] },
+    { name: 'My Profile', path: '/portal/profile', icon: <UserIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'warden'] },
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -98,7 +101,7 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
                         
                         return (
                             <div key={item.name} onClick={onLinkClick}>
-                                <NavItem to={path} end={path.endsWith('dashboard') || item.path.includes(':studentId/attendance-log')}>
+                                <NavItem to={path} end={path.endsWith('dashboard') || item.path.includes(':studentId/attendance-log') || item.path.endsWith('/profile')}>
                                     {item.icon}
                                     <span className="ml-3">{item.name}</span>
                                 </NavItem>

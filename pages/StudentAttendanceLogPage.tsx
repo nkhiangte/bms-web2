@@ -12,7 +12,6 @@ interface StudentAttendanceLogPageProps {
 }
 
 const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ students, fetchStudentAttendanceForMonth, user }) => {
-  // Fix: Cast untyped useParams call to specific type to resolve build error
   const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
@@ -30,6 +29,10 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
   }, [user, student]);
 
   useEffect(() => {
+    if (user.role === 'parent') {
+        setIsLoading(false);
+        return;
+    }
     const fetchAttendance = async () => {
       if (!student) return;
       
@@ -38,11 +41,9 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
       const month = currentDate.getMonth() + 1;
       
       try {
-        // This function fetches data for the entire grade for a month.
         const fullMonthData = await fetchStudentAttendanceForMonth(student.grade, year, month);
         const studentMonthData: Record<string, StudentAttendanceStatus | undefined> = {};
         
-        // We then extract just the data for our specific student.
         Object.entries(fullMonthData).forEach(([date, gradeRecords]) => {
             if (gradeRecords[student.id]) {
                 studentMonthData[date] = gradeRecords[student.id];
@@ -57,7 +58,7 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
       }
     };
     fetchAttendance();
-  }, [currentDate, student, fetchStudentAttendanceForMonth]);
+  }, [currentDate, student, fetchStudentAttendanceForMonth, user.role]);
 
   const changeMonth = (offset: number) => {
     setCurrentDate(prev => {
@@ -82,7 +83,7 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        if (date.getDay() !== 0 && date.getDay() !== 6) { // Sunday is 0, Saturday is 6, not working days
+        if (date.getDay() !== 0) { // Sunday is 0, not a working day
             const dateStr = date.toISOString().split('T')[0];
             const status = monthlyAttendance[dateStr];
             if(status) {
@@ -110,7 +111,7 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
         const date = new Date(year, month, day);
         const dateStr = date.toISOString().split('T')[0];
         const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+        const isWeekend = dayOfWeek === 0; // Sunday
 
         const status = monthlyAttendance[dateStr];
         let statusClass = 'bg-white';
@@ -165,6 +166,22 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
         </div>
       );
   }
+  
+  if (user.role === 'parent') {
+    return (
+        <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <h1 className="text-2xl font-bold text-slate-800">Attendance Log</h1>
+            <p className="mt-4 text-slate-600">
+                The detailed attendance calendar view for parents is currently undergoing a security upgrade.
+            </p>
+            <p className="mt-2 text-slate-500">
+                For attendance information, please contact the school office. We apologize for any inconvenience.
+            </p>
+            <button onClick={() => navigate(-1)} className="mt-6 btn btn-secondary">Go Back</button>
+        </div>
+    );
+  }
+
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">

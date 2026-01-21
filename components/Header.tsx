@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
-import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon } from './Icons';
+import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon, UserIcon } from './Icons';
 import PhotoWithFallback from './PhotoWithFallback';
 
 const { Link } = ReactRouterDOM as any;
@@ -93,6 +93,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onToggleSidebar, classN
                     onMouseLeave={() => setIsMenuOpen(false)}
                 >
                     <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                        <Link
+                            to="/portal/profile"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                            role="menuitem"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            <UserIcon className="w-5 h-5"/>
+                            My Profile
+                        </Link>
                         <Link
                             to="/portal/change-password"
                             className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"

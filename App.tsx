@@ -3,6 +3,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -21,7 +23,7 @@ import {
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
-    StudentClaim
+    StudentClaim, ExamRoutine, DailyRoutine
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -87,6 +89,7 @@ import RoutinePage from './pages/public/RoutinePage';
 import ExamSelectionPage from './pages/ExamSelectionPage';
 import ExamClassSelectionPage from './pages/ExamClassSelectionPage';
 import SitemapEditorPage from './pages/SitemapEditorPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 // Public Pages
 import PublicHomePage from './pages/public/PublicHomePage';
@@ -125,7 +128,6 @@ import ScienceTourPage from './pages/public/ScienceTourPage';
 import IncentiveAwardsPage from './pages/public/IncentiveAwardsPage';
 import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
-import { examRoutines } from './constants';
 
 const App: React.FC = () => {
     const navigate = useNavigate();
@@ -143,6 +145,8 @@ const App: React.FC = () => {
     const [tcRecords, setTcRecords] = useState<any[]>([]);
     const [serviceCerts, setServiceCerts] = useState<any[]>([]);
     const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
+    const [examSchedules, setExamSchedules] = useState<ExamRoutine[]>([]);
+    const [classSchedules, setClassSchedules] = useState<Record<string, DailyRoutine>>(timetableData);
     
     // Hostel State
     const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
@@ -245,9 +249,19 @@ const App: React.FC = () => {
         const unsubGradeDefs = db.collection('config').doc('gradeDefinitions').onSnapshot(d => d.exists && setGradeDefinitions(d.data() as any));
         const unsubAcademic = db.collection('settings').doc('academic').onSnapshot(d => d.exists && setAcademicYear(d.data()?.currentYear || "2025-2026"));
         const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(d => d.exists && setSitemapContent(d.data()?.content || ''));
+        const unsubExams = db.collection('examRoutines').onSnapshot(s => setExamSchedules(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
+        const unsubClasses = db.collection('classRoutines').onSnapshot(snapshot => {
+            const routines: Record<string, DailyRoutine> = { ...timetableData }; // Start with fallback
+            snapshot.forEach(doc => {
+                if (doc.data()?.schedule) {
+                    routines[doc.id] = doc.data().schedule as DailyRoutine;
+                }
+            });
+            setClassSchedules(routines);
+        });
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses();
         };
     }, []);
 
@@ -412,6 +426,26 @@ const App: React.FC = () => {
             addNotification(e.message, "error", "User Update Failed");
         }
     };
+    
+    const handleUpdateUserProfile = async (updates: { displayName?: string, photoURL?: string }) => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            addNotification("You must be logged in to update your profile.", "error");
+            return { success: false, message: "No user logged in." };
+        }
+
+        try {
+            await currentUser.updateProfile(updates);
+            await db.collection('users').doc(currentUser.uid).update(updates);
+            addNotification("Profile updated successfully!", "success");
+            return { success: true };
+        } catch (error: any) {
+            console.error("Profile update error:", error);
+            addNotification(error.message, "error", "Update Failed");
+            return { success: false, message: error.message };
+        }
+    };
+
 
     const handleParentSignUp = async (name: string, email: string, password: string, studentId: string, dateOfBirth: string, studentName: string, relationship: string) => {
         try {
@@ -480,6 +514,42 @@ const App: React.FC = () => {
             return { success: false, message: message };
         }
     };
+    
+    const handleSaveExamRoutine = async (routine: Omit<ExamRoutine, 'id'>, id?: string): Promise<boolean> => {
+        try {
+            if (id) {
+                await db.collection('examRoutines').doc(id).update(routine);
+                addNotification("Exam routine updated successfully", "success");
+            } else {
+                await db.collection('examRoutines').add(routine);
+                addNotification("Exam routine added successfully", "success");
+            }
+            return true;
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save Failed");
+            return false;
+        }
+    };
+
+    const handleDeleteExamRoutine = async (routine: ExamRoutine) => {
+        if (window.confirm(`Are you sure you want to delete the routine "${routine.title}"? This action cannot be undone.`)) {
+            try {
+                await db.collection('examRoutines').doc(routine.id).delete();
+                addNotification("Exam routine deleted successfully.", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Deletion Failed");
+            }
+        }
+    };
+    
+    const handleUpdateClassRoutine = async (day: string, routine: DailyRoutine) => {
+        try {
+            await db.collection('classRoutines').doc(day).set({ schedule: routine });
+            addNotification(`${day}'s class routine updated successfully`, "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Update Failed");
+        }
+    };
 
     if (loading) {
         return (
@@ -531,7 +601,7 @@ const App: React.FC = () => {
                     <Route path="/achievements/science/incentive-awards" element={<IncentiveAwardsPage />} />
                     <Route path="/achievements/science/mathematics-competition" element={<MathematicsCompetitionPage />} />
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
-                    <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
+                    <Route path="/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
@@ -577,7 +647,7 @@ const App: React.FC = () => {
                         <Route path="/portal/insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
                         <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => undefined} />} />
-                        <Route path="/portal/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
+                        <Route path="/portal/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                         <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={() => undefined} user={user} onResetAllMarks={async () => undefined} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />
@@ -611,6 +681,7 @@ const App: React.FC = () => {
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
                         <Route path="/portal/parents" element={<ParentsManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
                         <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => undefined} />} />
+                        <Route path="/portal/profile" element={<UserProfilePage currentUser={user} onUpdateProfile={handleUpdateUserProfile} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => undefined} />} />
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />

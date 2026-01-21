@@ -162,15 +162,11 @@ service cloud.firestore {
     // Attendance
     // ---------------------------
     match /studentAttendance/{docId} {
-      // Parents need to read attendance to see their child's status
-      allow read: if isStaff() || isParent();
-      allow write, delete: if isStaff();
+      allow read, write, delete: if isStaff();
     }
 
     match /staffAttendance/{docId} {
-      // Parents view teacher attendance logs
-      allow read: if isStaff() || isParent();
-      allow write, delete: if isStaff();
+      allow read, write, delete: if isStaff();
     }
 
     // ---------------------------

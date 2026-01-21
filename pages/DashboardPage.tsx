@@ -1,24 +1,22 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon } from '../components/Icons';
+import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon } from '../components/Icons';
 import AcademicYearForm from '../components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, OnlineAdmission } from '../types';
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType } from '../types';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface DashboardPageProps {
   user: User;
-  onAddStudent: () => void;
   studentCount: number;
   academicYear: string;
-  onSetAcademicYear: (year: string) => void;
-  allUsers: User[];
   assignedGrade: Grade | null;
   assignedSubjects: SubjectAssignment[];
-  isReminderServiceActive: boolean;
-  onToggleReminderService: (isActive: boolean) => void;
   calendarEvents: CalendarEvent[];
-  onlineAdmissions: OnlineAdmission[];
+  pendingAdmissionsCount: number;
+  pendingParentCount: number;
+  pendingStaffCount: number;
 }
 
 const DashboardCard: React.FC<{
@@ -125,7 +123,7 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, studentCount, academicYear, onSetAcademicYear, allUsers, assignedGrade, assignedSubjects, isReminderServiceActive, onToggleReminderService, calendarEvents, onlineAdmissions }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount }) => {
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
   
@@ -143,15 +141,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
   
   if (!academicYear || isChangingYear) {
     return <AcademicYearForm onSetAcademicYear={(year) => {
-        onSetAcademicYear(year);
+        // This is a placeholder; actual update would be in App.tsx
+        console.log("Selected new year:", year);
         setIsChangingYear(false);
     }} />;
   }
 
   const isAdmin = user.role === 'admin';
-  const pendingStaffCount = allUsers.filter(u => u.role === 'pending').length;
-  const pendingParentCount = allUsers.filter(u => u.role === 'pending_parent').length;
-  const pendingAdmissionsCount = onlineAdmissions.filter(a => a.status === 'pending').length;
+  const totalPending = pendingAdmissionsCount + pendingParentCount + pendingStaffCount;
   
   const upcomingEvents = useMemo(() => {
     if (!calendarEvents) return [];
@@ -191,7 +188,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
         }
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Cards for All Users */}
+            {isAdmin && (
+                <DashboardCard
+                    title="Admin Panel"
+                    description="Access all administrative functions."
+                    icon={<CogIcon className="w-7 h-7" />}
+                    count={totalPending > 0 ? totalPending : undefined}
+                    color="rose"
+                    action={<Link to="/portal/admin">Go to Admin Panel</Link>}
+                />
+            )}
              <DashboardCard
                 title={isAdmin ? "Manage Students" : "View Students"}
                 description={isAdmin ? "View, edit, or delete student records." : "Browse all active students in the school."}
@@ -260,7 +266,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
                 description="Add a new student to the database."
                 icon={<PlusIcon className="w-7 h-7" />}
                 color="emerald"
-                action={<button onClick={onAddStudent} disabled={!isAdmin}>Add New Student</button>}
+                action={<button onClick={() => navigate('/portal/students')} disabled={!isAdmin}>Add New Student</button>}
             />
             <DashboardCard
                 title="Manage Classes"
@@ -323,84 +329,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, onAddStudent, stude
                 action={<Link to="/portal/calendar">View Calendar</Link>}
             />
         
-            <DashboardCard
-                title={isAdmin ? "Manage Staff" : "View Staff"}
-                description={isAdmin ? "Add, view, and manage staff profiles." : "View all staff profiles."}
+            {!isAdmin && <DashboardCard
+                title={"View Staff"}
+                description={"View all staff profiles."}
                 icon={<BriefcaseIcon className="w-7 h-7" />}
                 color="sky"
-                action={<Link to="/portal/staff">{isAdmin ? "Manage Staff" : "View Staff"}</Link>}
-            />
-           
-            {/* Admin-only cards */}
-            {isAdmin && (
-                <>
-                    <DashboardCard
-                        title="Online Admissions"
-                        description="Review and process new student applications."
-                        icon={<InboxArrowDownIcon className="w-7 h-7" />}
-                        count={pendingAdmissionsCount}
-                        color="violet"
-                        action={<Link to="/portal/admissions">Review Applications</Link>}
-                    />
-                    <DashboardCard
-                        title="Parents Management"
-                        description="View parent biodata and approve new accounts."
-                        icon={<UserGroupIcon className="w-7 h-7" />}
-                        count={pendingParentCount}
-                        color="indigo"
-                        action={<Link to="/portal/parents">Manage Parents</Link>}
-                    />
-                    <DashboardCard
-                        title="News Management"
-                        description="Create and manage school news."
-                        icon={<DocumentReportIcon className="w-7 h-7" />}
-                        color="rose"
-                        action={<Link to="/portal/news-management">Manage News</Link>}
-                    />
-                    <DashboardCard
-                        title="Staff Management"
-                        description="Approve new user registrations for staff."
-                        icon={<UserGroupIcon className="w-7 h-7" />}
-                        count={pendingStaffCount}
-                        color="teal"
-                        action={<Link to="/portal/users">Manage Staff Users</Link>}
-                    />
-                </>
-            )}
-             {/* New Card, spanning full width */}
-            <div className="md:col-span-2 lg:col-span-3">
-                <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row items-center gap-4">
-                    <div className={`p-3 rounded-lg shadow-md ${isReminderServiceActive ? 'bg-gradient-to-br from-teal-400 to-teal-600' : 'bg-slate-300'}`}>
-                        <MegaphoneIcon className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="flex-grow text-center sm:text-left">
-                        <h3 className="text-xl font-bold text-slate-900">SMS Class Reminders</h3>
-                        <p className={`text-sm font-semibold ${isReminderServiceActive ? 'text-teal-700' : 'text-slate-600'}`}>
-                            {isReminderServiceActive ? 'Service is Active' : 'Service is Inactive'}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Automatically triggers SMS reminders to teachers 1 minute before their class starts. (Requires user device to handle SMS)
-                        </p>
-                    </div>
-                    <div className="flex-shrink-0">
-                        {user.role === 'admin' ? (
-                            <label htmlFor="reminder-toggle" className="flex items-center cursor-pointer">
-                                <div className="relative">
-                                    <input
-                                        type="checkbox"
-                                        id="reminder-toggle"
-                                        className="sr-only"
-                                        checked={isReminderServiceActive}
-                                        onChange={(e) => onToggleReminderService(e.target.checked)}
-                                    />
-                                    <div className={`block w-14 h-8 rounded-full transition-colors ${isReminderServiceActive ? 'bg-teal-500' : 'bg-slate-400'}`}></div>
-                                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isReminderServiceActive ? 'translate-x-6' : ''}`}></div>
-                                </div>
-                            </label>
-                        ) : <p className="text-sm font-semibold text-slate-500">Admin only</p>}
-                    </div>
-                </div>
-            </div>
+                action={<Link to="/portal/staff">{"View Staff"}</Link>}
+            />}
         </div>
     </div>
   );

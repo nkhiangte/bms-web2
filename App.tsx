@@ -38,6 +38,7 @@ import { formatStudentId } from './utils';
 // Portal Pages
 import DashboardPage from './pages/DashboardPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
+import AdminPage from './pages/AdminPage';
 import StudentListPage from './pages/StudentListPage';
 import StudentDetailPage from './pages/StudentDetailPage';
 import ClassListPage from './pages/ClassListPage';
@@ -174,6 +175,11 @@ const App: React.FC = () => {
         return entry ? entry[0] as Grade : null;
     }, [staffProfile, gradeDefinitions]);
     const assignedSubjects = useMemo(() => staffProfile?.assignedSubjects || [], [staffProfile]);
+
+    // Derived Counts for Admin
+    const pendingAdmissionsCount = useMemo(() => onlineAdmissions.filter(a => a.status === 'pending').length, [onlineAdmissions]);
+    const pendingParentCount = useMemo(() => allUsers.filter(u => u.role === 'pending_parent').length, [allUsers]);
+    const pendingStaffCount = useMemo(() => allUsers.filter(u => u.role === 'pending').length, [allUsers]);
 
     const addNotification = (message: string, type: NotificationType, title?: string) => {
         const id = Math.random().toString(36).substring(7);
@@ -627,9 +633,10 @@ const App: React.FC = () => {
                         <Route path="/portal/dashboard" element={
                             user.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> :
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
-                            <DashboardPage user={user} onAddStudent={() => undefined} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => undefined} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => undefined} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />
+                            <DashboardPage user={user} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />
                         } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} onLinkChild={handleLinkChildRequest} />} />
+                        {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => undefined} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />

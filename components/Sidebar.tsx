@@ -18,6 +18,7 @@ interface SidebarProps {
 
 const portalNavLinks = [
     { name: 'Portal Home', path: '/portal/dashboard', parentPath: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden', 'pending_parent'] },
+    { name: 'Admin Panel', path: '/portal/admin', icon: <CogIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'My Profile', path: '/portal/profile', icon: <UserIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'warden'] },
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -27,7 +28,7 @@ const portalNavLinks = [
     { name: 'Activity Log', path: '/portal/activity-log', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Class Routine', path: '/portal/routine', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden'] },
     { name: 'Attendance Log', path: '/portal/student/:studentId/attendance-log', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['parent'] },
-    { name: 'Staff', path: '/portal/staff', icon: <BriefcaseIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Staff', path: '/portal/staff', icon: <BriefcaseIcon className="w-5 h-5" />, roles: ['user'] },
     { name: 'Teacher Attendance', path: '/portal/staff/attendance-logs', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['admin', 'user'] },
     { name: 'Fees', path: '/portal/fees', icon: <CurrencyDollarIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
     { name: 'Transfers', path: '/portal/transfers', icon: <TransferIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -36,9 +37,6 @@ const portalNavLinks = [
     { name: 'Chore Roster', path: '/portal/hostel/chores', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'warden'] },
     { name: 'Communication', path: '/portal/communication', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
-    { name: 'News Management', path: '/portal/news-management', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
-    { name: 'Parents Management', path: '/portal/parents', icon: <UserGroupIcon className="w-5 h-5" />, roles: ['admin'] },
-    { name: 'Staff Users', path: '/portal/users', icon: <UserGroupIcon className="w-5 h-5" />, roles: ['admin'] },
 ];
 
 const publicNavLinks = [
@@ -101,7 +99,7 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
                         
                         return (
                             <div key={item.name} onClick={onLinkClick}>
-                                <NavItem to={path} end={path.endsWith('dashboard') || item.path.includes(':studentId/attendance-log') || item.path.endsWith('/profile')}>
+                                <NavItem to={path} end={path.endsWith('dashboard') || item.path.includes(':studentId/attendance-log') || item.path.endsWith('/profile') || path.endsWith('/admin')}>
                                     {item.icon}
                                     <span className="ml-3">{item.name}</span>
                                 </NavItem>

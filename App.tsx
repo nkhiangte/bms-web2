@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -433,6 +434,22 @@ const App: React.FC = () => {
             return { success: false, message: error.message };
         }
     };
+    
+    const handleLinkChildRequest = async (claim: StudentClaim) => {
+        if (!user) {
+            addNotification("You must be logged in to perform this action.", "error");
+            return;
+        }
+        try {
+            await db.collection('users').doc(user.uid).update({
+                claimedStudents: firebase.firestore.FieldValue.arrayUnion(claim)
+            });
+            addNotification("Request to link child has been sent for approval.", "success");
+        } catch (e: any) {
+            console.error("Error submitting link child request:", e);
+            addNotification(e.message, "error", "Request Failed");
+        }
+    };
 
     if (loading) {
         return (
@@ -512,7 +529,7 @@ const App: React.FC = () => {
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
                             <DashboardPage user={user} onAddStudent={() => undefined} studentCount={students.length} academicYear={academicYear} onSetAcademicYear={() => undefined} allUsers={allUsers} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} isReminderServiceActive={false} onToggleReminderService={() => undefined} calendarEvents={calendarEvents} onlineAdmissions={onlineAdmissions} />
                         } />
-                        <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} />} />
+                        <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} onLinkChild={handleLinkChildRequest} />} />
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => undefined} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />

@@ -58,9 +58,12 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
 
     const handleApproveAndLink = async (studentIdsToLink: string[]) => {
         if (reviewingUser) {
+            const existingIds = reviewingUser.studentIds || [];
+            const newStudentIds = [...new Set([...existingIds, ...studentIdsToLink])];
+
             await onUpdateUser(reviewingUser.uid, {
                 role: 'parent',
-                studentIds: studentIdsToLink,
+                studentIds: newStudentIds,
                 claimedStudents: firebase.firestore.FieldValue.delete(),
                 claimedStudentId: firebase.firestore.FieldValue.delete(),
                 claimedDateOfBirth: firebase.firestore.FieldValue.delete(),
@@ -132,15 +135,25 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                             ) : (
                                                 <div>
                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">Approved Parent</span>
-                                                    <div className="text-xs text-slate-500 mt-1">Linked to {user.studentIds?.length || 0} student(s)</div>
+                                                    <div className="text-xs text-slate-600 mt-1">Linked to {user.studentIds?.length || 0} student(s)</div>
+                                                    {user.claimedStudents && user.claimedStudents.length > 0 && (
+                                                        <div className="mt-1">
+                                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                                                                {user.claimedStudents.length} New Claims to Review
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-center gap-2">
-                                                {user.role === 'pending_parent' && (
-                                                    <button onClick={() => setReviewingUser(user)} className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition">
-                                                        <CheckIcon className="w-4 h-4" /> Review
+                                                {(user.role === 'pending_parent' || (user.claimedStudents && user.claimedStudents.length > 0)) && (
+                                                    <button
+                                                        onClick={() => setReviewingUser(user)}
+                                                        className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition"
+                                                    >
+                                                        <CheckIcon className="w-4 h-4" /> Review Claims
                                                     </button>
                                                 )}
                                                 <button onClick={() => setUserToDelete(user)} disabled={user.uid === currentUser.uid} className="p-2 text-red-600 hover:bg-red-100 rounded-full disabled:text-slate-400 disabled:hover:bg-transparent">

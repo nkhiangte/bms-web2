@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -174,37 +176,49 @@ const App: React.FC = () => {
         setNotifications(prev => [...prev, { id, message, type, title }]);
     };
 
-    // Firebase Auth Setup with Real-time User Doc Sync
+    // Firebase Auth Setup with Real-time User Doc Sync and Auto-Creation for New Users
     useEffect(() => {
         let userDocUnsubscribe: () => void;
 
-        const authUnsubscribe = auth.onAuthStateChanged(firebaseUser => {
+        const authUnsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
             if (userDocUnsubscribe) userDocUnsubscribe(); // Unsubscribe from previous user listener
 
             if (firebaseUser) {
-                userDocUnsubscribe = db.collection('users').doc(firebaseUser.uid).onSnapshot(
-                    userDoc => {
-                        if (userDoc.exists) {
-                            const userData = userDoc.data();
-                            setUser({
-                                uid: firebaseUser.uid,
-                                email: firebaseUser.email,
-                                displayName: firebaseUser.displayName,
-                                photoURL: firebaseUser.photoURL,
-                                role: userData?.role || 'pending',
-                                studentIds: userData?.studentIds,
-                                claimedStudentId: userData?.claimedStudentId,
-                                claimedDateOfBirth: userData?.claimedDateOfBirth,
-                                claimedStudents: userData?.claimedStudents,
-                                registrationDetails: userData?.registrationDetails,
-                            });
-                        } else {
-                            // User is authenticated but doesn't have a user document yet (e.g., during signup)
-                            setUser({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName, photoURL: firebaseUser.photoURL, role: 'pending' });
-                        }
+                const userDocRef = db.collection('users').doc(firebaseUser.uid);
+                const userDoc = await userDocRef.get();
+
+                if (!userDoc.exists) {
+                    // This is a first-time sign-in for this user (could be email or Google).
+                    // Create a user document for them.
+                    const newUser = {
+                        displayName: firebaseUser.displayName,
+                        email: firebaseUser.email,
+                        photoURL: firebaseUser.photoURL,
+                        role: 'pending', // A generic pending role. Admin will sort staff/parent.
+                        createdAt: new Date().toISOString(),
+                    };
+                    await userDocRef.set(newUser);
+                }
+
+                // Now that we've ensured a doc exists, set up the real-time listener.
+                userDocUnsubscribe = userDocRef.onSnapshot(
+                    (doc) => {
+                        const userData = doc.data();
+                        setUser({
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                            displayName: firebaseUser.displayName,
+                            photoURL: firebaseUser.photoURL, // Always use the fresh photoURL from Firebase Auth
+                            role: userData?.role || 'pending',
+                            studentIds: userData?.studentIds,
+                            claimedStudentId: userData?.claimedStudentId,
+                            claimedDateOfBirth: userData?.claimedDateOfBirth,
+                            claimedStudents: userData?.claimedStudents,
+                            registrationDetails: userData?.registrationDetails,
+                        });
                         setLoading(false);
                     },
-                    error => {
+                    (error) => {
                         console.error("Error listening to user document:", error);
                         setUser(null);
                         setLoading(false);
@@ -451,6 +465,22 @@ const App: React.FC = () => {
         }
     };
 
+    const handleGoogleSignIn = async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+            // onAuthStateChanged will handle the rest of the logic.
+            return { success: true };
+        } catch (error: any) {
+            let message = error.message;
+            if (error.code === 'auth/account-exists-with-different-credential') {
+                message = "An account already exists with this email address. Please sign in with your original method.";
+            }
+            addNotification(message, 'error', 'Google Sign-In Failed');
+            return { success: false, message: message };
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -503,7 +533,7 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examRoutines as any} classSchedules={timetableData} user={user} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
-                    <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} error="" notification="" />} />
+                    <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/parent-registration" element={<ParentRegistrationPage />} />
                     <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={handleParentSignUp} />} />

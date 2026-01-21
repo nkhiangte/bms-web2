@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { User, Student, StudentClaim } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon, PhoneIcon, WhatsappIcon } from '../components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { firebase } from '../firebaseConfig';
 import ParentReviewModal from '../components/ParentReviewModal';
-import { formatDateForDisplay, formatStudentId } from '../utils';
+import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -124,7 +124,17 @@ const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                                             <div>{user.email}</div>
-                                            <div className="text-xs text-slate-500">{user.registrationDetails?.contactNumber}</div>
+                                            {user.registrationDetails?.contactNumber && (
+                                                <div className="text-xs text-slate-500 flex items-center gap-2 mt-1">
+                                                    <span>{user.registrationDetails.contactNumber}</span>
+                                                    <a href={`tel:${user.registrationDetails.contactNumber}`} title="Call" className="text-slate-500 hover:text-sky-600">
+                                                        <PhoneIcon className="w-4 h-4" />
+                                                    </a>
+                                                    <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(user.registrationDetails.contactNumber)}`} target="_blank" rel="noopener noreferrer" title="Send WhatsApp Message" className="text-slate-500 hover:text-emerald-600">
+                                                        <WhatsappIcon className="w-4 h-4" />
+                                                    </a>
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate">{user.registrationDetails?.address}</td>
                                         <td className="px-4 py-3 text-sm">

@@ -1,8 +1,10 @@
 
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
 import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon } from './Icons';
+import PhotoWithFallback from './PhotoWithFallback';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -79,7 +81,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onToggleSidebar, classN
                 aria-haspopup="true"
                 aria-expanded={isMenuOpen}
             >
-                <img className="w-8 h-8 rounded-full" src={user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`} alt="User avatar" />
+                <div className="w-8 h-8">
+                    <PhotoWithFallback src={user.photoURL || undefined} alt="User avatar" />
+                </div>
                 <span className="font-semibold text-slate-700 hidden sm:inline">Welcome, {user.displayName || user.email}</span>
                 <ChevronDownIcon className={`w-5 h-5 text-slate-600 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
             </button>

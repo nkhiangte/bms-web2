@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance } from '../types';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
 import { BackIcon, PrinterIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
@@ -15,6 +15,26 @@ interface ProgressReportPageProps {
 }
 
 // --- Reusable Logic and Components ---
+
+const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
+    if (!results) return undefined;
+    const normSubjDefName = normalizeSubjectName(subjectDef.name);
+    
+    return results.find(r => {
+        const normResultName = normalizeSubjectName(r.subject);
+        if (normResultName === normSubjDefName) return true;
+
+        // Alias for "English" vs "English - I" or "English I"
+        if ((normSubjDefName === 'english') && (normResultName === 'english - i' || normResultName === 'english i')) return true;
+        // Alias for "English - II" vs "English II"
+        if ((normSubjDefName === 'english - ii') && (normResultName === 'english ii')) return true;
+        // Alias for "Social Studies" vs "Social Science"
+        if ((normSubjDefName === 'social studies') && (normResultName === 'social science')) return true;
+
+        return false;
+    });
+};
+
 
 const calculateTermSummary = (
     student: Student,
@@ -46,7 +66,7 @@ const calculateTermSummary = (
         const failedSubjects: string[] = [];
 
         numericSubjects.forEach(sd => {
-            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const result = findResultWithAliases(studentExam?.results, sd);
             let totalSubjectMark = 0, subjectFullMarks = 0;
 
             if (hasActivities) {
@@ -69,7 +89,7 @@ const calculateTermSummary = (
         });
 
         gradedSubjects.forEach(sd => {
-            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const result = findResultWithAliases(studentExam?.results, sd);
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
         });
         
@@ -191,9 +211,9 @@ const MultiTermReportCard: React.FC<{
                 </thead>
                 <tbody>
                     {gradeDef.subjects.map(sd => {
-                        const term1Result = exams.terminal1?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-                        const term2Result = exams.terminal2?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-                        const term3Result = exams.terminal3?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                        const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
+                        const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
+                        const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
 
                         return (
                             <tr key={sd.name} className="text-center">
@@ -349,7 +369,7 @@ const SingleTermReportCard: React.FC<{
                 </thead>
                 <tbody>
                      {gradeDef.subjects.map((sd: any) => {
-                        const result = exam?.results.find((r: any) => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                        const result = findResultWithAliases(exam?.results, sd);
                         const isGraded = sd.gradingSystem === 'OABC';
                         
                         return (

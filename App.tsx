@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -337,6 +338,18 @@ const App: React.FC = () => {
         }
     };
 
+    const handleUpdateGradeDefinition = async (grade: Grade, newDefinition: GradeDefinition) => {
+        try {
+            await db.collection('config').doc('gradeDefinitions').update({
+                [grade]: newDefinition
+            });
+            addNotification(`Successfully updated subjects for ${grade}.`, 'success');
+        } catch (e: any) {
+            console.error("Error updating grade definition:", e);
+            addNotification(`Failed to update subjects: ${e.message}`, 'error');
+        }
+    };
+
     const handleUpdateAttendance = async (grade: Grade, date: string, records: StudentAttendanceRecord) => {
         try {
             await db.collection('studentAttendance').doc(date).set({ [grade]: records }, { merge: true });
@@ -663,7 +676,7 @@ const App: React.FC = () => {
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
                         <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => undefined} />} />
                         <Route path="/portal/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
-                        <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={() => undefined} user={user} onResetAllMarks={async () => undefined} />} />
+                        <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={handleUpdateGradeDefinition} user={user} onResetAllMarks={async () => undefined} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />
                         <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={async () => undefined} user={user} />} />

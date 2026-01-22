@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '../../components/Icons';
@@ -24,7 +24,9 @@ interface PublicHomePageProps {
 
 
 const PublicHomePage: React.FC<PublicHomePageProps> = ({ news }) => {
-    const latestNews = news.slice(0, 2);
+    const latestNews = useMemo(() => {
+        return [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
+    }, [news]);
 
     return (
         <>
@@ -165,5 +167,4 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news }) => {
         </>
     );
 };
-
 export default PublicHomePage;

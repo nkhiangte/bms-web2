@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -240,16 +239,17 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
       numericSubjects.forEach(sd => {
         let totalSubjectMark = 0, subjectFullMarks = 0;
-        if (hasActivities) { 
-            // FIX: Use nullish coalescing operator to provide a default value of 0 for potentially null marks.
-            const examMark = (studentMarks[sd.name + '_exam'] as number) ?? 0;
-            const activityMark = (studentMarks[sd.name + '_activity'] as number) ?? 0;
+        if (hasActivities) {
+            // FIX: Safely convert potential string/null values to numbers for arithmetic operations.
+            const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
+            const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
             subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
-            totalSubjectMark = (studentMarks[sd.name] as number) ?? 0;
+            // FIX: Safely convert potential string/null values to numbers for arithmetic operations.
+            totalSubjectMark = Number(studentMarks[sd.name]) || 0;
             examTotal += totalSubjectMark;
             subjectFullMarks = sd.examFullMarks;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;

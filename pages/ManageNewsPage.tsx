@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { NewsItem, User } from '../types';
@@ -17,6 +17,10 @@ interface ManageNewsPageProps {
 
 const ManageNewsPage: React.FC<ManageNewsPageProps> = ({ news, onAdd, onEdit, onDelete, user }) => {
     const navigate = useNavigate();
+
+    const sortedNews = useMemo(() => {
+        return [...news].sort((a, b) => b.date.localeCompare(a.date));
+    }, [news]);
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
@@ -57,7 +61,7 @@ const ManageNewsPage: React.FC<ManageNewsPageProps> = ({ news, onAdd, onEdit, on
                 )}
             </div>
 
-            {news.length === 0 ? (
+            {sortedNews.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
                     <p className="text-slate-700 text-lg font-semibold">No news items have been created yet.</p>
                 </div>
@@ -72,7 +76,7 @@ const ManageNewsPage: React.FC<ManageNewsPageProps> = ({ news, onAdd, onEdit, on
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
-                            {news.map(item => (
+                            {sortedNews.map(item => (
                                 <tr key={item.id} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">{formatDateForDisplay(item.date)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{item.title}</td>

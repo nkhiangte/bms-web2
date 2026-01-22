@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, CalendarEvent, CalendarEventType } from '../types';
 import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon } from '../components/Icons';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link } = ReactRouterDOM as any;
 
 interface CalendarPageProps {
     events: CalendarEvent[];
@@ -45,7 +44,6 @@ const MIZORAM_HOLIDAYS: { date: string, title: string }[] = [
 ];
 
 const CalendarPage: React.FC<CalendarPageProps> = ({ events, user, onAdd, onEdit, onDelete, notificationDaysBefore, onUpdatePrefs }) => {
-    const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -178,7 +176,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ events, user, onAdd, onEdit
     return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex justify-between items-center">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800">
+                <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800">
                     <BackIcon className="w-5 h-5" /> Back
                 </button>
                 <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800" title="Go to Home">

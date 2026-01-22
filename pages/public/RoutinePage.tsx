@@ -7,7 +7,7 @@ import { ExamRoutine, DailyRoutine, User, ClassRoutine } from '../../types';
 import ExamRoutineModal from '../../components/ExamRoutineModal';
 import ClassRoutineModal from '../../components/ClassRoutineModal';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link, useLocation } = ReactRouterDOM as any;
 
 const days = ROUTINE_DAYS;
 const periods = PERIOD_LABELS;
@@ -61,7 +61,9 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     onDeleteExamRoutine,
     onUpdateClassRoutine
 }) => {
-    const navigate = useNavigate();
+    const location = useLocation();
+    const parentGradeFilter = location.state?.grade;
+
     const [activeDay, setActiveDay] = useState(days[0]);
     const [activeTab, setActiveTab] = useState('exam');
     
@@ -71,6 +73,13 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     const [isClassModalOpen, setIsClassModalOpen] = useState(false);
 
     useEffect(() => {
+        // If navigating from parent dashboard, default to class routine
+        if (parentGradeFilter) {
+            setActiveTab('class');
+        }
+    }, [parentGradeFilter]);
+
+    useEffect(() => {
         const today = new Date().getDay(); // 0=Sun, 1=Mon,... 6=Sat
         const todayKey = days[today - 1]; // Our `days` array is Mon-Fri
         if (todayKey) {
@@ -78,7 +87,15 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
         }
     }, []);
 
-    const routineForDay: DailyRoutine = classSchedules[activeDay] || [];
+    const routineForDay: DailyRoutine = useMemo(() => {
+        const dailySchedule = classSchedules[activeDay] || [];
+        // If user is a parent and came from dashboard, filter for their child's class
+        if (user?.role === 'parent' && parentGradeFilter) {
+            return dailySchedule.filter((classRoutine: ClassRoutine) => classRoutine.class === parentGradeFilter);
+        }
+        return dailySchedule;
+    }, [classSchedules, activeDay, user, parentGradeFilter]);
+    
     const isAdmin = user?.role === 'admin';
 
     const allTeachers = useMemo(() => {
@@ -265,20 +282,22 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                                 <td colSpan={10} className="text-center py-8 text-slate-500">No schedule available for this day.</td>
                             </tr>
                         )}
-                        <tr className="bg-slate-100">
-                            <td className="sticky left-0 bg-slate-200 px-4 py-2 font-bold text-slate-800 text-center align-middle border-r">Off Teachers</td>
-                            {offTeachersByPeriod.slice(0, 4).map((teachers, index) => (
-                                <td key={`off-${index}`} className="p-2 text-center align-middle border-l text-sm text-slate-600">
-                                    {teachers.length > 0 ? teachers.join(', ') : 'None'}
-                                </td>
-                            ))}
-                            {/* Lunch TD spans */}
-                            {offTeachersByPeriod.slice(4, 7).map((teachers, index) => (
-                                 <td key={`off-${index+4}`} className="p-2 text-center align-middle border-l text-sm text-slate-600">
-                                    {teachers.length > 0 ? teachers.join(', ') : 'None'}
-                                </td>
-                            ))}
-                        </tr>
+                        {user?.role !== 'parent' && (
+                            <tr className="bg-slate-100">
+                                <td className="sticky left-0 bg-slate-200 px-4 py-2 font-bold text-slate-800 text-center align-middle border-r">Off Teachers</td>
+                                {offTeachersByPeriod.slice(0, 4).map((teachers, index) => (
+                                    <td key={`off-${index}`} className="p-2 text-center align-middle border-l text-sm text-slate-600">
+                                        {teachers.length > 0 ? teachers.join(', ') : 'None'}
+                                    </td>
+                                ))}
+                                {/* Lunch TD spans */}
+                                {offTeachersByPeriod.slice(4, 7).map((teachers, index) => (
+                                    <td key={`off-${index+4}`} className="p-2 text-center align-middle border-l text-sm text-slate-600">
+                                        {teachers.length > 0 ? teachers.join(', ') : 'None'}
+                                    </td>
+                                ))}
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -291,7 +310,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="mb-6 flex justify-between items-center">
                     <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => window.history.back()}
                     className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
                     >
                     <BackIcon className="w-5 h-5" />

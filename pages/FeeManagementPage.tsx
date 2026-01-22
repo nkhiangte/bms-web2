@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon } from '../components/Icons';
@@ -6,7 +5,7 @@ import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet,
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
 import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
 
-const { Link, useNavigate, useLocation } = ReactRouterDOM as any;
+const { Link, useLocation } = ReactRouterDOM as any;
 
 interface FeeManagementPageProps {
   students: Student[];
@@ -37,7 +36,6 @@ const FeeDetailItem: React.FC<{ label: string; amount: number }> = ({ label, amo
 );
 
 const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academicYear, onUpdateFeePayments, user, feeStructure, onUpdateFeeStructure, addNotification }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [studentIdInput, setStudentIdInput] = useState('');
   const [foundStudent, setFoundStudent] = useState<Student | null>(null);
@@ -310,7 +308,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
       )}
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
+            <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
             <BackIcon className="w-5 h-5" /> Back
             </button>
             <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home/Dashboard">

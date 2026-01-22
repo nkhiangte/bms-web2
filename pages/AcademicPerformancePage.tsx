@@ -9,7 +9,7 @@ import ExamPerformanceCard from '../components/ExamPerformanceCard';
 import { normalizeSubjectName } from '../utils';
 import { db } from '../firebaseConfig';
 
-const { useParams, useNavigate, Link } = ReactRouterDOM as any;
+const { useParams, Link } = ReactRouterDOM as any;
 
 interface AcademicPerformancePageProps {
   students: Student[];
@@ -23,7 +23,6 @@ interface AcademicPerformancePageProps {
 
 const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ students, onUpdateAcademic, gradeDefinitions, academicYear, user, assignedGrade, assignedSubjects }) => {
   const { studentId } = useParams();
-  const navigate = useNavigate();
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
   const [classmates, setClassmates] = useState<Student[]>([]);
@@ -112,7 +111,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center">
-             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5" /> Back</button>
+             <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5" /> Back</button>
              <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800"> <HomeIcon className="w-5 h-5" /> Home</Link>
         </div>
         <div className="mb-6 flex justify-between items-center">

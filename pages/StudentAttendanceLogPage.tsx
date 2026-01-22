@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '../types';
 import { BackIcon, HomeIcon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerIcon } from '../components/Icons';
 import { exportAttendanceToCsv } from '../utils';
 import { db } from '../firebaseConfig';
+import DateRangeExportModal from '../components/DateRangeExportModal';
+
+const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface StudentAttendanceLogPageProps {
   students: Student[];
@@ -115,25 +118,15 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
 
         const status = monthlyAttendance[dateStr];
         let statusClass = 'bg-white';
-        let statusText = 'Not Marked';
+        let statusText = isWeekend ? 'Holiday' : 'Not Marked';
 
         if (isWeekend) {
             statusClass = 'bg-slate-100';
-            statusText = 'Holiday';
         } else if (status) {
             switch(status) {
-                case StudentAttendanceStatus.PRESENT:
-                    statusClass = 'bg-emerald-100 text-emerald-800';
-                    statusText = 'Present';
-                    break;
-                case StudentAttendanceStatus.ABSENT:
-                    statusClass = 'bg-rose-100 text-rose-800';
-                    statusText = 'Absent';
-                    break;
-                case StudentAttendanceStatus.LEAVE:
-                    statusClass = 'bg-amber-100 text-amber-800';
-                    statusText = 'On Leave';
-                    break;
+                case StudentAttendanceStatus.PRESENT: statusClass = 'bg-emerald-100 text-emerald-800'; statusText = 'Present'; break;
+                case StudentAttendanceStatus.ABSENT: statusClass = 'bg-rose-100 text-rose-800'; statusText = 'Absent'; break;
+                case StudentAttendanceStatus.LEAVE: statusClass = 'bg-amber-100 text-amber-800'; statusText = 'On Leave'; break;
             }
         }
 
@@ -177,7 +170,7 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
             <p className="mt-2 text-slate-500">
                 For attendance information, please contact the school office. We apologize for any inconvenience.
             </p>
-            <button onClick={() => navigate(-1)} className="mt-6 btn btn-secondary">Go Back</button>
+            <button onClick={() => window.history.back()} className="mt-6 btn btn-secondary">Go Back</button>
         </div>
     );
   }
@@ -186,7 +179,7 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
       <div className="mb-6 flex justify-between items-center">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5"/> Back</button>
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5"/> Back</button>
         <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
       </div>
 

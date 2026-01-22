@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-// FIX: Added 'SyllabusTopic' to the import to resolve a 'Cannot find name' error.
+import { useParams, Link } from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';
 import { BookOpenIcon, BackIcon, HomeIcon } from '../../components/Icons';
 
@@ -11,7 +10,6 @@ interface SyllabusPageProps {
 
 const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions }) => {
     const { grade } = useParams<{ grade: string }>();
-    const navigate = useNavigate();
     const decodedGrade = grade ? decodeURIComponent(grade) as Grade : undefined;
 
     const subjectsForGrade = useMemo(() => {
@@ -19,11 +17,12 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
         return gradeDefinitions[decodedGrade]?.subjects || [];
     }, [decodedGrade, gradeDefinitions]);
 
-    const syllabusBySubject = useMemo(() => {
+    // FIX: Add explicit type to useMemo to ensure TypeScript correctly infers the shape of syllabusBySubject, resolving destructuring errors.
+    const syllabusBySubject = useMemo<Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }>>(() => {
         if (!decodedGrade) return {};
         const gradeSyllabus = syllabus.filter(s => s.grade === decodedGrade);
         
-        const result: Record<string, { topics: any[], statusCounts: any }> = {};
+        const result: Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }> = {};
 
         subjectsForGrade.forEach(subjectDef => {
             const subjectSyllabus = gradeSyllabus.find(s => s.subject === subjectDef.name);
@@ -31,7 +30,7 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
             const statusCounts = topics.reduce((acc, topic) => {
                 acc[topic.status] = (acc[topic.status] || 0) + 1;
                 return acc;
-            }, {} as Record<SyllabusTopic['status'], number>);
+            }, {} as Partial<Record<SyllabusTopic['status'], number>>);
             result[subjectDef.name] = { topics, statusCounts };
         });
 
@@ -45,7 +44,7 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
             <div className="container mx-auto px-4">
                 <div className="max-w-4xl mx-auto">
                     <div className="mb-6 flex justify-between items-center">
-                        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600"><BackIcon className="w-5 h-5"/> Back</button>
+                        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600"><BackIcon className="w-5 h-5"/> Back</button>
                         <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-slate-600"><HomeIcon className="w-5 h-5"/> Home</Link>
                     </div>
                     <div className="text-center mb-10">

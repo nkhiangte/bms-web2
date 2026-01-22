@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { User } from '../types';
 import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon } from '../components/Icons';
 import PhotoWithFallback from '../components/PhotoWithFallback';
@@ -12,7 +11,6 @@ interface UserProfilePageProps {
 }
 
 const UserProfilePage: React.FC<UserProfilePageProps> = ({ currentUser, onUpdateProfile }) => {
-    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
@@ -43,7 +41,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ currentUser, onUpdate
         <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="mb-6 flex justify-between items-center">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800">
+                    <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800">
                         <BackIcon className="w-5 h-5"/> Back
                     </button>
                     <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800">

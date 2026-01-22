@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, CheckIcon, HomeIcon } from '../components/Icons';
 
-const { useNavigate, Link } = ReactRouterDOM as any;
+const { Link } = ReactRouterDOM as any;
 
 interface ChangePasswordPageProps {
   onChangePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
@@ -15,7 +15,6 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({ onChangePasswor
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +40,7 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({ onChangePasswor
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
       <div className="mb-6 flex justify-between items-center">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.back()}
           className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
         >
           <BackIcon className="w-5 h-5" />
@@ -117,7 +116,7 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({ onChangePasswor
             <div className="flex justify-end gap-3 pt-4">
             <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => window.history.back()}
                 className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition"
             >
                 Cancel

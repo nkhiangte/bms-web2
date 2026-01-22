@@ -247,7 +247,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                         {routineForDay.length > 0 ? (
                             routineForDay.map((classRoutine, rowIndex) => (
                                 <tr key={classRoutine.class} className="hover:bg-slate-50">
-                                    <td className="sticky left-0 bg-white hover:bg-slate-50 px-4 py-2 font-bold text-slate-800 text-center whitespace-nowrap border-r">{classRoutine.class.startsWith('Class') ? classRoutine.class : `Class ${classRoutine.class}`}</td>
+                                    <td className="sticky left-0 bg-white hover:bg-slate-50 px-4 py-2 font-bold text-slate-800 text-center whitespace-nowrap border-r">{classRoutine.class}</td>
                                     {classRoutine.periods.slice(0, 4).map((period, index) => {
                                         const { subject, teacher } = parseSubject(period.subject);
                                         return (

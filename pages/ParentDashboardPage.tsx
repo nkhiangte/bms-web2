@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord } from '../types';
+import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '../types';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon, PlusIcon, SparklesIcon, ChevronDownIcon, MessageIcon, ArrowRightIcon, SpinnerIcon } from '../components/Icons';
 import LinkChildModal from '../components/LinkChildModal';
@@ -37,9 +37,10 @@ interface ParentDashboardPageProps {
     syllabus?: Syllabus[];
     onSendMessage: (message: any) => Promise<boolean>;
     fetchStudentAttendanceForMonth: (grade: Grade, year: number, month: number) => Promise<{ [date: string]: StudentAttendanceRecord }>;
+    feeStructure: FeeStructure;
 }
 
-const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStudents, onLinkChild, currentAttendance, news = [], staff = [], gradeDefinitions = {} as any, homework = [], syllabus = [], onSendMessage, fetchStudentAttendanceForMonth }) => {
+const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStudents, onLinkChild, currentAttendance, news = [], staff = [], gradeDefinitions = {} as any, homework = [], syllabus = [], onSendMessage, fetchStudentAttendanceForMonth, feeStructure }) => {
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [expandedChild, setExpandedChild] = useState<string | null>(null);
     const [viewingAttendanceFor, setViewingAttendanceFor] = useState<Student | null>(null);
@@ -61,7 +62,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
         const isExpanded = expandedChild === student.id;
         
         const attendanceStatus = currentAttendance?.[student.grade]?.[student.id];
-        const dues = getDuesSummary(student, {} as any); // Fee structure handled on fees page
+        const dues = getDuesSummary(student, feeStructure);
         
         const childHomework = useMemo(() => {
             return homework.filter(h => h.grade === student.grade).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);

@@ -55,10 +55,14 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     },
     [Grade.KINDERGARTEN]: {
         subjects: [
-            { name: 'English', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Mizo', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Mathematics', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'EVS', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'English I', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'English II', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Maths', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Writing', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Spellings', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Rhymes', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Conversation', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Drawing', examFullMarks: 100, activityFullMarks: 0 },
         ],
     },
     [Grade.I]: {

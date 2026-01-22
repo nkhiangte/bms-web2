@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -163,16 +162,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
             if (normResultName === normSubjName) return true;
-            // Fallbacks for legacy data
+            
+            // Fallbacks for common name variations
+            const mathNames = ['math', 'maths', 'mathematics'];
+            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
+            
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            // Fallbacks for Math variations and Class II subjects
-            // FIX: Updated matching to handle 'math', 'maths', and 'mathematics' interchangeably.
-            if ((normSubjName === 'math' || normSubjName === 'mathematics') && (normResultName === 'math' || normResultName === 'mathematics' || normResultName === 'maths')) return true;
             if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
             if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
             if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            
             return false;
         });
         
@@ -247,8 +249,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            // FIX: Removed redundant Number() conversions to resolve arithmetic operation error on potentially non-numeric types.
-            subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+            subjectFullMarks = Number(sd.examFullMarks) + Number(sd.activityFullMarks);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;

@@ -71,6 +71,11 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
+            // Fallbacks for Class II subjects
+            if (normSubjName === 'math' && normResultName === 'mathematics') return true;
+            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
             return false;
         });
         

@@ -54,6 +54,11 @@ const calculateTermSummary = (
                 if (normSubjDefName === 'english' && normResultName === 'english i') return true;
                 if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
                 if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                // Fallbacks for Class II subjects
+                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
+                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
                 return false;
             });
 
@@ -86,6 +91,11 @@ const calculateTermSummary = (
                 if (normSubjDefName === 'english' && normResultName === 'english i') return true;
                 if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
                 if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                // Fallbacks for Class II subjects
+                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
+                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
                 return false;
             });
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
@@ -245,6 +255,11 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
                                 if (normSubjDefName === 'english' && normResultName === 'english i') return true;
                                 if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
                                 if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                                // Fallbacks for Class II subjects
+                                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
+                                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+                                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+                                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
                                 return false;
                             });
                             const isGraded = sd.gradingSystem === 'OABC';

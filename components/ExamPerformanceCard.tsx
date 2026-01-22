@@ -68,9 +68,15 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                 const result = studentExam?.results.find(r => {
                     const normResultName = normalizeSubjectName(r.subject);
                     if (normResultName === normSubjDefName) return true;
+                    // Fallbacks for legacy data
                     if (normSubjDefName === 'english' && normResultName === 'english i') return true;
                     if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
                     if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                    // Fallbacks for Class II subjects
+                    if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
+                    if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+                    if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+                    if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
                     return false;
                 });
                 let totalSubjectMark = 0, subjectFullMarks = 0;
@@ -102,6 +108,11 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     if (normSubjDefName === 'english' && normResultName === 'english i') return true;
                     if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
                     if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+                    // Fallbacks for Class II subjects
+                    if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
+                    if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+                    if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+                    if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
                     return false;
                 });
                 if (result?.grade != null && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;

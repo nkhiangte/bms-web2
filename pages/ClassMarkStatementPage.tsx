@@ -254,6 +254,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       
       const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
+      if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
+
 
       let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
       let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
@@ -263,10 +265,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
     
     const finalData = studentData.map(s => {
-        if (s.result !== 'PASS') {
+        if (s.result === 'FAIL') {
             return { ...s, rank: '-' as const };
         }
         // Find index of first student with same score to handle ties (standard competition ranking 1, 2, 2, 4).

@@ -62,7 +62,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
 
     const initialData = TERMINAL_EXAMS.map(examTemplate => {
       const existingExam = studentPerformance.find(e => 
-          e.id === examTemplate.id || (e.name && e.name.trim() === examTemplate.name.trim())
+          e.id === examTemplate.id || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
       );
       const results: SubjectMark[] = subjects.map(sd => {
         const normSubjName = normalizeSubjectName(sd.name);

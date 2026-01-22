@@ -43,7 +43,7 @@ const calculateTermSummary = (
         const studentExam = s.academicPerformance?.find(e => {
             const examTemplate = TERMINAL_EXAMS.find(t => t.id === examId);
             if (!examTemplate) return false;
-            return e.id === examId || (e.name && e.name.trim() === examTemplate.name.trim());
+            return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
         let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
@@ -150,12 +150,12 @@ const calculateTermSummary = (
         return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
     
     const rankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
     
     studentData.forEach(s => {
-        if (s.result !== 'PASS') {
+        if (s.result === 'FAIL') {
             rankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
@@ -413,7 +413,9 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
         return <div className="p-8 text-center">Curriculum not defined for this student's grade.</div>;
     }
 
-    const exam = student.academicPerformance?.find(e => e.id === examId);
+    const exam = student.academicPerformance?.find(e => 
+        e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
+    );
 
     const handlePrint = () => {
         window.print();

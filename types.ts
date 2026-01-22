@@ -1,4 +1,5 @@
 
+
 export interface StudentClaim {
   fullName: string;
   studentId: string;
@@ -627,6 +628,33 @@ export interface OnlineAdmission {
     paymentScreenshotUrl?: string;
     submissionDate: string;
     status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+}
+
+// FIX: Added missing 'Homework' interface.
+export interface Homework {
+    id: string;
+    grade: Grade;
+    subject: string;
+    date: string;
+    assignmentDetails: string;
+    dueDate?: string;
+    createdBy: {
+        uid: string;
+        name: string;
+    };
+}
+
+// FIX: Added missing 'Syllabus' related interfaces.
+export interface SyllabusTopic {
+    name: string;
+    status: 'Completed' | 'In Progress' | 'Not Started';
+}
+
+export interface Syllabus {
+    id: string; // composite key e.g., "Class V-Science"
+    grade: Grade;
+    subject: string;
+    topics: SyllabusTopic[];
 }
 
 declare global {

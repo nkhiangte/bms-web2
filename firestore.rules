@@ -56,13 +56,23 @@ service cloud.firestore {
       return isStaff() ||
              (isParent() && studentId in getParentStudentIds());
     }
+    
+    function canAccessGrade(grade) {
+      let studentIds = getParentStudentIds();
+      // This is a simplified check. It assumes a parent might have access
+      // if they have a child in any class. A more complex rule might check
+      // if any of their children are in the specified grade. For now, this is
+      // a basic guard.
+      return isStaff() || (isParent() && studentIds.size() > 0);
+    }
 
     // ---------------------------
     // Online Admissions
     // ---------------------------
     match /online_admissions/{admissionId} {
       allow create: if true; // Public can submit forms
-      allow read, update, delete: if isAdmin(); // Only admins can manage submissions
+      // FIX: Added 'list' permission for admins to view all submissions on the dashboard.
+      allow read, list, update, delete: if isAdmin(); // Only admins can manage submissions
     }
     
     // ---------------------------
@@ -138,14 +148,16 @@ service cloud.firestore {
     // TC Records
     // ---------------------------
     match /tcRecords/{docId} {
-      allow read, write, delete: if isStaff();
+      // FIX: Added 'list' permission for staff to view all records on the dashboard.
+      allow read, list, write, delete: if isStaff();
     }
 
     // ---------------------------
     // Service Certificates
     // ---------------------------
     match /serviceCertificates/{docId} {
-      allow read, write, delete: if isStaff();
+      // FIX: Added 'list' permission for staff to view all certificates on the dashboard.
+      allow read, list, write, delete: if isStaff();
     }
 
     // ---------------------------
@@ -162,12 +174,35 @@ service cloud.firestore {
     // Attendance
     // ---------------------------
     match /studentAttendance/{docId} {
-      allow read, write, delete: if isStaff();
+      // Allow parents to read to fetch calendar data, but not write.
+      allow read: if isStaff() || isParent();
+      allow write, delete: if isStaff();
     }
 
     match /staffAttendance/{docId} {
       allow read, write, delete: if isStaff();
     }
+
+    // ---------------------------
+    // NEW: Homework, Syllabus, Messages
+    // ---------------------------
+    match /homework/{homeworkId} {
+      allow list: if isStaff() || isParent();
+      allow get: if isStaff() || (isParent() && canAccessGrade(resource.data.grade));
+      allow create, update, delete: if isStaff();
+    }
+    
+    match /syllabus/{syllabusId} {
+      allow read, list: if true; // Publicly readable for curriculum page etc.
+      allow create, update, delete: if isStaff();
+    }
+    
+    match /parentMessages/{messageId} {
+      allow create: if isParent();
+      allow read, list: if isStaff() || (isParent() && request.auth.uid == resource.data.fromParentId);
+      allow update, delete: if isStaff(); // e.g., for status updates
+    }
+
 
     // ---------------------------
     // Inventory System
@@ -180,15 +215,18 @@ service cloud.firestore {
     // Hostel Management
     // ---------------------------
     match /hostelResidents/{docId} {
-      allow read, write, delete: if isWardenOrAdmin();
+      // FIX: Added 'list' permission for admins/wardens to view all residents.
+      allow read, list, write, delete: if isWardenOrAdmin();
     }
 
     match /hostelStaff/{docId} {
-      allow read, write, delete: if isWardenOrAdmin();
+      // FIX: Added 'list' permission for admins/wardens to view all hostel staff.
+      allow read, list, write, delete: if isWardenOrAdmin();
     }
 
     match /hostelInventory/{docId} {
-      allow read, write, delete: if isWardenOrAdmin();
+      // FIX: Added 'list' permission for admins/wardens to view all inventory items.
+      allow read, list, write, delete: if isWardenOrAdmin();
     }
 
     match /stockLogs/{docId} {

@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -23,7 +16,7 @@ import {
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
-    StudentClaim, ExamRoutine, DailyRoutine
+    StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -32,7 +25,6 @@ import { SpinnerIcon } from './components/Icons';
 // Data & Constants
 import { timetableData } from './timetableData';
 import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
-// FIX: Import formatStudentId utility to be used in user management handlers.
 import { formatStudentId } from './utils';
 
 // Portal Pages
@@ -91,6 +83,9 @@ import ExamSelectionPage from './pages/ExamSelectionPage';
 import ExamClassSelectionPage from './pages/ExamClassSelectionPage';
 import SitemapEditorPage from './pages/SitemapEditorPage';
 import UserProfilePage from './pages/UserProfilePage';
+import ManageHomeworkPage from './pages/ManageHomeworkPage';
+import ManageSyllabusPage from './pages/ManageSyllabusPage';
+import SyllabusPage from './pages/public/SyllabusPage';
 
 // Public Pages
 import PublicHomePage from './pages/public/PublicHomePage';
@@ -148,6 +143,8 @@ const App: React.FC = () => {
     const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
     const [examSchedules, setExamSchedules] = useState<ExamRoutine[]>([]);
     const [classSchedules, setClassSchedules] = useState<Record<string, DailyRoutine>>(timetableData);
+    const [homework, setHomework] = useState<Homework[]>([]);
+    const [syllabus, setSyllabus] = useState<Syllabus[]>([]);
     
     // Hostel State
     const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
@@ -198,19 +195,16 @@ const App: React.FC = () => {
                 const userDoc = await userDocRef.get();
 
                 if (!userDoc.exists) {
-                    // This is a first-time sign-in for this user (could be email or Google).
-                    // Create a user document for them.
                     const newUser = {
                         displayName: firebaseUser.displayName,
                         email: firebaseUser.email,
                         photoURL: firebaseUser.photoURL,
-                        role: 'pending', // A generic pending role. Admin will sort staff/parent.
+                        role: 'pending', 
                         createdAt: new Date().toISOString(),
                     };
                     await userDocRef.set(newUser);
                 }
 
-                // Now that we've ensured a doc exists, set up the real-time listener.
                 userDocUnsubscribe = userDocRef.onSnapshot(
                     (doc) => {
                         const userData = doc.data();
@@ -218,7 +212,7 @@ const App: React.FC = () => {
                             uid: firebaseUser.uid,
                             email: firebaseUser.email,
                             displayName: firebaseUser.displayName,
-                            photoURL: firebaseUser.photoURL, // Always use the fresh photoURL from Firebase Auth
+                            photoURL: firebaseUser.photoURL,
                             role: userData?.role || 'pending',
                             studentIds: userData?.studentIds,
                             claimedStudentId: userData?.claimedStudentId,
@@ -257,7 +251,7 @@ const App: React.FC = () => {
         const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(d => d.exists && setSitemapContent(d.data()?.content || ''));
         const unsubExams = db.collection('examRoutines').onSnapshot(s => setExamSchedules(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
         const unsubClasses = db.collection('classRoutines').onSnapshot(snapshot => {
-            const routines: Record<string, DailyRoutine> = { ...timetableData }; // Start with fallback
+            const routines: Record<string, DailyRoutine> = { ...timetableData };
             snapshot.forEach(doc => {
                 if (doc.data()?.schedule) {
                     routines[doc.id] = doc.data().schedule as DailyRoutine;
@@ -265,18 +259,19 @@ const App: React.FC = () => {
             });
             setClassSchedules(routines);
         });
+        const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
+
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus();
         };
     }, []);
 
     // Authenticated Real-time Sync
     useEffect(() => {
         if (!user) {
-            // Clear all data on logout
             setStudents([]); setConductLog([]); setTcRecords([]); setServiceCerts([]);
-            setAllUsers([]); setOnlineAdmissions([]);
+            setAllUsers([]); setOnlineAdmissions([]); setHomework([]);
             setCurrentStudentAttendance(null); setCurrentStaffAttendance(null);
             setHostelResidents([]); setHostelStaff([]); setHostelInventory([]); setHostelDisciplineLog([]); setHostelChoreRoster({});
             return;
@@ -289,7 +284,6 @@ const App: React.FC = () => {
         
         const unsubscribers: (() => void)[] = [];
     
-        // STUDENT & CONDUCT DATA
         if (isStaff) {
             unsubscribers.push(db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student)))));
             unsubscribers.push(db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))));
@@ -297,20 +291,21 @@ const App: React.FC = () => {
             unsubscribers.push(db.collection('students').where(firebase.firestore.FieldPath.documentId(), 'in', user.studentIds).onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student)))));
             unsubscribers.push(db.collection('conductLog').where('studentId', 'in', user.studentIds).onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))));
         }
+
+        if (isStaff || isParent) {
+            unsubscribers.push(db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework)))));
+        }
     
-        // GENERAL STAFF-ONLY DATA
         if (isStaff) {
             unsubscribers.push(db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() })))));
             unsubscribers.push(db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() })))));
         }
         
-        // ADMIN-ONLY DATA
         if (isAdmin) {
             unsubscribers.push(db.collection('users').onSnapshot(s => setAllUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User)))));
             unsubscribers.push(db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))));
         }
     
-        // HOSTEL DATA
         if (isWardenOrAdmin) {
             unsubscribers.push(db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident)))));
             unsubscribers.push(db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff)))));
@@ -318,18 +313,15 @@ const App: React.FC = () => {
             unsubscribers.push(db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)))));
             unsubscribers.push(db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setHostelChoreRoster(d.data() as ChoreRoster)));
         } else if (isParent && user.studentIds && user.studentIds.length > 0) {
-            // Parents only get their children's discipline logs
             unsubscribers.push(db.collection('hostelDisciplineLog').where('studentId', 'in', user.studentIds).onSnapshot(s => {
                 setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)));
             }));
         }
     
-        // DATA FOR ALL AUTHENTICATED USERS (STAFF & PARENTS)
         const todayStr = new Date().toISOString().split('T')[0];
         unsubscribers.push(db.collection('studentAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStudentAttendance(d.data() as any)));
         unsubscribers.push(db.collection('staffAttendance').doc(todayStr).onSnapshot(d => d.exists && setCurrentStaffAttendance(d.data() as StaffAttendanceRecord)));
     
-        // Cleanup function
         return () => {
             unsubscribers.forEach(unsub => unsub());
         };
@@ -509,7 +501,6 @@ const App: React.FC = () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         try {
             await auth.signInWithPopup(provider);
-            // onAuthStateChanged will handle the rest of the logic.
             return { success: true };
         } catch (error: any) {
             let message = error.message;
@@ -556,6 +547,22 @@ const App: React.FC = () => {
             addNotification(e.message, "error", "Update Failed");
         }
     };
+
+    const handleSendMessage = async (message: any) => {
+        try {
+            await db.collection('parentMessages').add({
+                ...message,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'sent',
+            });
+            addNotification("Message sent successfully!", "success");
+            return true;
+        } catch (e: any) {
+            addNotification(e.message, "error", "Message Failed");
+            return false;
+        }
+    };
+
 
     if (loading) {
         return (
@@ -609,6 +616,7 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
+                    <Route path="/portal/syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
                     <Route path="/parent-registration" element={<ParentRegistrationPage />} />
@@ -635,7 +643,7 @@ const App: React.FC = () => {
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
                             <DashboardPage user={user} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />
                         } />
-                        <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} onLinkChild={handleLinkChildRequest} />} />
+                        <Route path="/portal/parent-dashboard" element={<ParentDashboardPage user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
                         {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => undefined} />} />
@@ -692,6 +700,8 @@ const App: React.FC = () => {
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => undefined} />} />
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
+                        <Route path="/portal/manage-homework" element={<ManageHomeworkPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} onDelete={async () => {}} allHomework={homework} />} />
+                        <Route path="/portal/manage-syllabus" element={<ManageSyllabusPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions}/>} />
                     </Route>
                 ) : (
                     <Route path="/portal/*" element={<Navigate to="/login" replace />} />

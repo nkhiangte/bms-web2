@@ -184,7 +184,7 @@ service cloud.firestore {
     }
 
     // ---------------------------
-    // NEW: Homework, Syllabus, Messages
+    // NEW: Homework, Syllabus, Messages, Notices
     // ---------------------------
     match /homework/{homeworkId} {
       allow list: if isStaff() || isParent();
@@ -201,6 +201,11 @@ service cloud.firestore {
       allow create: if isParent();
       allow read, list: if isStaff() || (isParent() && request.auth.uid == resource.data.fromParentId);
       allow update, delete: if isStaff(); // e.g., for status updates
+    }
+    
+    match /notices/{noticeId} {
+      allow read, list: if isStaff() || isParent();
+      allow create, update, delete: if isStaff();
     }
 
 

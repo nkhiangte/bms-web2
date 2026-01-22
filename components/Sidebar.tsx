@@ -1,7 +1,5 @@
 
 
-
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
@@ -38,6 +36,7 @@ const portalNavLinks = [
     { name: 'Hostel', path: '/portal/hostel-dashboard', icon: <BuildingOfficeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'warden'] },
     { name: 'Chore Roster', path: '/portal/hostel/chores', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'warden'] },
     { name: 'Communication', path: '/portal/communication', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Manage Notice Board', path: '/portal/manage-notices', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
 ];
 

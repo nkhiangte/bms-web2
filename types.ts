@@ -500,6 +500,18 @@ export interface NewsItem {
     imageUrls?: string[];
 }
 
+export interface Notice {
+    id: string;
+    title: string;
+    content: string;
+    date: string; // YYYY-MM-DD
+    targetGrades: Grade[] | 'all'; // Array of grades or 'all'
+    createdBy: {
+        uid: string;
+        name: string;
+    };
+}
+
 export interface TcRecord {
     id: string;
     refNo: string;

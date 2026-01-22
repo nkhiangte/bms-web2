@@ -10,7 +10,7 @@ interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-// FIX: To resolve errors about missing 'setState' and 'props', this class must extend React.Component, making it a proper React class component.
+// FIX: Extended React.Component to make this a valid class component, which provides `setState` and `props`.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,

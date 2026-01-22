@@ -74,16 +74,21 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     },
     [Grade.II]: {
         subjects: [
-            { name: 'English', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Mizo', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Mathematics', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'ENG-I', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'ENG-II', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'MIZO', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'MATH', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Spellings', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Hindi', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'EVS', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Cursive', examFullMarks: 0, activityFullMarks: 0, gradingSystem: 'OABC' },
+            { name: 'Drawing', examFullMarks: 0, activityFullMarks: 0, gradingSystem: 'OABC' },
         ],
     },
     [Grade.III]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
@@ -94,8 +99,8 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     },
     [Grade.IV]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
@@ -106,8 +111,8 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     },
     [Grade.V]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
@@ -118,35 +123,35 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
     },
     [Grade.VI]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Science', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Social Science', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Social Studies', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
         ],
     },
     [Grade.VII]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Science', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Social Science', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Social Studies', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
         ],
     },
     [Grade.VIII]: {
         subjects: [
-            { name: 'English I', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'English II', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'English - II', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Mathematics', examFullMarks: 60, activityFullMarks: 40 },
             { name: 'Science', examFullMarks: 60, activityFullMarks: 40 },
-            { name: 'Social Science', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Social Studies', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Mizo', examFullMarks: 60, activityFullMarks: 40 },
+            { name: 'Hindi', examFullMarks: 60, activityFullMarks: 40 },
         ],
     },
     [Grade.IX]: {
@@ -155,7 +160,7 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
             { name: 'Mizo', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Mathematics', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Science', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Social Science', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Social Studies', examFullMarks: 100, activityFullMarks: 0 },
         ],
     },
     [Grade.X]: {
@@ -164,7 +169,7 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
             { name: 'Mizo', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Mathematics', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Science', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'Social Science', examFullMarks: 100, activityFullMarks: 0 },
+            { name: 'Social Studies', examFullMarks: 100, activityFullMarks: 0 },
         ],
     },
 };

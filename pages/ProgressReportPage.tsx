@@ -40,7 +40,11 @@ const calculateTermSummary = (
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classmates.map(s => {
-        const studentExam = s.academicPerformance?.find(e => e.id === examId);
+        const studentExam = s.academicPerformance?.find(e => {
+            const examTemplate = TERMINAL_EXAMS.find(t => t.id === examId);
+            if (!examTemplate) return false;
+            return e.id === examId || (e.name && e.name.trim() === examTemplate.name.trim());
+        });
         
         let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
         let failedSubjectsCount_III_to_VIII = 0, failedSubjectsCount_IX_to_X = 0, failedSubjectsCount_N_to_II = 0, gradedSubjectsPassed = 0;
@@ -146,12 +150,12 @@ const calculateTermSummary = (
         return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
     
     const rankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
     
     studentData.forEach(s => {
-        if (s.result === 'FAIL') {
+        if (s.result !== 'PASS') {
             rankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);

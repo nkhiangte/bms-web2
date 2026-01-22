@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -262,10 +263,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    const passedStudents = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
     
     const finalData = studentData.map(s => {
-        if (s.result === 'FAIL') {
+        if (s.result !== 'PASS') {
             return { ...s, rank: '-' as const };
         }
         // Find index of first student with same score to handle ties (standard competition ranking 1, 2, 2, 4).

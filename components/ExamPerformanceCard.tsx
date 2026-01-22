@@ -56,7 +56,9 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             if (s.id === student.id) {
                 studentExam = exam;
             } else {
-                studentExam = s.academicPerformance?.find(e => e.id === exam.id);
+                studentExam = s.academicPerformance?.find(e => 
+                    e.id === exam.id || (e.name && e.name.trim() === exam.name.trim())
+                );
             }
             
             let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
@@ -158,12 +160,12 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
         });
     
-        const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+        const passedStudents = studentData.filter(s => s.result === 'PASS').sort((a, b) => b.grandTotal - a.grandTotal);
         
         const finalRankedData = new Map<string, typeof studentData[0] & { rank: number | '-' }>();
         
         studentData.forEach(s => {
-            if (s.result === 'FAIL') {
+            if (s.result !== 'PASS') {
                 finalRankedData.set(s.id, { ...s, rank: '-' });
             } else {
                 const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);

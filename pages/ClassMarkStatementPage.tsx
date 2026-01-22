@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -275,14 +274,18 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+    // DENSE RANKING LOGIC (1, 1, 2, 3, 3)
+    // Get all students who passed or simple passed
+    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS');
+    // Get the unique scores and sort them in descending order
+    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
     
     const finalData = studentData.map(s => {
         if (s.result === 'FAIL') {
             return { ...s, rank: '-' as const };
         }
-        // Find index of first student with same score to handle ties (standard competition ranking 1, 2, 2, 4).
-        const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
+        // The rank is the index of the score in the unique sorted list, plus one.
+        const rankIndex = uniqueScores.indexOf(s.grandTotal);
         return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
     });
     

@@ -298,6 +298,145 @@ const MultiTermReportCard: React.FC<{
     );
 };
 
+const SingleTermReportCard: React.FC<{
+    student: Student;
+    gradeDef: GradeDefinition;
+    exam: Exam | undefined;
+    examTemplate: { id: string; name: string; } | undefined;
+    summary: ReturnType<typeof calculateTermSummary>;
+    staff: Staff[];
+}> = ({ student, gradeDef, exam, examTemplate, summary, staff }) => {
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
+    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
+
+    return (
+        <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate?.name}</h3>
+            <table className="min-w-full text-sm border-collapse">
+                <thead className="bg-slate-50 print:bg-transparent">
+                    {isNurseryToII ? (
+                        <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    ) : hasActivities ? (
+                        <>
+                            <tr className="border-b border-slate-400">
+                                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
+                                <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total Obtained</th>
+                            </tr>
+                            <tr className="border-b border-slate-400">
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            </tr>
+                        </>
+                    ) : ( // IX & X
+                         <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    )}
+                </thead>
+                <tbody>
+                     {gradeDef.subjects.map((sd: any) => {
+                        const result = exam?.results.find((r: any) => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                        const isGraded = sd.gradingSystem === 'OABC';
+                        
+                        return (
+                             <tr key={sd.name} className="border-t border-slate-300">
+                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                {isNurseryToII ? (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                ) : hasActivities ? (
+                                    isGraded ? (
+                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
+                                    ) : (
+                                        <>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{(result?.examMarks ?? 0) + (result?.activityMarks ?? 0)}</td>
+                                        </>
+                                    )
+                                ) : ( // IX & X
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 text-sm print:py-1 print:bg-transparent">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {hasActivities && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Summative Total:</div>
+                            <div className="font-bold text-slate-800">{summary?.examTotal}</div>
+                            <div className="font-semibold text-slate-600 text-right">Activity Total:</div>
+                            <div className="font-bold text-slate-800">{summary?.activityTotal}</div>
+                        </>
+                    )}
+                    <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
+                    <div className="font-bold text-slate-800">{summary?.grandTotal}</div>
+                    <div className="font-semibold text-slate-600 text-right">Percentage:</div>
+                    <div className="font-bold text-slate-800">{summary?.percentage?.toFixed(2) ?? '0.00'}%</div>
+                    {!isClassIXorX && <><div className="font-semibold text-slate-600 text-right">Grade:</div><div className="font-bold text-slate-800">{summary?.academicGrade}</div></>}
+                    {isClassIXorX && <><div className="font-semibold text-slate-600 text-right">Division:</div><div className="font-bold text-slate-800">{summary?.division}</div></>}
+                    <div className="font-semibold text-slate-600 text-right">Result:</div>
+                    <div className={`font-bold ${summary?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{summary?.result}</div>
+                    <div className="font-semibold text-slate-600 text-right">Rank:</div>
+                    <div className="font-bold text-slate-800">{summary?.rank}</div>
+                    <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
+                    <div className="font-bold text-slate-800">
+                        {(exam?.attendance && exam.attendance.totalWorkingDays > 0)
+                            ? `${((exam.attendance.daysPresent / exam.attendance.totalWorkingDays) * 100).toFixed(0)}%`
+                            : 'N/A'}
+                    </div>
+                </div>
+                <div className="pt-1.5 mt-1.5 border-t">
+                    <span className="font-semibold">Teacher's Remarks: </span>
+                    <span>{exam?.teacherRemarks || summary?.remark || 'N/A'}</span>
+                </div>
+            </div>
+             <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
+                <div className="flex justify-between items-end">
+                    <div className="text-center">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        </div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="h-12 min-w-[150px]"></div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                    </div>
+                </div>
+                <div className="flex justify-between mt-4 print:mt-1">
+                    <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- MAIN PAGE COMPONENT ---
 
@@ -345,6 +484,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     
     const handlePrint = () => window.print();
 
+    const currentExam = exams[examId as keyof typeof exams];
+    const currentSummary = summaries[examId as keyof typeof summaries];
+    const currentExamTemplate = TERMINAL_EXAMS.find(e => e.id === examId);
+
     return (
         <div className="bg-slate-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0">
             <style>{`
@@ -380,19 +523,26 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                         <div><strong className="text-slate-600">Student ID:</strong> <span className="font-bold text-base ml-1">{formatStudentId(student, academicYear)}</span></div>
                     </section>
                     
-                    {examId === 'terminal3' ? (
-                        <MultiTermReportCard 
-                            student={student}
-                            gradeDef={gradeDef}
-                            exams={exams}
-                            summaries={summaries}
-                            staff={staff}
-                        />
-                    ) : (
-                        <p className="text-center font-bold text-red-600 p-4 bg-red-50 rounded-lg">
-                            This consolidated view is only available for the Final (Third) Term. Please select the Third Term to see the full year's report.
-                        </p>
-                    )}
+                     <section className="mt-4 print:mt-2">
+                        {examId === 'terminal3' ? (
+                            <MultiTermReportCard 
+                                student={student}
+                                gradeDef={gradeDef}
+                                exams={exams}
+                                summaries={summaries}
+                                staff={staff}
+                            />
+                        ) : (
+                            <SingleTermReportCard
+                                student={student}
+                                gradeDef={gradeDef}
+                                exam={currentExam}
+                                examTemplate={currentExamTemplate}
+                                summary={currentSummary}
+                                staff={staff}
+                            />
+                        )}
+                    </section>
                 </div>
             </div>
         </div>

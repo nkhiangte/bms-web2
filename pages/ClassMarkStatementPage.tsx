@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -240,6 +241,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       numericSubjects.forEach(sd => {
         let totalSubjectMark = 0, subjectFullMarks = 0;
         if (hasActivities) { 
+            // FIX: Use nullish coalescing operator to provide a default value of 0 for potentially null marks.
             const examMark = (studentMarks[sd.name + '_exam'] as number) ?? 0;
             const activityMark = (studentMarks[sd.name + '_activity'] as number) ?? 0;
             examTotal += examMark; activityTotal += activityMark;
@@ -269,19 +271,30 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
       let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
       
-      let remark = result === 'FAIL' ? `Needs improvement in ${failedSubjects.join(', ')}` : result === 'SIMPLE PASS' ? `Focus on ${failedSubjects.join(', ')}` : "Good progress.";
+      let remark = '';
+      if (result === 'FAIL') {
+          remark = `Needs improvement in ${failedSubjects.join(', ')}`;
+      } else if (result === 'SIMPLE PASS') {
+          remark = `Focus on ${failedSubjects.join(', ')}`;
+      } else { // PASS
+          if (percentage >= 90) remark = "Outstanding performance!";
+          else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
+          else if (percentage >= 60) remark = "Good progress. Well done.";
+          else if (percentage >= 45) remark = "Satisfactory performance. Consistent effort will lead to better results.";
+          else remark = "Passed. Consistent effort is needed to improve scores.";
+      }
 
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
     // DENSE RANKING LOGIC (1, 1, 2, 3, 3)
-    // Get all students who passed or simple passed
-    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS');
+    // Get all students who passed
+    const passedStudents = studentData.filter(s => s.result === 'PASS');
     // Get the unique scores and sort them in descending order
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
     
     const finalData = studentData.map(s => {
-        if (s.result === 'FAIL') {
+        if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
             return { ...s, rank: '-' as const };
         }
         // The rank is the index of the score in the unique sorted list, plus one.

@@ -32,6 +32,8 @@ interface ProcessedStudent extends Student {
     rank: number | '-';
 }
 
+type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
+
 const MobileEditView: React.FC<any> = ({ student, onBack, subjectDefinitions, marksData, handleMarkChange, hasActivities, attendanceData, handleAttendanceChange }) => {
     return (
       <div>
@@ -138,6 +140,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [mobileEditingStudent, setMobileEditingStudent] = useState<ProcessedStudent | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
+  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
 
   useEffect(() => {
     if (classStudents.length === 0) return;
@@ -283,8 +286,26 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
     });
     
-    return finalData.sort((a, b) => a.rollNo - b.rollNo);
-  }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII]);
+    const sortedData = finalData;
+
+    if (sortCriteria === 'name') {
+        sortedData.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortCriteria === 'totalMarks') {
+        sortedData.sort((a, b) => {
+            const aIsFail = a.result === 'FAIL';
+            const bIsFail = b.result === 'FAIL';
+
+            if (aIsFail && !bIsFail) return 1;
+            if (!aIsFail && bIsFail) return -1;
+            
+            return b.grandTotal - a.grandTotal;
+        });
+    } else { // default to 'rollNo'
+        sortedData.sort((a, b) => a.rollNo - b.rollNo);
+    }
+    
+    return sortedData;
+  }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, sortCriteria]);
 
   const handleConfirmSave = async () => {
     if (!examDetails || changedStudents.size === 0) return;
@@ -345,8 +366,32 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
         </div>
+
+        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
+            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
+            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
+                <button 
+                    onClick={() => setSortCriteria('rollNo')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Roll No
+                </button>
+                <button
+                    onClick={() => setSortCriteria('name')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Name
+                </button>
+                <button
+                    onClick={() => setSortCriteria('totalMarks')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Total Marks
+                </button>
+            </div>
+        </div>
         
-        <div className="mt-6 overflow-x-auto border rounded-lg">
+        <div className="mt-2 overflow-x-auto border rounded-lg">
             <table id="mark-statement-table" className="min-w-full text-sm">
                  <thead className="bg-slate-100">
                     <tr>

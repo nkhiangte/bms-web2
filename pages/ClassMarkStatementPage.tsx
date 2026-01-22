@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -240,15 +241,14 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       numericSubjects.forEach(sd => {
         let totalSubjectMark = 0, subjectFullMarks = 0;
         if (hasActivities) {
-            // FIX: Safely convert potential string/null values to numbers for arithmetic operations.
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+            // FIX: Explicitly cast properties to Number to resolve TypeScript type error during arithmetic operation.
+            subjectFullMarks = Number(sd.examFullMarks) + Number(sd.activityFullMarks);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
-            // FIX: Safely convert potential string/null values to numbers for arithmetic operations.
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;
             examTotal += totalSubjectMark;
             subjectFullMarks = sd.examFullMarks;
@@ -287,17 +287,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       return { ...student, grandTotal, examTotal, activityTotal, percentage, result, division, academicGrade, remark };
     });
 
-    // DENSE RANKING LOGIC (1, 1, 2, 3, 3)
-    // Get all students who passed
     const passedStudents = studentData.filter(s => s.result === 'PASS');
-    // Get the unique scores and sort them in descending order
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
     
     const finalData = studentData.map(s => {
         if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
             return { ...s, rank: '-' as const };
         }
-        // The rank is the index of the score in the unique sorted list, plus one.
         const rankIndex = uniqueScores.indexOf(s.grandTotal);
         return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
     });
@@ -353,11 +349,15 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             id: examId as any,
             name: examDetails.name,
             results: newResults,
-            attendance: attendanceData[studentId]?.totalWorkingDays ? { 
+        };
+        
+        // FIX: Conditionally add the attendance object to avoid sending `undefined` to Firestore.
+        if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
+            newExamData.attendance = { 
                 totalWorkingDays: attendanceData[studentId].totalWorkingDays!, 
                 daysPresent: attendanceData[studentId].daysPresent! 
-            } : undefined
-        };
+            };
+        }
 
         const newPerformance: Exam[] = [...(student.academicPerformance?.filter(e => e.id !== examId) || []), newExamData];
         return onUpdateAcademic(studentId, newPerformance);

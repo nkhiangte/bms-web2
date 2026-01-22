@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance } from '../types';
 import { BackIcon, PrinterIcon } from '../components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
+import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
 import { db } from '../firebaseConfig';
 
@@ -14,15 +14,7 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-interface ReportCardProps {
-    student: Student;
-    gradeDef: GradeDefinition;
-    exam: Exam | undefined;
-    examTemplate: { id: string; name: string };
-    allStudents: Student[];
-    academicYear: string;
-    staff: Staff[];
-}
+// --- Reusable Logic and Components ---
 
 const calculateTermSummary = (
     student: Student,
@@ -31,6 +23,8 @@ const calculateTermSummary = (
     gradeDef: GradeDefinition,
     allStudents: Student[]
 ) => {
+    if (!gradeDef || !gradeDef.subjects) return null;
+
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
@@ -47,25 +41,12 @@ const calculateTermSummary = (
         });
         
         let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
-        let failedSubjectsCount_III_to_VIII = 0, failedSubjectsCount_IX_to_X = 0, failedSubjectsCount_N_to_II = 0, gradedSubjectsPassed = 0;
+        let failedSubjectsCount = 0;
+        let gradedSubjectsPassed = 0;
         const failedSubjects: string[] = [];
 
         numericSubjects.forEach(sd => {
-            const normSubjDefName = normalizeSubjectName(sd.name);
-            const result = studentExam?.results.find(r => {
-                const normResultName = normalizeSubjectName(r.subject);
-                if (normResultName === normSubjDefName) return true;
-                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-                // Fallbacks for Class II subjects
-                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
-                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-                return false;
-            });
-
+            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
             let totalSubjectMark = 0, subjectFullMarks = 0;
 
             if (hasActivities) {
@@ -75,33 +56,20 @@ const calculateTermSummary = (
                 activityTotal += activityMark;
                 totalSubjectMark = examMark + activityMark;
                 subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
-                if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
+                if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
             } else {
                 totalSubjectMark = result?.marks ?? 0;
                 examTotal += totalSubjectMark;
                 subjectFullMarks = sd.examFullMarks;
-                if (isClassIXorX && totalSubjectMark < 33) { failedSubjectsCount_IX_to_X++; failedSubjects.push(sd.name); }
-                if (isNurseryToII && totalSubjectMark < 35) { failedSubjectsCount_N_to_II++; failedSubjects.push(sd.name); }
+                const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
+                if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
             }
             grandTotal += totalSubjectMark;
             fullMarksTotal += subjectFullMarks;
         });
 
         gradedSubjects.forEach(sd => {
-            const normSubjDefName = normalizeSubjectName(sd.name);
-            const result = studentExam?.results.find(r => {
-                const normResultName = normalizeSubjectName(r.subject);
-                if (normResultName === normSubjDefName) return true;
-                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-                // Fallbacks for Class II subjects
-                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
-                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-                return false;
-            });
+            const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
         });
         
@@ -109,11 +77,10 @@ const calculateTermSummary = (
         
         let resultStatus = 'PASS';
         if (gradedSubjectsPassed < gradedSubjects.length) resultStatus = 'FAIL';
-        else if (hasActivities && failedSubjectsCount_III_to_VIII > 1) resultStatus = 'FAIL';
-        else if (hasActivities && failedSubjectsCount_III_to_VIII === 1) resultStatus = 'SIMPLE PASS';
-        else if (isClassIXorX && failedSubjectsCount_IX_to_X > 1) resultStatus = 'FAIL';
-        else if (isClassIXorX && failedSubjectsCount_IX_to_X === 1) resultStatus = 'SIMPLE PASS';
-        else if (isNurseryToII && failedSubjectsCount_N_to_II > 0) resultStatus = 'FAIL';
+        else if (failedSubjectsCount > 1) resultStatus = 'FAIL';
+        else if (failedSubjectsCount === 1) resultStatus = 'SIMPLE PASS';
+        if (isNurseryToII && failedSubjectsCount > 0) resultStatus = 'FAIL';
+        
 
         let division = '-';
         if (isClassIXorX && resultStatus === 'PASS') {
@@ -124,14 +91,9 @@ const calculateTermSummary = (
         }
 
         let academicGrade = '-';
-        if (isNurseryToII) {
-            if (resultStatus === 'FAIL') academicGrade = 'E';
-            else {
-                if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
-            }
-        } else {
-            if (resultStatus === 'FAIL') academicGrade = 'E';
-            else { if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D'; }
+        if (resultStatus === 'FAIL') academicGrade = 'E';
+        else {
+            if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
         }
         
         let remark = '';
@@ -150,59 +112,35 @@ const calculateTermSummary = (
         return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
     });
 
-    const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
-    
-    const rankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
+    const passedStudents = studentData.filter(s => s.result === 'PASS');
+    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
+
+    const finalRankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
     
     studentData.forEach(s => {
-        if (s.result === 'FAIL') {
-            rankedData.set(s.id, { ...s, rank: '-' });
+        if (s.result !== 'PASS') {
+            finalRankedData.set(s.id, { ...s, rank: '-' });
         } else {
-            const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
+            const rankIndex = uniqueScores.indexOf(s.grandTotal);
             const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
-            rankedData.set(s.id, { ...s, rank });
+            finalRankedData.set(s.id, { ...s, rank });
         }
     });
     
-    return rankedData.get(student.id);
+    return finalRankedData.get(student.id) || null;
 };
 
+// --- MULTI-TERM FINAL REPORT COMPONENT ---
 
-const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
+const MultiTermReportCard: React.FC<{
+    student: Student;
+    gradeDef: GradeDefinition;
+    exams: Record<'terminal1' | 'terminal2' | 'terminal3', Exam | undefined>;
+    summaries: Record<'terminal1' | 'terminal2' | 'terminal3', ReturnType<typeof calculateTermSummary>>;
+    staff: Staff[];
+}> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
-    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
-
-    const currentTermId = examTemplate.id as 'terminal1' | 'terminal2' | 'terminal3';
-    
-    const summary = useMemo(() => {
-        if (allStudents.length === 0) return null;
-        return calculateTermSummary(student, exam, currentTermId, gradeDef, allStudents);
-    }, [student, exam, currentTermId, gradeDef, allStudents]);
-
-    const classTeacher = useMemo(() => {
-        if (!staff || !gradeDef?.classTeacherId) return null;
-        return staff.find((s: Staff) => s.id === gradeDef.classTeacherId);
-    }, [staff, gradeDef]);
-
-    const finalRemark = useMemo(() => {
-        if (currentTermId === 'terminal3') {
-             const nextGrade = getNextGrade(student.grade);
-
-            if (summary?.result === 'PASS' || summary?.result === 'SIMPLE PASS') {
-                if (student.grade === Grade.X) {
-                    return `Passed. School reopens on April 7, 2025`;
-                }
-                if (nextGrade) {
-                    return `Promoted to ${nextGrade}. School reopens on April 7, 2025`;
-                }
-                return `Promoted. School reopens on April 7, 2025`;
-            } else if (summary?.result === 'FAIL') {
-                return "Detained";
-            }
-        }
-        return exam?.teacherRemarks || summary?.remark || "Awaiting final results.";
-    }, [currentTermId, summary, student.grade, exam?.teacherRemarks]);
+    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
         if (attendance && attendance.totalWorkingDays > 0) {
@@ -211,135 +149,130 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
         return '-';
     };
 
-    const termLabel = examTemplate.name;
+    const finalRemark = useMemo(() => {
+        const summary3 = summaries.terminal3;
+        const exam3 = exams.terminal3;
+        const nextGrade = getNextGrade(student.grade);
+
+        if (summary3?.result === 'PASS' || summary3?.result === 'SIMPLE PASS') {
+            if (student.grade === Grade.X) {
+                return `Passed. School reopens on April 7, 2025`;
+            }
+            if (nextGrade) {
+                return `Promoted to ${nextGrade}. School reopens on April 7, 2025`;
+            }
+            return `Promoted. School reopens on April 7, 2025`;
+        } else if (summary3?.result === 'FAIL') {
+            return "Detained";
+        }
+        return exam3?.teacherRemarks || summary3?.remark || "Awaiting final results.";
+    }, [summaries.terminal3, exams.terminal3, student.grade]);
 
     return (
-        <div className="report-card-wrapper">
-            <div className="border border-slate-400 rounded-lg overflow-hidden print:overflow-visible break-inside-avoid">
-                <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 border-b border-slate-400">{termLabel}</h3>
-                <table className="min-w-full text-sm border-collapse">
-                    <thead className="bg-slate-50">
-                        {isNurseryToII ? (
-                             <tr className="border-b border-slate-400">
-                                <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
-                            </tr>
-                        ) : hasActivities ? (
-                             <>
-                                <tr className="border-b border-slate-400">
-                                    <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
-                                    <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
-                                    <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
-                                    <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total Obtained</th>
-                                </tr>
-                                <tr className="border-b border-slate-400">
-                                    <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                    <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
-                                    <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                    <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
-                                </tr>
-                             </>
-                        ) : (
-                             <tr className="border-b border-slate-400">
-                                <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
-                            </tr>
-                        )}
-                    </thead>
-                    <tbody>
-                        {gradeDef.subjects.map((sd) => {
-                            const normSubjDefName = normalizeSubjectName(sd.name);
-                            const result = exam?.results.find(r => {
-                                const normResultName = normalizeSubjectName(r.subject);
-                                if (normResultName === normSubjDefName) return true;
-                                if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-                                if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-                                if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-                                // Fallbacks for Class II subjects
-                                if (normSubjDefName === 'math' && normResultName === 'mathematics') return true;
-                                if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-                                if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-                                if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-                                return false;
-                            });
-                            const isGraded = sd.gradingSystem === 'OABC';
-                            
-                            return (
-                                 <tr key={sd.name} className="border-t border-slate-300">
-                                    <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-                                    {isNurseryToII ? (
-                                        <>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                        </>
-                                    ) : hasActivities ? (
-                                        isGraded ? (
-                                            <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
-                                        ) : (
-                                            <>
-                                                <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                                                <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
-                                                <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                                                <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                                <td className="px-2 py-1 text-center font-bold">{(result?.examMarks ?? 0) + (result?.activityMarks ?? 0)}</td>
-                                            </>
-                                        )
-                                    ) : (
-                                         <>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                        </>
-                                    )}
-                                </tr>
-                            );
-                        })}
-                        {hasActivities && (
-                            <tr className="border-t-2 border-slate-400 font-bold bg-slate-50">
-                                <td className="px-2 py-1 text-right border-r border-slate-300">Total</td>
-                                <td colSpan={2} className="px-2 py-1 text-center border-r border-slate-300">{summary?.examTotal}</td>
-                                <td colSpan={2} className="px-2 py-1 text-center border-r border-slate-300">{summary?.activityTotal}</td>
-                                <td className="px-2 py-1 text-center">{summary?.grandTotal}</td>
-                            </tr>
-                        )}
-                        <tr className="font-bold bg-slate-100 border-t border-slate-400">
-                            <td className="px-2 py-1 text-right border-r border-slate-300">Grand Total</td>
-                            <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center">{summary?.grandTotal}</td>
+        <div>
+            <table className="w-full border-collapse border border-slate-400 text-sm">
+                <thead>
+                    <tr className="bg-slate-100">
+                        <th rowSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>
+                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">I Entry</th>
+                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">II Entry</th>
+                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">III Entry</th>
+                    </tr>
+                    {hasActivities && (
+                        <tr className="bg-slate-100 text-xs">
+                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
                         </tr>
-                        <tr className="border-t border-slate-300">
-                            <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">Result</td>
-                            <td colSpan={hasActivities ? 5 : 3} className={`px-2 py-1 text-center font-bold ${summary?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>
-                                {summary?.result}
-                            </td>
-                        </tr>
-                         <tr className="border-t border-slate-300">
-                            <td className="px-2 py-1 text-right border-r border-slate-300 font-bold bg-slate-50">Percentage</td>
-                            <td colSpan={hasActivities ? 5 : 3} className="px-2 py-1 text-center font-bold">{summary?.percentage?.toFixed(2)}%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="mt-2 border border-slate-400 rounded-lg p-2 text-sm space-y-1 bg-slate-50 break-inside-avoid">
-                <div className="flex justify-between">
-                    <span><strong>Attendance:</strong> {getAttendancePercent(exam?.attendance)}</span>
-                    <span><strong>Rank:</strong> {summary?.rank}</span>
-                    {isClassIXorX ? (
-                        <span><strong>Division:</strong> {summary?.division}</span>
-                    ) : (
-                        <span><strong>Grade:</strong> {summary?.academicGrade}</span>
                     )}
-                </div>
-            </div>
+                </thead>
+                <tbody>
+                    {gradeDef.subjects.map(sd => {
+                        const term1Result = exams.terminal1?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                        const term2Result = exams.terminal2?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+                        const term3Result = exams.terminal3?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
 
-            <div className="mt-2 border border-slate-400 rounded-lg p-2 text-sm break-inside-avoid">
+                        return (
+                            <tr key={sd.name} className="text-center">
+                                <td className="p-1 border border-slate-400 text-left font-semibold">{sd.name}</td>
+                                {hasActivities ? (
+                                    <>
+                                        <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td className="p-1 border border-slate-400">{term1Result?.marks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term2Result?.marks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400">{term3Result?.marks ?? '-'}</td>
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+                <tfoot>
+                    {hasActivities && (
+                        <tr className="font-bold text-center">
+                            <td className="p-1 border border-slate-400 text-left">Total</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal1?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal1?.activityTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal2?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal2?.activityTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal3?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal3?.activityTotal ?? '-'}</td>
+                        </tr>
+                    )}
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Grand Total</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.grandTotal ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Result</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.result ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.result ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.result ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Rank</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.rank ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Percentage</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Grade</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.academicGrade ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.academicGrade ?? '-'}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.academicGrade ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Attendance %</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal1?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal2?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div className="mt-4 border border-slate-400 rounded-lg p-2 text-sm break-inside-avoid">
                 <strong>Final Remarks:</strong> {finalRemark}
             </div>
+            
             <div className="mt-8 text-sm break-inside-avoid">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
@@ -365,16 +298,19 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, gradeDef, exam, examTe
     );
 };
 
+
+// --- MAIN PAGE COMPONENT ---
+
 const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
     const { studentId, examId } = useParams() as { studentId: string; examId: string };
     const navigate = useNavigate();
 
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
     const [classmates, setClassmates] = useState<Student[]>([]);
-    const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
-
+    
     useEffect(() => {
         if (student) {
+            // This could be optimized to not re-fetch if students prop is comprehensive
             const unsubscribe = db.collection('students')
                 .where('grade', '==', student.grade)
                 .where('status', '==', StudentStatus.ACTIVE)
@@ -387,84 +323,48 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
         }
     }, [student]);
 
-    // Logic to override gradeDef for IX/X
     const gradeDef = useMemo(() => {
         if (!student || !gradeDefinitions[student.grade]) return null;
-        const def = gradeDefinitions[student.grade];
-        
-        if (student.grade === Grade.IX || student.grade === Grade.X) {
-            return {
-                ...def,
-                subjects: def.subjects.map(s => ({ 
-                    ...s, 
-                    examFullMarks: 100, 
-                    activityFullMarks: 0 
-                }))
-            };
-        }
-        return def;
+        return gradeDefinitions[student.grade];
     }, [student, gradeDefinitions]);
 
-    if (!student || !examTemplate) {
-        return <div className="p-8 text-center">Invalid student or exam specified.</div>;
-    }
+    const exams = useMemo(() => ({
+        terminal1: student?.academicPerformance?.find(e => e.id === 'terminal1'),
+        terminal2: student?.academicPerformance?.find(e => e.id === 'terminal2'),
+        terminal3: student?.academicPerformance?.find(e => e.id === 'terminal3'),
+    }), [student?.academicPerformance]);
 
-    if (!gradeDef) {
-        return <div className="p-8 text-center">Curriculum not defined for this student's grade.</div>;
-    }
-
-    const exam = student.academicPerformance?.find(e => 
-        e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
-    );
-
-    const handlePrint = () => {
-        window.print();
+    const summaries = {
+        terminal1: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal1, 'terminal1', gradeDef, classmates) : null, [student, exams.terminal1, gradeDef, classmates]),
+        terminal2: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal2, 'terminal2', gradeDef, classmates) : null, [student, exams.terminal2, gradeDef, classmates]),
+        terminal3: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal3, 'terminal3', gradeDef, classmates) : null, [student, exams.terminal3, gradeDef, classmates]),
     };
+    
+    if (!student || !examId) return <div className="p-8 text-center">Invalid student or exam specified.</div>;
+    if (!gradeDef) return <div className="p-8 text-center">Curriculum not defined for this student's grade.</div>;
+    
+    const handlePrint = () => window.print();
 
     return (
         <div className="bg-slate-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0">
-            {/* Print Styles */}
             <style>{`
+                @page { size: A4 portrait; margin: 1.5cm; }
                 @media print {
-                    @page {
-                        size: A4 portrait;
-                        margin: 5mm;
-                    }
-                    html, body {
-                        background-color: white;
-                        height: auto;
-                        margin: 0;
-                        padding: 0;
-                    }
+                    html, body { background-color: white; height: auto; margin: 0; padding: 0; }
                     body > *:not(#root) { display: none; }
-                    
-                    .print-hidden { display: none !important; }
-                    
-                    #printable-report {
-                        width: 100% !important;
-                        max-width: none !important;
-                        box-shadow: none !important;
-                        border: none !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                    }
-                    
-                    .report-card-wrapper {
-                        page-break-inside: avoid;
-                        break-inside: avoid;
-                    }
+                    #printable-report { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+                    .report-card-wrapper { page-break-inside: avoid; break-inside: avoid; }
                 }
             `}</style>
-
-            <div className="max-w-3xl mx-auto print:w-full print:max-w-none">
+            
+            <div className="max-w-4xl mx-auto print:w-full print:max-w-none">
                 <div className="mb-6 flex justify-between items-center print:hidden">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5"/> Back</button>
+                    <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
                     <button onClick={handlePrint} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print Report</button>
                 </div>
 
-                <div id="printable-report" className="bg-white p-8 shadow-lg print:shadow-none">
-                     <header className="text-center mb-4">
-                        <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto"/>
+                <div id="printable-report" className="bg-white p-6 shadow-lg print:shadow-none print:p-0 pt-24 print:pt-0">
+                    <header className="text-center mb-4">
                         <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-4 print:mt-2 print:text-lg">
                             STUDENT'S PROGRESS REPORT
                         </h2>
@@ -479,16 +379,20 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                         <div><strong className="text-slate-600">Roll No:</strong> <span className="font-bold text-base ml-1">{student.rollNo}</span></div>
                         <div><strong className="text-slate-600">Student ID:</strong> <span className="font-bold text-base ml-1">{formatStudentId(student, academicYear)}</span></div>
                     </section>
-
-                    <ReportCard 
-                        student={student} 
-                        gradeDef={gradeDef} 
-                        exam={exam} 
-                        examTemplate={examTemplate} 
-                        allStudents={classmates} 
-                        academicYear={academicYear}
-                        staff={staff}
-                    />
+                    
+                    {examId === 'terminal3' ? (
+                        <MultiTermReportCard 
+                            student={student}
+                            gradeDef={gradeDef}
+                            exams={exams}
+                            summaries={summaries}
+                            staff={staff}
+                        />
+                    ) : (
+                        <p className="text-center font-bold text-red-600 p-4 bg-red-50 rounded-lg">
+                            This consolidated view is only available for the Final (Third) Term. Please select the Third Term to see the full year's report.
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

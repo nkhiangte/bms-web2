@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Grade, GradeDefinition, SubjectDefinition } from '../types';
 import { PlusIcon, TrashIcon } from './Icons';
@@ -28,8 +27,7 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
     const subjectToUpdate = { ...newSubjects[index] };
 
     if (field === 'name') {
-        // FIX: Use bracket notation for consistency and to ensure the update is correctly applied.
-        subjectToUpdate[field] = value as string;
+        subjectToUpdate.name = value as string;
     } else if (field === 'examFullMarks' || field === 'activityFullMarks') {
         subjectToUpdate[field] = parseInt(value as string, 10) || 0;
     }

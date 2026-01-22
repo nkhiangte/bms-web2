@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
 import { BackIcon, PrinterIcon } from '../components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
+import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
 import { db } from '../firebaseConfig';
 
@@ -526,8 +526,13 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                     <button onClick={handlePrint} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print Report</button>
                 </div>
 
-                <div id="printable-report" className="bg-white p-6 shadow-lg print:shadow-none print:p-0 pt-24 print:pt-0">
+                <div id="printable-report" className="bg-white p-6 shadow-lg print:shadow-none print:p-0">
                     <header className="text-center mb-4">
+                         {examId !== 'terminal3' ? (
+                            <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
+                        ) : (
+                            <div className="h-32 md:h-40 print:h-48" aria-hidden="true"></div>
+                        )}
                         <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-4 print:mt-2 print:text-lg">
                             STUDENT'S PROGRESS REPORT
                         </h2>

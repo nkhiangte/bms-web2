@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';

@@ -1,6 +1,4 @@
 
-
-
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {
@@ -13,7 +11,7 @@ interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-// FIX: Extended React.Component to make this a valid class component, which provides `setState` and `props`.
+// FIX: The ErrorBoundary class must extend React.Component to have access to `this.state`, `this.setState`, and `this.props`.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
@@ -28,7 +26,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    // FIX: Corrected error by ensuring this class extends React.Component, which provides setState.
     this.setState({ errorInfo: errorInfo });
   }
 
@@ -113,7 +110,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    // FIX: Corrected error by ensuring this class extends React.Component, which provides props.
     return this.props.children || null;
   }
 }

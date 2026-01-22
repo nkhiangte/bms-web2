@@ -548,7 +548,11 @@ const BulkProgressReportPage: React.FC<BulkProgressReportPageProps> = ({ student
                         <div key={student.id} className="report-card-container container mx-auto bg-white p-6 my-4 shadow-lg print:w-full print:max-w-none print:my-0 print:p-0 print:shadow-none">
                             <div id={`printable-report-${student.id}`} className="font-serif print:text-sm">
                                 <header className="text-center mb-2">
-                                    <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
+                                    {examId !== 'terminal3' ? (
+                                        <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
+                                    ) : (
+                                        <div className="h-32 md:h-40 print:h-48" aria-hidden="true"></div>
+                                    )}
                                     <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
                                         STUDENT'S PROGRESS REPORT
                                     </h2>

@@ -507,6 +507,14 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
 
         <div className="mt-6 flex justify-end gap-4 print-hidden">
+            <Link
+                to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
+                target="_blank"
+                className="btn btn-secondary"
+            >
+                <PrinterIcon className="w-5 h-5" />
+                Bulk Print Reports
+            </Link>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">
                 <InboxArrowDownIcon className="w-5 h-5" /> Import Marks
             </button>

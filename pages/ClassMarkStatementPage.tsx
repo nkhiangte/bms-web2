@@ -244,8 +244,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            // FIX: Removed redundant Number() casting which was causing a TypeScript type error.
-            subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+            // FIX: Explicitly cast to Number to resolve potential type inference issues from the compiler.
+            subjectFullMarks = Number(sd.examFullMarks) + Number(sd.activityFullMarks);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;

@@ -24,12 +24,17 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
 
-        // Alias for "English" vs "English - I" or "English I"
-        if ((normSubjDefName === 'english') && (normResultName === 'english - i' || normResultName === 'english i')) return true;
-        // Alias for "English - II" vs "English II"
-        if ((normSubjDefName === 'english - ii') && (normResultName === 'english ii')) return true;
-        // Alias for "Social Studies" vs "Social Science"
-        if ((normSubjDefName === 'social studies') && (normResultName === 'social science')) return true;
+        // Fallbacks for common name variations
+        const mathNames = ['math', 'maths', 'mathematics'];
+        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+        
+        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
 
         return false;
     });

@@ -1,8 +1,10 @@
 
 import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';
 import { BookOpenIcon, BackIcon, HomeIcon } from '../../components/Icons';
+
+const { useParams, Link } = ReactRouterDOM as any;
 
 interface SyllabusPageProps {
     syllabus: Syllabus[];
@@ -20,7 +22,6 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
 
     // FIX: Add explicit type to useMemo to ensure TypeScript correctly infers the shape of syllabusBySubject, resolving destructuring errors.
     const syllabusBySubject = useMemo<Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }>>(() => {
-        if (!decodedGrade) return {};
         const gradeSyllabus = syllabus.filter(s => s.grade === decodedGrade);
         
         const result: Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }> = {};

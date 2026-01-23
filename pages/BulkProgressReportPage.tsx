@@ -134,7 +134,7 @@ const calculateTermSummary = (
     const finalRankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
     
     studentData.forEach(s => {
-        if (s.result !== 'PASS') {
+        if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
             finalRankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = uniqueScores.indexOf(s.grandTotal);

@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { Student, Exam, Grade, GradeDefinition, StudentStatus, ConductGrade, Attendance } from '../types';
 import AcademicRecordTable from './AcademicRecordTable';
@@ -89,7 +90,8 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     examTotal += examMark;
                     activityTotal += activityMark;
                     totalSubjectMark = examMark + activityMark;
-                    subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+                    // FIX: Use nullish coalescing operator to ensure operands are numbers, preventing potential TypeError.
+                    subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                     if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
                 } else {
                     totalSubjectMark = result?.marks ?? 0;
@@ -160,15 +162,16 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
             return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
         });
     
-        const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS').sort((a, b) => b.grandTotal - a.grandTotal);
+        const passedStudents = studentData.filter(s => s.result === 'PASS');
+        const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
         
         const finalRankedData = new Map<string, typeof studentData[0] & { rank: number | '-' }>();
         
         studentData.forEach(s => {
-            if (s.result === 'FAIL') {
+            if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
                 finalRankedData.set(s.id, { ...s, rank: '-' });
             } else {
-                const rankIndex = passedStudents.findIndex(p => p.grandTotal === s.grandTotal);
+                const rankIndex = uniqueScores.indexOf(s.grandTotal);
                 const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
                 finalRankedData.set(s.id, { ...s, rank });
             }

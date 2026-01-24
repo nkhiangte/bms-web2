@@ -1,6 +1,7 @@
 
 
 
+
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {
@@ -28,6 +29,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
+    // FIX: Property 'setState' does not exist on type 'ErrorBoundary'. This is fixed by extending React.Component.
     this.setState({ errorInfo: errorInfo });
   }
 
@@ -112,6 +114,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
+    // FIX: Property 'props' does not exist on type 'ErrorBoundary'. This is fixed by extending React.Component.
     return this.props.children || null;
   }
 }

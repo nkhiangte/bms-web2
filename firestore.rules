@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -71,8 +72,11 @@ service cloud.firestore {
     // ---------------------------
     match /online_admissions/{admissionId} {
       allow create: if true; // Public can submit forms
-      // FIX: Added 'list' permission for admins to view all submissions on the dashboard.
-      allow read, list, update, delete: if isAdmin(); // Only admins can manage submissions
+      allow read, list, delete: if isAdmin();
+      // Allow admins to update.
+      // Allow public to update (for payment step) ONLY if the application is still 'pending'.
+      // This prevents modification after review/approval.
+      allow update: if isAdmin() || resource.data.status == 'pending';
     }
     
     // ---------------------------

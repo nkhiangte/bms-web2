@@ -1,8 +1,4 @@
 
-import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
-
-
-
 
 export interface StudentClaim {
   fullName: string;

@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';
@@ -12,7 +13,8 @@ interface SyllabusPageProps {
 }
 
 const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions }) => {
-    const { grade } = useParams<{ grade: string }>();
+    // FIX: Changed useParams generic call to a result cast to avoid "Untyped function calls may not accept type arguments" error.
+    const { grade } = useParams() as { grade: string };
     const decodedGrade = grade ? decodeURIComponent(grade) as Grade : undefined;
 
     const subjectsForGrade = useMemo(() => {

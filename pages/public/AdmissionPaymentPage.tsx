@@ -4,7 +4,7 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType } from '../../types';
 import { ADMISSION_FEE_AMOUNT, NOTEBOOK_SET_PRICES, OTHER_ADMISSION_ITEMS, UNIFORM_ITEMS, UNIFORM_SIZES } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon } from '../../components/Icons';
-import { resizeImage, uploadToImgBB, useScript } from '../../utils';
+import { resizeImage, uploadToImgBB } from '../../utils';
 
 interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string }) => Promise<boolean>;
@@ -14,18 +14,17 @@ interface AdmissionPaymentPageProps {
 const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdmissionPayment, addNotification }) => {
     const { admissionId } = useParams<{ admissionId: string }>();
     const location = useLocation();
-    const razorpayStatus = useScript('https://checkout.razorpay.com/v1/checkout.js');
     
-    const { grade, studentName, fatherName, contact } = location.state || {};
+    const { grade, studentName } = location.state || {};
 
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+    const [transactionId, setTransactionId] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error'>('pending');
 
     const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
 
-    // FIX: Ensured all items in the array have a consistent shape to prevent type errors.
     const allItems = useMemo(() => [
         { name: 'Admission Fee', price: ADMISSION_FEE_AMOUNT, mandatory: true, checkable: false, hasSize: false, sizes: undefined },
         { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined },
@@ -35,7 +34,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     ], [grade, notebookPrice]);
 
     useEffect(() => {
-        // Pre-select mandatory items
         const mandatory: Record<string, { quantity: number; size?: string }> = {};
         allItems.forEach(item => {
             if (item.mandatory) {
@@ -69,13 +67,13 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         setSelectedItems(prev => ({...prev, [itemName]: {...prev[itemName], size}}));
     };
 
-    const displayRazorpay = async () => {
+    const handleSubmit = async () => {
         if (!paymentScreenshot) {
-            addNotification("Please upload the payment screenshot before proceeding.", 'error');
+            addNotification("Please upload a screenshot of your successful payment.", 'error', 'Screenshot Required');
             return;
         }
-        if (razorpayStatus !== 'ready') {
-            addNotification("Payment gateway is not ready. Please wait a moment and try again.", 'error');
+        if (!transactionId.trim()) {
+            addNotification("Please enter the UPI Transaction ID from your payment app.", 'error', 'Transaction ID Required');
             return;
         }
 
@@ -83,47 +81,28 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         try {
             const screenshotUrl = await uploadToImgBB(await resizeImage(paymentScreenshot, 800, 800, 0.8));
             
-            const options = {
-                key: process.env.VITE_RAZORPAY_KEY_ID,
-                amount: totalCost * 100,
-                currency: "INR",
-                name: "Bethel Mission School",
-                description: `Admission Payment for ${studentName}`,
-                image: "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
-                handler: async (response: any) => {
-                    const purchasedItems: AdmissionItem[] = Object.entries(selectedItems).map(([name, details]) => {
-                        const item = allItems.find(i => i.name === name)!;
-                        return { name, price: item.price, quantity: details.quantity, size: details.size };
-                    });
-
-                    const success = await onUpdateAdmissionPayment(admissionId!, {
-                        paymentAmount: totalCost,
-                        purchasedItems,
-                        paymentScreenshotUrl: screenshotUrl,
-                        paymentTransactionId: response.razorpay_payment_id,
-                    });
-
-                    if (success) {
-                        setPaymentStatus('success');
-                    } else {
-                        setPaymentStatus('error');
-                    }
-                },
-                prefill: { name: fatherName, contact: contact },
-                theme: { color: "#0ea5e9" },
-                modal: { ondismiss: () => setIsProcessing(false) }
-            };
-
-            const paymentObject = new window.Razorpay(options);
-            paymentObject.on('payment.failed', (response: any) => {
-                addNotification(response.error.description, 'error', 'Payment Failed');
-                setIsProcessing(false);
+            const purchasedItems: AdmissionItem[] = Object.entries(selectedItems).map(([name, details]) => {
+                const item = allItems.find(i => i.name === name)!;
+                return { name, price: item.price, quantity: details.quantity, size: details.size };
             });
-            paymentObject.open();
 
+            const success = await onUpdateAdmissionPayment(admissionId!, {
+                paymentAmount: totalCost,
+                purchasedItems,
+                paymentScreenshotUrl: screenshotUrl,
+                paymentTransactionId: transactionId,
+            });
+
+            if (success) {
+                setPaymentStatus('success');
+            } else {
+                throw new Error("Failed to update admission record on the server.");
+            }
         } catch (error) {
-            console.error("Payment preparation failed:", error);
-            addNotification("Failed to prepare payment. Please check your screenshot and try again.", 'error');
+            console.error("Payment submission failed:", error);
+            addNotification("Failed to submit payment details. Please try again or contact the school office.", 'error', 'Submission Failed');
+            setPaymentStatus('error');
+        } finally {
             setIsProcessing(false);
         }
     };
@@ -148,8 +127,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
          return (
             <div className="py-16 bg-slate-50 min-h-screen flex items-center justify-center">
                 <div className="text-center max-w-2xl mx-auto">
-                    <h1 className="text-3xl font-bold text-red-600">Payment Update Failed</h1>
-                    <p className="mt-4 text-lg text-slate-600">Your payment was likely successful, but we failed to update your application record. Please contact the school office with your payment details.</p>
+                    <h1 className="text-3xl font-bold text-red-600">Submission Failed</h1>
+                    <p className="mt-4 text-lg text-slate-600">We were unable to save your payment details. Please try again. If the problem persists, please contact the school office.</p>
                     <Link to="/" className="mt-8 btn btn-secondary">Return to Homepage</Link>
                 </div>
             </div>
@@ -162,7 +141,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-5xl mx-auto">
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment (Step 2 of 2)</h1>
-                        <p className="mt-2 text-lg text-slate-600">Select items and complete the payment to finalize your application.</p>
+                        <p className="mt-2 text-lg text-slate-600">Select items and complete the payment to finalize your application for <span className="font-bold">{studentName}</span>.</p>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -185,25 +164,41 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                             ))}
                         </div>
                         <div className="lg:col-span-1">
-                            <div className="bg-slate-50 p-6 rounded-lg border sticky top-28">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">Cart Summary</h3>
-                                <div className="space-y-2 text-sm">
-                                    {Object.entries(selectedItems).map(([name, details]) => {
-                                        const item = allItems.find(i => i.name === name);
-                                        return (
-                                            <div key={name} className="flex justify-between">
-                                                <span className="text-slate-600">{name} {details.size && `(Size: ${details.size})`}</span>
-                                                <span className="font-semibold">₹{item?.price}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="mt-4 pt-4 border-t flex justify-between font-bold text-lg">
-                                    <span>Total</span>
-                                    <span>₹{totalCost}</span>
+                            <div className="bg-slate-50 p-6 rounded-lg border sticky top-28 space-y-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 mb-4">Cart Summary</h3>
+                                    <div className="space-y-2 text-sm">
+                                        {Object.entries(selectedItems).map(([name, details]) => {
+                                            const item = allItems.find(i => i.name === name);
+                                            return (
+                                                <div key={name} className="flex justify-between">
+                                                    <span className="text-slate-600">{name} {details.size && `(Size: ${details.size})`}</span>
+                                                    <span className="font-semibold">₹{item?.price}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t flex justify-between font-bold text-lg">
+                                        <span>Total</span>
+                                        <span>₹{totalCost}</span>
+                                    </div>
                                 </div>
                                 
-                                <div className="mt-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Instructions</h3>
+                                    <p className="text-sm text-slate-600 mb-4">Pay the total amount using the details below, then upload the screenshot to finalize.</p>
+                                     <div className="flex justify-center">
+                                        <img src="https://i.ibb.co/L8mC9gW/qr-code-placeholder.png" alt="UPI QR Code Placeholder" className="w-48 h-48 border p-1"/>
+                                     </div>
+                                     <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700">bethelmissionschool@upi</span></p>
+                                </div>
+                                
+                                <div>
+                                     <label className="block text-sm font-bold text-slate-800">UPI Transaction ID*</label>
+                                     <input type="text" value={transactionId} onChange={e => setTransactionId(e.target.value)} className="form-input w-full mt-1" placeholder="Enter ID from your payment app" required/>
+                                </div>
+
+                                <div>
                                      <label className="block text-sm font-bold text-slate-800">Upload Payment Screenshot*</label>
                                      <div className="mt-1 flex items-center gap-3">
                                         <button type="button" onClick={() => document.getElementById('payment-ss-upload')?.click()} className="btn btn-secondary whitespace-nowrap w-full">
@@ -214,11 +209,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                                     {paymentScreenshot && <p className="text-xs text-slate-600 mt-1 truncate">{paymentScreenshot.name}</p>}
                                 </div>
                                 
-                                <button onClick={displayRazorpay} disabled={isProcessing} className="w-full btn btn-primary !py-3 !text-base mt-6">
+                                <button onClick={handleSubmit} disabled={isProcessing || !paymentScreenshot || !transactionId} className="w-full btn btn-primary !py-3 !text-base mt-2">
                                     {isProcessing ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                    {isProcessing ? 'Processing...' : `Pay ₹${totalCost}`}
+                                    {isProcessing ? 'Submitting...' : 'Submit Payment & Finalize Application'}
                                 </button>
-                                 <p className="text-xs text-slate-500 mt-2 text-center">You will be redirected to Razorpay.</p>
                             </div>
                         </div>
                     </div>

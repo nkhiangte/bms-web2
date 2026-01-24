@@ -80,7 +80,7 @@ const calculateTermSummary = (
                 examTotal += examMark;
                 activityTotal += activityMark;
                 totalSubjectMark = examMark + activityMark;
-                subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+                subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                 if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
             } else {
                 totalSubjectMark = result?.marks ?? 0;
@@ -323,22 +323,23 @@ const MultiTermReportCard: React.FC<{
     );
 };
 
-const SingleTermReportCard: React.FC<{
-    student: Student;
-    gradeDef: GradeDefinition;
-    exam: Exam | undefined;
-    examTemplate: { id: string; name: string; } | undefined;
-    summary: ReturnType<typeof calculateTermSummary>;
-    staff: Staff[];
-}> = ({ student, gradeDef, exam, examTemplate, summary, staff }) => {
+const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
-    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
+
+    const processedReportData = useMemo(() => {
+        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents);
+    }, [student, exam, examTemplate.id, gradeDef, allStudents]);
+
+    const classTeacher = useMemo(() => {
+        if (!staff || !gradeDef?.classTeacherId) return null;
+        return staff.find((s: Staff) => s.id === gradeDef.classTeacherId);
+    }, [staff, gradeDef]);
 
     return (
         <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate?.name}</h3>
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
             <table className="min-w-full text-sm border-collapse">
                 <thead className="bg-slate-50 print:bg-transparent">
                     {isNurseryToII ? (
@@ -415,21 +416,35 @@ const SingleTermReportCard: React.FC<{
                     {hasActivities && (
                         <>
                             <div className="font-semibold text-slate-600 text-right">Summative Total:</div>
-                            <div className="font-bold text-slate-800">{summary?.examTotal}</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>
                             <div className="font-semibold text-slate-600 text-right">Activity Total:</div>
-                            <div className="font-bold text-slate-800">{summary?.activityTotal}</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.activityTotal}</div>
                         </>
                     )}
                     <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
-                    <div className="font-bold text-slate-800">{summary?.grandTotal}</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
+                    
                     <div className="font-semibold text-slate-600 text-right">Percentage:</div>
-                    <div className="font-bold text-slate-800">{summary?.percentage?.toFixed(2) ?? '0.00'}%</div>
-                    {!isClassIXorX && <><div className="font-semibold text-slate-600 text-right">Grade:</div><div className="font-bold text-slate-800">{summary?.academicGrade}</div></>}
-                    {isClassIXorX && <><div className="font-semibold text-slate-600 text-right">Division:</div><div className="font-bold text-slate-800">{summary?.division}</div></>}
+                    <div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
+
+                    {!isClassIXorX && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Grade:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.academicGrade}</div>
+                        </>
+                    )}
+                    {isClassIXorX && (
+                         <>
+                            <div className="font-semibold text-slate-600 text-right">Division:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.division}</div>
+                        </>
+                    )}
+
                     <div className="font-semibold text-slate-600 text-right">Result:</div>
-                    <div className={`font-bold ${summary?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{summary?.result}</div>
+                    <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
+                    
                     <div className="font-semibold text-slate-600 text-right">Rank:</div>
-                    <div className="font-bold text-slate-800">{summary?.rank}</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.rank}</div>
                     <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
                     <div className="font-bold text-slate-800">
                         {(exam?.attendance && exam.attendance.totalWorkingDays > 0)
@@ -437,9 +452,10 @@ const SingleTermReportCard: React.FC<{
                             : 'N/A'}
                     </div>
                 </div>
+                
                 <div className="pt-1.5 mt-1.5 border-t">
                     <span className="font-semibold">Teacher's Remarks: </span>
-                    <span>{exam?.teacherRemarks || summary?.remark || 'N/A'}</span>
+                    <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
                 </div>
             </div>
              <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
@@ -457,6 +473,7 @@ const SingleTermReportCard: React.FC<{
                 </div>
                 <div className="flex justify-between mt-4 print:mt-1">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                    <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>
             </div>
         </div>
@@ -464,7 +481,6 @@ const SingleTermReportCard: React.FC<{
 };
 
 // --- MAIN PAGE COMPONENT ---
-
 const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
     const { studentId, examId } = useParams() as { studentId: string; examId: string };
     const navigate = useNavigate();
@@ -474,7 +490,6 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     
     useEffect(() => {
         if (student) {
-            // This could be optimized to not re-fetch if students prop is comprehensive
             const unsubscribe = db.collection('students')
                 .where('grade', '==', student.grade)
                 .where('status', '==', StudentStatus.ACTIVE)
@@ -489,9 +504,23 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
 
     const gradeDef = useMemo(() => {
         if (!student || !gradeDefinitions[student.grade]) return null;
-        return gradeDefinitions[student.grade];
+        const def = gradeDefinitions[student.grade];
+        
+        if (student.grade === Grade.IX || student.grade === Grade.X) {
+            return {
+                ...def,
+                subjects: def.subjects.map(s => ({ 
+                    ...s, 
+                    examFullMarks: 100, 
+                    activityFullMarks: 0 
+                }))
+            };
+        }
+        return def;
     }, [student, gradeDefinitions]);
 
+    const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
+    
     const exams = useMemo(() => ({
         terminal1: student?.academicPerformance?.find(e => e.id === 'terminal1'),
         terminal2: student?.academicPerformance?.find(e => e.id === 'terminal2'),
@@ -504,56 +533,55 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
         terminal3: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal3, 'terminal3', gradeDef, classmates) : null, [student, exams.terminal3, gradeDef, classmates]),
     };
     
-    if (!student || !examId) return <div className="p-8 text-center">Invalid student or exam specified.</div>;
-    if (!gradeDef) return <div className="p-8 text-center">Curriculum not defined for this student's grade.</div>;
-    
-    const handlePrint = () => window.print();
+    const singleExam = useMemo(() => exams[examId as 'terminal1' | 'terminal2' | 'terminal3'], [exams, examId]);
 
-    const currentExam = exams[examId as keyof typeof exams];
-    const currentSummary = summaries[examId as keyof typeof summaries];
-    const currentExamTemplate = TERMINAL_EXAMS.find(e => e.id === examId);
+    if (!student) {
+        return <div className="p-8 text-center">Loading student data...</div>;
+    }
+
+    if (!gradeDef) {
+        return (
+            <div className="p-8 text-center">
+                <p>Curriculum not defined for {student.grade}. Please contact an administrator.</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="bg-slate-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0">
-            <style>{`
-                @page { size: A4 portrait; margin: 1.5cm; }
-                @media print {
-                    html, body { background-color: white; height: auto; margin: 0; padding: 0; }
-                    body > *:not(#root) { display: none; }
-                    #printable-report { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-                    .report-card-wrapper { page-break-inside: avoid; break-inside: avoid; }
-                }
-            `}</style>
-            
-            <div className="max-w-4xl mx-auto print:w-full print:max-w-none">
-                <div className="mb-6 flex justify-between items-center print:hidden">
-                    <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
-                    <button onClick={handlePrint} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print Report</button>
+        <div className="bg-slate-100 print:bg-white">
+            <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm">
+                <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
+                <div className="text-center">
+                    <h2 className="text-xl font-bold">Print Preview</h2>
+                    <p className="text-sm text-slate-600">{student.name} - {examTemplate?.name}</p>
                 </div>
-
-                <div id="printable-report" className="bg-white p-6 shadow-lg print:shadow-none print:p-0">
-                    <header className="text-center mb-4">
-                         {examId !== 'terminal3' ? (
+                <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print Report</button>
+            </div>
+            
+            <div className="container mx-auto bg-white p-6 my-4 shadow-lg print:w-full print:max-w-none print:my-0 print:p-0 print:shadow-none">
+                <div id={`printable-report-${student.id}`} className="font-serif print:text-sm">
+                    <header className="text-center mb-2">
+                        {examId !== 'terminal3' ? (
                             <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
                         ) : (
                             <div className="h-32 md:h-40 print:h-48" aria-hidden="true"></div>
                         )}
-                        <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-4 print:mt-2 print:text-lg">
+                        <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
                             STUDENT'S PROGRESS REPORT
                         </h2>
-                        <p className="font-semibold mt-1 text-sm">Academic Session: {academicYear}</p>
+                        <p className="font-semibold mt-1 print:text-sm">Academic Session: {academicYear}</p>
                     </header>
 
-                    <section className="mb-4 p-3 border-2 border-slate-400 rounded-lg grid grid-cols-2 md:grid-cols-3 gap-x-2 gap-y-1 text-sm print:grid-cols-3 print:gap-y-0.5 print:mb-2">
-                        <div><strong className="text-slate-600">Student's Name:</strong> <span className="font-bold text-base ml-1">{student.name}</span></div>
-                        <div><strong className="text-slate-600">Father's Name:</strong> <span className="font-bold text-base ml-1">{student.fatherName}</span></div>
-                        <div><strong className="text-slate-600">Date of Birth:</strong> <span className="font-bold text-base ml-1">{formatDateForDisplay(student.dateOfBirth)}</span></div>
-                        <div><strong className="text-slate-600">Class:</strong> <span className="font-bold text-base ml-1">{student.grade}</span></div>
-                        <div><strong className="text-slate-600">Roll No:</strong> <span className="font-bold text-base ml-1">{student.rollNo}</span></div>
-                        <div><strong className="text-slate-600">Student ID:</strong> <span className="font-bold text-base ml-1">{formatStudentId(student, academicYear)}</span></div>
+                    <section className="mb-2 p-2 border-2 border-slate-400 rounded-lg grid grid-cols-3 print:grid-cols-3 gap-x-2 gap-y-1 text-sm print:mb-1 print:p-1 print:gap-y-0.5">
+                        <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold text-base">{student.name}</span></div>
+                        <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold text-base">{student.fatherName}</span></div>
+                        <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold text-base">{formatDateForDisplay(student.dateOfBirth)}</span></div>
+                        <div><strong className="block text-slate-600">Class:</strong><span className="font-bold text-base">{student.grade}</span></div>
+                        <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold text-base">{student.rollNo}</span></div>
+                        <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
                     </section>
-                    
-                     <section className="mt-4 print:mt-2">
+
+                    <section className="mt-4 print:mt-2">
                         {examId === 'terminal3' ? (
                             <MultiTermReportCard 
                                 student={student}
@@ -563,12 +591,13 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                                 staff={staff}
                             />
                         ) : (
-                            <SingleTermReportCard
-                                student={student}
-                                gradeDef={gradeDef}
-                                exam={currentExam}
-                                examTemplate={currentExamTemplate}
-                                summary={currentSummary}
+                            <ReportCard 
+                                student={student} 
+                                gradeDef={gradeDef} 
+                                exam={singleExam} 
+                                examTemplate={examTemplate} 
+                                allStudents={classmates}
+                                academicYear={academicYear}
                                 staff={staff}
                             />
                         )}

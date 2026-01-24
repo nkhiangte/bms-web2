@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 import React, { useMemo } from 'react';
 import { Student, Exam, Grade, GradeDefinition, StudentStatus, ConductGrade, Attendance } from '../types';
 import AcademicRecordTable from './AcademicRecordTable';
@@ -96,7 +89,7 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     examTotal += examMark;
                     activityTotal += activityMark;
                     totalSubjectMark = examMark + activityMark;
-                    // FIX: Use nullish coalescing operator to ensure operands are numbers, preventing potential TypeError.
+                    // FIX: Use nullish coalescing operator to ensure operands are numbers, as properties from Firestore can be undefined.
                     subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                     if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
                 } else {

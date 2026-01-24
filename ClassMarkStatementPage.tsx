@@ -1,6 +1,4 @@
 
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance } from '../types';
@@ -183,7 +181,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            // FIX: Use nullish coalescing operator to ensure operands are numbers, preventing potential TypeError.
+            // FIX: Use nullish coalescing operator to ensure operands are numbers, as properties from Firestore can be undefined.
             subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {

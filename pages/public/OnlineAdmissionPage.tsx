@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
@@ -76,6 +77,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         e.preventDefault();
         if (!agreed) {
             alert("You must agree to the declaration before submitting.");
+            return;
+        }
+        
+        if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard || !fileUploads.paymentScreenshot) {
+            alert("Please upload all required documents: Birth Certificate, Transfer Certificate, Report Card, and Payment Screenshot.");
             return;
         }
 
@@ -207,9 +213,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         <fieldset className="space-y-4 border p-4 rounded-lg">
                              <legend className="text-xl font-bold text-slate-800 px-2">Document Upload</legend>
                              <p className="text-sm text-slate-600">Please upload clear images (JPG, PNG) of the following documents.</p>
-                             <FileUploadField label="Birth Certificate" id="birthCertificate" file={fileUploads.birthCertificate} status={uploadProgress.birthCertificate} onFileChange={handleFileChange} />
-                             <FileUploadField label="Transfer Certificate (if applicable)" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} />
-                             <FileUploadField label="Previous Progress Report Card (if applicable)" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} />
+                             <FileUploadField label="Birth Certificate" id="birthCertificate" file={fileUploads.birthCertificate} status={uploadProgress.birthCertificate} onFileChange={handleFileChange} required />
+                             <FileUploadField label="Transfer Certificate" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} required />
+                             <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required />
                         </fieldset>
 
                         {/* Payment Section */}

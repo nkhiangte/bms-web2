@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {

@@ -63,6 +63,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
 
+    const isNursery = formData.admissionGrade === Grade.NURSERY;
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
@@ -79,9 +81,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             return;
         }
         
-        if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
-            alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
-            return;
+        if (isNursery) {
+            if (!fileUploads.birthCertificate) {
+                alert("Please upload the Birth Certificate.");
+                return;
+            }
+        } else {
+            if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
+                alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
+                return;
+            }
         }
 
         setIsSubmitting(true);
@@ -193,10 +202,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         {/* Document Upload */}
                         <fieldset className="space-y-4 border p-4 rounded-lg">
                              <legend className="text-xl font-bold text-slate-800 px-2">Document Upload</legend>
-                             <p className="text-sm text-slate-600">Please upload clear images (JPG, PNG) of the following documents.</p>
+                             <p className="text-sm text-slate-600">
+                                Please upload clear images (JPG, PNG) of the following documents.
+                                {isNursery && <span className="block text-sky-700 font-semibold">For Nursery admission, only the Birth Certificate is required.</span>}
+                             </p>
                              <FileUploadField label="Birth Certificate" id="birthCertificate" file={fileUploads.birthCertificate} status={uploadProgress.birthCertificate} onFileChange={handleFileChange} required />
-                             <FileUploadField label="Transfer Certificate" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} required />
-                             <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required />
+                             <FileUploadField label="Transfer Certificate" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} required={!isNursery} />
+                             <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required={!isNursery} />
                         </fieldset>
 
                         {/* Declaration */}

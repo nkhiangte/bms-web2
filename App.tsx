@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -18,7 +20,7 @@ import {
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
-    StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus
+    StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -98,6 +100,7 @@ import FacultyPage from './pages/public/FacultyPage';
 import RulesPage from './pages/public/RulesPage';
 import AdmissionsPage from './pages/public/AdmissionsPage';
 import OnlineAdmissionPage from './pages/public/OnlineAdmissionPage';
+import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import FeesPage from './pages/public/FeesPage';
 import SuppliesPage from './pages/public/SuppliesPage';
@@ -378,6 +381,41 @@ const App: React.FC = () => {
             addNotification(e.message, "error");
         }
     };
+    
+    const handleOnlineAdmissionSubmit = async (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>): Promise<string | null> => {
+        try {
+            const submissionData = {
+                ...data,
+                submissionDate: new Date().toISOString(),
+                status: 'pending' as 'pending',
+                paymentStatus: 'pending' as 'pending'
+            };
+            const docRef = await db.collection('online_admissions').add(submissionData);
+            return docRef.id;
+        } catch (error: any) {
+            addNotification(error.message, 'error', 'Submission Failed');
+            return null;
+        }
+    };
+
+    const handleUpdateAdmissionPayment = async (
+        admissionId: string, 
+        updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string }
+    ) => {
+         try {
+            await db.collection('online_admissions').doc(admissionId).update({
+                ...updates,
+                paymentStatus: 'paid',
+                status: 'reviewed' // Move to reviewed after payment
+            });
+            addNotification("Payment details saved successfully!", 'success');
+            return true;
+        } catch (error: any) {
+            addNotification(error.message, 'error', 'Payment Update Failed');
+            return false;
+        }
+    };
+
 
     const handleMarkStaffAttendance = async (staffId: string, status: AttendanceStatus) => {
         const todayStr = new Date().toISOString().split('T')[0];
@@ -629,7 +667,8 @@ const App: React.FC = () => {
                     <Route path="/achievements/science/mathematics-competition" element={<MathematicsCompetitionPage />} />
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
-                    <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async () => true} />} />
+                    <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
+                    <Route path="/admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={handleUpdateAdmissionPayment} addNotification={addNotification} />} />
                     <Route path="/portal/syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />

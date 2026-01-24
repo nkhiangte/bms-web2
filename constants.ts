@@ -1,4 +1,5 @@
 
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -200,6 +201,38 @@ export const HOSTEL_STAFF_ROLE_LIST: HostelStaffRole[] = Object.values(HostelSta
 export const HOSTEL_INVENTORY_CATEGORY_LIST: HostelInventoryCategory[] = Object.values(HostelInventoryCategory);
 export const CALENDAR_EVENT_TYPE_LIST: CalendarEventType[] = Object.values(CalendarEventType);
 
+// --- NEW: Admission Payment Items ---
+export const ADMISSION_FEE_AMOUNT = 1000;
+export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
+    [Grade.NURSERY]: 500,
+    [Grade.KINDERGARTEN]: 600,
+    [Grade.I]: 700,
+    [Grade.II]: 750,
+    [Grade.III]: 800,
+    [Grade.IV]: 850,
+    [Grade.V]: 900,
+    [Grade.VI]: 950,
+    [Grade.VII]: 1000,
+    [Grade.VIII]: 1050,
+    [Grade.IX]: 1100,
+    [Grade.X]: 0, // No new admissions
+};
+
+export const OTHER_ADMISSION_ITEMS = {
+    'ID Card': 150,
+    'Diary': 100,
+};
+
+export const UNIFORM_SIZES = ['22', '24', '26', '28', '30', '32', '34', '36', '38', '40'];
+export const UNIFORM_ITEMS = [
+    { name: 'Shirt (Boy/Girl)', price: 400, sizes: UNIFORM_SIZES },
+    { name: 'Pants (Boy)', price: 450, sizes: UNIFORM_SIZES },
+    { name: 'Skirt (Girl)', price: 450, sizes: UNIFORM_SIZES },
+    { name: 'Cardigan (Boy/Girl)', price: 600, sizes: UNIFORM_SIZES },
+    { name: 'Pullover (Boy/Girl)', price: 550, sizes: UNIFORM_SIZES },
+    { name: 'Sweater (Boy/Girl)', price: 700, sizes: UNIFORM_SIZES },
+];
+
 // --- NEW: Hostel Discipline ---
 export const INCIDENT_SEVERITY_LIST: IncidentSeverity[] = Object.values(IncidentSeverity);
 export const INCIDENT_STATUS_LIST: IncidentStatus[] = Object.values(IncidentStatus);
@@ -277,7 +310,6 @@ export const examRoutines: Routine[] = [
 ];
 
 
-// FIX: Added explicit type to prevent TS from widening the 'id' property to a generic string.
 export const TERMINAL_EXAMS: { id: 'terminal1' | 'terminal2' | 'terminal3'; name: string }[] = [
     { id: 'terminal1', name: 'First Terminal Examination' },
     { id: 'terminal2', name: 'Second Terminal Examination' },

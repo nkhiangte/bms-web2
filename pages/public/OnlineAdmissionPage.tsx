@@ -1,21 +1,19 @@
 
 import React, { useState, FormEvent, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
-// FIX: Added GENDER_LIST to the import to resolve 'Cannot find name' error.
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 
 interface OnlineAdmissionPageProps {
-    onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>) => Promise<boolean>;
+    onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>) => Promise<string | null>;
 }
 
 type FileUploads = {
     transferCertificate: File | null;
     birthCertificate: File | null;
     reportCard: File | null;
-    paymentScreenshot: File | null;
 };
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
@@ -49,6 +47,7 @@ const FileUploadField: React.FC<{
 
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit }) => {
+    const navigate = useNavigate();
     const initialFormState = {
         admissionGrade: Grade.NURSERY, academicYear: '2026-27', studentName: '', dateOfBirth: '', gender: Gender.MALE,
         studentAadhaar: '', fatherName: '', motherName: '', fatherOccupation: '', motherOccupation: '', parentAadhaar: '',
@@ -58,11 +57,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     };
     
     const [formData, setFormData] = useState(initialFormState);
-    const [fileUploads, setFileUploads] = useState<FileUploads>({ transferCertificate: null, birthCertificate: null, reportCard: null, paymentScreenshot: null });
-    const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ transferCertificate: 'idle', birthCertificate: 'idle', reportCard: 'idle', paymentScreenshot: 'idle' });
+    const [fileUploads, setFileUploads] = useState<FileUploads>({ transferCertificate: null, birthCertificate: null, reportCard: null });
+    const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ transferCertificate: 'idle', birthCertificate: 'idle', reportCard: 'idle' });
     const [agreed, setAgreed] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -80,13 +79,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             return;
         }
         
-        if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard || !fileUploads.paymentScreenshot) {
-            alert("Please upload all required documents: Birth Certificate, Transfer Certificate, Report Card, and Payment Screenshot.");
+        if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
+            alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
             return;
         }
 
         setIsSubmitting(true);
-        setSubmissionStatus('idle');
+        setSubmissionError(null);
 
         const uploadedFileUrls: Partial<Record<keyof FileUploads, string>> = {};
 
@@ -107,20 +106,18 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 transferCertificateUrl: uploadedFileUrls.transferCertificate,
                 birthCertificateUrl: uploadedFileUrls.birthCertificate,
                 reportCardUrl: uploadedFileUrls.reportCard,
-                paymentScreenshotUrl: uploadedFileUrls.paymentScreenshot!,
             };
 
-            const success = await onOnlineAdmissionSubmit(submissionData);
-            if (success) {
-                setSubmissionStatus('success');
+            const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
+            if (newAdmissionId) {
+                navigate(`/admissions/payment/${newAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } });
             } else {
-                throw new Error("Failed to save data to the server.");
+                throw new Error("Failed to get admission ID from the server.");
             }
 
         } catch (error) {
             console.error("Submission failed:", error);
-            setSubmissionStatus('error');
-            // Reset status for failed uploads
+            setSubmissionError("An error occurred during submission. Please check your connection and try again.");
             setUploadProgress(prev => {
                 const newProgress = {...prev};
                 for (const key in newProgress) {
@@ -134,22 +131,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             setIsSubmitting(false);
         }
     };
-    
-    if (submissionStatus === 'success') {
-        return (
-            <div className="bg-white py-16">
-                <div className="container mx-auto px-4 text-center max-w-2xl">
-                    <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
-                    <h1 className="text-3xl font-bold text-slate-800">Application Submitted!</h1>
-                    <p className="mt-4 text-lg text-slate-600">
-                        Thank you for your interest in Bethel Mission School. Your application has been received successfully.
-                        The school office will review your application and contact you shortly regarding the next steps.
-                    </p>
-                    <Link to="/" className="mt-8 btn btn-primary">Return to Homepage</Link>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="bg-slate-50 py-16">
@@ -157,7 +138,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg">
                     <div className="text-center mb-8">
                         <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-24 mx-auto mb-4" />
-                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
+                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form (Step 1 of 2)</h1>
                         <p className="mt-2 text-lg text-slate-600">Academic Year: 2026–27</p>
                     </div>
 
@@ -218,17 +199,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                              <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required />
                         </fieldset>
 
-                        {/* Payment Section */}
-                        <fieldset className="space-y-4 border p-4 rounded-lg">
-                             <legend className="text-xl font-bold text-slate-800 px-2">Admission Fee Payment</legend>
-                             <p className="text-sm text-slate-600">Please pay the admission fee of <strong className="text-slate-800">₹1,000</strong> using the UPI QR code below and upload a screenshot of the successful payment.</p>
-                             <div className="flex justify-center">
-                                {/* Placeholder QR code */}
-                                <img src="https://i.ibb.co/L8mC9gW/qr-code-placeholder.png" alt="UPI QR Code Placeholder" className="w-48 h-48 border p-1"/>
-                             </div>
-                             <FileUploadField label="Upload Payment Screenshot" id="paymentScreenshot" file={fileUploads.paymentScreenshot} status={uploadProgress.paymentScreenshot} onFileChange={handleFileChange} required/>
-                        </fieldset>
-
                         {/* Declaration */}
                          <div className="space-y-4">
                             <p className="text-xs text-slate-600 italic">I hereby solemnly affirm & declare that I have read the contents of School Diary clearly and have understood the points mentioned in the undertaking. I shall abide by the rules and regulations of the school as mentioned in the said diary and also the changes which may be notified from time to time. I further confirm that the information given in the application form is correct and true to the best of my knowledge & belief.</p>
@@ -238,14 +208,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             </label>
                         </div>
                         
-                        {submissionStatus === 'error' && (
-                             <p className="text-red-600 font-bold text-center">Submission failed. Please check your internet connection, ensure all required fields are filled, and try again.</p>
+                        {submissionError && (
+                             <p className="text-red-600 font-bold text-center">{submissionError}</p>
                         )}
                         
                         <div className="pt-4 flex justify-end">
                             <button type="submit" disabled={!agreed || isSubmitting} className="btn btn-primary !text-lg !font-bold !px-8 !py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
                                 {isSubmitting ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
+                                {isSubmitting ? 'Submitting...' : 'Proceed to Payment'}
                             </button>
                         </div>
                     </form>

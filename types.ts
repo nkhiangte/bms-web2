@@ -1,4 +1,8 @@
 
+import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
+
+
+
 
 export interface StudentClaim {
   fullName: string;
@@ -500,18 +504,6 @@ export interface NewsItem {
     imageUrls?: string[];
 }
 
-export interface Notice {
-    id: string;
-    title: string;
-    content: string;
-    date: string; // YYYY-MM-DD
-    targetGrades: Grade[] | 'all'; // Array of grades or 'all'
-    createdBy: {
-        uid: string;
-        name: string;
-    };
-}
-
 export interface TcRecord {
     id: string;
     refNo: string;
@@ -606,6 +598,13 @@ export interface DistinctionHolder {
     imageUrl: string;
 }
 
+export interface AdmissionItem {
+  name: string;
+  price: number;
+  size?: string;
+  quantity: number;
+}
+
 export interface OnlineAdmission {
     id: string;
     admissionGrade: string;
@@ -640,9 +639,12 @@ export interface OnlineAdmission {
     paymentScreenshotUrl?: string;
     submissionDate: string;
     status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+    paymentStatus?: 'pending' | 'paid';
+    paymentAmount?: number;
+    paymentTransactionId?: string;
+    purchasedItems?: AdmissionItem[];
 }
 
-// FIX: Added missing 'Homework' interface.
 export interface Homework {
     id: string;
     grade: Grade;
@@ -656,7 +658,6 @@ export interface Homework {
     };
 }
 
-// FIX: Added missing 'Syllabus' related interfaces.
 export interface SyllabusTopic {
     name: string;
     status: 'Completed' | 'In Progress' | 'Not Started';
@@ -667,6 +668,19 @@ export interface Syllabus {
     grade: Grade;
     subject: string;
     topics: SyllabusTopic[];
+}
+
+// FIX: Add the missing 'Notice' interface.
+export interface Notice {
+    id: string;
+    title: string;
+    content: string;
+    date: string;
+    targetGrades: Grade[] | 'all';
+    createdBy: {
+        uid: string;
+        name: string;
+    };
 }
 
 declare global {

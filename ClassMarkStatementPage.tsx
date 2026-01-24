@@ -1,26 +1,15 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
-import { BackIcon, HomeIcon, PrinterIcon, CheckIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, ChevronDownIcon } from '../components/Icons';
+import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance } from '../types';
+import { BackIcon, HomeIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
-import { formatStudentId, normalizeSubjectName } from '../utils';
+import { normalizeSubjectName } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
-import * as XLSX from 'xlsx';
 import ConfirmationModal from '../components/ConfirmationModal';
+import EditSubjectsModal from '../components/EditSubjectsModal';
 
 interface ClassMarkStatementPageProps {
   students: Student[];
@@ -47,75 +36,6 @@ interface ProcessedStudent extends Student {
 }
 
 type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
-
-const MobileEditView: React.FC<any> = ({ student, onBack, subjectDefinitions, marksData, handleMarkChange, hasActivities, attendanceData, handleAttendanceChange }) => {
-    return (
-      <div>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 mb-4">
-          <BackIcon className="w-5 h-5" />
-          Back to Student List
-        </button>
-        <div className="mb-4 p-4 bg-slate-100 rounded-lg">
-          <h3 className="text-xl font-bold text-slate-800">{student.name}</h3>
-          <p className="text-sm text-slate-600">Roll No: {student.rollNo}</p>
-        </div>
-        <div className="space-y-3">
-          {subjectDefinitions.map((sd: any) => {
-            const isOABC = sd.gradingSystem === 'OABC';
-            return (
-              <div key={sd.name} className="p-3 border rounded-lg bg-white shadow-sm">
-                <label className="block text-md font-bold text-slate-800 mb-2">{sd.name}</label>
-                {isOABC ? (
-                  <select
-                    value={(marksData[student.id]?.[sd.name] as string) ?? ''}
-                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
-                    className="form-select w-full"
-                  >
-                    <option value="">-- Select Grade --</option>
-                    {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                ) : hasActivities ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-600">Exam (out of {sd.examFullMarks})</label>
-                      <input
-                        type="number" inputMode="numeric"
-                        value={marksData[student.id]?.[sd.name + '_exam'] ?? ''}
-                        onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')}
-                        className="form-input w-full text-center mt-1"
-                        max={sd.examFullMarks} min="0" placeholder="-"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-600">Activity (out of {sd.activityFullMarks})</label>
-                      <input
-                        type="number" inputMode="numeric"
-                        value={marksData[student.id]?.[sd.name + '_activity'] ?? ''}
-                        onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')}
-                        className="form-input w-full text-center mt-1"
-                        max={sd.activityFullMarks} min="0" placeholder="-"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600">Marks (out of {sd.examFullMarks})</label>
-                    <input
-                      type="number" inputMode="numeric"
-                      value={marksData[student.id]?.[sd.name] ?? ''}
-                      onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')}
-                      className="form-input w-full text-center mt-1"
-                      max={sd.examFullMarks} min="0" placeholder="-"
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-};
 
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
   const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
@@ -151,10 +71,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [isSaving, setIsSaving] = useState(false);
   const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [mobileEditingStudent, setMobileEditingStudent] = useState<ProcessedStudent | null>(null);
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
+  const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
+
 
   useEffect(() => {
     if (classStudents.length === 0) return;
@@ -316,7 +236,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
     });
     
-    const sortedData = finalData;
+    let sortedData = finalData;
 
     if (sortCriteria === 'name') {
         sortedData.sort((a, b) => a.name.localeCompare(b.name));

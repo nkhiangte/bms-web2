@@ -17,7 +17,7 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
   const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(grade);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && initialGradeDefinition) {
       // Deep copy to prevent modifying the original state directly
       setSubjects(JSON.parse(JSON.stringify(initialGradeDefinition.subjects || [])));
     }
@@ -28,7 +28,6 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
     const subjectToUpdate = { ...newSubjects[index] };
 
     if (field === 'name') {
-        // FIX: Use bracket notation for consistency and to ensure the update is correctly applied.
         subjectToUpdate[field] = value as string;
     } else if (field === 'examFullMarks' || field === 'activityFullMarks') {
         subjectToUpdate[field] = parseInt(value as string, 10) || 0;
@@ -48,13 +47,10 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
     } else {
         delete subjectToUpdate.gradingSystem;
         // Reset to default marks when unchecked
-        const isSpecialGrade = [Grade.III, Grade.IV, Grade.V, Grade.VI, Grade.VII, Grade.VIII].includes(grade);
-        if (isSpecialGrade) {
+        const isMiddleSchool = [Grade.III, Grade.IV, Grade.V, Grade.VI, Grade.VII, Grade.VIII].includes(grade);
+        if (isMiddleSchool) {
             subjectToUpdate.examFullMarks = 60;
             subjectToUpdate.activityFullMarks = 40;
-        } else if (hasActivities) {
-            subjectToUpdate.examFullMarks = 80;
-            subjectToUpdate.activityFullMarks = 20;
         } else {
             subjectToUpdate.examFullMarks = 100;
             subjectToUpdate.activityFullMarks = 0;
@@ -65,7 +61,7 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
   };
 
   const handleAddSubject = () => {
-    const isSpecialGrade = [Grade.III, Grade.IV, Grade.V, Grade.VI, Grade.VII, Grade.VIII].includes(grade);
+    const isMiddleSchool = [Grade.III, Grade.IV, Grade.V, Grade.VI, Grade.VII, Grade.VIII].includes(grade);
     
     const newSubject: SubjectDefinition = { 
         name: '', 
@@ -73,12 +69,9 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
         activityFullMarks: 0 
     };
 
-    if (isSpecialGrade) {
+    if (isMiddleSchool) {
         newSubject.examFullMarks = 60;
         newSubject.activityFullMarks = 40;
-    } else if (hasActivities) {
-        newSubject.examFullMarks = 80; // A reasonable default
-        newSubject.activityFullMarks = 20; // A reasonable default
     }
     setSubjects(prev => [...prev, newSubject]);
   };
@@ -199,14 +192,14 @@ const EditSubjectsModal: React.FC<EditSubjectsModalProps> = ({ isOpen, onClose, 
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50"
+            className="btn btn-secondary"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700"
+            className="btn btn-primary"
           >
             Save Changes
           </button>

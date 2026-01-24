@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { FeeStructure, Student, FeePayments, NotificationType } from '../../types';

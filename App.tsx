@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -400,7 +396,7 @@ const App: React.FC = () => {
 
     const handleUpdateAdmissionPayment = async (
         admissionId: string, 
-        updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string }
+        updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }
     ) => {
          try {
             await db.collection('online_admissions').doc(admissionId).update({

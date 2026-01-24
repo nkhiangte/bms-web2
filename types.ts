@@ -1,5 +1,4 @@
 
-
 export interface StudentClaim {
   fullName: string;
   studentId: string;
@@ -639,6 +638,7 @@ export interface OnlineAdmission {
     paymentAmount?: number;
     paymentTransactionId?: string;
     purchasedItems?: AdmissionItem[];
+    billId?: string;
 }
 
 export interface Homework {

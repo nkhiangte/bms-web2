@@ -62,6 +62,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [agreed, setAgreed] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
+    const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
@@ -119,7 +120,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
             if (newAdmissionId) {
-                navigate(`/admissions/payment/${newAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } });
+                // If admission is for Class IX, do not redirect to payment. Show success message instead.
+                if (formData.admissionGrade === Grade.IX) {
+                    setSubmissionSuccess(true);
+                    window.scrollTo(0, 0);
+                } else {
+                    navigate(`/admissions/payment/${newAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } });
+                }
             } else {
                 throw new Error("Failed to get admission ID from the server.");
             }
@@ -140,6 +147,36 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             setIsSubmitting(false);
         }
     };
+
+    if (submissionSuccess) {
+        return (
+            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+                    <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg text-center">
+                         <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
+                         <h1 className="text-3xl font-extrabold text-slate-800">Application Submitted Successfully</h1>
+                         <p className="mt-4 text-lg text-slate-600">
+                             Thank you for applying to Class IX at Bethel Mission School.
+                         </p>
+                         <div className="mt-8 bg-sky-50 p-6 rounded-lg border border-sky-100 text-left">
+                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps for Class IX Admission:</h3>
+                             <p className="text-sky-800 leading-relaxed mb-4">
+                                 Admission to Class IX is reserved on a <strong>merit basis</strong>. Your application is currently <strong>Pending Review</strong>.
+                             </p>
+                             <ul className="list-disc list-inside text-sky-700 space-y-2">
+                                 <li>Our administration will review your academic records and submitted documents.</li>
+                                 <li>If your application is approved, you will be notified via your registered contact number.</li>
+                                 <li>You will receive a Temporary ID and instructions to complete the admission payment.</li>
+                             </ul>
+                         </div>
+                         <div className="mt-8">
+                            <Link to="/" className="btn btn-primary inline-flex">Return to Homepage</Link>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50 py-16">
@@ -227,7 +264,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         <div className="pt-4 flex justify-end">
                             <button type="submit" disabled={!agreed || isSubmitting} className="btn btn-primary !text-lg !font-bold !px-8 !py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
                                 {isSubmitting ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                {isSubmitting ? 'Submitting...' : 'Proceed to Payment'}
+                                {isSubmitting ? 'Submitting...' : 'Proceed'}
                             </button>
                         </div>
                     </form>

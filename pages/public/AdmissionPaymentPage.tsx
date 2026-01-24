@@ -3,11 +3,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType } from '../../types';
 import { ADMISSION_FEE_AMOUNT, NOTEBOOK_SET_PRICES, OTHER_ADMISSION_ITEMS, UNIFORM_ITEMS, UNIFORM_SIZES } from '../../constants';
-import { SpinnerIcon, CheckCircleIcon, UploadIcon } from '../../components/Icons';
-import { resizeImage, uploadToImgBB } from '../../utils';
+import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
+import { resizeImage, uploadToImgBB, formatStudentId } from '../../utils';
+import { jsPDF } from 'jspdf';
 
 interface AdmissionPaymentPageProps {
-    onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string }) => Promise<boolean>;
+    onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
     addNotification: (message: string, type: NotificationType, title?: string) => void;
 }
 
@@ -15,13 +16,16 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     const { admissionId } = useParams<{ admissionId: string }>();
     const location = useLocation();
     
-    const { grade, studentName } = location.state || {};
+    const { grade, studentName, fatherName, contact } = location.state || {};
 
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
     const [transactionId, setTransactionId] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error'>('pending');
+    
+    // Generate a semi-persistent Bill ID for this session/transaction
+    const [billId] = useState(`BILL-${Math.floor(100000 + Math.random() * 900000)}`);
 
     const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
 
@@ -91,6 +95,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                 purchasedItems,
                 paymentScreenshotUrl: screenshotUrl,
                 paymentTransactionId: transactionId,
+                billId: billId, // Include billId in submission
             });
 
             if (success) {
@@ -106,18 +111,126 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
             setIsProcessing(false);
         }
     };
+
+    const generateReceipt = () => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.width;
+        
+        // --- Header ---
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("BETHEL MISSION SCHOOL", pageWidth / 2, 20, { align: "center" });
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Bethel Veng, Champhai, Mizoram - 796321", pageWidth / 2, 26, { align: "center" });
+        doc.text("ADMISSION & MERCHANDISE RECEIPT", pageWidth / 2, 32, { align: "center" });
+        
+        doc.setLineWidth(0.5);
+        doc.line(10, 36, pageWidth - 10, 36);
+
+        // --- Bill Metadata ---
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Bill ID: ${billId}`, 15, 45);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.text(`Student Name: ${studentName}`, 15, 52);
+        doc.text(`Father's Name: ${fatherName || 'N/A'}`, 15, 59);
+        doc.text(`Class Applied: ${grade}`, pageWidth / 2 + 10, 52);
+        doc.text(`Contact: ${contact || 'N/A'}`, pageWidth / 2 + 10, 59);
+        
+        // --- Table Header ---
+        let yPos = 70;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.text("Item Description", 20, yPos);
+        doc.text("Size", 110, yPos);
+        doc.text("Price", 140, yPos);
+        doc.text("Amount", 180, yPos);
+        
+        yPos += 8;
+        doc.setFont("helvetica", "normal");
+
+        // --- Items ---
+        const items = Object.entries(selectedItems);
+        items.forEach(([name, details]) => {
+            const itemDef = allItems.find(i => i.name === name);
+            const price = itemDef ? itemDef.price : 0;
+            const amount = price * details.quantity;
+
+            doc.text(name, 20, yPos);
+            doc.text(details.size || '-', 110, yPos);
+            doc.text(`${price}`, 140, yPos);
+            doc.text(`${amount}`, 180, yPos);
+            yPos += 7;
+        });
+
+        // --- Divider ---
+        doc.line(15, yPos, pageWidth - 15, yPos);
+        yPos += 8;
+
+        // --- Totals ---
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.text("Grand Total", 140, yPos);
+        doc.text(`Rs. ${totalCost}`, 180, yPos);
+
+        yPos += 15;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Payment Mode: Online (UPI)`, 15, yPos);
+        doc.text(`Transaction ID: ${transactionId}`, 15, yPos + 6);
+        
+        // --- Footer / Instructions ---
+        yPos += 20;
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.2);
+        doc.rect(15, yPos, pageWidth - 30, 25);
+        
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("STORE KEEPER INSTRUCTIONS:", 20, yPos + 6);
+        doc.setFont("helvetica", "normal");
+        doc.text("Please verify the Bill ID and Transaction ID before handing over the merchandise.", 20, yPos + 12);
+        doc.text("Uniform sizes can be exchanged within 3 days if unused and unwashed.", 20, yPos + 18);
+
+        doc.save(`${studentName}_BMS_Receipt.pdf`);
+    };
     
     if (paymentStatus === 'success') {
          return (
             <div className="py-16 bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center max-w-2xl mx-auto">
-                    <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
-                    <h1 className="text-3xl font-bold text-slate-800">Application Submitted!</h1>
+                <div className="text-center max-w-2xl mx-auto px-4">
+                    <CheckCircleIcon className="w-24 h-24 text-emerald-500 mx-auto mb-6"/>
+                    <h1 className="text-3xl font-bold text-slate-800">Payment Successful!</h1>
                     <p className="mt-4 text-lg text-slate-600">
-                        Thank you for your interest in Bethel Mission School. Your application has been received successfully.
-                        The school office will review your application and contact you shortly regarding the next steps.
+                        Your application for <strong>{studentName}</strong> has been finalized.
                     </p>
-                    <Link to="/" className="mt-8 btn btn-primary">Return to Homepage</Link>
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200 mt-8 text-left">
+                        <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Payment Receipt</h3>
+                        <div className="flex justify-between text-sm mb-2">
+                            <span className="text-slate-600">Bill ID:</span>
+                            <span className="font-mono font-bold text-slate-800">{billId}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2">
+                            <span className="text-slate-600">Transaction ID:</span>
+                            <span className="font-mono font-bold text-slate-800">{transactionId}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-4">
+                            <span className="text-slate-600">Total Amount:</span>
+                            <span className="font-bold text-emerald-600">₹{totalCost}</span>
+                        </div>
+                        <div className="bg-sky-50 p-3 rounded text-sm text-sky-800 mb-6">
+                            <strong>Note:</strong> Please download this receipt and show it at the school store to collect your Uniforms, Books, and Diary.
+                        </div>
+                        <button onClick={generateReceipt} className="w-full btn btn-primary flex items-center justify-center gap-2">
+                            <PrinterIcon className="w-5 h-5" /> Download Receipt
+                        </button>
+                    </div>
+                    <Link to="/" className="mt-8 inline-block text-sky-600 font-semibold hover:underline">Return to Homepage</Link>
                 </div>
             </div>
         );

@@ -122,10 +122,12 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
             const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
             const prompt = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+// FIX: Using gemini-3-flash-preview model for basic text task as per guidelines
+                model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-            setFormData(prev => ({...prev, dateOfBirthInWords: response.text.trim()}));
+// FIX: Use response.text instead of response.text()
+            setFormData(prev => ({...prev, dateOfBirthInWords: response.text?.trim() ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);
             setSearchError("Could not generate date in words. Please enter manually.");
@@ -198,7 +200,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 <form onSubmit={handleStudentSearch} className="my-6 max-w-lg">
                     <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Find Student by ID</label>
                     <div className="flex gap-2 items-start">
-                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
+                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
                         <button type="submit" className="btn btn-primary h-[42px]"><SearchIcon className="w-5 h-5"/></button>
                     </div>
                 </form>

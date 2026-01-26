@@ -126,7 +126,8 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         try {
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+// FIX: Updated Gemini model to 'gemini-3-flash-preview' for basic text tasks, as per guidelines.
+                model: 'gemini-3-flash-preview',
                 contents: prompt,
                 config: {
                     responseMimeType: "application/json",

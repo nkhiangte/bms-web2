@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade } from '../types';
+import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade, CalendarEvent } from '../types';
 import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, DocumentReportIcon } from '../components/Icons';
-import { exportAttendanceToCsv } from '../utils';
+import { exportAttendanceToCsv, getHolidayDates } from '../utils';
 import DateRangeExportModal from '../components/DateRangeExportModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -15,15 +16,17 @@ interface StaffAttendanceLogPageProps {
   fetchStaffAttendanceForRange: (startDate: string, endDate: string) => Promise<{ [date: string]: StaffAttendanceRecord }>;
   academicYear: string;
   user: User;
+  calendarEvents: CalendarEvent[];
 }
 
-const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, students, gradeDefinitions, fetchStaffAttendanceForMonth, fetchStaffAttendanceForRange, academicYear, user }) => {
+const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, students, gradeDefinitions, fetchStaffAttendanceForMonth, fetchStaffAttendanceForRange, academicYear, user, calendarEvents }) => {
     const navigate = useNavigate();
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [attendanceData, setAttendanceData] = useState<Record<string, StaffAttendanceRecord>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const holidays = useMemo(() => getHolidayDates(calendarEvents), [calendarEvents]);
 
     const staffToDisplay = useMemo(() => {
         if (user.role === 'admin' || user.role === 'user') {
@@ -93,6 +96,7 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
                 entityName: 'All_Staff',
                 entityType: 'Staff',
                 academicYear,
+                holidays,
             });
         } catch (error) {
             console.error("Failed to export attendance range:", error);

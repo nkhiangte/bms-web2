@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -58,7 +57,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
     try {
         const result = await onLogin(email, password);
         if (result && result.success) {
-            // Explicitly push the user into the portal dashboard.
+            // FIX: Explicitly push the user into the portal dashboard.
             // Using replace ensures they can't go back to the login page.
             navigate('/portal/dashboard', { replace: true });
         } else if (result && result.message) {

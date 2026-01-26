@@ -63,6 +63,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
+    const [submittedAdmissionId, setSubmittedAdmissionId] = useState<string | null>(null);
     
     // State for Last School Attended logic
     const [isOtherSchool, setIsOtherSchool] = useState(false);
@@ -141,7 +142,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
             if (newAdmissionId) {
-                // If admission is for Class IX, do not redirect to payment. Show success message instead.
+                setSubmittedAdmissionId(newAdmissionId);
                 if (formData.admissionGrade === Grade.IX) {
                     setSubmissionSuccess(true);
                     window.scrollTo(0, 0);
@@ -177,17 +178,27 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                          <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
                          <h1 className="text-3xl font-extrabold text-slate-800">Application Submitted Successfully</h1>
                          <p className="mt-4 text-lg text-slate-600">
-                             Thank you for applying to Class IX at Bethel Mission School.
+                             Thank you for applying to {formData.admissionGrade} at Bethel Mission School.
                          </p>
+                         
+                         {submittedAdmissionId && (
+                            <div className="mt-6 text-center">
+                                <p className="text-slate-600">Your Application Reference ID is:</p>
+                                <p className="font-mono text-lg font-bold bg-slate-100 inline-block px-4 py-2 rounded-lg mt-1">{submittedAdmissionId}</p>
+                                <p className="text-xs text-slate-500 mt-1">Please save this ID for future reference.</p>
+                            </div>
+                         )}
+
                          <div className="mt-8 bg-sky-50 p-6 rounded-lg border border-sky-100 text-left">
-                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps for Class IX Admission:</h3>
+                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps for {formData.admissionGrade} Admission:</h3>
                              <p className="text-sky-800 leading-relaxed mb-4">
-                                 Admission to Class IX is reserved on a <strong>merit basis</strong>. Your application is currently <strong>Pending Review</strong>.
+                                 Admission to {formData.admissionGrade} is reserved on a <strong>merit basis</strong>. Your application is currently <strong className="bg-amber-200 text-amber-900 px-2 py-1 rounded">Pending Review</strong>.
                              </p>
                              <ul className="list-disc list-inside text-sky-700 space-y-2">
-                                 <li>Our administration will review your academic records and submitted documents.</li>
-                                 <li>If your application is approved, you will be notified via your registered contact number.</li>
-                                 <li>You will receive a Temporary ID and instructions to complete the admission payment.</li>
+                                 <li>Our administration will review your academic records and submitted documents. Please allow <strong>2-3 working days</strong> for this process.</li>
+                                 <li>If your application is approved, you will be notified via SMS or a call on your registered contact number ({formData.contactNumber}).</li>
+                                 <li>The notification will include your Temporary Student ID and instructions to complete the admission payment.</li>
+                                 <li className="font-bold">Please do not proceed to payment until you receive confirmation from the school.</li>
                              </ul>
                          </div>
                          <div className="mt-8">
@@ -354,7 +365,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                     <h5 className="font-bold text-slate-800">6. Safety, Anti-Bullying & Anti-Ragging</h5>
                                     <ul className="list-disc list-inside pl-2 space-y-1">
                                         <li><strong>Zero Tolerance Policy:</strong> Bullying, ragging, intimidation, physical violence, or harassment of any kind is strictly prohibited.</li>
-                                        <li><strong>Serious Consequences:</strong> Such actions may result in immediate suspension or expulsion.</li>
+                                        <li><strong>Serious Consequences:</strong> Such acts may result in immediate suspension or expulsion.</li>
                                         <li><strong>Property Damage:</strong> Any damage to school property (furniture, laboratories, library books, buses, etc.) must be compensated by the parent along with a penalty.</li>
                                     </ul>
                                 </div>

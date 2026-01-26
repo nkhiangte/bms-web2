@@ -76,7 +76,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
 
         setIsProcessingPayment(true);
         
-        // FIX: Use process.env as defined in vite.config.ts to access environment variables.
+// FIX: Changed `import.meta.env` to `process.env` to correctly access Vite environment variables.
         const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
         if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
             addNotification('Online payment gateway is not configured correctly. Please contact the school administrator.', 'error', 'Configuration Error');

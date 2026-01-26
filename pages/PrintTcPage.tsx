@@ -25,17 +25,31 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
     const record = tcRecords.find(r => r.id === tcId);
 
     if (!record) {
-        return <div className="p-8 text-center">Certificate not found.</div>;
+        return (
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                <h2 className="text-2xl font-bold text-red-600">Certificate Not Found</h2>
+                <p className="text-slate-700 mt-2">The requested certificate record does not exist.</p>
+                <button
+                    onClick={() => navigate('/portal/transfers/records')}
+                    className="mt-6 flex items-center mx-auto justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 transition"
+                >
+                    <BackIcon className="w-5 h-5" />
+                    Return to Records
+                </button>
+            </div>
+        );
     }
+    
+    const { staffDetails, certData } = record;
 
     return (
-        <div className="bg-slate-200 print:bg-white flex justify-center py-8">
-            <div className="print-hidden fixed top-4 right-4 flex flex-col gap-2">
-                <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print</button>
-                <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
-            </div>
+      <div className="bg-slate-200 print:bg-white flex justify-center py-8">
+        <div className="print-hidden fixed top-4 right-4 flex flex-col gap-2">
+            <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print</button>
+            <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
+        </div>
 
-            <div id="printable-tc" className="bg-white A4-size p-8 shadow-lg print:shadow-none font-serif text-sm">
+        <div id="printable-tc" className="bg-white A4-size p-8 shadow-lg print:shadow-none font-serif text-sm">
                  <style>{`
                     @page { size: A4 portrait; margin: 1.5cm; }
                     @media print {

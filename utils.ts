@@ -309,8 +309,8 @@ export const exportAttendanceToCsv = ({
         let totalDaysCount = 0;
 
         dates.forEach(dateStr => {
-            const dateObj = new Date(dateStr);
-            const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            const isWeekend = dateObj.getDay() === 0; // Sunday (0) is a holiday
             const isHoliday = holidays?.has(dateStr);
 
             if (isWeekend || isHoliday) {

@@ -1,10 +1,19 @@
 
+
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
 import { BackIcon, PrinterIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
+import { db } from '../firebaseConfig';
+
+interface ProgressReportPageProps {
+  students: Student[];
+  staff: Staff[];
+  gradeDefinitions: Record<Grade, GradeDefinition>;
+  academicYear: string;
+}
 
 // --- Reusable Logic and Components (copied from ProgressReportPage) ---
 
@@ -71,7 +80,8 @@ const calculateTermSummary = (
                 examTotal += examMark;
                 activityTotal += activityMark;
                 totalSubjectMark = examMark + activityMark;
-                subjectFullMarks = sd.examFullMarks + sd.activityFullMarks;
+// FIX: Use nullish coalescing operator to ensure operands are numbers, as properties from Firestore can be undefined.
+                subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                 if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
             } else {
                 totalSubjectMark = result?.marks ?? 0;
@@ -451,11 +461,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                 <div className="flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (
-                                 <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
-                             ) : (
-                                 <div className="h-4"></div>
-                             )}
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>

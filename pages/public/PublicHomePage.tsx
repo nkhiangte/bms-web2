@@ -167,4 +167,5 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news }) => {
         </>
     );
 };
+
 export default PublicHomePage;

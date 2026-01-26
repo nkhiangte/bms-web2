@@ -125,8 +125,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function. The error "Expected 1 arguments, but got 0" suggests
-            // an incorrect function call. Simplifying this to just use the property value is the safest fix.
+            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

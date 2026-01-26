@@ -18,7 +18,8 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
 
     useEffect(() => {
         setUpiId(config.upiId || 'nkhiangte@oksbi');
-        setQrCodeUrl(config.paymentQRCodeUrl || 'https://i.ibb.co/C5f88Qy/nelson-upi.jpg');
+        // Use a safe placeholder if no config is set
+        setQrCodeUrl(config.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set');
     }, [config]);
 
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +96,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                         <div className="bg-white p-4 border rounded-lg shadow-inner">
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Live Preview</h3>
                             <div className="flex flex-col items-center">
-                                <img src={qrCodeUrl} alt="QR Preview" className="w-40 h-40 border p-1 bg-white mb-2"/>
+                                <img src={qrCodeUrl || 'https://via.placeholder.com/300x300.png?text=No+QR'} alt="QR Preview" className="w-40 h-40 border p-1 bg-white mb-2"/>
                                 <p className="text-xs font-semibold text-slate-600">UPI ID: <span className="text-sky-700 font-mono">{upiId}</span></p>
                             </div>
                         </div>

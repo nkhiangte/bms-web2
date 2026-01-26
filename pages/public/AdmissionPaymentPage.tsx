@@ -26,9 +26,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     
     const [billId] = useState(`BILL-${Math.floor(100000 + Math.random() * 900000)}`);
 
-    // Use dynamic config or provided screenshot defaults
+    // Use dynamic config or provided screenshot defaults. Fallback to a placeholder if missing.
     const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
-    const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://i.ibb.co/C5f88Qy/nelson-upi.jpg';
+    const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set';
 
     const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
 
@@ -94,7 +94,13 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
             
             const purchasedItems: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                 const item = allItems.find(i => i.name === name)!;
-                return { name, price: item.price, quantity: details.quantity, size: details.size };
+                // FIX: Ensure size is null if undefined, as Firestore doesn't support undefined
+                return { 
+                    name, 
+                    price: item.price, 
+                    quantity: details.quantity, 
+                    size: details.size || null 
+                };
             });
 
             const success = await onUpdateAdmissionPayment(admissionId!, {
@@ -110,9 +116,14 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
             } else {
                 throw new Error("Failed to update admission record on the server.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Payment submission failed:", error);
-            addNotification("Failed to submit payment details. Please try again or contact the school office.", 'error', 'Submission Failed');
+            // Check for specific Firestore errors
+            const errorMessage = error.message?.includes('undefined') 
+                ? "Internal Error: Invalid data format. Please contact support." 
+                : "Failed to submit payment details. Please try again.";
+            
+            addNotification(errorMessage, 'error', 'Submission Failed');
             setPaymentStatus('error');
         } finally {
             setIsProcessing(false);

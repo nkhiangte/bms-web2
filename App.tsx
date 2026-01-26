@@ -284,12 +284,12 @@ const App: React.FC = () => {
             setClassSchedules(routines);
         });
         const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
-        const unsubNotices = db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))));
+        // Removed notices from here because it's restricted to staff/parents
         const unsubSchoolDetails = db.collection('config').doc('schoolDetails').onSnapshot(d => d.exists && setSchoolConfig(d.data() as any));
 
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubNotices(); unsubSchoolDetails();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubSchoolDetails();
         };
     }, []);
 
@@ -297,7 +297,7 @@ const App: React.FC = () => {
     useEffect(() => {
         if (!user) {
             setStudents([]); setConductLog([]); setTcRecords([]); setServiceCerts([]);
-            setAllUsers([]); setOnlineAdmissions([]); setHomework([]);
+            setAllUsers([]); setOnlineAdmissions([]); setHomework([]); setNotices([]);
             setCurrentStudentAttendance(null); setCurrentStaffAttendance(null);
             setHostelResidents([]); setHostelStaff([]); setHostelInventory([]); setHostelDisciplineLog([]); setHostelChoreRoster({});
             return;
@@ -320,6 +320,8 @@ const App: React.FC = () => {
 
         if (isStaff || isParent) {
             unsubscribers.push(db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework)))));
+            // Moved 'notices' listener here to ensure only authenticated users (Staff/Parents) try to read it
+            unsubscribers.push(db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice)))));
         }
     
         if (isStaff) {

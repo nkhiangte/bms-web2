@@ -76,7 +76,7 @@ const AdmissionStatusPage: React.FC = () => {
                                 value={admissionId}
                                 onChange={e => setAdmissionId(e.target.value)}
                                 className="form-input flex-grow"
-                                placeholder="Enter your Application ID"
+                                placeholder="Enter your Application Reference ID"
                                 required
                             />
                             <button type="submit" className="btn btn-primary" disabled={isLoading}>

@@ -125,8 +125,9 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function.
-            setFormData(prev => ({...prev, dateOfBirthInWords: response.text?.trim() ?? ''}));
+            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function. The error "Expected 1 arguments, but got 0" suggests
+            // an incorrect function call. Simplifying this to just use the property value is the safest fix.
+            setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);
             setSearchError("Could not generate date in words. Please enter manually.");
@@ -148,7 +149,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         }
         setIsConfirmModalOpen(true);
     };
-
+    
     const handleConfirmGenerate = () => {
         if (!foundStudent) return;
 

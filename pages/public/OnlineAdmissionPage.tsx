@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
@@ -143,12 +142,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
             if (newAdmissionId) {
                 setSubmittedAdmissionId(newAdmissionId);
-                if (formData.admissionGrade === Grade.IX) {
-                    setSubmissionSuccess(true);
-                    window.scrollTo(0, 0);
-                } else {
-                    navigate(`/admissions/payment/${newAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } });
-                }
+                setSubmissionSuccess(true);
+                window.scrollTo(0, 0);
             } else {
                 throw new Error("Failed to get admission ID from the server.");
             }
@@ -176,7 +171,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                  <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
                     <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg text-center">
                          <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
-                         <h1 className="text-3xl font-extrabold text-slate-800">Application Submitted Successfully</h1>
+                         <h1 className="text-3xl font-extrabold text-slate-800">Application Submitted!</h1>
                          <p className="mt-4 text-lg text-slate-600">
                              Thank you for applying to {formData.admissionGrade} at Bethel Mission School.
                          </p>
@@ -184,25 +179,39 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                          {submittedAdmissionId && (
                             <div className="mt-6 text-center">
                                 <p className="text-slate-600">Your Application Reference ID is:</p>
-                                <p className="font-mono text-lg font-bold bg-slate-100 inline-block px-4 py-2 rounded-lg mt-1">{submittedAdmissionId}</p>
-                                <p className="text-xs text-slate-500 mt-1">Please save this ID for future reference.</p>
+                                <p className="font-mono text-lg font-bold bg-slate-100 inline-block px-4 py-2 rounded-lg mt-1 border">{submittedAdmissionId}</p>
+                                <p className="text-sm text-red-600 font-semibold mt-1">Please save this ID to check your application status later.</p>
                             </div>
                          )}
 
                          <div className="mt-8 bg-sky-50 p-6 rounded-lg border border-sky-100 text-left">
-                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps for {formData.admissionGrade} Admission:</h3>
-                             <p className="text-sky-800 leading-relaxed mb-4">
-                                 Admission to {formData.admissionGrade} is reserved on a <strong>merit basis</strong>. Your application is currently <strong className="bg-amber-200 text-amber-900 px-2 py-1 rounded">Pending Review</strong>.
-                             </p>
-                             <ul className="list-disc list-inside text-sky-700 space-y-2">
-                                 <li>Our administration will review your academic records and submitted documents. Please allow <strong>2-3 working days</strong> for this process.</li>
-                                 <li>If your application is approved, you will be notified via SMS or a call on your registered contact number ({formData.contactNumber}).</li>
-                                 <li>The notification will include your Temporary Student ID and instructions to complete the admission payment.</li>
-                                 <li className="font-bold">Please do not proceed to payment until you receive confirmation from the school.</li>
-                             </ul>
+                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps:</h3>
+                             {formData.admissionGrade === Grade.IX ? (
+                                <div className="text-sky-800 leading-relaxed space-y-2">
+                                    <p>Admission to {formData.admissionGrade} is on a <strong>merit basis</strong>. Your application is now <strong className="bg-amber-200 text-amber-900 px-2 py-1 rounded">Under Review</strong>.</p>
+                                    <ul className="list-disc list-inside pl-4 text-sm">
+                                         <li>Our administration will review your academic records and submitted documents.</li>
+                                         <li>If your application is approved, you will be notified via SMS or call.</li>
+                                         <li>You can check your status anytime using your Application Reference ID.</li>
+                                    </ul>
+                                </div>
+                             ) : (
+                                 <div className="text-sky-800 leading-relaxed space-y-2">
+                                     <p>Your application has been received. To complete your registration for {formData.admissionGrade}, please proceed to the payment page.</p>
+                                     <ul className="list-disc list-inside pl-4 text-sm">
+                                         <li>On the next page, you can select uniforms and other required items.</li>
+                                         <li>Complete the online payment as instructed to finalize your admission.</li>
+                                     </ul>
+                                 </div>
+                             )}
                          </div>
-                         <div className="mt-8">
-                            <Link to="/" className="btn btn-primary inline-flex">Return to Homepage</Link>
+                         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                            <Link to="/admissions/status" className="btn btn-secondary">Check Status Now</Link>
+                            {formData.admissionGrade !== Grade.IX && (
+                                <button onClick={() => navigate(`/admissions/payment/${submittedAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } })} className="btn btn-primary">
+                                    Proceed to Payment
+                                </button>
+                            )}
                          </div>
                     </div>
                 </div>
@@ -216,7 +225,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg">
                     <div className="text-center mb-8">
                         <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-24 mx-auto mb-4" />
-                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form (Step 1 of 2)</h1>
+                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
                         <p className="mt-2 text-lg text-slate-600">Academic Year: 2026–27</p>
                     </div>
 
@@ -305,172 +314,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
                         {/* Declaration */}
                          <div className="space-y-4">
-                            <div className="h-96 overflow-y-auto p-4 border border-slate-300 rounded bg-white text-sm text-slate-700 space-y-4 mb-4 shadow-inner">
-                                <h3 className="font-bold text-center text-lg text-slate-800">SCHOOL RULES & REGULATIONS</h3>
-                                <h4 className="font-bold text-center text-slate-800">Code of Conduct (Nursery to Class X)</h4>
-                                <p className="italic">Admission to the school implies that students and parents/guardians agree to abide by all the rules, regulations, and decisions of the school authorities.</p>
-
-                                <div>
-                                    <h5 className="font-bold text-slate-800">1. Academic Integrity & Attendance</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Minimum Attendance:</strong> A minimum of 75% attendance, as prescribed by Board norms, is compulsory for eligibility to appear in final examinations.</li>
-                                        <li><strong>Leave of Absence:</strong> Leave must be applied through a written application in the School Diary, duly signed by the parent/guardian.</li>
-                                        <li><strong>Medical Leave:</strong> For sick leave exceeding three (3) consecutive days, a valid medical certificate must be submitted.</li>
-                                        <li><strong>Punctuality:</strong> School gates will close at 8:30 AM. Latecomers will be warned twice; thereafter, they will be sent home and marked absent.</li>
-                                        <li><strong>Class Attendance:</strong> Students must attend all periods, tests, and activities assigned to their class unless officially exempted.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">2. Uniform, Grooming & Decorum</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Uniform:</strong> Students must wear the prescribed school uniform, clean socks, polished shoes, and visible school ID card every working day.</li>
-                                        <li><strong>Grooming:</strong>
-                                            <ul className="list-circle list-inside pl-4">
-                                                <li>Boys must maintain short, neat haircuts.</li>
-                                                <li>Girls with long hair must tie or braid it properly.</li>
-                                                <li>Nails must be trimmed and clean.</li>
-                                            </ul>
-                                        </li>
-                                        <li><strong>Prohibited Appearance:</strong> Use of makeup, hair coloring, nail polish, jewelry (except small studs for girls), smartwatches, or expensive accessories is strictly prohibited.</li>
-                                        <li><strong>Non-compliance:</strong> Repeated violation of uniform or grooming rules may result in disciplinary action.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">3. Mobile Phones & Electronic Devices</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Strict Prohibition:</strong> Students are not allowed to bring mobile phones, smart devices, cameras, earbuds, or electronic gadgets to school.</li>
-                                        <li><strong>Confiscation Policy:</strong> Any confiscated device will be returned only to the parent/guardian, and may be retained until the end of the term.</li>
-                                        <li><strong>School Liability:</strong> The school bears no responsibility for loss or damage of prohibited items.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">4. Fee Policy</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Due Date:</strong> School fees must be paid on or before the 10th of every month/quarter, as applicable.</li>
-                                        <li><strong>Late Fee:</strong> A fine of ₹50 per day will be charged after the due date.</li>
-                                        <li><strong>Non-Payment:</strong> Non-payment of fees for two consecutive months may result in the student’s name being struck off the school rolls.</li>
-                                        <li><strong>Fee Refund:</strong> Fees once paid are non-refundable and non-transferable.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">5. Discipline, Behaviour & Moral Conduct</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Respect & Courtesy:</strong> Students must show respect to teachers, staff, school authorities, and fellow students at all times.</li>
-                                        <li><strong>Classroom Discipline:</strong> Silence and order must be maintained during classes, assemblies, examinations, and school programs.</li>
-                                        <li><strong>Prohibited Behaviour:</strong> Use of abusive language or gestures, disobedience or defiance of authority, and indecent, immoral, or disruptive behavior.</li>
-                                        <li><strong>Disciplinary Action:</strong> Such acts may lead to detention, suspension, or expulsion depending on severity.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">6. Safety, Anti-Bullying & Anti-Ragging</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Zero Tolerance Policy:</strong> Bullying, ragging, intimidation, physical violence, or harassment of any kind is strictly prohibited.</li>
-                                        <li><strong>Serious Consequences:</strong> Such acts may result in immediate suspension or expulsion.</li>
-                                        <li><strong>Property Damage:</strong> Any damage to school property (furniture, laboratories, library books, buses, etc.) must be compensated by the parent along with a penalty.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">7. Child Protection & POCSO Compliance</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Child Safety:</strong> The school strictly follows the Protection of Children from Sexual Offences (POCSO) Act, 2012.</li>
-                                        <li><strong>Mandatory Reporting:</strong> Any form of physical, emotional, or sexual abuse will be reported to the appropriate legal authorities.</li>
-                                        <li><strong>Student Support:</strong> Students are encouraged to report any discomfort or inappropriate behavior without fear.</li>
-                                        <li><strong>False Complaints:</strong> Proven false or malicious allegations will invite disciplinary action.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">8. Health, Hygiene & Well-being</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Personal Hygiene:</strong> Students must maintain cleanliness in person, uniform, and habits.</li>
-                                        <li><strong>Medical Information:</strong> Parents must inform the school of any medical condition, allergy, or chronic illness at the time of admission.</li>
-                                        <li><strong>Communicable Diseases:</strong> Students suffering from infectious diseases must not attend school until medically cleared.</li>
-                                        <li><strong>Food Policy:</strong> Students should bring healthy, home-prepared food. Junk food, carbonated drinks, and packaged fast food are discouraged.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">9. Transportation Rules (If Applicable)</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Bus Discipline:</strong> Students must remain seated, behave responsibly, and follow instructions of the bus staff.</li>
-                                        <li><strong>Safety:</strong> Standing, shouting, or distracting the driver is strictly prohibited.</li>
-                                        <li><strong>Misconduct:</strong> Repeated misbehavior may lead to withdrawal of transport facility without refund.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">10. Examination & Assessment</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Unfair Means:</strong> Any student found cheating or using unfair means will receive zero marks in that subject and may be barred from further examinations.</li>
-                                        <li><strong>Absenteeism:</strong> No re-test will be conducted for missed exams except in serious medical emergencies verified by the school.</li>
-                                        <li><strong>Promotion Policy:</strong> Promotion is based on overall annual performance, including internal assessments and examinations.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">11. Library & Laboratory Rules</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Library Books:</strong> Lost or damaged books must be replaced or paid for at double the current market price.</li>
-                                        <li><strong>Lab Safety:</strong> Students must strictly follow safety instructions in Science and Computer Labs.</li>
-                                        <li><strong>Equipment Damage:</strong> Any damage due to negligence will be charged to parents.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">12. Campus Conduct & Social Media Policy</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Language Policy:</strong> English shall be the primary language of communication within the school campus, except during language classes.</li>
-                                        <li><strong>Social Media Conduct:</strong> Posting photos/videos in school uniform or using the school’s name/logo in a defamatory manner is prohibited. Cyberbullying of students or staff will result in immediate disciplinary action, including expulsion.</li>
-                                        <li><strong>Prohibited Items:</strong> Sharp objects, lighters, chemical sprays, tobacco products, vapes, or intoxicants are strictly forbidden. Bags may be inspected when required.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">13. Extracurricular Activities & School Events</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Participation:</strong> Attendance in assemblies, national programs, cultural events, and sports activities is compulsory unless medically exempted.</li>
-                                        <li><strong>School Representation:</strong> Students representing the school must uphold discipline and decorum at all times.</li>
-                                        <li><strong>Permission:</strong> Participation in external events in school uniform requires written permission from the Principal.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">14. Environmental Responsibility</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Clean Campus:</strong> Littering is strictly prohibited. Students must use dustbins.</li>
-                                        <li><strong>Eco-Friendly Practices:</strong> Wastage of water, electricity, or damage to plants is not permitted.</li>
-                                        <li><strong>Plastic-Free Initiative:</strong> Use of single-use plastic items is discouraged.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">15. Personal Belongings</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>School Liability:</strong> The school is not responsible for loss of valuables.</li>
-                                        <li><strong>Labeling:</strong> All personal belongings must be clearly labeled with the student’s name and class.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">16. Withdrawal & Transfer Certificate (TC)</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Notice Period:</strong> A written withdrawal notice must be submitted at least one month or one full quarter in advance.</li>
-                                        <li><strong>No-Dues Clearance:</strong> TC and Report Cards will be issued only after all dues are cleared.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">17. Authority & Amendments</h5>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li><strong>Right to Amend:</strong> The school management reserves the right to modify rules without prior notice.</li>
-                                        <li><strong>Final Authority:</strong> The Principal’s decision shall be final and binding in all matters.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h5 className="font-bold text-slate-800 mt-4 border-t pt-2">STUDENT & PARENT UNDERTAKING</h5>
-                                    <p>We hereby declare that:</p>
-                                    <ul className="list-disc list-inside pl-2 space-y-1">
-                                        <li>We have carefully read and understood all the School Rules & Regulations.</li>
-                                        <li>We agree to abide by all rules, policies, and disciplinary actions of the school.</li>
-                                        <li>We understand that violation of rules may result in disciplinary action, including suspension or expulsion.</li>
-                                        <li>We accept responsibility for the conduct, behavior, and academic performance of the student.</li>
-                                        <li>We agree to cooperate with the school authorities in the best interest of the child and the institution.</li>
-                                    </ul>
-                                </div>
+                            <div className="h-48 overflow-y-auto p-4 border border-slate-300 rounded bg-white text-sm text-slate-700 space-y-4 mb-4 shadow-inner">
+                                <h3 className="font-bold text-center text-lg text-slate-800">School Rules & Regulations</h3>
+                                <p>By submitting this form, you agree to abide by all the rules, regulations, and decisions of the school authorities.</p>
+                                <p>This includes policies on academic integrity, attendance, uniform & grooming, discipline, fees, and safety. Misrepresentation of information in this form may lead to cancellation of admission.</p>
+                                <p>Full rules can be viewed on the school website.</p>
                             </div>
                             <label className="flex items-center gap-3 cursor-pointer">
                                 <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500"/>
-                                <span className="font-semibold text-slate-800">I have read, understood, and agree to abide by the School Rules & Regulations and Code of Conduct.</span>
+                                <span className="font-semibold text-slate-800">I have read, understood, and agree to abide by the School Rules & Regulations.</span>
                             </label>
                         </div>
                         
@@ -481,7 +333,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         <div className="pt-4 flex justify-end">
                             <button type="submit" disabled={!agreed || isSubmitting} className="btn btn-primary !text-lg !font-bold !px-8 !py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
                                 {isSubmitting ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                {isSubmitting ? 'Submitting...' : 'Proceed'}
+                                {isSubmitting ? 'Submitting...' : 'Submit Application'}
                             </button>
                         </div>
                     </form>

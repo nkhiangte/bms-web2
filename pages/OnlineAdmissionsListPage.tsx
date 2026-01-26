@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade } from '../types';
@@ -159,15 +158,15 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                 {isExpanded && (
                                     <div className="p-6 bg-white space-y-6 border-t animate-fade-in">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <DetailItem label="Application Ref. ID" value={app.id} />
                                             <DetailItem label="Date of Birth" value={formatDateForDisplay(app.dateOfBirth)} />
                                             <DetailItem label="Gender" value={app.gender} />
-                                            <DetailItem label="Aadhaar" value={app.studentAadhaar} />
                                             <DetailItem label="Contact" value={app.contactNumber} />
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                             <DetailItem label="Father's Name" value={app.fatherName} />
                                             <DetailItem label="Mother's Name" value={app.motherName} />
-                                            <DetailItem label="Parent's Aadhaar" value={app.parentAadhaar} />
+                                            <DetailItem label="Aadhaar (Student)" value={app.studentAadhaar} />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <DetailItem label="Permanent Address" value={app.permanentAddress} />

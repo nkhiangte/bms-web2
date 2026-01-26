@@ -152,7 +152,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5" /> Back</button>
                 <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800" title="Go to Home"><HomeIcon className="w-5 h-5" /> Home</Link>
             </div>
-            <div className="flex items-center gap-3 mb-6">
+             <div className="flex items-center gap-3 mb-6">
                 <SparklesIcon className="w-10 h-10 text-teal-600"/>
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800">AI-Powered Academic Insights</h1>

@@ -89,7 +89,7 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     activityTotal += activityMark;
                     totalSubjectMark = examMark + activityMark;
                     // FIX: Use nullish coalescing operator to ensure operands are numbers, as properties from Firestore can be undefined.
-                    subjectFullMarks = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
+                    subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                     if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
                 } else {
                     totalSubjectMark = result?.marks ?? 0;

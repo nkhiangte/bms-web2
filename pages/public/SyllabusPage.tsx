@@ -1,6 +1,5 @@
 
 
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';

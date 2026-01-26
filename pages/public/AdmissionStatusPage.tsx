@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
@@ -89,26 +88,33 @@ const AdmissionStatusPage: React.FC = () => {
                     
                     {admissionData && (
                         <div className="animate-fade-in">
-                            {admissionData.status === 'pending' || admissionData.status === 'reviewed' ? (
+                            {/* Paid and Approved */}
+                            {admissionData.paymentStatus === 'paid' ? (
+                                <StatusCard status="approved" title="Admission Complete!" message={`Your admission process for ${admissionData.studentName} is complete, and payment has been received. You can re-download your receipt from the payment page.`}>
+                                     <Link to={`/admissions/payment/${admissionData.id}`} state={{ grade: admissionData.admissionGrade, studentName: admissionData.studentName, fatherName: admissionData.fatherName, contact: admissionData.contactNumber }} className="btn btn-secondary w-full mt-2">
+                                        View/Download Receipt
+                                     </Link>
+                                </StatusCard>
+                            ) : admissionData.status === 'pending' || admissionData.status === 'reviewed' ? (
                                 <StatusCard status={admissionData.status} title="Application Under Review" message="Your application for Bethel Mission School is currently being reviewed by our administration. Please check back later for updates." />
                             ) : admissionData.status === 'approved' ? (
-                                <StatusCard status="approved" title="Congratulations! Your Application is Approved." message={`You are now eligible to complete the admission process for ${admissionData.admissionGrade}. Please proceed to the payment page to finalize your admission.`}>
-                                    <button onClick={() => navigate(`/admissions/payment/${admissionData.id}`, { state: { grade: admissionData.admissionGrade, studentName: admissionData.studentName, fatherName: admissionData.fatherName, contact: admissionData.contactNumber } })} className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 w-full mt-2 !py-3 !text-base">
-                                        Proceed to Payment <ArrowRightIcon className="w-5 h-5"/>
-                                    </button>
+                                <StatusCard status="approved" title="Congratulations! Your Application is Approved." message={`You are now eligible to complete the admission process for ${admissionData.admissionGrade}.`}>
+                                     {admissionData.temporaryStudentId ? (
+                                        <>
+                                            <p className="font-semibold text-slate-700 mt-4">Your Temporary Student ID is:</p>
+                                            <p className="font-mono text-lg font-bold text-slate-800 bg-white inline-block px-4 py-2 rounded mt-1 border">{admissionData.temporaryStudentId}</p>
+                                            <p className="text-sm text-slate-600 mt-2">Please use this ID for future reference and proceed to the payment page.</p>
+                                            <button onClick={() => navigate(`/admissions/payment/${admissionData.id}`, { state: { grade: admissionData.admissionGrade, studentName: admissionData.studentName, fatherName: admissionData.fatherName, contact: admissionData.contactNumber } })} className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 w-full mt-4 !py-3 !text-base">
+                                                Proceed to Payment <ArrowRightIcon className="w-5 h-5"/>
+                                            </button>
+                                        </>
+                                     ) : (
+                                        <div className="flex items-center gap-2 mt-4 text-slate-600"><SpinnerIcon className="w-5 h-5"/><span>Your Temporary Student ID is being generated. Please refresh in a moment.</span></div>
+                                     )}
                                 </StatusCard>
                             ) : admissionData.status === 'rejected' ? (
                                 <StatusCard status="rejected" title="Application Update" message="We regret to inform you that we are unable to offer a place at this time. Please contact the school office for more details." />
                             ) : null}
-
-                            {/* Additional case for already paid */}
-                            {admissionData.paymentStatus === 'paid' && admissionData.status === 'approved' && (
-                                <StatusCard status="approved" title="Admission Complete" message="Your admission process is complete, and payment has been received. You can re-download your receipt from the admissions page.">
-                                     <Link to="/admissions/payment" state={{ admissionId: admissionData.id, grade: admissionData.admissionGrade, studentName: admissionData.studentName }} className="btn btn-secondary w-full mt-2">
-                                        View/Download Receipt
-                                     </Link>
-                                </StatusCard>
-                            )}
                         </div>
                     )}
 

@@ -125,7 +125,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function. Changed from `response.text()`.
+            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text?.trim() ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

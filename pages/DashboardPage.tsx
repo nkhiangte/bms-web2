@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon } from '../components/Icons';
+import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '../components/Icons';
 import AcademicYearForm from '../components/AcademicYearForm';
 import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType } from '../types';
 
@@ -17,6 +16,7 @@ interface DashboardPageProps {
   pendingAdmissionsCount: number;
   pendingParentCount: number;
   pendingStaffCount: number;
+  onUpdateAcademicYear: (year: string) => Promise<void>;
 }
 
 const DashboardCard: React.FC<{
@@ -123,30 +123,11 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear }) => {
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
-  
-  if (user.role === 'pending' || user.role === 'pending_parent') {
-      return (
-          <div className="text-center bg-white p-10 rounded-xl shadow-lg">
-              <h2 className="text-2xl font-bold text-amber-600">Account Pending Approval</h2>
-              <p className="text-slate-700 mt-2">Your account has been registered successfully and is awaiting approval from a school administrator.</p>
-              {user.role === 'pending_parent' && user.claimedStudentId && (
-                  <p className="text-slate-600 mt-1">You will be notified once your account is linked to student ID: <strong>{user.claimedStudentId}</strong>.</p>
-              )}
-          </div>
-      );
-  }
-  
-  if (!academicYear || isChangingYear) {
-    return <AcademicYearForm onSetAcademicYear={(year) => {
-        // This is a placeholder; actual update would be in App.tsx
-        console.log("Selected new year:", year);
-        setIsChangingYear(false);
-    }} />;
-  }
 
+  // FIX: Hooks must be called before any early return to prevent "Rendered fewer hooks than expected" error
   const isAdmin = user.role === 'admin';
   const totalPending = pendingAdmissionsCount + pendingParentCount + pendingStaffCount;
   
@@ -163,8 +144,41 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
         .slice(0, 5); // Show up to 5 upcoming events
     }, [calendarEvents]);
 
+  // Handle pending user state early return - This is safe because useMemo is called above
+  if (user.role === 'pending' || user.role === 'pending_parent') {
+      return (
+          <div className="text-center bg-white p-10 rounded-xl shadow-lg">
+              <h2 className="text-2xl font-bold text-amber-600">Account Pending Approval</h2>
+              <p className="text-slate-700 mt-2">Your account has been registered successfully and is awaiting approval from a school administrator.</p>
+              {user.role === 'pending_parent' && user.claimedStudentId && (
+                  <p className="text-slate-600 mt-1">You will be notified once your account is linked to student ID: <strong>{user.claimedStudentId}</strong>.</p>
+              )}
+          </div>
+      );
+  }
+
   return (
     <div>
+        {/* Academic Year Modal */}
+        {(!academicYear || isChangingYear) && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative">
+                     {academicYear && (
+                        <button 
+                            onClick={() => setIsChangingYear(false)} 
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                        >
+                            <XIcon className="w-6 h-6" />
+                        </button>
+                    )}
+                    <AcademicYearForm onSetAcademicYear={async (year) => {
+                        await onUpdateAcademicYear(year);
+                        setIsChangingYear(false);
+                    }} />
+                </div>
+            </div>
+        )}
+
         <div className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Welcome, {user.displayName || user.email}!</h1>
             <p className="text-slate-600 text-lg mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -172,14 +186,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                  {user.role === 'user' && assignedGrade && (
                     <span>Class Teacher of: <span className="font-semibold text-indigo-600">{assignedGrade}</span></span>
                 )}
-                <button 
-                    onClick={() => setIsChangingYear(true)} 
-                    className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-semibold rounded-full shadow-sm hover:bg-slate-50 transition"
-                    title="Change the currently active academic year"
-                >
-                    <SyncIcon className="w-4 h-4"/>
-                    Change Year
-                </button>
+                {isAdmin && (
+                    <button 
+                        onClick={() => setIsChangingYear(true)} 
+                        className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-semibold rounded-full shadow-sm hover:bg-slate-50 transition"
+                        title="Change the currently active academic year"
+                    >
+                        <SyncIcon className="w-4 h-4"/>
+                        Change Year
+                    </button>
+                )}
             </p>
         </div>
         

@@ -1,6 +1,6 @@
 
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent } from './types';
-import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY } from './constants';
+import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
 
 // Custom hook to dynamically load an external script
@@ -183,6 +183,67 @@ export const getNextGrade = (currentGrade: Grade): Grade | null => {
         return null;
     }
     return GRADES_LIST[currentIndex + 1];
+};
+
+export const getNextAcademicYear = (currentYear: string): string => {
+    const [start, end] = currentYear.split('-').map(Number);
+    if (!start || !end) return "2026-2027"; // Fallback
+    return `${start + 1}-${end + 1}`;
+};
+
+export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {
+    if (!gradeDef || !gradeDef.subjects) return 'PASS'; // Default safe
+
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    
+    // Pass/Fail relies primarily on Terminal 3 (Final) results in this context
+    const studentExam = student.academicPerformance?.find(e => e.id === 'terminal3');
+    
+    // If no final exam data, we assume they haven't failed *yet*, but for promotion logic
+    // we might need strict checking. For now, if no exam data, we can't fail them.
+    if (!studentExam) return 'PASS';
+
+    const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
+    const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
+
+    let failedSubjectsCount_III_to_VIII = 0;
+    let failedSubjectsCount_IX_to_X = 0;
+    let gradedSubjectsPassed = 0;
+
+    numericSubjects.forEach(sd => {
+        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        if (hasActivities) { // III to VIII
+            const examMark = result?.examMarks ?? 0;
+            if (examMark < 20) { 
+                failedSubjectsCount_III_to_VIII++;
+            }
+        } else { // N, KG, I, II, IX, X
+            if (isClassIXorX) {
+                const totalSubjectMark = result?.marks ?? 0;
+                if (totalSubjectMark < 33) { 
+                    failedSubjectsCount_IX_to_X++;
+                }
+            }
+        }
+    });
+
+    gradedSubjects.forEach(sd => {
+        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        if (result?.grade && OABC_GRADES.includes(result.grade as any)) {
+            gradedSubjectsPassed++;
+        }
+    });
+    
+    if (gradedSubjectsPassed < gradedSubjects.length) {
+        return 'FAIL';
+    } else if (hasActivities && failedSubjectsCount_III_to_VIII > 1) {
+        return 'FAIL';
+    } else if (isClassIXorX && failedSubjectsCount_IX_to_X > 1) {
+        return 'FAIL';
+    }
+
+    return 'PASS';
 };
 
 export const formatDateForDisplay = (isoDate?: string): string => {

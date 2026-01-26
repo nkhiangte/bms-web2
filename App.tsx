@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -17,7 +18,7 @@ import {
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
     StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem,
-    HostelDormitory, StockLogType, Notice
+    HostelDormitory, StockLogType, Notice, StudentStatus
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -26,7 +27,7 @@ import { SpinnerIcon } from './components/Icons';
 // Data & Constants
 import { timetableData } from './timetableData';
 import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
-import { formatStudentId } from './utils';
+import { calculateStudentResult, createDefaultFeePayments, formatStudentId, getNextAcademicYear, getNextGrade } from './utils';
 
 // Portal Pages
 import DashboardPage from './pages/DashboardPage';
@@ -781,7 +782,7 @@ const App: React.FC = () => {
         try {
             await db.collection('hostelResidents').add({
                 studentId: student.id,
-                dormitory: student.gender === 'Male' ? HostelDormitory.BOYS_BLOCK_A : HostelDormitory.GIRLS_BLOCK_A,
+                dormitory: HostelDormitory.BOYS_BLOCK_A,
                 dateOfJoining: new Date().toISOString().split('T')[0],
             });
             addNotification(`${student.name} added to hostel residents.`, 'success');
@@ -956,6 +957,88 @@ const App: React.FC = () => {
         }
     };
 
+    const handleUpdateAcademicYear = async (year: string) => {
+        try {
+            await db.collection('settings').doc('academic').set({ currentYear: year }, { merge: true });
+            addNotification(`Academic Year changed to ${year}`, 'success');
+        } catch (error: any) {
+             addNotification(error.message, 'error', 'Update Failed');
+        }
+    };
+
+    const handlePromoteStudents = async () => {
+        try {
+            const nextAcademicYear = getNextAcademicYear(academicYear);
+            const archiveCollectionName = `archive_students_${academicYear.replace('-', '_')}`;
+            
+            // Get all active students
+            const snapshot = await db.collection('students').where('status', '==', StudentStatus.ACTIVE).get();
+            const batchSize = 500;
+            let batch = db.batch();
+            let opCount = 0;
+
+            const commitBatch = async () => {
+                if (opCount > 0) {
+                    await batch.commit();
+                    batch = db.batch();
+                    opCount = 0;
+                }
+            };
+
+            for (const doc of snapshot.docs) {
+                const student = { id: doc.id, ...doc.data() } as Student;
+                
+                // 1. Archive
+                const archiveRef = db.collection(archiveCollectionName).doc(student.id);
+                batch.set(archiveRef, student);
+                opCount++;
+
+                // 2. Calculate Result
+                // We need the grade definition to check fail criteria
+                const gradeDef = gradeDefinitions[student.grade];
+                const result = calculateStudentResult(student, gradeDef);
+
+                // 3. Prepare Update
+                const updates: Partial<Student> = {
+                    academicPerformance: [],
+                    feePayments: createDefaultFeePayments(),
+                    // Reset attendance? Attendance is usually stored in separate collection by date, 
+                    // so simply clearing student profile doesn't delete history but starts fresh for new year views.
+                };
+
+                if (result === 'PASS') {
+                    if (student.grade === Grade.X) {
+                        updates.status = StudentStatus.GRADUATED;
+                    } else {
+                        const nextGrade = getNextGrade(student.grade);
+                        if (nextGrade) {
+                            updates.grade = nextGrade;
+                        }
+                    }
+                }
+                // If FAIL, grade remains same (detained)
+
+                const studentRef = db.collection('students').doc(student.id);
+                batch.update(studentRef, updates);
+                opCount++;
+
+                if (opCount >= batchSize) await commitBatch();
+            }
+            
+            await commitBatch();
+
+            // 4. Update Academic Year Setting
+            await db.collection('settings').doc('academic').set({ currentYear: nextAcademicYear }, { merge: true });
+            
+            addNotification(`Successfully promoted students to academic session ${nextAcademicYear}`, 'success');
+            // Force reload to refresh context
+            window.location.reload();
+
+        } catch (error: any) {
+            console.error("Promotion Error:", error);
+            addNotification(`Promotion failed: ${error.message}`, 'error');
+        }
+    };
 
 
     if (loading) {
@@ -1062,7 +1145,7 @@ const App: React.FC = () => {
                         <Route path="/portal/dashboard" element={
                             user.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> :
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
-                            <DashboardPage user={user} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />
+                            <DashboardPage user={user} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} />
                         } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage feeStructure={feeStructure} user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
                         {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
@@ -1087,7 +1170,7 @@ const App: React.FC = () => {
                         <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={handleUpdateGradeDefinition} user={user} onResetAllMarks={async () => undefined} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />
-                        <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={async () => undefined} user={user} />} />
+                        <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user} />} />
                         <Route path="/portal/staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user} />} />
                         <Route path="/portal/staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={() => undefined} user={user} />} />
                         <Route path="/portal/staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />

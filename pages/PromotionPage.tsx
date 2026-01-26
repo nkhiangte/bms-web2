@@ -2,10 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, StudentStatus, User } from '../types';
-import { GRADES_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
-import { BackIcon, HomeIcon, CheckIcon, AcademicCapIcon } from '../components/Icons';
+import { GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, AcademicCapIcon } from '../components/Icons';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { normalizeSubjectName } from '../utils';
+import { calculateStudentResult } from '../utils';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
@@ -20,6 +20,7 @@ interface PromotionPageProps {
 const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinitions, academicYear, onPromoteStudents, user }) => {
     const navigate = useNavigate();
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isPromoting, setIsPromoting] = useState(false);
 
     const promotionSummary = useMemo(() => {
         return GRADES_LIST.map(grade => {
@@ -32,51 +33,8 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
             let toDetain = 0;
             let toGraduate = 0;
 
-            const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(grade);
-            const isClassIXorX = grade === Grade.IX || grade === Grade.X;
-            
-            const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
-            const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
-
             classStudents.forEach(student => {
-                const studentExam = student.academicPerformance?.find(e => e.id === 'terminal3');
-                
-                let failedSubjectsCount_III_to_VIII = 0;
-                let failedSubjectsCount_IX_to_X = 0;
-                let gradedSubjectsPassed = 0;
-
-                numericSubjects.forEach(sd => {
-                    const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-                    if (hasActivities) { // III to VIII
-                        const examMark = result?.examMarks ?? 0;
-                        if (examMark < 20) { 
-                            failedSubjectsCount_III_to_VIII++;
-                        }
-                    } else { // N, KG, I, II, IX, X
-                        if (isClassIXorX) {
-                            const totalSubjectMark = result?.marks ?? 0;
-                            if (totalSubjectMark < 33) { 
-                                failedSubjectsCount_IX_to_X++;
-                            }
-                        }
-                    }
-                });
-
-                gradedSubjects.forEach(sd => {
-                    const result = studentExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-                    if (result?.grade && OABC_GRADES.includes(result.grade as any)) {
-                        gradedSubjectsPassed++;
-                    }
-                });
-                
-                let resultStatus = 'PASS';
-                if (gradedSubjectsPassed < gradedSubjects.length) {
-                    resultStatus = 'FAIL';
-                } else if (hasActivities && failedSubjectsCount_III_to_VIII > 1) {
-                    resultStatus = 'FAIL';
-                } else if (isClassIXorX && failedSubjectsCount_IX_to_X > 1) {
-                    resultStatus = 'FAIL';
-                }
+                const resultStatus = calculateStudentResult(student, gradeDef);
 
                 // Simple pass is still a promotion.
                 if (resultStatus === 'FAIL') {
@@ -95,9 +53,11 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
     }, [students, gradeDefinitions]);
 
     const handleConfirmPromotion = async () => {
+        setIsPromoting(true);
         await onPromoteStudents();
+        setIsPromoting(false);
         setIsConfirmModalOpen(false);
-        // The reload is now handled by onPromoteStudents in App.tsx
+        // The reload is handled by onPromoteStudents in App.tsx
     };
     
     return (
@@ -154,11 +114,11 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
                 <div className="mt-6 flex justify-end">
                     <button
                         onClick={() => setIsConfirmModalOpen(true)}
-                        disabled={user.role !== 'admin'}
+                        disabled={user.role !== 'admin' || isPromoting}
                         className="btn btn-primary bg-red-600 hover:bg-red-700 focus:ring-red-500 text-lg px-6 py-3 disabled:bg-slate-400"
                     >
                         <AcademicCapIcon className="w-5 h-5" />
-                        Finalize & Promote to New Session
+                        {isPromoting ? 'Processing...' : 'Finalize & Promote to New Session'}
                     </button>
                 </div>
             </div>
@@ -168,6 +128,7 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={handleConfirmPromotion}
                 title="Confirm Promotion to New Academic Session"
+                confirmDisabled={isPromoting}
             >
                 <p>Are you sure you want to proceed? This will end the current academic year and promote students to the next session. This action cannot be undone.</p>
             </ConfirmationModal>

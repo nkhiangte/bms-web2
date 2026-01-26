@@ -1,4 +1,38 @@
 
+export interface Student {
+    id: string;
+    rollNo: number;
+    name: string;
+    grade: Grade;
+    academicYear: string; // Added field to track the session
+    studentId: string;
+    contact: string;
+    dateOfBirth: string;
+    gender: Gender;
+    address: string;
+    aadhaarNumber: string;
+    pen: string;
+    category: Category;
+    fatherName: string;
+    fatherOccupation: string;
+    fatherAadhaar: string;
+    motherName: string;
+    motherOccupation: string;
+    motherAadhaar: string;
+    guardianName: string;
+    guardianRelationship: string;
+    lastSchoolAttended: string;
+    healthConditions: string;
+    achievements: string;
+    status: StudentStatus;
+    cwsn: string;
+    religion: string;
+    bloodGroup?: BloodGroup;
+    photographUrl: string;
+    feePayments: FeePayments;
+    academicPerformance?: Exam[];
+}
+
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -191,39 +225,6 @@ export interface Exam {
     teacherRemarks?: string;
     generalConduct?: ConductGrade;
     attendance?: Attendance;
-}
-
-export interface Student {
-    id: string;
-    rollNo: number;
-    name: string;
-    grade: Grade;
-    studentId: string;
-    contact: string;
-    dateOfBirth: string;
-    gender: Gender;
-    address: string;
-    aadhaarNumber: string;
-    pen: string;
-    category: Category;
-    fatherName: string;
-    fatherOccupation: string;
-    fatherAadhaar: string;
-    motherName: string;
-    motherOccupation: string;
-    motherAadhaar: string;
-    guardianName: string;
-    guardianRelationship: string;
-    lastSchoolAttended: string;
-    healthConditions: string;
-    achievements: string;
-    status: StudentStatus;
-    cwsn: string;
-    religion: string;
-    bloodGroup?: BloodGroup;
-    photographUrl: string;
-    feePayments: FeePayments;
-    academicPerformance?: Exam[];
 }
 
 export interface User {

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '../components/Icons';
@@ -216,7 +217,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
             )}
              <DashboardCard
                 title={isAdmin ? "Manage Students" : "View Students"}
-                description={isAdmin ? "View, edit, or delete student records." : "Browse all active students in the school."}
+                description={isAdmin ? `View, edit, or delete student records for ${academicYear}.` : `Browse all active students in ${academicYear}.`}
                 icon={<UsersIcon className="w-7 h-7" />}
                 count={studentCount}
                 color="sky"
@@ -279,7 +280,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
             
             <DashboardCard
                 title="Register New Student"
-                description="Add a new student to the database."
+                description={`Add a new student to the ${academicYear} database.`}
                 icon={<PlusIcon className="w-7 h-7" />}
                 color="emerald"
                 action={<button onClick={() => navigate('/portal/students')} disabled={!isAdmin}>Add New Student</button>}

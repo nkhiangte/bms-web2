@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BackIcon, HomeIcon, EditIcon, CheckIcon, XIcon } from '../components/Icons';
@@ -36,7 +37,7 @@ const boysOnlyChores: Chore[] = [
 const HostelChoreRosterPage: React.FC<HostelChoreRosterPageProps> = ({ user, students, residents, choreRoster, onUpdateChoreRoster, academicYear }) => {
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
-    const [editableRoster, setEditableRoster] = useState<ChoreRoster>({});
+    const [editableRoster, setEditableRoster] = useState<ChoreRoster>({} as ChoreRoster);
 
     const studentMap = useMemo(() => new Map(students.map(s => [s.id, s])), [students]);
 
@@ -55,7 +56,7 @@ const HostelChoreRosterPage: React.FC<HostelChoreRosterPageProps> = ({ user, stu
     }, [residents, studentMap]);
 
     const normalizeRoster = (roster: ChoreRoster): ChoreRoster => {
-        const normalized: ChoreRoster = {};
+        const normalized: ChoreRoster = {} as ChoreRoster;
         CHORE_LIST.forEach(chore => {
             normalized[chore] = {};
             DAYS_OF_WEEK.forEach(day => {

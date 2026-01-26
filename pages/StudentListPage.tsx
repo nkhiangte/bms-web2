@@ -28,6 +28,11 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const filteredStudents = useMemo(() => {
     return students
       .filter(student => {
+        // Strict check for academic year. If student has no year, fallback to 2025-2026 legacy.
+        const studentYear = student.academicYear || '2025-2026';
+        return studentYear === academicYear;
+      })
+      .filter(student => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         switch (searchType) {
@@ -50,7 +55,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
 
   const statsByGrade = useMemo(() => {
     const gradeStats = GRADES_LIST.map(grade => {
-        const classStudents = students.filter(s => s.grade === grade);
+        const classStudents = filteredStudents.filter(s => s.grade === grade);
         const maleCount = classStudents.filter(s => s.gender === Gender.MALE).length;
         const femaleCount = classStudents.filter(s => s.gender === Gender.FEMALE).length;
         const totalCount = classStudents.length;
@@ -62,7 +67,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
     const grandTotal = gradeStats.reduce((sum, s) => sum + s.totalCount, 0);
 
     return { gradeStats, totals: { males: totalMales, females: totalFemales, total: grandTotal } };
-  }, [students]);
+  }, [filteredStudents]);
 
   const searchPlaceholders = {
     name: 'Search by name...',
@@ -93,7 +98,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
 
       <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
         <h2 className="text-2xl font-bold text-slate-800 md:flex-grow">
-          Active Students ({filteredStudents.length})
+          Active Students ({filteredStudents.length}) <span className="text-sm font-normal text-slate-500">for {academicYear}</span>
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Search Type Selector */}
@@ -167,7 +172,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
               aria-expanded={isStatsOpen}
               aria-controls="student-stats-table"
           >
-              <h3 className="text-lg font-bold text-slate-800">Student Statistics</h3>
+              <h3 className="text-lg font-bold text-slate-800">Student Statistics ({academicYear})</h3>
               {isStatsOpen ? <ChevronUpIcon className="w-6 h-6 text-slate-700" /> : <ChevronDownIcon className="w-6 h-6 text-slate-700" />}
           </button>
           {isStatsOpen && (

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Student, Grade, StudentStatus, Gender, Category, BloodGroup } from '../types';
@@ -14,6 +16,7 @@ interface ImportStudentsModalProps {
     allStudents: Student[];
     allGrades: Grade[];
     isImporting: boolean;
+    academicYear: string;
 }
 
 type ParsedStudent = Omit<Student, 'id'> & { errors: string[] };
@@ -27,7 +30,7 @@ const CSV_HEADERS = [
 ];
 
 
-export const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen, onClose, onImport, grade, allStudents, allGrades, isImporting }) => {
+export const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen, onClose, onImport, grade, allStudents, allGrades, isImporting, academicYear }) => {
     const [file, setFile] = useState<File | null>(null);
     const [parsedStudents, setParsedStudents] = useState<ParsedStudent[]>([]);
     const [parseError, setParseError] = useState<string>('');
@@ -158,7 +161,8 @@ export const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen
                     achievements: validateValue(row[21], 'string') as string,
                     photographUrl: '',
                     studentId: '', // Default value
-                    guardianRelationship: '' // Default value
+                    guardianRelationship: '', // Default value
+                    academicYear: academicYear // Passed prop
                 };
 
                 newParsedStudents.push({ ...studentData, errors });

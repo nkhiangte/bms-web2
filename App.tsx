@@ -18,7 +18,7 @@ import {
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
     StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem,
-    HostelDormitory, StockLogType, Notice, StudentStatus
+    HostelDormitory, StockLogType, Notice, StudentStatus, DailyStudentAttendance
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -164,7 +164,7 @@ const App: React.FC = () => {
     const [hostelInventory, setHostelInventory] = useState<HostelInventoryItem[]>([]);
     const [hostelStockLogs, setHostelStockLogs] = useState<StockLog[]>([]);
     const [hostelDisciplineLog, setHostelDisciplineLog] = useState<HostelDisciplineEntry[]>([]);
-    const [hostelChoreRoster, setHostelChoreRoster] = useState<ChoreRoster>({});
+    const [hostelChoreRoster, setHostelChoreRoster] = useState<ChoreRoster>({} as ChoreRoster);
     
     // Config State
     const [academicYear, setAcademicYear] = useState<string>("2025-2026");
@@ -174,7 +174,7 @@ const App: React.FC = () => {
     const [schoolConfig, setSchoolConfig] = useState<{ paymentQRCodeUrl?: string; upiId?: string }>({});
 
     // Attendance State
-    const [currentStudentAttendance, setCurrentStudentAttendance] = useState<Record<Grade, StudentAttendanceRecord> | null>(null);
+    const [currentStudentAttendance, setCurrentStudentAttendance] = useState<DailyStudentAttendance | null>(null);
     const [currentStaffAttendance, setCurrentStaffAttendance] = useState<StaffAttendanceRecord | null>(null);
 
     // Modal State
@@ -202,6 +202,18 @@ const App: React.FC = () => {
     const pendingAdmissionsCount = useMemo(() => onlineAdmissions.filter(a => a.status === 'pending').length, [onlineAdmissions]);
     const pendingParentCount = useMemo(() => allUsers.filter(u => u.role === 'pending_parent').length, [allUsers]);
     const pendingStaffCount = useMemo(() => allUsers.filter(u => u.role === 'pending').length, [allUsers]);
+    
+    // Filtered Students based on Academic Year
+    // Only pass this filtered list to student management components to ensure year consistency
+    const studentsForCurrentYear = useMemo(() => {
+        return students.filter(s => s.academicYear === academicYear || (!s.academicYear && academicYear === '2025-2026')); // Fallback for legacy
+    }, [students, academicYear]);
+    
+    const studentsForFees = useMemo(() => {
+        // Fee management might need to see all students or specific logic, but generally current year
+        return studentsForCurrentYear;
+    }, [studentsForCurrentYear]);
+
 
     const addNotification = (message: string, type: NotificationType, title?: string) => {
         const id = Math.random().toString(36).substring(7);
@@ -299,7 +311,7 @@ const App: React.FC = () => {
             setStudents([]); setConductLog([]); setTcRecords([]); setServiceCerts([]);
             setAllUsers([]); setOnlineAdmissions([]); setHomework([]); setNotices([]);
             setCurrentStudentAttendance(null); setCurrentStaffAttendance(null);
-            setHostelResidents([]); setHostelStaff([]); setHostelInventory([]); setHostelDisciplineLog([]); setHostelChoreRoster({});
+            setHostelResidents([]); setHostelStaff([]); setHostelInventory([]); setHostelDisciplineLog([]); setHostelChoreRoster({} as ChoreRoster);
             return;
         };
     
@@ -482,9 +494,10 @@ const App: React.FC = () => {
             // Logic for Approving and Enrolling
             if (status === 'approved' && !admissionData.isEnrolled) {
                 
-                // 1. Calculate Next Roll Number for the specific grade
+                // 1. Calculate Next Roll Number for the specific grade (in current academic year if needed, or globally for simple logic)
                 const studentsSnapshot = await db.collection('students')
                     .where('grade', '==', admissionData.admissionGrade)
+                    .where('academicYear', '==', academicYear) // Filter for current year
                     .get();
                 
                 let maxRoll = 0;
@@ -501,6 +514,7 @@ const App: React.FC = () => {
                     rollNo: newRollNo,
                     name: admissionData.studentName.toUpperCase(),
                     grade: admissionData.admissionGrade as Grade,
+                    academicYear: academicYear, // Set to current system academic year
                     studentId: '', // Will be updated after generation
                     contact: admissionData.contactNumber,
                     dateOfBirth: admissionData.dateOfBirth,
@@ -1040,8 +1054,15 @@ const App: React.FC = () => {
             const nextAcademicYear = getNextAcademicYear(academicYear);
             const archiveCollectionName = `archive_students_${academicYear.replace('-', '_')}`;
             
-            // Get all active students
+            // Get all active students - Note: We fetch ALL active students regardless of year here
+            // to process the promotion for the *current* batch.
             const snapshot = await db.collection('students').where('status', '==', StudentStatus.ACTIVE).get();
+            
+            // Filter to ensure we are only promoting students from the current year context if multiple years existed
+            const studentsToPromote = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as Student))
+                .filter(s => s.academicYear === academicYear || !s.academicYear);
+
             const batchSize = 500;
             let batch = db.batch();
             let opCount = 0;
@@ -1054,16 +1075,13 @@ const App: React.FC = () => {
                 }
             };
 
-            for (const doc of snapshot.docs) {
-                const student = { id: doc.id, ...doc.data() } as Student;
-                
+            for (const student of studentsToPromote) {
                 // 1. Archive
                 const archiveRef = db.collection(archiveCollectionName).doc(student.id);
                 batch.set(archiveRef, student);
                 opCount++;
 
                 // 2. Calculate Result
-                // We need the grade definition to check fail criteria
                 const gradeDef = gradeDefinitions[student.grade];
                 const result = calculateStudentResult(student, gradeDef);
 
@@ -1071,6 +1089,7 @@ const App: React.FC = () => {
                 const updates: Partial<Student> = {
                     academicPerformance: [],
                     feePayments: createDefaultFeePayments(),
+                    academicYear: nextAcademicYear, // Move student to the new academic year
                 };
 
                 if (result === 'PASS') {
@@ -1083,7 +1102,7 @@ const App: React.FC = () => {
                         }
                     }
                 }
-                // If FAIL, grade remains same (detained)
+                // If FAIL, grade remains same (detained) but year updates to new year
 
                 const studentRef = db.collection('students').doc(student.id);
                 batch.update(studentRef, updates);
@@ -1136,7 +1155,7 @@ const App: React.FC = () => {
                 onSubmit={handleSaveHostelResident}
                 resident={editingHostelResident}
                 preselectedStudent={null}
-                allStudents={students}
+                allStudents={studentsForCurrentYear}
                 allResidents={hostelResidents}
                 isSaving={isSavingHostelResident}
             />
@@ -1158,7 +1177,7 @@ const App: React.FC = () => {
                     <Route path="/rules" element={<RulesPage />} />
                     <Route path="/admissions" element={<AdmissionsPage />} />
                     <Route path="/admissions/status" element={<AdmissionStatusPage />} />
-                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
+                    <Route path="/fees" element={<FeesPage feeStructure={feeStructure} students={studentsForFees} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
                     <Route path="/supplies" element={<SuppliesPage />} />
                     <Route path="/student-life" element={<StudentLifePage />} />
                     <Route path="/ncc" element={<NccPage />} />
@@ -1202,7 +1221,7 @@ const App: React.FC = () => {
                         <DashboardLayout 
                             user={user} 
                             onLogout={handleLogout} 
-                            students={students} 
+                            students={studentsForCurrentYear} 
                             staff={staff} 
                             tcRecords={tcRecords} 
                             serviceCerts={serviceCerts} 
@@ -1212,32 +1231,32 @@ const App: React.FC = () => {
                         <Route path="/portal/dashboard" element={
                             user.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> :
                             user.role === 'warden' ? <Navigate to="/portal/hostel-dashboard" replace /> :
-                            <DashboardPage user={user} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} />
+                            <DashboardPage user={user} studentCount={studentsForCurrentYear.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} />
                         } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage feeStructure={feeStructure} user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
                         {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
-                        <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
+                        <Route path="/portal/students" element={<StudentListPage students={studentsForCurrentYear} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={handleAddConductEntry} onDeleteConductEntry={handleDeleteConductEntry} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />
-                        <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => undefined} academicYear={academicYear} onOpenImportModal={() => undefined} onDelete={() => undefined} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => undefined} onUpdateBulkFeePayments={async () => undefined} feeStructure={feeStructure} />} />
-                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
+                        <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={studentsForCurrentYear} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => undefined} academicYear={academicYear} onOpenImportModal={() => undefined} onDelete={() => undefined} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => undefined} onUpdateBulkFeePayments={async () => undefined} feeStructure={feeStructure} />} />
+                        <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={studentsForCurrentYear} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => undefined} gradeDefinitions={gradeDefinitions} />} />
                         <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} calendarEvents={calendarEvents} />} />
-                        <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
-                        <Route path="/portal/reports/academics" element={<ReportSearchPage students={students} academicYear={academicYear} />} />
+                        <Route path="/portal/fees" element={<FeeManagementPage students={studentsForFees} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
+                        <Route path="/portal/reports/academics" element={<ReportSearchPage students={studentsForCurrentYear} academicYear={academicYear} />} />
                         <Route path="/portal/student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
-                        <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />
-                        <Route path="/portal/insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
+                        <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={studentsForCurrentYear} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />
+                        <Route path="/portal/insights" element={<InsightsPage students={studentsForCurrentYear} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user} />} />
                         <Route path="/portal/homework-scanner" element={<HomeworkScannerPage />} />
-                        <Route path="/portal/activity-log" element={<ActivityLogPage students={students} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => undefined} />} />
+                        <Route path="/portal/activity-log" element={<ActivityLogPage students={studentsForCurrentYear} user={user} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => undefined} />} />
                         <Route path="/portal/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                         <Route path="/portal/subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={handleUpdateGradeDefinition} user={user} onResetAllMarks={async () => undefined} />} />
                         <Route path="/portal/exams" element={<ExamSelectionPage />} />
                         <Route path="/portal/exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user} />} />
-                        <Route path="/portal/promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user} />} />
+                        <Route path="/portal/promotion" element={<PromotionPage students={studentsForCurrentYear} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user} />} />
                         <Route path="/portal/staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user} />} />
                         <Route path="/portal/staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={() => undefined} user={user} />} />
                         <Route path="/portal/staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />
@@ -1247,7 +1266,7 @@ const App: React.FC = () => {
                         <Route path="/portal/transfers/records" element={<TcRecordsPage tcRecords={tcRecords} />} />
                         <Route path="/portal/transfers/print/:tcId" element={<PrintTcPage tcRecords={tcRecords} />} />
                         <Route path="/progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
-                        <Route path="/portal/reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
+                        <Route path="/portal/reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={studentsForCurrentYear} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
                         <Route path="/portal/hostel-dashboard" element={<HostelDashboardPage disciplineLog={hostelDisciplineLog} />} />
                         <Route path="/portal/hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={handleOpenAddHostelResident} onAddById={handleAddHostelResidentById} onEdit={handleOpenEditHostelResident} onDelete={handleDeleteHostelResident} user={user} academicYear={academicYear} />} />
                         <Route path="/portal/hostel/rooms" element={<HostelRoomListPage residents={hostelResidents} students={students} />} />
@@ -1261,7 +1280,7 @@ const App: React.FC = () => {
                         <Route path="/portal/hostel/communication" element={<HostelCommunicationPage />} />
                         <Route path="/portal/hostel/settings" element={<HostelSettingsPage />} />
                         <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={handleUpdateChoreRoster} academicYear={academicYear} />} />
-                        <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
+                        <Route path="/portal/communication" element={<CommunicationPage students={studentsForCurrentYear} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} notificationDaysBefore={-1} onUpdatePrefs={() => undefined} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={handleOpenAddNews} onEdit={handleOpenEditNews} onDelete={handleDeleteNews} user={user} />} />
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />

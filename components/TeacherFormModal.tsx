@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
 import { 
@@ -92,7 +93,7 @@ interface StaffFormModalProps {
 
 const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubmit, staffMember, allStaff, gradeDefinitions, isSaving, error }) => {
     const getInitialFormData = (): Omit<Staff, 'id'> => ({
-        staffType: 'Teaching',
+        staffType: StaffType.TEACHING,
         employeeId: '',
         firstName: '',
         lastName: '',
@@ -385,7 +386,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                             {EMPLOYEE_TYPE_LIST.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
-                    {formData.staffType === 'Teaching' && (
+                    {formData.staffType === StaffType.TEACHING && (
                         <div>
                             <label className="block text-sm font-bold text-slate-800">Assign as Class Teacher</label>
                             <select value={assignedGrade} onChange={e => setAssignedGrade(e.target.value as Grade)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
@@ -412,7 +413,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                         <label className="block text-sm font-bold text-slate-800">Years of Experience</label>
                         <input type="number" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
                     </div>
-                    {formData.staffType === 'Teaching' && (
+                    {formData.staffType === StaffType.TEACHING && (
                         <>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Subject Assignments</label>

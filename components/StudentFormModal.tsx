@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { Grade, Student, Gender, StudentStatus, Category, BloodGroup } from '../types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../constants';
@@ -37,7 +36,7 @@ const AccordionSection: React.FC<{ title: string; children: React.ReactNode; def
 };
 
 const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, onSubmit, student, newStudentTargetGrade, academicYear, isSaving, error }) => {
-    const getInitialFormData = (): Omit<Student, 'id' | 'feePayments'> => ({
+    const getInitialFormData = (): Omit<Student, 'id' | 'feePayments' | 'academicYear'> => ({
         rollNo: 0,
         name: '',
         grade: newStudentTargetGrade || GRADES_LIST[0],
@@ -78,7 +77,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
             if (student) {
                 // When editing, create a new object from the student prop containing only the form fields.
                 // This prevents `feePayments` etc. from ever entering the form's state.
-                const { feePayments, id, ...formFields } = student;
+                const { feePayments, id, academicYear, ...formFields } = student;
                 setFormData({
                     ...getInitialFormData(), // Start with defaults to ensure all keys are present
                     ...formFields, // Overlay with actual student data
@@ -139,6 +138,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
         const dataToSave: { [key: string]: any } = {
             ...formData,
             dateOfBirth: formatDateForStorage(formData.dateOfBirth),
+            academicYear: student ? student.academicYear : academicYear, // Keep existing year if edit, else use current
         };
         
         // 2. If we are editing a student, we now explicitly pull the `feePayments`

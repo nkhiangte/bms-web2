@@ -48,9 +48,12 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const classStudents = useMemo(() => {
         if (!grade) return [];
         return students
-            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE)
+            .filter(s => {
+                const studentYear = s.academicYear || '2025-2026';
+                return s.grade === grade && s.status === StudentStatus.ACTIVE && studentYear === academicYear;
+            })
             .sort((a, b) => a.rollNo - b.rollNo);
-    }, [students, grade]);
+    }, [students, grade, academicYear]);
 
     const filteredStudents = useMemo(() => {
         return classStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || formatStudentId(s, academicYear).toLowerCase().includes(searchTerm.toLowerCase()));
@@ -85,7 +88,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
             {/* Title & Teacher */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">{grade}</h1>
+                    <h1 className="text-3xl font-bold text-slate-800">{grade} <span className="text-lg font-normal text-slate-500">({academicYear})</span></h1>
                     <div className="flex items-center gap-2 mt-2 text-slate-600">
                         <UserIcon className="w-5 h-5" />
                         <span className="font-semibold">Class Teacher:</span>
@@ -146,7 +149,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
             {/* Students List */}
             {filteredStudents.length === 0 ? (
                  <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
-                    <p className="text-slate-700 text-lg font-semibold">No students found.</p>
+                    <p className="text-slate-700 text-lg font-semibold">No students found for {academicYear}.</p>
+                    <p className="text-slate-500">Students will appear here after promotion or new admission.</p>
                 </div>
             ) : (
                 <div className="space-y-3">

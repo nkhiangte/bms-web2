@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '../types';
@@ -126,7 +127,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                     <div className="p-4 border-t border-white/30 space-y-6 animate-fade-in">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <ActionCard title="Today's Attendance" onClick={() => setViewingAttendanceFor(student)} icon={<CalendarDaysIcon className="w-6 h-6 text-sky-600"/>}>
-                                {attendanceStatus ? (<span className={`font-bold ${attendanceStatus === 'Present' ? 'text-emerald-700' : 'text-red-700'}`}>{attendanceStatus}</span>) : (<span className="text-slate-600">Not Marked</span>)}
+                                {attendanceStatus ? (<span className={`font-bold ${(attendanceStatus as unknown as string) === 'Present' ? 'text-emerald-700' : 'text-red-700'}`}>{(attendanceStatus as unknown as string)}</span>) : (<span className="text-slate-600">Not Marked</span>)}
                             </ActionCard>
                             <ActionCard title="Class Timetable" link="/portal/routine" state={{ grade: student.grade }} icon={<BookOpenIcon className="w-6 h-6 text-indigo-600"/>} />
                             <ActionCard title="Academic Calendar" link="/portal/calendar" icon={<CalendarDaysIcon className="w-6 h-6 text-teal-600"/>} />

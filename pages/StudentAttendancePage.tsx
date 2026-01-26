@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '../types';
@@ -119,7 +120,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
                 const [year, month] = dateStr.split('-').map(Number);
                 try {
                     const monthlyData = await fetchStudentAttendanceForMonth(grade, year, month);
-                    attendanceData = monthlyData[dateStr] || {};
+                    attendanceData = (monthlyData[dateStr] as StudentAttendanceRecord) || {};
                 } catch (e) {
                     console.error("Error fetching historical attendance", e);
                 }

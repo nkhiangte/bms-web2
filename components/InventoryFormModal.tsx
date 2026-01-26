@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { InventoryItem, InventoryCategory, InventoryStatus } from '../types';
 import { INVENTORY_CATEGORY_LIST, INVENTORY_STATUS_LIST } from '../constants';
@@ -21,6 +22,8 @@ const InventoryFormModal: React.FC<InventoryFormModalProps> = ({ isOpen, onClose
     purchaseDate: formatDateForDisplay(new Date().toISOString().split('T')[0]),
     lastMaintenanceDate: '',
     notes: '',
+    reorderLevel: 5,
+    currentStock: 0,
   });
 
   const [formData, setFormData] = useState(getInitialFormData());
@@ -62,14 +65,16 @@ const InventoryFormModal: React.FC<InventoryFormModalProps> = ({ isOpen, onClose
     Object.keys(dataToSave).forEach(key => {
         const value = dataToSave[key];
         if (value === undefined || value === null || value === '') {
-             if (key !== 'quantity') { // quantity can be 0
+             if (key !== 'quantity' && key !== 'currentStock' && key !== 'reorderLevel') { 
                 delete dataToSave[key];
             }
         }
     });
 
     dataToSave.quantity = Number(dataToSave.quantity) || 0;
-    
+    dataToSave.currentStock = Number(dataToSave.quantity) || 0; // Assuming currentStock starts same as quantity on add
+    dataToSave.reorderLevel = Number(dataToSave.reorderLevel) || 5;
+
     onSubmit(dataToSave as Omit<InventoryItem, 'id'>);
   };
 
@@ -115,6 +120,10 @@ const InventoryFormModal: React.FC<InventoryFormModalProps> = ({ isOpen, onClose
                 <div>
                     <label htmlFor="purchaseDate" className="block text-sm font-bold text-slate-800">Purchase Date</label>
                     <input type="text" name="purchaseDate" id="purchaseDate" placeholder="DD/MM/YYYY" pattern="\d{1,2}/\d{1,2}/\d{4}" value={formData.purchaseDate} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm" required />
+                </div>
+                <div>
+                    <label htmlFor="reorderLevel" className="block text-sm font-bold text-slate-800">Reorder Level</label>
+                    <input type="number" name="reorderLevel" id="reorderLevel" value={formData.reorderLevel} onChange={handleChange} min="0" className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm" />
                 </div>
                 <div>
                     <label htmlFor="lastMaintenanceDate" className="block text-sm font-bold text-slate-800">Last Maintenance (Optional)</label>

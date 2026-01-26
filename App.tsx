@@ -87,7 +87,6 @@ import SitemapEditorPage from './pages/SitemapEditorPage';
 import UserProfilePage from './pages/UserProfilePage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
-import SyllabusPage from './pages/public/SyllabusPage';
 import ManageNoticesPage from './pages/ManageNoticesPage';
 
 // Modals
@@ -134,6 +133,8 @@ import ScienceTourPage from './pages/public/ScienceTourPage';
 import IncentiveAwardsPage from './pages/public/IncentiveAwardsPage';
 import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
+// FIX: Import 'SyllabusPage' component to fix 'Cannot find name' error.
+import SyllabusPage from './pages/public/SyllabusPage';
 
 const App: React.FC = () => {
     const navigate = useNavigate();
@@ -424,13 +425,22 @@ const App: React.FC = () => {
     
     const handleOnlineAdmissionSubmit = async (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>): Promise<string | null> => {
         try {
-            const submissionData = {
+            const submissionDataWithTimestamp = {
                 ...data,
                 submissionDate: new Date().toISOString(),
                 status: 'pending' as 'pending',
                 paymentStatus: 'pending' as 'pending'
             };
-            const docRef = await db.collection('online_admissions').add(submissionData);
+
+            // Clean data before sending to Firestore to remove any 'undefined' fields.
+            const cleanedData: { [key: string]: any } = {};
+            Object.entries(submissionDataWithTimestamp).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    cleanedData[key] = value;
+                }
+            });
+
+            const docRef = await db.collection('online_admissions').add(cleanedData);
             return docRef.id;
         } catch (error: any) {
             addNotification(error.message, 'error', 'Submission Failed');

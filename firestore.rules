@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -72,11 +71,12 @@ service cloud.firestore {
     // ---------------------------
     match /online_admissions/{admissionId} {
       allow create: if true; // Public can submit forms
-      allow read, list, delete: if isAdmin();
+      allow get: if true;    // FIX: Allows public users with their Ref ID to view their application
+      allow list, delete: if isAdmin(); // Keep full list protected
       // Allow admins to update.
-      // Allow public to update (for payment step) ONLY if the application is still 'pending'.
-      // This prevents modification after review/approval.
-      allow update: if isAdmin() || resource.data.status == 'pending';
+      // Allow public to update (for payment step) if the application is 'pending' or 'approved'.
+      // This prevents modification after rejection but allows payment after approval.
+      allow update: if isAdmin() || (resource.data.status == 'pending' || resource.data.status == 'approved');
     }
     
     // ---------------------------

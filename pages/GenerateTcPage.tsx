@@ -50,7 +50,6 @@ const REASON_FOR_LEAVING_OPTIONS = [
 
 const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, isSaving, error }) => {
     const navigate = useNavigate();
-    // Fix: Cast untyped useParams call to specific type to resolve build error
     const { studentId: paramStudentId } = useParams() as { studentId: string };
 
     const [studentIdInput, setStudentIdInput] = useState<string>('');
@@ -120,12 +119,14 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         try {
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
-            const prompt = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
+            const promptText = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
+            
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: prompt,
+                contents: promptText,
             });
-            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function.
+            
+            // FIX: response.text is a property, not a method.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);
@@ -199,7 +200,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 <form onSubmit={handleStudentSearch} className="my-6 max-w-lg">
                     <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Find Student by ID</label>
                     <div className="flex gap-2 items-start">
-                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
+                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(e as any); }}} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
                         <button type="submit" className="btn btn-primary h-[42px]"><SearchIcon className="w-5 h-5"/></button>
                     </div>
                 </form>

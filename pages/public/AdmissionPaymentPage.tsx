@@ -1,11 +1,9 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType } from '../../types';
 import { ADMISSION_FEE_AMOUNT, NOTEBOOK_SET_PRICES, OTHER_ADMISSION_ITEMS, UNIFORM_ITEMS, UNIFORM_SIZES } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
-import { resizeImage, uploadToImgBB, formatStudentId } from '../../utils';
+import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
 
 interface AdmissionPaymentPageProps {
@@ -25,7 +23,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error'>('pending');
     
-    // Generate a semi-persistent Bill ID for this session/transaction
     const [billId] = useState(`BILL-${Math.floor(100000 + Math.random() * 900000)}`);
 
     const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
@@ -100,7 +97,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                 purchasedItems,
                 paymentScreenshotUrl: screenshotUrl,
                 paymentTransactionId: transactionId,
-                billId: billId, // Include billId in submission
+                billId: billId,
             });
 
             if (success) {
@@ -121,7 +118,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         
-        // --- Header ---
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
         doc.text("BETHEL MISSION SCHOOL", pageWidth / 2, 20, { align: "center" });
@@ -134,7 +130,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         doc.setLineWidth(0.5);
         doc.line(10, 36, pageWidth - 10, 36);
 
-        // --- Bill Metadata ---
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.text(`Bill ID: ${billId}`, 15, 45);
@@ -146,7 +141,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         doc.text(`Class Applied: ${grade}`, pageWidth / 2 + 10, 52);
         doc.text(`Contact: ${contact || 'N/A'}`, pageWidth / 2 + 10, 59);
         
-        // --- Table Header ---
         let yPos = 70;
         doc.setFillColor(240, 240, 240);
         doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F');
@@ -159,7 +153,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         yPos += 8;
         doc.setFont("helvetica", "normal");
 
-        // --- Items ---
         const items = Object.entries(selectedItems) as [string, { quantity: number; size?: string }][];
         items.forEach(([name, details]) => {
             const itemDef = allItems.find(i => i.name === name);
@@ -173,11 +166,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
             yPos += 7;
         });
 
-        // --- Divider ---
         doc.line(15, yPos, pageWidth - 15, yPos);
         yPos += 8;
 
-        // --- Totals ---
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text("Grand Total", 140, yPos);
@@ -189,7 +180,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         doc.text(`Payment Mode: Online (UPI)`, 15, yPos);
         doc.text(`Transaction ID: ${transactionId}`, 15, yPos + 6);
         
-        // --- Footer / Instructions ---
         yPos += 20;
         doc.setDrawColor(0);
         doc.setLineWidth(0.2);
@@ -306,7 +296,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                                     <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Instructions</h3>
                                     <p className="text-sm text-slate-600 mb-4">Pay the total amount using the details below, then upload the screenshot to finalize.</p>
                                      <div className="flex justify-center">
-                                        <img src="https://i.ibb.co/L8mC9gW/qr-code-placeholder.png" alt="UPI QR Code Placeholder" className="w-48 h-48 border p-1"/>
+                                        <img src="https://i.ibb.co/7Qr5qYV/sample-qr-code.png" alt="UPI QR Code" className="w-48 h-48 border p-1 bg-white shadow-sm"/>
                                      </div>
                                      <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700">bethelmissionschool@upi</span></p>
                                 </div>

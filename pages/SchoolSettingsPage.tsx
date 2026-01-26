@@ -41,7 +41,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        await onUpdate({ upiId, paymentQRCodeUrl: qrCodeUrl });
+        const success = await onUpdate({ upiId, paymentQRCodeUrl: qrCodeUrl });
         setIsSaving(false);
     };
 
@@ -73,7 +73,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                                     placeholder="e.g., nkhiangte@oksbi"
                                     required
                                 />
-                                <p className="text-xs text-slate-500 mt-1">This ID will be displayed on the admission payment page.</p>
+                                <p className="text-xs text-slate-500 mt-1">Current default is: <strong>nkhiangte@oksbi</strong></p>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700">Payment QR Code</label>
@@ -95,7 +95,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                         <div className="bg-white p-4 border rounded-lg shadow-inner">
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Live Preview</h3>
                             <div className="flex flex-col items-center">
-                                <img src={qrCodeUrl || 'https://via.placeholder.com/150?text=No+QR'} alt="QR Preview" className="w-40 h-40 border p-1 bg-white mb-2"/>
+                                <img src={qrCodeUrl} alt="QR Preview" className="w-40 h-40 border p-1 bg-white mb-2"/>
                                 <p className="text-xs font-semibold text-slate-600">UPI ID: <span className="text-sky-700 font-mono">{upiId}</span></p>
                             </div>
                         </div>

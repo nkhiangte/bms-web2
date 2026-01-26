@@ -26,6 +26,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     
     const [billId] = useState(`BILL-${Math.floor(100000 + Math.random() * 900000)}`);
 
+    // Use dynamic config or provided screenshot defaults
     const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
     const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://i.ibb.co/C5f88Qy/nelson-upi.jpg';
 

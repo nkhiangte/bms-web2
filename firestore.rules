@@ -71,12 +71,10 @@ service cloud.firestore {
     // ---------------------------
     match /online_admissions/{admissionId} {
       allow create: if true; // Public can submit forms
-      allow get: if true;    // FIX: Allows public users with their Ref ID to view their application
-      allow list, delete: if isAdmin(); // Keep full list protected
-      // Allow admins to update.
-      // Allow public to update (for payment step) if the application is 'pending' or 'approved'.
-      // This prevents modification after rejection but allows payment after approval.
-      allow update: if isAdmin() || (resource.data.status == 'pending' || resource.data.status == 'approved');
+      allow get: if true;    // Public can view their specific application
+      allow list, delete: if isAdmin();
+      // Allow updates if application is not rejected (allows re-submission of payment if needed)
+      allow update: if isAdmin() || (resource.data.status != 'rejected');
     }
     
     // ---------------------------
@@ -100,7 +98,7 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Config collection (Fees, GradeDefs, Sitemap) - Public Read required for website
+    // Config collection (Fees, GradeDefs, Sitemap, SchoolDetails) - Public Read required for website
     match /config/{configDoc} {
       allow read: if true;
       allow write: if isStaff();

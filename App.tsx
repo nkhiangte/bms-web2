@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -88,6 +87,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
 import ManageNoticesPage from './pages/ManageNoticesPage';
+import SchoolSettingsPage from './pages/SchoolSettingsPage';
 
 // Modals
 import NewsFormModal from './components/NewsFormModal';
@@ -133,7 +133,6 @@ import ScienceTourPage from './pages/public/ScienceTourPage';
 import IncentiveAwardsPage from './pages/public/IncentiveAwardsPage';
 import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
-// FIX: Import 'SyllabusPage' component to fix 'Cannot find name' error.
 import SyllabusPage from './pages/public/SyllabusPage';
 
 const App: React.FC = () => {
@@ -171,6 +170,7 @@ const App: React.FC = () => {
     const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
     const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
     const [sitemapContent, setSitemapContent] = useState<string>('');
+    const [schoolConfig, setSchoolConfig] = useState<{ paymentQRCodeUrl?: string; upiId?: string }>({});
 
     // Attendance State
     const [currentStudentAttendance, setCurrentStudentAttendance] = useState<Record<Grade, StudentAttendanceRecord> | null>(null);
@@ -207,12 +207,12 @@ const App: React.FC = () => {
         setNotifications(prev => [...prev, { id, message, type, title }]);
     };
 
-    // Firebase Auth Setup with Real-time User Doc Sync and Auto-Creation for New Users
+    // Firebase Auth Setup
     useEffect(() => {
         let userDocUnsubscribe: () => void;
 
         const authUnsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-            if (userDocUnsubscribe) userDocUnsubscribe(); // Unsubscribe from previous user listener
+            if (userDocUnsubscribe) userDocUnsubscribe();
 
             if (firebaseUser) {
                 const userDocRef = db.collection('users').doc(firebaseUser.uid);
@@ -285,10 +285,11 @@ const App: React.FC = () => {
         });
         const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
         const unsubNotices = db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))));
+        const unsubSchoolDetails = db.collection('config').doc('schoolDetails').onSnapshot(d => d.exists && setSchoolConfig(d.data() as any));
 
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubNotices();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubNotices(); unsubSchoolDetails();
         };
     }, []);
 
@@ -373,7 +374,7 @@ const App: React.FC = () => {
             addNotification(`Failed to update subjects: ${e.message}`, 'error');
         }
     };
-// FIX: Implement handleAddConductEntry to replace placeholder
+
     const handleAddConductEntry = async (entry: Omit<ConductEntry, 'id'>): Promise<boolean> => {
         try {
             await db.collection('conductLog').add(entry);
@@ -432,7 +433,6 @@ const App: React.FC = () => {
                 paymentStatus: 'pending' as 'pending'
             };
 
-            // Clean data before sending to Firestore to remove any 'undefined' fields.
             const cleanedData: { [key: string]: any } = {};
             Object.entries(submissionDataWithTimestamp).forEach(([key, value]) => {
                 if (value !== undefined) {
@@ -456,7 +456,7 @@ const App: React.FC = () => {
             await db.collection('online_admissions').doc(admissionId).update({
                 ...updates,
                 paymentStatus: 'paid',
-                status: 'reviewed' // Move to reviewed after payment
+                status: 'reviewed' 
             });
             addNotification("Payment details saved successfully!", 'success');
             return true;
@@ -943,6 +943,17 @@ const App: React.FC = () => {
         }
     };
 
+    const handleUpdateSchoolConfig = async (updates: { paymentQRCodeUrl?: string; upiId?: string }) => {
+        try {
+            await db.collection('config').doc('schoolDetails').set(updates, { merge: true });
+            addNotification("School settings updated successfully.", "success");
+            return true;
+        } catch (e: any) {
+            addNotification(e.message, "error", "Update Failed");
+            return false;
+        }
+    };
+
 
 
     if (loading) {
@@ -1023,7 +1034,7 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
-                    <Route path="/admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={handleUpdateAdmissionPayment} addNotification={addNotification} />} />
+                    <Route path="/admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={handleUpdateAdmissionPayment} addNotification={addNotification} schoolConfig={schoolConfig} />} />
                     <Route path="/portal/syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
@@ -1111,6 +1122,7 @@ const App: React.FC = () => {
                         <Route path="/portal/manage-homework" element={<ManageHomeworkPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} onDelete={async () => {}} allHomework={homework} />} />
                         <Route path="/portal/manage-syllabus" element={<ManageSyllabusPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions}/>} />
                         <Route path="/portal/manage-notices" element={<ManageNoticesPage user={user} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
+                        <Route path="/portal/settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={handleUpdateSchoolConfig} />} />
                     </Route>
                 ) : (
                     <Route path="/portal/*" element={<Navigate to="/login" replace />} />

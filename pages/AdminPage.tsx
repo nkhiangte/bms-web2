@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -8,6 +7,7 @@ import {
     InboxArrowDownIcon,
     UserGroupIcon,
     DocumentReportIcon,
+    CogIcon,
 } from '../components/Icons';
 
 const AdminCard: React.FC<{
@@ -52,6 +52,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
         { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },
         { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
         { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
+        { title: "School Settings", description: "Update school info, payment QR codes, etc.", icon: <CogIcon className="w-7 h-7" />, link: "/portal/settings" },
     ];
 
     return (

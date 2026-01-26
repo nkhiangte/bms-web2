@@ -126,7 +126,6 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 contents: promptText,
             });
             
-            // FIX: response.text is a property, not a method.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

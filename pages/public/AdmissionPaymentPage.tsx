@@ -9,9 +9,10 @@ import { jsPDF } from 'jspdf';
 interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
     addNotification: (message: string, type: NotificationType, title?: string) => void;
+    schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
 }
 
-const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdmissionPayment, addNotification }) => {
+const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdmissionPayment, addNotification, schoolConfig }) => {
     const { admissionId } = useParams<{ admissionId: string }>();
     const location = useLocation();
     
@@ -24,6 +25,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error'>('pending');
     
     const [billId] = useState(`BILL-${Math.floor(100000 + Math.random() * 900000)}`);
+
+    const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
+    const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://i.ibb.co/C5f88Qy/nelson-upi.jpg';
 
     const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
 
@@ -296,9 +300,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                                     <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Instructions</h3>
                                     <p className="text-sm text-slate-600 mb-4">Pay the total amount using the details below, then upload the screenshot to finalize.</p>
                                      <div className="flex justify-center">
-                                        <img src="https://i.ibb.co/7Qr5qYV/sample-qr-code.png" alt="UPI QR Code" className="w-48 h-48 border p-1 bg-white shadow-sm"/>
+                                        <img src={qrCodeUrl} alt="UPI QR Code" className="w-48 h-48 border p-1 bg-white shadow-sm"/>
                                      </div>
-                                     <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700">bethelmissionschool@upi</span></p>
+                                     <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700">{upiId}</span></p>
                                 </div>
                                 
                                 <div>

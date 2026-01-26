@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType } from '../../types';
@@ -48,7 +49,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     }, [allItems]);
 
     const totalCost = useMemo(() => {
-        return Object.entries(selectedItems).reduce((total, [itemName, details]) => {
+        return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             return total + (item ? item.price * details.quantity : 0);
         }, 0);
@@ -68,7 +69,11 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     };
     
     const handleSizeChange = (itemName: string, size: string) => {
-        setSelectedItems(prev => ({...prev, [itemName]: {...prev[itemName], size}}));
+        setSelectedItems(prev => {
+            const item = prev[itemName];
+            if (!item) return prev;
+            return { ...prev, [itemName]: { ...item, size } };
+        });
     };
 
     const handleSubmit = async () => {
@@ -85,7 +90,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         try {
             const screenshotUrl = await uploadToImgBB(await resizeImage(paymentScreenshot, 800, 800, 0.8));
             
-            const purchasedItems: AdmissionItem[] = Object.entries(selectedItems).map(([name, details]) => {
+            const purchasedItems: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                 const item = allItems.find(i => i.name === name)!;
                 return { name, price: item.price, quantity: details.quantity, size: details.size };
             });
@@ -155,7 +160,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         doc.setFont("helvetica", "normal");
 
         // --- Items ---
-        const items = Object.entries(selectedItems);
+        const items = Object.entries(selectedItems) as [string, { quantity: number; size?: string }][];
         items.forEach(([name, details]) => {
             const itemDef = allItems.find(i => i.name === name);
             const price = itemDef ? itemDef.price : 0;
@@ -281,7 +286,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-800 mb-4">Cart Summary</h3>
                                     <div className="space-y-2 text-sm">
-                                        {Object.entries(selectedItems).map(([name, details]) => {
+                                        {(Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                                             const item = allItems.find(i => i.name === name);
                                             return (
                                                 <div key={name} className="flex justify-between">

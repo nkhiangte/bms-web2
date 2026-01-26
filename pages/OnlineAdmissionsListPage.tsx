@@ -1,9 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade } from '../types';
 import { BackIcon, HomeIcon, InboxArrowDownIcon, ChevronDownIcon, SpinnerIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
 import { GRADES_LIST } from '../constants';
+import * as XLSX from 'xlsx';
 
 interface OnlineAdmissionsListPageProps {
     admissions: OnlineAdmission[];
@@ -60,6 +62,42 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
         setUpdatingStatus(prev => ({ ...prev, [id]: false }));
     };
 
+    const handleExportExcel = () => {
+        if (filteredAdmissions.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        const dataToExport = filteredAdmissions.map(app => ({
+            "Student Name": app.studentName,
+            "Grade Applied": app.admissionGrade,
+            "Status": app.status,
+            "Date of Birth": formatDateForDisplay(app.dateOfBirth),
+            "Gender": app.gender,
+            "Father's Name": app.fatherName,
+            "Mother's Name": app.motherName,
+            "Contact": app.contactNumber,
+            "Address": app.presentAddress,
+            "Last School": app.lastSchoolAttended || 'N/A',
+            "Payment Status": app.paymentStatus || 'Pending',
+            "Payment Amount": app.paymentAmount || 0,
+            "Transaction ID": app.paymentTransactionId || 'N/A',
+            "Submission Date": new Date(app.submissionDate).toLocaleDateString()
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Admissions");
+        
+        // Generate filename based on filters
+        let filename = "Online_Admissions";
+        if (activeFilters.grade) filename += `_${activeFilters.grade}`;
+        if (activeFilters.status) filename += `_${activeFilters.status}`;
+        filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        XLSX.writeFile(workbook, filename);
+    };
+
     return (
         <>
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -75,39 +113,46 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                     </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 border rounded-lg flex flex-col sm:flex-row items-center gap-4">
-                    <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="form-input flex-grow w-full sm:w-auto"/>
-                    <select name="status" value={activeFilters.status} onChange={handleFilterChange} className="form-select w-full sm:w-auto">
+                <div className="p-4 bg-slate-50 border rounded-lg flex flex-col md:flex-row items-center gap-4 mb-6">
+                    <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="form-input flex-grow w-full md:w-auto"/>
+                    <select name="status" value={activeFilters.status} onChange={handleFilterChange} className="form-select w-full md:w-auto">
                         <option value="">All Statuses</option>
                         <option value="pending">Pending</option>
                         <option value="reviewed">Reviewed</option>
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
                     </select>
-                    <select name="grade" value={activeFilters.grade} onChange={handleFilterChange} className="form-select w-full sm:w-auto">
+                    <select name="grade" value={activeFilters.grade} onChange={handleFilterChange} className="form-select w-full md:w-auto">
                         <option value="">All Classes</option>
                         {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
+                    <button 
+                        onClick={handleExportExcel}
+                        className="btn btn-secondary w-full md:w-auto whitespace-nowrap"
+                        disabled={filteredAdmissions.length === 0}
+                    >
+                        Export to Excel
+                    </button>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                <div className="space-y-3">
                     {filteredAdmissions.length > 0 ? filteredAdmissions.map(app => {
                         const isExpanded = expandedId === app.id;
                         return (
-                            <div key={app.id} className="border rounded-lg overflow-hidden">
-                                <button onClick={() => setExpandedId(isExpanded ? null : app.id)} className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100">
+                            <div key={app.id} className="border rounded-lg overflow-hidden transition-shadow hover:shadow-md">
+                                <button onClick={() => setExpandedId(isExpanded ? null : app.id)} className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
                                     <div className="text-left">
                                         <p className="font-bold text-slate-800">{app.studentName}</p>
                                         <p className="text-sm text-slate-600">Applied for: {app.admissionGrade}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className="text-xs text-slate-500">{new Date(app.submissionDate).toLocaleDateString()}</span>
+                                        <span className="text-xs text-slate-500 hidden sm:inline">{new Date(app.submissionDate).toLocaleDateString()}</span>
                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyles(app.status)}`}>{app.status}</span>
                                         <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                     </div>
                                 </button>
                                 {isExpanded && (
-                                    <div className="p-6 bg-white space-y-6">
+                                    <div className="p-6 bg-white space-y-6 border-t animate-fade-in">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <DetailItem label="Date of Birth" value={formatDateForDisplay(app.dateOfBirth)} />
                                             <DetailItem label="Gender" value={app.gender} />
@@ -143,34 +188,49 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                         </div>
 
                                         <div>
-                                            <h4 className="text-sm font-bold text-slate-800 mb-2">Payment Screenshot</h4>
+                                            <h4 className="text-sm font-bold text-slate-800 mb-2">Payment Details</h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+                                                 <DetailItem label="Status" value={app.paymentStatus} />
+                                                 <DetailItem label="Amount" value={app.paymentAmount ? `₹${app.paymentAmount}` : '0'} />
+                                                 <DetailItem label="Transaction ID" value={app.paymentTransactionId} />
+                                            </div>
                                             {app.paymentScreenshotUrl ? (
-                                                <img 
-                                                    src={app.paymentScreenshotUrl} 
-                                                    alt="Payment Screenshot" 
-                                                    className="w-48 h-auto rounded-lg border cursor-pointer" 
-                                                    onClick={() => setLightboxImage({ src: app.paymentScreenshotUrl, alt: "Payment Screenshot" })}
-                                                />
-                                            ) : <p className="text-slate-500 italic">Not uploaded.</p>}
+                                                <div className="mt-2">
+                                                    <p className="text-xs font-semibold text-slate-600 mb-1">Screenshot:</p>
+                                                    <img 
+                                                        src={app.paymentScreenshotUrl} 
+                                                        alt="Payment Screenshot" 
+                                                        className="w-48 h-auto rounded-lg border cursor-pointer hover:opacity-90" 
+                                                        onClick={() => setLightboxImage({ src: app.paymentScreenshotUrl!, alt: "Payment Screenshot" })}
+                                                    />
+                                                </div>
+                                            ) : <p className="text-slate-500 italic text-sm">Screenshot not uploaded.</p>}
                                         </div>
 
-                                        <div className="pt-4 border-t flex items-center gap-4">
-                                            <label className="font-bold text-slate-800">Update Status:</label>
-                                            {updatingStatus[app.id] ? <SpinnerIcon className="w-5 h-5"/> : (
-                                                <select value={app.status} onChange={e => handleStatusChange(app.id, e.target.value as any)} className="form-select">
-                                                    <option value="pending">Pending</option>
-                                                    <option value="reviewed">Reviewed</option>
-                                                    <option value="approved">Approved</option>
-                                                    <option value="rejected">Rejected</option>
-                                                </select>
-                                            )}
+                                        <div className="pt-4 border-t flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 -mx-6 -mb-6 p-6">
+                                            <label className="font-bold text-slate-800">Update Application Status:</label>
+                                            <div className="flex items-center gap-2">
+                                                {updatingStatus[app.id] ? <SpinnerIcon className="w-5 h-5"/> : (
+                                                    <select 
+                                                        value={app.status} 
+                                                        onChange={e => handleStatusChange(app.id, e.target.value as any)} 
+                                                        className="form-select border-slate-300 shadow-sm focus:ring-sky-500 focus:border-sky-500"
+                                                    >
+                                                        <option value="pending">Pending</option>
+                                                        <option value="reviewed">Reviewed</option>
+                                                        <option value="approved">Approved</option>
+                                                        <option value="rejected">Rejected</option>
+                                                    </select>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-slate-500 italic">Changing status updates the record immediately.</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         );
                     }) : (
-                        <p className="text-center py-10 text-slate-600">No applications match the current filters.</p>
+                        <p className="text-center py-10 text-slate-600 border-2 border-dashed rounded-lg">No applications match the current filters.</p>
                     )}
                 </div>
             </div>

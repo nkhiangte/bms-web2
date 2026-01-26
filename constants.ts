@@ -1,5 +1,6 @@
 
 
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -310,6 +311,7 @@ export const examRoutines: Routine[] = [
 ];
 
 
+// FIX: Added explicit type to prevent TS from widening the 'id' property to a generic string.
 export const TERMINAL_EXAMS: { id: 'terminal1' | 'terminal2' | 'terminal3'; name: string }[] = [
     { id: 'terminal1', name: 'First Terminal Examination' },
     { id: 'terminal2', name: 'Second Terminal Examination' },

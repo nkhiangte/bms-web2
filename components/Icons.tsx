@@ -301,7 +301,7 @@ export const ClipboardDocumentListIcon: React.FC<IconProps> = ({ className }) =>
 
 export const CakeIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path d="M21 15.75a3 3 0 01-3 3M21 15.75v-3.75a3 3 0 00-3-3h-1.5m-3 6.75a3 3 0 01-3 3M9 15.75v-3.75a3 3 0 00-3-3H4.5m16.5 6.75h-1.5a3 3 0 00-3 3v-3.75a3 3 0 013-3h1.5m-16.5 0h1.5a3 3 0 013 3v-3.75a3 3 0 00-3-3H4.5m6 15v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m10.5 0v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m16.5 0h-1.5a3 3 0 00-3 3M4.5 20.25h1.5a3 3 0 013 3m-3-3v-3.75a3 3 0 00-3-3H4.5m10.5 15h1.5a3 3 0 003-3m-3 3v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.75a3 3 0 01-3 3M21 15.75v-3.75a3 3 0 00-3-3h-1.5m-3 6.75a3 3 0 01-3 3M9 15.75v-3.75a3 3 0 00-3-3H4.5m16.5 6.75h-1.5a3 3 0 00-3 3v-3.75a3 3 0 013-3h1.5m-16.5 0h1.5a3 3 0 013 3v-3.75a3 3 0 00-3-3H4.5m6 15v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m10.5 0v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75m16.5 0h-1.5a3 3 0 00-3 3M4.5 20.25h1.5a3 3 0 013 3m-3-3v-3.75a3 3 0 00-3-3H4.5m10.5 15h1.5a3 3 0 003-3m-3 3v-3.75a3 3 0 00-3-3h-1.5a3 3 0 00-3 3v3.75" />
     </svg>
 );
 

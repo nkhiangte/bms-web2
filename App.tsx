@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -87,6 +88,9 @@ import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
 import SyllabusPage from './pages/public/SyllabusPage';
 
+// Modals
+import NewsFormModal from './components/NewsFormModal';
+
 // Public Pages
 import PublicHomePage from './pages/public/PublicHomePage';
 import NewsPage from './pages/public/NewsPage';
@@ -164,6 +168,11 @@ const App: React.FC = () => {
     // Attendance State
     const [currentStudentAttendance, setCurrentStudentAttendance] = useState<Record<Grade, StudentAttendanceRecord> | null>(null);
     const [currentStaffAttendance, setCurrentStaffAttendance] = useState<StaffAttendanceRecord | null>(null);
+
+    // Modal State
+    const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+    const [editingNewsItem, setEditingNewsItem] = useState<NewsItem | null>(null);
+    const [isSavingNews, setIsSavingNews] = useState(false);
 
     // Derived User Properties
     const staffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user?.email?.toLowerCase()), [staff, user?.email]);
@@ -411,7 +420,16 @@ const App: React.FC = () => {
             return false;
         }
     };
-
+    
+    const handleUpdateAdmissionStatus = async (id: string, status: OnlineAdmission['status']) => {
+        try {
+            await db.collection('online_admissions').doc(id).update({ status });
+            addNotification(`Application status updated to ${status}`, 'success');
+        } catch (error: any) {
+            console.error("Error updating admission status:", error);
+            addNotification("Failed to update status", 'error');
+        }
+    };
 
     const handleMarkStaffAttendance = async (staffId: string, status: AttendanceStatus) => {
         const todayStr = new Date().toISOString().split('T')[0];
@@ -611,6 +629,45 @@ const App: React.FC = () => {
         }
     };
 
+    const handleOpenAddNews = () => {
+        setEditingNewsItem(null);
+        setIsNewsModalOpen(true);
+    };
+
+    const handleOpenEditNews = (item: NewsItem) => {
+        setEditingNewsItem(item);
+        setIsNewsModalOpen(true);
+    };
+
+    const handleSaveNews = async (itemData: Omit<NewsItem, 'id'>) => {
+        setIsSavingNews(true);
+        try {
+            if (editingNewsItem) {
+                await db.collection('news').doc(editingNewsItem.id).update(itemData);
+                addNotification("News item updated successfully", "success");
+            } else {
+                await db.collection('news').add(itemData);
+                addNotification("News item added successfully", "success");
+            }
+            setIsNewsModalOpen(false);
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save Failed");
+        } finally {
+            setIsSavingNews(false);
+        }
+    };
+
+    const handleDeleteNews = async (item: NewsItem) => {
+        if (window.confirm(`Are you sure you want to delete "${item.title}"? This is irreversible.`)) {
+            try {
+                await db.collection('news').doc(item.id).delete();
+                addNotification("News item deleted successfully", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Deletion Failed");
+            }
+        }
+    };
+
 
     if (loading) {
         return (
@@ -627,6 +684,13 @@ const App: React.FC = () => {
                 onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} 
             />
             <OfflineIndicator />
+             <NewsFormModal
+                isOpen={isNewsModalOpen}
+                onClose={() => setIsNewsModalOpen(false)}
+                onSubmit={handleSaveNews}
+                item={editingNewsItem}
+                isSaving={isSavingNews}
+            />
             <Routes>
                 <Route element={<PublicLayout />}>
                     <Route path="/" element={<PublicHomePage news={news} />} />
@@ -741,10 +805,10 @@ const App: React.FC = () => {
                         <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={async () => undefined} academicYear={academicYear} />} />
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} notificationDaysBefore={-1} onUpdatePrefs={() => undefined} />} />
-                        <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
+                        <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={handleOpenAddNews} onEdit={handleOpenEditNews} onDelete={handleDeleteNews} user={user} />} />
                         <Route path="/portal/users" element={<UserManagementPage allUsers={allUsers} currentUser={user} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
                         <Route path="/portal/parents" element={<ParentsManagementPage allUsers={allUsers} students={students} academicYear={academicYear} currentUser={user} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateUser} />} />
-                        <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={() => undefined} />} />
+                        <Route path="/portal/admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={handleUpdateAdmissionStatus} />} />
                         <Route path="/portal/profile" element={<UserProfilePage currentUser={user} onUpdateProfile={handleUpdateUserProfile} />} />
                         <Route path="/portal/change-password" element={<ChangePasswordPage onChangePassword={handleChangePassword} />} />
                         <Route path="/portal/sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={async () => undefined} />} />

@@ -23,7 +23,7 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
     }, [decodedGrade, gradeDefinitions]);
 
     // FIX: Add explicit type to useMemo to ensure TypeScript correctly infers the shape of syllabusBySubject, resolving destructuring errors.
-    const syllabusBySubject = useMemo(() => {
+    const syllabusBySubject = useMemo<Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }>>(() => {
         const gradeSyllabus = syllabus.filter(s => s.grade === decodedGrade);
         
         const result: Record<string, { topics: SyllabusTopic[], statusCounts: Partial<Record<SyllabusTopic['status'], number>> }> = {};

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -19,7 +18,7 @@ import {
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
     StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem,
-    Notice
+    HostelDormitory, StockLogType, Notice
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -93,6 +92,8 @@ import ManageNoticesPage from './pages/ManageNoticesPage';
 
 // Modals
 import NewsFormModal from './components/NewsFormModal';
+import HostelResidentFormModal from './components/HostelResidentFormModal';
+import HostelStaffFormModal from './components/HostelStaffFormModal';
 
 // Public Pages
 import PublicHomePage from './pages/public/PublicHomePage';
@@ -178,6 +179,13 @@ const App: React.FC = () => {
     const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
     const [editingNewsItem, setEditingNewsItem] = useState<NewsItem | null>(null);
     const [isSavingNews, setIsSavingNews] = useState(false);
+    const [isHostelResidentModalOpen, setIsHostelResidentModalOpen] = useState(false);
+    const [editingHostelResident, setEditingHostelResident] = useState<HostelResident | null>(null);
+    const [isSavingHostelResident, setIsSavingHostelResident] = useState(false);
+    const [isHostelStaffModalOpen, setIsHostelStaffModalOpen] = useState(false);
+    const [editingHostelStaff, setEditingHostelStaff] = useState<HostelStaff | null>(null);
+    const [isSavingHostelStaff, setIsSavingHostelStaff] = useState(false);
+
 
     // Derived User Properties
     const staffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user?.email?.toLowerCase()), [staff, user?.email]);
@@ -375,6 +383,16 @@ const App: React.FC = () => {
             return false;
         }
     };
+    
+    const handleDeleteConductEntry = async (entryId: string): Promise<void> => {
+        try {
+            await db.collection('conductLog').doc(entryId).delete();
+            addNotification("Conduct entry deleted", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Delete Failed");
+        }
+    };
+
 
     const handleUpdateAttendance = async (grade: Grade, date: string, records: StudentAttendanceRecord) => {
         try {
@@ -705,6 +723,217 @@ const App: React.FC = () => {
         }
     };
 
+    const handleSaveNotice = async (noticeData: Omit<Notice, 'id' | 'createdBy'>, id?: string) => {
+        if (!user) return;
+        const dataToSave = {
+            ...noticeData,
+            createdBy: {
+                uid: user.uid,
+                name: user.displayName || user.email || 'Admin'
+            }
+        };
+        try {
+            if (id) {
+                await db.collection('notices').doc(id).update(dataToSave);
+                addNotification("Notice updated successfully", "success");
+            } else {
+                await db.collection('notices').add(dataToSave);
+                addNotification("Notice added successfully", "success");
+            }
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save Failed");
+        }
+    };
+
+    const handleDeleteNotice = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this notice?")) {
+            try {
+                await db.collection('notices').doc(id).delete();
+                addNotification("Notice deleted successfully", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Delete Failed");
+            }
+        }
+    };
+
+    const handleAddHostelResidentById = async (studentId: string): Promise<{ success: boolean, message?: string }> => {
+        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === studentId.toLowerCase());
+        if (!student) {
+            return { success: false, message: 'Student ID not found in school records.' };
+        }
+        const isAlreadyResident = hostelResidents.some(r => r.studentId === student.id);
+        if (isAlreadyResident) {
+            return { success: false, message: 'This student is already registered as a hostel resident.' };
+        }
+        
+        try {
+            await db.collection('hostelResidents').add({
+                studentId: student.id,
+                dormitory: student.gender === 'Male' ? HostelDormitory.BOYS_BLOCK_A : HostelDormitory.GIRLS_BLOCK_A,
+                dateOfJoining: new Date().toISOString().split('T')[0],
+            });
+            addNotification(`${student.name} added to hostel residents.`, 'success');
+            return { success: true };
+        } catch (e: any) {
+            addNotification(e.message, 'error', 'Failed to add resident');
+            return { success: false, message: e.message };
+        }
+    };
+
+    const handleOpenAddHostelResident = () => {
+        setEditingHostelResident(null);
+        setIsHostelResidentModalOpen(true);
+    };
+
+    const handleOpenEditHostelResident = (resident: HostelResident) => {
+        setEditingHostelResident(resident);
+        setIsHostelResidentModalOpen(true);
+    };
+
+    const handleSaveHostelResident = async (residentData: Omit<HostelResident, 'id'>) => {
+        setIsSavingHostelResident(true);
+        try {
+            if (editingHostelResident) {
+                await db.collection('hostelResidents').doc(editingHostelResident.id).update(residentData);
+                addNotification("Hostel resident updated.", "success");
+            } else {
+                await db.collection('hostelResidents').add(residentData);
+                addNotification("Hostel resident added.", "success");
+            }
+            setIsHostelResidentModalOpen(false);
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save failed");
+        } finally {
+            setIsSavingHostelResident(false);
+        }
+    };
+    
+    const handleDeleteHostelResident = async (resident: HostelResident) => {
+        if (window.confirm("Are you sure you want to remove this student from the hostel records?")) {
+            try {
+                await db.collection('hostelResidents').doc(resident.id).delete();
+                addNotification("Hostel resident removed.", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Deletion failed");
+            }
+        }
+    };
+
+    const handleOpenAddHostelStaff = () => {
+        setEditingHostelStaff(null);
+        setIsHostelStaffModalOpen(true);
+    };
+
+    const handleOpenEditHostelStaff = (staffMember: HostelStaff) => {
+        setEditingHostelStaff(staffMember);
+        setIsHostelStaffModalOpen(true);
+    };
+    
+    const handleSaveHostelStaff = async (staffData: Omit<HostelStaff, 'id'>) => {
+        setIsSavingHostelStaff(true);
+        try {
+            if (editingHostelStaff) {
+                await db.collection('hostelStaff').doc(editingHostelStaff.id).update(staffData);
+                addNotification("Hostel staff updated.", "success");
+            } else {
+                await db.collection('hostelStaff').add(staffData);
+                addNotification("Hostel staff added.", "success");
+            }
+            setIsHostelStaffModalOpen(false);
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save failed");
+        } finally {
+            setIsSavingHostelStaff(false);
+        }
+    };
+    
+    const handleDeleteHostelStaff = async (staffMember: HostelStaff) => {
+        if (window.confirm(`Are you sure you want to delete ${staffMember.name}?`)) {
+            try {
+                await db.collection('hostelStaff').doc(staffMember.id).delete();
+                addNotification("Hostel staff member removed.", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Deletion failed");
+            }
+        }
+    };
+
+    const handleUpdateHostelStock = async (itemId: string, change: number, notes: string) => {
+        if (!user) return;
+        const itemRef = db.collection('hostelInventory').doc(itemId);
+        const logRef = db.collection('stockLogs');
+        try {
+            await db.runTransaction(async (transaction) => {
+                const itemDoc = await transaction.get(itemRef);
+                if (!itemDoc.exists) {
+                    throw "Item not found!";
+                }
+                const itemData = itemDoc.data() as HostelInventoryItem;
+                const newStock = itemData.currentStock + change;
+                if (newStock < 0) {
+                    throw "Not enough stock to issue.";
+                }
+                transaction.update(itemRef, { currentStock: newStock });
+                
+                const logEntry = {
+                    itemId: itemId,
+                    itemName: itemData.name,
+                    quantity: Math.abs(change),
+                    type: change > 0 ? StockLogType.IN : StockLogType.OUT,
+                    date: new Date().toISOString(),
+                    updatedBy: user.displayName || user.email || 'System',
+                    notes: notes
+                };
+                transaction.set(logRef.doc(), logEntry);
+            });
+            addNotification("Stock updated successfully.", "success");
+        } catch (e: any) {
+            const message = e instanceof Error ? e.message : String(e);
+            addNotification(message, "error", "Stock update failed");
+        }
+    };
+
+    const handleSaveHostelDisciplineEntry = async (entryData: Omit<HostelDisciplineEntry, 'id' | 'reportedBy' | 'reportedById'>, id?: string) => {
+        if (!user) return;
+        const dataToSave = {
+            ...entryData,
+            reportedBy: user.displayName || user.email || 'System',
+            reportedById: user.uid
+        };
+        try {
+            if (id) {
+                await db.collection('hostelDisciplineLog').doc(id).update(dataToSave);
+                addNotification("Discipline entry updated.", "success");
+            } else {
+                await db.collection('hostelDisciplineLog').add(dataToSave);
+                addNotification("Discipline entry added.", "success");
+            }
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save Failed");
+        }
+    };
+
+    const handleDeleteHostelDisciplineEntry = async (entry: HostelDisciplineEntry) => {
+         if (window.confirm(`Are you sure you want to delete this incident for ${students.find(s => s.id === entry.studentId)?.name}?`)) {
+            try {
+                await db.collection('hostelDisciplineLog').doc(entry.id).delete();
+                addNotification("Discipline entry deleted.", "success");
+            } catch (e: any) {
+                addNotification(e.message, "error", "Deletion failed");
+            }
+        }
+    };
+    
+    const handleUpdateChoreRoster = async (newRoster: ChoreRoster) => {
+        try {
+            await db.collection('choreRoster').doc('current').set(newRoster);
+            addNotification("Chore roster updated successfully.", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Update Failed");
+        }
+    };
+
+
 
     if (loading) {
         return (
@@ -728,6 +957,24 @@ const App: React.FC = () => {
                 item={editingNewsItem}
                 isSaving={isSavingNews}
             />
+            <HostelResidentFormModal 
+                isOpen={isHostelResidentModalOpen}
+                onClose={() => setIsHostelResidentModalOpen(false)}
+                onSubmit={handleSaveHostelResident}
+                resident={editingHostelResident}
+                preselectedStudent={null}
+                allStudents={students}
+                allResidents={hostelResidents}
+                isSaving={isSavingHostelResident}
+            />
+             <HostelStaffFormModal
+                isOpen={isHostelStaffModalOpen}
+                onClose={() => setIsHostelStaffModalOpen(false)}
+                onSubmit={handleSaveHostelStaff}
+                staffMember={editingHostelStaff}
+                isSaving={isSavingHostelStaff}
+            />
+
             <Routes>
                 <Route element={<PublicLayout />}>
                     <Route path="/" element={<PublicHomePage news={news} />} />
@@ -797,16 +1044,13 @@ const App: React.FC = () => {
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage feeStructure={feeStructure} user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
                         {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
-                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={handleAddConductEntry} onDeleteConductEntry={async () => undefined} />} />
+                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={handleAddConductEntry} onDeleteConductEntry={handleDeleteConductEntry} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />
                         <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => undefined} academicYear={academicYear} onOpenImportModal={() => undefined} onDelete={() => undefined} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => undefined} onUpdateBulkFeePayments={async () => undefined} feeStructure={feeStructure} />} />
-                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
-                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => undefined} gradeDefinitions={gradeDefinitions} />} />
-                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
@@ -832,18 +1076,18 @@ const App: React.FC = () => {
                         <Route path="/progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
                         <Route path="/portal/reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
                         <Route path="/portal/hostel-dashboard" element={<HostelDashboardPage disciplineLog={hostelDisciplineLog} />} />
-                        <Route path="/portal/hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={() => undefined} onAddById={async () => ({success: true})} onEdit={() => undefined} onDelete={() => undefined} user={user} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={handleOpenAddHostelResident} onAddById={handleAddHostelResidentById} onEdit={handleOpenEditHostelResident} onDelete={handleDeleteHostelResident} user={user} academicYear={academicYear} />} />
                         <Route path="/portal/hostel/rooms" element={<HostelRoomListPage residents={hostelResidents} students={students} />} />
                         <Route path="/portal/hostel/fees" element={<HostelFeePage />} />
                         <Route path="/portal/hostel/attendance" element={<HostelAttendancePage />} />
                         <Route path="/portal/hostel/mess" element={<HostelMessPage />} />
-                        <Route path="/portal/hostel/staff" element={<HostelStaffPage staff={hostelStaff} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
-                        <Route path="/portal/hostel/inventory" element={<HostelInventoryPage inventory={hostelInventory} stockLogs={hostelStockLogs} onUpdateStock={() => undefined} user={user} />} />
-                        <Route path="/portal/hostel/discipline" element={<HostelDisciplinePage user={user} students={students} residents={hostelResidents} disciplineLog={hostelDisciplineLog} onSave={async () => undefined} onDelete={() => undefined} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/staff" element={<HostelStaffPage staff={hostelStaff} onAdd={handleOpenAddHostelStaff} onEdit={handleOpenEditHostelStaff} onDelete={handleDeleteHostelStaff} user={user} />} />
+                        <Route path="/portal/hostel/inventory" element={<HostelInventoryPage inventory={hostelInventory} stockLogs={hostelStockLogs} onUpdateStock={handleUpdateHostelStock} user={user} />} />
+                        <Route path="/portal/hostel/discipline" element={<HostelDisciplinePage user={user} students={students} residents={hostelResidents} disciplineLog={hostelDisciplineLog} onSave={handleSaveHostelDisciplineEntry} onDelete={handleDeleteHostelDisciplineEntry} academicYear={academicYear} />} />
                         <Route path="/portal/hostel/health" element={<HostelHealthPage />} />
                         <Route path="/portal/hostel/communication" element={<HostelCommunicationPage />} />
                         <Route path="/portal/hostel/settings" element={<HostelSettingsPage />} />
-                        <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={async () => undefined} academicYear={academicYear} />} />
+                        <Route path="/portal/hostel/chores" element={<HostelChoreRosterPage user={user} students={students} residents={hostelResidents} choreRoster={hostelChoreRoster} onUpdateChoreRoster={handleUpdateChoreRoster} academicYear={academicYear} />} />
                         <Route path="/portal/communication" element={<CommunicationPage students={students} user={user} />} />
                         <Route path="/portal/calendar" element={<CalendarPage events={calendarEvents} user={user} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} notificationDaysBefore={-1} onUpdatePrefs={() => undefined} />} />
                         <Route path="/portal/news-management" element={<ManageNewsPage news={news} onAdd={handleOpenAddNews} onEdit={handleOpenEditNews} onDelete={handleDeleteNews} user={user} />} />
@@ -856,7 +1100,7 @@ const App: React.FC = () => {
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/manage-homework" element={<ManageHomeworkPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} onDelete={async () => {}} allHomework={homework} />} />
                         <Route path="/portal/manage-syllabus" element={<ManageSyllabusPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions}/>} />
-                        <Route path="/portal/manage-notices" element={<ManageNoticesPage user={user} allNotices={notices} onSave={async () => {}} onDelete={async () => {}} />} />
+                        <Route path="/portal/manage-notices" element={<ManageNoticesPage user={user} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
                     </Route>
                 ) : (
                     <Route path="/portal/*" element={<Navigate to="/login" replace />} />

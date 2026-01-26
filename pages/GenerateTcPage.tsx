@@ -122,11 +122,10 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
             const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
             const prompt = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
             const response = await ai.models.generateContent({
-// FIX: Using gemini-3-flash-preview model for basic text task as per guidelines
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-// FIX: Use response.text instead of response.text()
+            // FIX: Per Gemini API guidelines, `response.text` is a property, not a function. Changed from `response.text()`.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text?.trim() ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

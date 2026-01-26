@@ -1,7 +1,8 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Staff, StaffAttendanceRecord, AttendanceStatus } from '../types';
+import { User, Staff, StaffAttendanceRecord, AttendanceStatus, CalendarEvent } from '../types';
 import { BackIcon, HomeIcon, CalendarDaysIcon, CheckIcon, XIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, DocumentReportIcon } from '../components/Icons';
 import { getDistanceFromLatLonInM, exportAttendanceToCsv } from '../utils';
 
@@ -15,6 +16,7 @@ interface StaffAttendancePageProps {
   fetchStaffAttendanceForMonth: (year: number, month: number) => Promise<{ [date: string]: StaffAttendanceRecord }>;
   fetchStaffAttendanceForRange: (startDate: string, endDate: string) => Promise<{ [date: string]: StaffAttendanceRecord }>;
   academicYear: string;
+  calendarEvents: CalendarEvent[];
 }
 
 const SCHOOL_COORDS = {
@@ -33,7 +35,7 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onDismiss: (
     );
 };
 
-const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, attendance, onMarkAttendance, fetchStaffAttendanceForMonth, fetchStaffAttendanceForRange, academicYear }) => {
+const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, attendance, onMarkAttendance, fetchStaffAttendanceForMonth, fetchStaffAttendanceForRange, academicYear, calendarEvents }) => {
     const navigate = useNavigate();
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);

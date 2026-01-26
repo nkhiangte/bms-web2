@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db, firebase } from './firebaseConfig';
@@ -17,7 +18,8 @@ import {
     StockLog, HostelDisciplineEntry, ChoreRoster, FeeStructure, 
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
-    StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem
+    StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem,
+    Notice
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -152,6 +154,7 @@ const App: React.FC = () => {
     const [classSchedules, setClassSchedules] = useState<Record<string, DailyRoutine>>(timetableData);
     const [homework, setHomework] = useState<Homework[]>([]);
     const [syllabus, setSyllabus] = useState<Syllabus[]>([]);
+    const [notices, setNotices] = useState<Notice[]>([]);
     
     // Hostel State
     const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
@@ -272,10 +275,11 @@ const App: React.FC = () => {
             setClassSchedules(routines);
         });
         const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
+        const unsubNotices = db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))));
 
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubNotices();
         };
     }, []);
 
@@ -360,6 +364,17 @@ const App: React.FC = () => {
             addNotification(`Failed to update subjects: ${e.message}`, 'error');
         }
     };
+// FIX: Implement handleAddConductEntry to replace placeholder
+    const handleAddConductEntry = async (entry: Omit<ConductEntry, 'id'>): Promise<boolean> => {
+        try {
+            await db.collection('conductLog').add(entry);
+            addNotification("Conduct entry added successfully", "success");
+            return true;
+        } catch (e: any) {
+            addNotification(e.message, "error", "Save Failed");
+            return false;
+        }
+    };
 
     const handleUpdateAttendance = async (grade: Grade, date: string, records: StudentAttendanceRecord) => {
         try {
@@ -425,7 +440,26 @@ const App: React.FC = () => {
     
     const handleUpdateAdmissionStatus = async (id: string, status: OnlineAdmission['status']) => {
         try {
-            await db.collection('online_admissions').doc(id).update({ status });
+            const docRef = db.collection('online_admissions').doc(id);
+            const updates: { status: OnlineAdmission['status']; temporaryStudentId?: string | firebase.firestore.FieldValue } = { status };
+
+            if (status === 'approved') {
+                const admissionDoc = await docRef.get();
+                const admissionData = admissionDoc.data() as OnlineAdmission;
+                if (!admissionData.temporaryStudentId) {
+                    const generateTemporaryId = () => {
+                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                        let result = 'BMS';
+                        for (let i = 0; i < 15; i++) {
+                            result += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        return result;
+                    };
+                    updates.temporaryStudentId = generateTemporaryId();
+                }
+            }
+
+            await docRef.update(updates);
             addNotification(`Application status updated to ${status}`, 'success');
         } catch (error: any) {
             console.error("Error updating admission status:", error);
@@ -763,13 +797,16 @@ const App: React.FC = () => {
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage feeStructure={feeStructure} user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
                         {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
                         <Route path="/portal/students" element={<StudentListPage students={students} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
-                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async () => true} onDeleteConductEntry={async () => undefined} />} />
+                        <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={handleAddConductEntry} onDeleteConductEntry={async () => undefined} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />
                         <Route path="/portal/classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={() => undefined} academicYear={academicYear} onOpenImportModal={() => undefined} onDelete={() => undefined} user={user} assignedGrade={assignedGrade} onAddStudentToClass={() => undefined} onUpdateBulkFeePayments={async () => undefined} feeStructure={feeStructure} />} />
+                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={currentStudentAttendance} onUpdateAttendance={handleUpdateAttendance} user={user} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
+                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => undefined} gradeDefinitions={gradeDefinitions} />} />
+                        {/* FIX: Add missing calendarEvents prop */}
                         <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
@@ -819,7 +856,7 @@ const App: React.FC = () => {
                         <Route path="/portal/inventory" element={<InventoryPage inventory={[]} onAdd={() => undefined} onEdit={() => undefined} onDelete={() => undefined} user={user} />} />
                         <Route path="/portal/manage-homework" element={<ManageHomeworkPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} onDelete={async () => {}} allHomework={homework} />} />
                         <Route path="/portal/manage-syllabus" element={<ManageSyllabusPage user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async () => {}} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions}/>} />
-                        <Route path="/portal/manage-notices" element={<ManageNoticesPage user={user} allNotices={[]} onSave={async () => {}} onDelete={async () => {}} />} />
+                        <Route path="/portal/manage-notices" element={<ManageNoticesPage user={user} allNotices={notices} onSave={async () => {}} onDelete={async () => {}} />} />
                     </Route>
                 ) : (
                     <Route path="/portal/*" element={<Navigate to="/login" replace />} />

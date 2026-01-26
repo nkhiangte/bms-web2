@@ -1,6 +1,8 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '../types';
+import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade, CalendarEvent } from '../types';
 import { BackIcon, HomeIcon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerIcon } from '../components/Icons';
 import { exportAttendanceToCsv } from '../utils';
 import { db } from '../firebaseConfig';
@@ -12,9 +14,10 @@ interface StudentAttendanceLogPageProps {
   students: Student[];
   fetchStudentAttendanceForMonth: (grade: Grade, year: number, month: number) => Promise<{ [date: string]: StudentAttendanceRecord }>;
   user: User;
+  calendarEvents: CalendarEvent[];
 }
 
-const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ students, fetchStudentAttendanceForMonth, user }) => {
+const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ students, fetchStudentAttendanceForMonth, user, calendarEvents }) => {
   const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   

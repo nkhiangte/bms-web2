@@ -2,6 +2,8 @@
 
 
 
+
+
 export interface StudentClaim {
   fullName: string;
   studentId: string;
@@ -642,6 +644,7 @@ export interface OnlineAdmission {
     paymentTransactionId?: string;
     purchasedItems?: AdmissionItem[];
     billId?: string;
+    temporaryStudentId?: string;
 }
 
 export interface Homework {

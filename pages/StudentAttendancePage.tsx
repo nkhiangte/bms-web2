@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus } from '../types';
+import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '../types';
 import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
 import { exportAttendanceToCsv } from '../utils';
 import { db } from '../firebaseConfig';
@@ -18,6 +19,7 @@ interface StudentAttendancePageProps {
   fetchStudentAttendanceForRange: (grade: Grade, startDate: string, endDate: string) => Promise<{ [date: string]: StudentAttendanceRecord }>;
   academicYear: string;
   assignedGrade: Grade | null;
+  calendarEvents: CalendarEvent[];
 }
 
 const Toast: React.FC<{ message: string; onDismiss: () => void; }> = ({ message, onDismiss }) => {
@@ -59,7 +61,7 @@ const AbsenteesList: React.FC<{ students: Student[], records: StudentAttendanceR
 };
 
 
-const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students, allAttendance, onUpdateAttendance, user, fetchStudentAttendanceForMonth, fetchStudentAttendanceForRange, academicYear, assignedGrade }) => {
+const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students, allAttendance, onUpdateAttendance, user, fetchStudentAttendanceForMonth, fetchStudentAttendanceForRange, academicYear, assignedGrade, calendarEvents }) => {
     const { grade: encodedGrade } = useParams() as { grade: string };
     const navigate = useNavigate();
     const grade = useMemo(() => encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined, [encodedGrade]);

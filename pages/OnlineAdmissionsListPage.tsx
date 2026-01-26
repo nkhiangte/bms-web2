@@ -102,8 +102,13 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
         <>
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="mb-6 flex justify-between items-center">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600"><BackIcon className="w-5 h-5"/> Back</button>
-                    <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600"><HomeIcon className="w-5 h-5"/> Home</Link>
+                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
+                        <BackIcon className="w-5 h-5"/> Back
+                    </button>
+                    <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home/Dashboard">
+                        <HomeIcon className="w-5 h-5" />
+                        <span>Home</span>
+                    </Link>
                 </div>
                 <div className="flex items-center gap-3 mb-6">
                     <InboxArrowDownIcon className="w-10 h-10 text-violet-600"/>
@@ -206,6 +211,16 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                                 </div>
                                             ) : <p className="text-slate-500 italic text-sm">Screenshot not uploaded.</p>}
                                         </div>
+
+                                        {app.status === 'approved' && app.temporaryStudentId && (
+                                            <div className="mt-4 p-4 bg-emerald-50 border-l-4 border-emerald-400 rounded-r-lg">
+                                                <h4 className="font-bold text-emerald-800">Temporary Student ID Generated</h4>
+                                                <p className="font-mono text-lg font-bold text-slate-800 bg-white inline-block px-3 py-1 rounded mt-1">
+                                                    {app.temporaryStudentId}
+                                                </p>
+                                                <p className="text-xs text-slate-600 mt-1">Please provide this ID to the parent/guardian to complete payment.</p>
+                                            </div>
+                                        )}
 
                                         <div className="pt-4 border-t flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 -mx-6 -mb-6 p-6">
                                             <label className="font-bold text-slate-800">Update Application Status:</label>

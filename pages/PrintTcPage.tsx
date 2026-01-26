@@ -40,8 +40,6 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
         );
     }
     
-    const { staffDetails, certData } = record;
-
     return (
       <div className="bg-slate-200 print:bg-white flex justify-center py-8">
         <div className="print-hidden fixed top-4 right-4 flex flex-col gap-2">

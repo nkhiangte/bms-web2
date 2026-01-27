@@ -438,6 +438,15 @@ const App: React.FC = () => {
             addNotification(e.message, "error");
         }
     };
+
+    const handleUpdateFeeStructure = async (newStructure: FeeStructure) => {
+        try {
+            await db.collection('config').doc('feeStructure').set(newStructure, { merge: true });
+            addNotification("Fee structure updated successfully", "success");
+        } catch (e: any) {
+            addNotification(e.message, "error", "Update Failed");
+        }
+    };
     
     const handleOnlineAdmissionSubmit = async (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>): Promise<string | null> => {
         try {
@@ -1263,7 +1272,7 @@ const App: React.FC = () => {
                         <Route path="/portal/staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => undefined} gradeDefinitions={gradeDefinitions} />} />
                         <Route path="/portal/staff/attendance" element={<StaffAttendancePage user={user} staff={staff} attendance={currentStaffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} calendarEvents={calendarEvents} />} />
                         <Route path="/portal/staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user} calendarEvents={calendarEvents} />} />
-                        <Route path="/portal/fees" element={<FeeManagementPage students={studentsForFees} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={() => undefined} addNotification={addNotification} />} />
+                        <Route path="/portal/fees" element={<FeeManagementPage students={studentsForFees} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} />} />
                         <Route path="/portal/reports/academics" element={<ReportSearchPage students={studentsForCurrentYear} academicYear={academicYear} />} />
                         <Route path="/portal/student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
                         <Route path="/portal/reports/class/:grade/:examId" element={<ClassMarkStatementPage students={studentsForCurrentYear} academicYear={academicYear} user={user} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />

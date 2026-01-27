@@ -145,14 +145,27 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
             if (newAdmissionId) {
-                setSubmittedAdmissionId(newAdmissionId);
-                setSubmissionSuccess(true);
-                window.scrollTo(0, 0);
+                // If applying for Class IX (Merit-based), show the under review screen.
+                // For all other classes, redirect directly to payment.
+                if (formData.admissionGrade === Grade.IX) {
+                    setSubmittedAdmissionId(newAdmissionId);
+                    setSubmissionSuccess(true);
+                    window.scrollTo(0, 0);
+                } else {
+                    navigate(`/admissions/payment/${newAdmissionId}`, { 
+                        state: { 
+                            grade: formData.admissionGrade, 
+                            studentName: formData.studentName, 
+                            fatherName: formData.fatherName, 
+                            contact: formData.contactNumber 
+                        } 
+                    });
+                }
             } else {
                 throw new Error("Failed to get admission ID from the server.");
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Submission failed:", error);
             setSubmissionError("An error occurred during submission. Please check your connection and try again.");
             setUploadProgress(prev => {
@@ -211,11 +224,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                          </div>
                          <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                             <Link to="/admissions/status" className="btn btn-secondary">Check Status Now</Link>
-                            {formData.admissionGrade !== Grade.IX && (
-                                <button onClick={() => navigate(`/admissions/payment/${submittedAdmissionId}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber } })} className="btn btn-primary">
-                                    Proceed to Payment
-                                </button>
-                            )}
                          </div>
                     </div>
                 </div>

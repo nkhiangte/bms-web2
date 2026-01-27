@@ -11,15 +11,16 @@ interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-// FIX: Explicitly extending React.Component to ensure type definitions for setState and props are correctly picked up.
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// FIX: Extend Component directly to ensure type definitions for setState and props are correctly picked up.
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+  };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
   }
 
   static getDerivedStateFromError(error: any): Partial<ErrorBoundaryState> {

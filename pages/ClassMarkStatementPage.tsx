@@ -181,13 +181,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            // FIX: Removed Number() wrapper and || 0 check that was causing TS issues as values are strictly typed
-            subjectFullMarks = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            // FIX: Explicitly cast and sum to avoid type errors
+            subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;
             examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks;
+            subjectFullMarks = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }

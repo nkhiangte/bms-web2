@@ -45,6 +45,7 @@ export interface AdmissionItemConfig {
     id: string;
     name: string;
     price: number;
+    priceBySize?: Record<string, number>; // Optional map for size-specific prices
     mandatory: boolean;
     type: 'general' | 'uniform'; // 'general' items don't have sizes, 'uniform' items do
 }

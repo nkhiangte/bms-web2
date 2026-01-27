@@ -12,15 +12,14 @@ interface ErrorBoundaryProps {
 }
 
 // FIX: Explicitly extending React.Component to ensure type definitions for setState and props are correctly picked up.
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-  };
-
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
+    };
   }
 
   static getDerivedStateFromError(error: any): Partial<ErrorBoundaryState> {
@@ -55,7 +54,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         );
     }).then(() => {
         alert("Cache and service workers cleared. The application will now perform a hard reload.");
-        // Set flag to prevent potential reload loops if this page itself has an error
         sessionStorage.setItem('sw-unregistered-v3', 'true');
         window.location.reload();
     }).catch(error => {

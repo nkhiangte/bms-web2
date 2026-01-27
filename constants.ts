@@ -242,13 +242,22 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
         { id: 'diary', name: 'Diary', price: 100, mandatory: true, type: 'general' },
         { id: 'songbook', name: 'Song Book', price: 200, mandatory: true, type: 'general' },
         { id: 'idcard', name: 'ID Card', price: 150, mandatory: false, type: 'general' },
-        ...UNIFORM_ITEMS.map((item, index) => ({
-            id: `uniform-${index}`,
-            name: item.name,
-            price: item.price,
-            mandatory: false,
-            type: 'uniform' as const
-        }))
+        ...UNIFORM_ITEMS.map((item, index) => {
+            // Helper to generate default size prices for initialization
+            const priceBySize: Record<string, number> = {};
+            UNIFORM_SIZES.forEach(size => {
+                priceBySize[size] = item.price; // Start with base price for all sizes
+            });
+
+            return {
+                id: `uniform-${index}`,
+                name: item.name,
+                price: item.price,
+                priceBySize: priceBySize, // Initialize with default map
+                mandatory: false,
+                type: 'uniform' as const
+            };
+        })
     ]
 };
 

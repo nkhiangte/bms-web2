@@ -41,14 +41,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
     const allItems = useMemo(() => {
         const items = [
-            { name: 'Admission Fee', price: admissionConfig.admissionFee, mandatory: true, checkable: false, hasSize: false, sizes: undefined as string[] | undefined },
-            { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined },
+            { name: 'Admission Fee', price: admissionConfig.admissionFee, mandatory: true, checkable: false, hasSize: false, sizes: undefined as string[] | undefined, priceBySize: undefined as Record<string, number> | undefined },
+            { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined, priceBySize: undefined },
         ];
 
         admissionConfig.items.forEach(itemConfig => {
             items.push({
                 name: itemConfig.name,
                 price: itemConfig.price,
+                priceBySize: itemConfig.priceBySize,
                 mandatory: itemConfig.mandatory,
                 checkable: !itemConfig.mandatory, // If not mandatory, it's checkable (optional)
                 hasSize: itemConfig.type === 'uniform',
@@ -72,7 +73,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const totalCost = useMemo(() => {
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
-            return total + (item ? item.price * details.quantity : 0);
+            if (!item) return total;
+            
+            // Check if there is a specific price for the selected size
+            let effectivePrice = item.price;
+            if (item.hasSize && details.size && item.priceBySize && item.priceBySize[details.size]) {
+                effectivePrice = item.priceBySize[details.size];
+            }
+            
+            return total + (effectivePrice * details.quantity);
         }, 0);
     }, [selectedItems, allItems]);
 
@@ -96,6 +105,22 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             return { ...prev, [itemName]: { ...item, size } };
         });
     };
+    
+    const getItemPriceDisplay = (item: typeof allItems[0], selectedSize?: string) => {
+        if (item.hasSize && item.priceBySize) {
+            if (selectedSize && item.priceBySize[selectedSize]) {
+                return item.priceBySize[selectedSize];
+            }
+            // Show range or base price if multiple
+            const prices = Object.values(item.priceBySize) as number[];
+            if (prices.length > 0) {
+                 const min = Math.min(...prices);
+                 const max = Math.max(...prices);
+                 if (min !== max) return `${min} - ${max}`;
+            }
+        }
+        return item.price;
+    }
 
     const handleSubmit = async () => {
         if (!paymentScreenshot) {
@@ -113,10 +138,17 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             
             const purchasedItems: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                 const item = allItems.find(i => i.name === name)!;
+                
+                // Determine price at moment of purchase
+                let finalPrice = item.price;
+                if (item.hasSize && details.size && item.priceBySize && item.priceBySize[details.size]) {
+                    finalPrice = item.priceBySize[details.size];
+                }
+
                 // FIX: Ensure size is null if undefined, as Firestore doesn't support undefined
                 return { 
                     name, 
-                    price: item.price, 
+                    price: finalPrice, 
                     quantity: details.quantity, 
                     size: details.size || null 
                 };
@@ -191,7 +223,12 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         const items = Object.entries(selectedItems) as [string, { quantity: number; size?: string }][];
         items.forEach(([name, details]) => {
             const itemDef = allItems.find(i => i.name === name);
-            const price = itemDef ? itemDef.price : 0;
+            let price = itemDef ? itemDef.price : 0;
+            
+            if (itemDef?.hasSize && details.size && itemDef.priceBySize && itemDef.priceBySize[details.size]) {
+                price = itemDef.priceBySize[details.size];
+            }
+
             const amount = price * details.quantity;
 
             doc.text(name, 20, yPos);
@@ -289,13 +326,17 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-4">
-                            {allItems.map(item => (
+                            {allItems.map(item => {
+                                const currentSize = selectedItems[item.name]?.size;
+                                const displayPrice = getItemPriceDisplay(item, currentSize);
+                                
+                                return (
                                 <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : ''}`}>
                                     <div className="flex items-center gap-4">
                                         {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
                                         <div>
                                             <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
-                                            <p className="text-sm text-slate-600">₹{item.price}</p>
+                                            <p className="text-sm text-slate-600">₹{displayPrice}</p>
                                         </div>
                                     </div>
                                     {item.hasSize && selectedItems[item.name] && (
@@ -304,7 +345,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                         </select>
                                     )}
                                 </div>
-                            ))}
+                            )})}
                         </div>
                         <div className="lg:col-span-1">
                             <div className="bg-slate-50 p-6 rounded-lg border sticky top-28 space-y-6">
@@ -313,10 +354,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                     <div className="space-y-2 text-sm">
                                         {(Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                                             const item = allItems.find(i => i.name === name);
+                                            let effectivePrice = item ? item.price : 0;
+                                            if (item && item.hasSize && details.size && item.priceBySize && item.priceBySize[details.size]) {
+                                                effectivePrice = item.priceBySize[details.size];
+                                            }
+
                                             return (
                                                 <div key={name} className="flex justify-between">
                                                     <span className="text-slate-600">{name} {details.size && `(Size: ${details.size})`}</span>
-                                                    <span className="font-semibold">₹{item?.price}</span>
+                                                    <span className="font-semibold">₹{effectivePrice}</span>
                                                 </div>
                                             );
                                         })}

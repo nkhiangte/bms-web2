@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AdmissionSettings, AdmissionItemConfig, Grade } from '../types';
-import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon } from '../components/Icons';
-import { GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
+import { GRADES_LIST, UNIFORM_SIZES } from '../constants';
 
 interface AdmissionSettingsPageProps {
     admissionConfig: AdmissionSettings;
@@ -17,6 +17,9 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
     const [newItemName, setNewItemName] = useState('');
     const [newItemPrice, setNewItemPrice] = useState(0);
     const [newItemType, setNewItemType] = useState<'general' | 'uniform'>('general');
+    
+    // Track which uniform item row is expanded to show size prices
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
     useEffect(() => {
         setConfig(admissionConfig);
@@ -35,15 +38,37 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
             items: prev.items.map(item => item.id === id ? { ...item, [field]: value } : item)
         }));
     };
+    
+    const handleSizePriceChange = (itemId: string, size: string, price: number) => {
+        setConfig(prev => ({
+            ...prev,
+            items: prev.items.map(item => {
+                if (item.id === itemId) {
+                    const updatedPriceBySize = { ...item.priceBySize, [size]: price };
+                    return { ...item, priceBySize: updatedPriceBySize };
+                }
+                return item;
+            })
+        }));
+    };
 
     const handleAddItem = () => {
         if (!newItemName) return;
+        
+        const priceBySize: Record<string, number> = {};
+        if (newItemType === 'uniform') {
+            UNIFORM_SIZES.forEach(size => {
+                priceBySize[size] = newItemPrice; // Initialize all sizes with the base price
+            });
+        }
+
         const newItem: AdmissionItemConfig = {
             id: `item-${Date.now()}`,
             name: newItemName,
             price: newItemPrice,
             mandatory: false,
-            type: newItemType
+            type: newItemType,
+            priceBySize: newItemType === 'uniform' ? priceBySize : undefined
         };
         setConfig(prev => ({ ...prev, items: [...prev.items, newItem] }));
         setNewItemName('');
@@ -144,7 +169,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                             <thead>
                                 <tr className="bg-slate-200">
                                     <th className="p-2 text-left">Item Name</th>
-                                    <th className="p-2 text-left">Price (₹)</th>
+                                    <th className="p-2 text-left">Base Price (₹)</th>
                                     <th className="p-2 text-center">Mandatory?</th>
                                     <th className="p-2 text-center">Type</th>
                                     <th className="p-2 text-center">Action</th>
@@ -152,7 +177,8 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                             </thead>
                             <tbody className="divide-y divide-slate-200">
                                 {config.items.map(item => (
-                                    <tr key={item.id} className="bg-white">
+                                    <React.Fragment key={item.id}>
+                                    <tr className="bg-white">
                                         <td className="p-2">
                                             <input 
                                                 type="text" 
@@ -161,13 +187,25 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                                                 className="form-input w-full py-1"
                                             />
                                         </td>
-                                        <td className="p-2 w-32">
-                                            <input 
-                                                type="number" 
-                                                value={item.price} 
-                                                onChange={e => handleItemChange(item.id, 'price', parseInt(e.target.value) || 0)}
-                                                className="form-input w-full py-1"
-                                            />
+                                        <td className="p-2 w-48">
+                                            <div className="flex items-center gap-2">
+                                                <input 
+                                                    type="number" 
+                                                    value={item.price} 
+                                                    onChange={e => handleItemChange(item.id, 'price', parseInt(e.target.value) || 0)}
+                                                    className="form-input w-full py-1"
+                                                />
+                                                {item.type === 'uniform' && (
+                                                     <button 
+                                                        onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                                                        className="text-sky-600 hover:text-sky-800 text-xs font-semibold whitespace-nowrap flex items-center gap-1"
+                                                        title="Manage prices for different sizes"
+                                                     >
+                                                        {expandedItemId === item.id ? <ChevronUpIcon className="w-4 h-4"/> : <ChevronDownIcon className="w-4 h-4"/>}
+                                                        Sizes
+                                                     </button>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="p-2 text-center">
                                             <input 
@@ -184,6 +222,27 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                                             </button>
                                         </td>
                                     </tr>
+                                    {item.type === 'uniform' && expandedItemId === item.id && (
+                                        <tr className="bg-slate-100">
+                                            <td colSpan={5} className="p-4 border-b border-slate-300">
+                                                <p className="text-xs font-bold text-slate-600 mb-2">Set Prices per Size (Overrides Base Price if set)</p>
+                                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+                                                    {UNIFORM_SIZES.map(size => (
+                                                        <div key={size}>
+                                                            <label className="block text-[10px] font-bold text-slate-500 uppercase">Size {size}</label>
+                                                            <input 
+                                                                type="number"
+                                                                value={item.priceBySize?.[size] ?? item.price}
+                                                                onChange={e => handleSizePriceChange(item.id, size, parseInt(e.target.value) || 0)}
+                                                                className="form-input w-full text-xs py-1"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
@@ -202,7 +261,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                             />
                         </div>
                         <div className="w-32">
-                            <label className="block text-xs font-bold text-slate-500 mb-1">Price</label>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Base Price</label>
                             <input 
                                 type="number" 
                                 value={newItemPrice} 

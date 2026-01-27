@@ -1,6 +1,4 @@
 
-
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';
@@ -63,7 +61,8 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
                     </div>
 
                     <div className="space-y-8">
-                        {Object.entries(syllabusBySubject).map(([subject, { topics, statusCounts }]) => {
+                        {Object.entries(syllabusBySubject).map(([subject, data]) => {
+                            const { topics, statusCounts } = data as SyllabusData;
                             const totalTopics = topics.length;
                             const completed = statusCounts['Completed'] || 0;
                             const progress = totalTopics > 0 ? Math.round((completed / totalTopics) * 100) : 0;

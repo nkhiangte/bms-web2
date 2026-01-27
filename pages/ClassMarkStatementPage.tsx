@@ -181,8 +181,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            // FIX: Use Number() to ensure operands are numbers.
-            subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
+            // FIX: Removed Number() wrapper and || 0 check that was causing TS issues as values are strictly typed
+            subjectFullMarks = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;

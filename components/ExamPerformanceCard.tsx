@@ -89,8 +89,8 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     examTotal += examMark;
                     activityTotal += activityMark;
                     totalSubjectMark = examMark + activityMark;
-                    // FIX: Use Number() to ensure operands are numbers.
-                    subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
+                    // FIX: Removed Number() wrapper and || 0 check causing TS issues, now relying on types
+                    subjectFullMarks = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
                     if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
                 } else {
                     totalSubjectMark = result?.marks ?? 0;

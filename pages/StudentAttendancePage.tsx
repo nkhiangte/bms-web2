@@ -99,7 +99,8 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
 
             let attendanceData: StudentAttendanceRecord = {};
             const isFetchingToday = dateStr === todayStr;
-            const todayDataFromProp = allAttendance?.[grade];
+            // Access the specific date record from the daily attendance map
+            const todayDataFromProp = allAttendance?.[grade]?.[dateStr];
 
             if (isFetchingToday) {
                 if (todayDataFromProp) {

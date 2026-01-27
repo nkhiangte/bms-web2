@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { GoogleGenAI } from "@google/genai";
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '../components/Icons';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 type ScanType = 'grammar' | 'math' | 'handwriting';
 

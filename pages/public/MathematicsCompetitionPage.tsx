@@ -1,6 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon } from '../../components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 const MathematicsCompetitionPage: React.FC = () => {
     return (

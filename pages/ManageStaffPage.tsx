@@ -143,7 +143,7 @@ const PrintableStaffList: React.FC<{ staff: Staff[] }> = ({ staff }) => (
     </div>
 );
 
-export const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitions, onAdd, onEdit, onDelete, user }) => {
+const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitions, onAdd, onEdit, onDelete, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'teaching' | 'non-teaching'>('teaching');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -377,3 +377,5 @@ export const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDe
     </div>
   );
 };
+
+export default ManageStaffPage;

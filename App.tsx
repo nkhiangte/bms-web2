@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem } from './types';
@@ -10,6 +10,7 @@ import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } 
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ParentSignUpPage from './pages/ParentSignUpPage';
+import ParentRegistrationPage from './pages/ParentRegistrationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
@@ -109,9 +110,12 @@ import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import StudentAttendanceLogPage from './pages/StudentAttendanceLogPage';
 import SyllabusPage from './pages/public/SyllabusPage';
+import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
+
+const { Routes, Route, Navigate, useLocation } = ReactRouterDOM as any;
 
 const App: React.FC = () => {
   // --- State Declarations with Dummy Data/Defaults ---
@@ -149,7 +153,7 @@ const App: React.FC = () => {
   
   // Other Logs
   const [conductLog, setConductLog] = useState<ConductEntry[]>([]);
-  const [attendance, setAttendance] = useState<DailyStudentAttendance>({});
+  const [attendance, setAttendance] = useState<DailyStudentAttendance>({} as DailyStudentAttendance);
   const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
 
   // Notifications

@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { GRADES_LIST, TERMINAL_EXAMS } from '../constants';
 import { BookOpenIcon, HomeIcon, BackIcon } from '../components/Icons';
 import { Grade, GradeDefinition, Staff, User } from '../types';
+
+const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface ExamClassSelectionPageProps {
     gradeDefinitions: Record<Grade, GradeDefinition>;
@@ -12,7 +14,7 @@ interface ExamClassSelectionPageProps {
 
 const ExamClassSelectionPage: React.FC<ExamClassSelectionPageProps> = ({ gradeDefinitions, staff, user }) => {
     const navigate = useNavigate();
-    const { examId } = useParams<{ examId: string }>();
+    const { examId } = useParams() as { examId: string };
 
     const examDetails = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
 

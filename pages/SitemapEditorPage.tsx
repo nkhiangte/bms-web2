@@ -1,7 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon } from '../components/Icons';
+
+const { useNavigate, Link } = ReactRouterDOM as any;
 
 interface SitemapEditorPageProps {
     initialContent: string;

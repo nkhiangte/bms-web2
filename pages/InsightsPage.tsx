@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '../components/Icons';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface InsightsPageProps {
     students: Student[];
@@ -126,7 +128,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         try {
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
-// FIX: Updated Gemini model to 'gemini-3-flash-preview' for basic text tasks, as per guidelines.
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
                 config: {

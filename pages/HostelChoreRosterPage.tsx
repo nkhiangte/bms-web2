@@ -1,9 +1,12 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, EditIcon, CheckIcon, XIcon } from '../components/Icons';
 import { User, Student, HostelResident, Chore, ChoreRoster, Gender, DailyChoreAssignment } from '../types';
 import { CHORE_LIST, DAYS_OF_WEEK } from '../constants';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface HostelChoreRosterPageProps {
     user: User;

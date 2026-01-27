@@ -1,6 +1,8 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { HomeIcon, BackIcon, DocumentPlusIcon, SearchIcon, FolderIcon } from '../components/Icons';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 const ActionCard: React.FC<{ title: string; description: string; icon: React.ReactNode; link: string; }> = ({ title, description, icon, link }) => (
     <Link to={link} className="group block p-6 bg-slate-50 rounded-lg text-slate-800 hover:bg-white hover:text-sky-600 hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 border border-transparent hover:border-sky-300">

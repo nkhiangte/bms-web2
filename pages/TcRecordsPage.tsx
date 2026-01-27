@@ -1,9 +1,12 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { TcRecord } from '../types';
 import { BackIcon, HomeIcon, PrinterIcon, DocumentPlusIcon, SearchIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface TcRecordsPageProps {
   tcRecords: TcRecord[];

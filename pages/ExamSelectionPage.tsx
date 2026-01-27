@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, DocumentReportIcon } from '../components/Icons';
 import { TERMINAL_EXAMS } from '../constants';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 const ExamCard: React.FC<{ title: string; link: string; }> = ({ title, link }) => (
     <Link to={link} className="group block p-8 bg-slate-50 rounded-lg text-center text-slate-800 hover:bg-white hover:text-sky-600 hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 border border-transparent hover:border-sky-300">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -10,6 +10,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 // caching issues for users with an old, "stuck" service worker.
 // A robust unregister script in index.html now automatically clears these
 // old service workers from users' browsers on page load.
+
+const { BrowserRouter } = ReactRouterDOM as any;
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

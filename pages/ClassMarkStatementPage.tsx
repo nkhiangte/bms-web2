@@ -1,13 +1,16 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance } from '../types';
+import * as ReactRouterDOM from 'react-router-dom';
+import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
 import { BackIcon, HomeIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
 import { normalizeSubjectName } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditSubjectsModal from '../components/EditSubjectsModal';
+
+const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
 interface ClassMarkStatementPageProps {
   students: Student[];

@@ -1,13 +1,15 @@
+
 import React, { useState, FormEvent, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { FeeStructure, Student, FeePayments, NotificationType } from '../../types';
+import { FeeStructure, Student, FeePayments, NotificationType, User } from '../../types';
 import { FEE_SET_GRADES, academicMonths } from '../../constants';
 import { getDuesSummary, formatStudentId } from '../../utils';
-import { SpinnerIcon } from '../../components/Icons';
+import { SpinnerIcon, EditIcon, CogIcon } from '../../components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 
 interface FeesPageProps {
+    user: User | null;
     feeStructure: FeeStructure;
     students: Student[];
     academicYear: string;
@@ -16,27 +18,27 @@ interface FeesPageProps {
 }
 
 const FeeTable: React.FC<{ title: string; grades: string[]; fees: { admissionFee: number; tuitionFee: number; examFee: number; } }> = ({ title, grades, fees }) => (
-    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col">
+    <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col border border-slate-100">
         <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
-        <p className="text-sky-700 font-semibold mb-4">{grades.join(', ')}</p>
+        <p className="text-sky-700 font-semibold mb-4 text-sm">{grades.join(', ')}</p>
         <div className="space-y-3 flex-grow">
             <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600">Admission Fee</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(fees.admissionFee)}</span>
+                <span className="text-slate-600 font-medium">Admission Fee</span>
+                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.admissionFee)}</span>
             </div>
             <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600">Tuition Fee (Monthly)</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(fees.tuitionFee)}</span>
+                <span className="text-slate-600 font-medium">Tuition Fee (Monthly)</span>
+                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.tuitionFee)}</span>
             </div>
             <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600">Exam Fee (Per Term)</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(fees.examFee)}</span>
+                <span className="text-slate-600 font-medium">Exam Fee (Per Term)</span>
+                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.examFee)}</span>
             </div>
         </div>
     </div>
 );
 
-const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYear, onUpdateFeePayments, addNotification }) => {
+const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, academicYear, onUpdateFeePayments, addNotification }) => {
     const [studentIdInput, setStudentIdInput] = useState('');
     const [foundStudent, setFoundStudent] = useState<Student | null>(null);
     const [searchError, setSearchError] = useState('');
@@ -76,7 +78,6 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
 
         setIsProcessingPayment(true);
         
-// FIX: Changed `import.meta.env` to `process.env` to correctly access Vite environment variables.
         const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
         if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
             addNotification('Online payment gateway is not configured correctly. Please contact the school administrator.', 'error', 'Configuration Error');
@@ -84,7 +85,6 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
             return;
         }
 
-        // Capture the state of dues at the moment of payment initiation
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
             admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'),
@@ -98,7 +98,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
         
         const options = {
             key: razorpayKey,
-            amount: duesSummary.total * 100, // Amount is in currency subunits.
+            amount: duesSummary.total * 100, 
             currency: "INR",
             name: "Bethel Mission School",
             description: `Fee Payment for ${foundStudent.name}`,
@@ -106,7 +106,6 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
             handler: async (response: any) => {
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
 
-                // CORRECTED: Only mark the fees as paid that were part of this transaction snapshot.
                 if (duesToPay.admissionFee) {
                     newPayments.admissionFeePaid = true;
                 }
@@ -135,7 +134,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
                 }
             },
             prefill: {
-                name: foundStudent.fatherName, // Prefill with parent's name
+                name: foundStudent.fatherName,
                 contact: foundStudent.contact,
             },
             notes: {
@@ -164,10 +163,26 @@ const FeesPage: React.FC<FeesPageProps> = ({ feeStructure, students, academicYea
     return (
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
+                <div className="text-center mb-12 relative">
                     <h1 className="text-4xl font-extrabold text-slate-800">Fee Structure & Online Payment</h1>
                     <p className="mt-4 text-lg text-slate-600">Review the fee structure and pay outstanding dues online.</p>
+                    
+                    {user && user.role === 'admin' && (
+                        <div className="absolute top-0 right-0 hidden md:block">
+                            <Link to="/portal/fees" className="btn btn-secondary flex items-center gap-2 text-sm shadow-sm">
+                                <CogIcon className="w-4 h-4" /> Edit Structure
+                            </Link>
+                        </div>
+                    )}
                 </div>
+
+                {user && user.role === 'admin' && (
+                     <div className="md:hidden text-center mb-8">
+                        <Link to="/portal/fees" className="btn btn-secondary flex items-center justify-center gap-2 text-sm shadow-sm inline-flex">
+                            <CogIcon className="w-4 h-4" /> Edit Fee Structure
+                        </Link>
+                     </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
                     <FeeTable title="Set 1" grades={FEE_SET_GRADES.set1} fees={feeStructure.set1} />

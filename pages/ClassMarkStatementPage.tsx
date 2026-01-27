@@ -182,7 +182,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
             // FIX: Explicitly cast and sum to avoid type errors
-            subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
+            const eFM = Number(sd.examFullMarks || 0);
+            const aFM = Number(sd.activityFullMarks || 0);
+            subjectFullMarks = eFM + aFM;
+            
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;

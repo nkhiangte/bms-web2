@@ -232,4 +232,4 @@ const MultiTermReportCard: React.FC<{
                                         <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
                                         <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
                                         <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.activityMarks
+                                        <td className="p-1 border border-slate-400">{term3Result?.activityMarks  ?? '-'}

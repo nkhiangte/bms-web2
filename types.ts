@@ -1,38 +1,4 @@
 
-export interface Student {
-    id: string;
-    rollNo: number;
-    name: string;
-    grade: Grade;
-    academicYear: string; // Added field to track the session
-    studentId: string;
-    contact: string;
-    dateOfBirth: string;
-    gender: Gender;
-    address: string;
-    aadhaarNumber: string;
-    pen: string;
-    category: Category;
-    fatherName: string;
-    fatherOccupation: string;
-    fatherAadhaar: string;
-    motherName: string;
-    motherOccupation: string;
-    motherAadhaar: string;
-    guardianName: string;
-    guardianRelationship: string;
-    lastSchoolAttended: string;
-    healthConditions: string;
-    achievements: string;
-    status: StudentStatus;
-    cwsn: string;
-    religion: string;
-    bloodGroup?: BloodGroup;
-    photographUrl: string;
-    feePayments: FeePayments;
-    academicPerformance?: Exam[];
-}
-
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -73,6 +39,23 @@ export enum BloodGroup {
     O_POSITIVE = 'O+',
     O_NEGATIVE = 'O-'
 }
+
+// --- Admission Configuration Types ---
+export interface AdmissionItemConfig {
+    id: string;
+    name: string;
+    price: number;
+    mandatory: boolean;
+    type: 'general' | 'uniform'; // 'general' items don't have sizes, 'uniform' items do
+}
+
+export interface AdmissionSettings {
+    academicYearLabel: string; // e.g. "2026-27"
+    admissionFee: number;
+    notebookPrices: Record<string, number>; // Key is Grade string
+    items: AdmissionItemConfig[];
+}
+// -------------------------------------
 
 export interface AdmissionItem {
     name: string;
@@ -225,6 +208,40 @@ export interface Exam {
     teacherRemarks?: string;
     generalConduct?: ConductGrade;
     attendance?: Attendance;
+}
+
+export interface Student {
+    id: string;
+    rollNo: number;
+    name: string;
+    grade: Grade;
+    studentId: string;
+    contact: string;
+    dateOfBirth: string;
+    gender: Gender;
+    address: string;
+    aadhaarNumber: string;
+    pen: string;
+    category: Category;
+    fatherName: string;
+    fatherOccupation: string;
+    fatherAadhaar: string;
+    motherName: string;
+    motherOccupation: string;
+    motherAadhaar: string;
+    guardianName: string;
+    guardianRelationship: string;
+    lastSchoolAttended: string;
+    healthConditions: string;
+    achievements: string;
+    status: StudentStatus;
+    cwsn: string;
+    religion: string;
+    bloodGroup?: BloodGroup;
+    photographUrl: string;
+    feePayments: FeePayments;
+    academicPerformance?: Exam[];
+    academicYear?: string;
 }
 
 export interface User {

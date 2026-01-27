@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -8,6 +9,7 @@ import {
     UserGroupIcon,
     DocumentReportIcon,
     CogIcon,
+    CurrencyDollarIcon
 } from '../components/Icons';
 
 const AdminCard: React.FC<{
@@ -49,6 +51,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
     const adminLinks = [
         { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
         { title: "Online Admissions", description: "Review and process new student applications.", icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
+        { title: "Admission Settings", description: "Configure fees, items, and mandatory requirements.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
         { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },
         { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
         { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },

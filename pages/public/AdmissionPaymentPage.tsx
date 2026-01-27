@@ -1,19 +1,25 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
-import { Grade, AdmissionItem, NotificationType } from '../../types';
-import { ADMISSION_FEE_AMOUNT, NOTEBOOK_SET_PRICES, OTHER_ADMISSION_ITEMS, UNIFORM_ITEMS, UNIFORM_SIZES } from '../../constants';
+import { Grade, AdmissionItem, NotificationType, AdmissionSettings } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
+import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
 
 interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
     addNotification: (message: string, type: NotificationType, title?: string) => void;
     schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
+    admissionConfig?: AdmissionSettings; // Made optional to prevent breaking change, defaults inside
 }
 
-const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdmissionPayment, addNotification, schoolConfig }) => {
+const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ 
+    onUpdateAdmissionPayment, 
+    addNotification, 
+    schoolConfig,
+    admissionConfig = DEFAULT_ADMISSION_SETTINGS 
+}) => {
     const { admissionId } = useParams<{ admissionId: string }>();
     const location = useLocation();
     
@@ -31,16 +37,27 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
     const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
     const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set';
 
-    const notebookPrice = useMemo(() => (grade && NOTEBOOK_SET_PRICES[grade as Grade]) ? NOTEBOOK_SET_PRICES[grade as Grade] : 0, [grade]);
+    const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
 
-    const allItems = useMemo(() => [
-        { name: 'Admission Fee', price: ADMISSION_FEE_AMOUNT, mandatory: true, checkable: false, hasSize: false, sizes: undefined },
-        { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined },
-        { name: 'ID Card', price: OTHER_ADMISSION_ITEMS['ID Card'], mandatory: false, checkable: true, hasSize: false, sizes: undefined },
-        { name: 'Diary', price: OTHER_ADMISSION_ITEMS['Diary'], mandatory: true, checkable: false, hasSize: false, sizes: undefined },
-        { name: 'Song Book', price: OTHER_ADMISSION_ITEMS['Song Book'], mandatory: true, checkable: false, hasSize: false, sizes: undefined },
-        ...UNIFORM_ITEMS.map(item => ({ ...item, mandatory: false, checkable: true, hasSize: true })),
-    ], [grade, notebookPrice]);
+    const allItems = useMemo(() => {
+        const items = [
+            { name: 'Admission Fee', price: admissionConfig.admissionFee, mandatory: true, checkable: false, hasSize: false, sizes: undefined as string[] | undefined },
+            { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined },
+        ];
+
+        admissionConfig.items.forEach(itemConfig => {
+            items.push({
+                name: itemConfig.name,
+                price: itemConfig.price,
+                mandatory: itemConfig.mandatory,
+                checkable: !itemConfig.mandatory, // If not mandatory, it's checkable (optional)
+                hasSize: itemConfig.type === 'uniform',
+                sizes: itemConfig.type === 'uniform' ? UNIFORM_SIZES : undefined
+            });
+        });
+
+        return items;
+    }, [grade, notebookPrice, admissionConfig]);
 
     useEffect(() => {
         const mandatory: Record<string, { quantity: number; size?: string }> = {};

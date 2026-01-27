@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance } from '../types';
@@ -181,7 +182,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
             // FIX: Use Number() to ensure operands are numbers.
-            subjectFullMarks = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
+            subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;

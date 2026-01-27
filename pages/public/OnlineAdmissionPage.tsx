@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
@@ -47,8 +48,11 @@ const FileUploadField: React.FC<{
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
+    // FUTURE TODO: Fetch this from config if needed
+    const academicYearLabel = "2026-27"; 
+
     const initialFormState = {
-        admissionGrade: Grade.NURSERY, academicYear: '2026-27', studentName: '', dateOfBirth: '', gender: Gender.MALE,
+        admissionGrade: Grade.NURSERY, academicYear: academicYearLabel, studentName: '', dateOfBirth: '', gender: Gender.MALE,
         studentAadhaar: '', fatherName: '', motherName: '', fatherOccupation: '', motherOccupation: '', parentAadhaar: '',
         guardianName: '', guardianRelationship: '', permanentAddress: '', presentAddress: '', contactNumber: '',
         penNumber: '', motherTongue: 'Mizo', isCWSN: 'No' as 'Yes' | 'No', bloodGroup: undefined, email: '', lastSchoolAttended: '', lastDivision: '',
@@ -226,7 +230,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                     <div className="text-center mb-8">
                         <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-24 mx-auto mb-4" />
                         <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
-                        <p className="mt-2 text-lg text-slate-600">Academic Year: 2026–27</p>
+                        <p className="mt-2 text-lg text-slate-600">Academic Year: {academicYearLabel}</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">

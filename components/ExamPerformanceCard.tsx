@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Student, Exam, Grade, GradeDefinition, StudentStatus, ConductGrade, Attendance } from '../types';
 import AcademicRecordTable from './AcademicRecordTable';
@@ -89,7 +90,7 @@ const ExamPerformanceCard: React.FC<ExamPerformanceCardProps> = ({
                     activityTotal += activityMark;
                     totalSubjectMark = examMark + activityMark;
                     // FIX: Use Number() to ensure operands are numbers.
-                    subjectFullMarks = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
+                    subjectFullMarks = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
                     if (examMark < 20) { failedSubjectsCount_III_to_VIII++; failedSubjects.push(sd.name); }
                 } else {
                     totalSubjectMark = result?.marks ?? 0;

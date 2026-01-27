@@ -1,9 +1,6 @@
 
 
-
-
-
-import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
+import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
 export const IMGBB_API_KEY = 'd36909d21412322dc45661e15078de9f';
@@ -236,6 +233,24 @@ export const UNIFORM_ITEMS = [
     { name: 'Pullover (Boy/Girl)', price: 550, sizes: UNIFORM_SIZES },
     { name: 'Sweater (Boy/Girl)', price: 700, sizes: UNIFORM_SIZES },
 ];
+
+export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
+    academicYearLabel: '2026-27',
+    admissionFee: 1000,
+    notebookPrices: NOTEBOOK_SET_PRICES,
+    items: [
+        { id: 'diary', name: 'Diary', price: 100, mandatory: true, type: 'general' },
+        { id: 'songbook', name: 'Song Book', price: 200, mandatory: true, type: 'general' },
+        { id: 'idcard', name: 'ID Card', price: 150, mandatory: false, type: 'general' },
+        ...UNIFORM_ITEMS.map((item, index) => ({
+            id: `uniform-${index}`,
+            name: item.name,
+            price: item.price,
+            mandatory: false,
+            type: 'uniform' as const
+        }))
+    ]
+};
 
 // --- NEW: Hostel Discipline ---
 export const INCIDENT_SEVERITY_LIST: IncidentSeverity[] = Object.values(IncidentSeverity);

@@ -18,7 +18,7 @@ import {
     Grade, GradeDefinition, SubjectAssignment, OnlineAdmission,
     Exam, FeePayments, StudentAttendanceRecord, StaffAttendanceRecord, AttendanceStatus,
     StudentClaim, ExamRoutine, DailyRoutine, Homework, Syllabus, AdmissionItem,
-    HostelDormitory, StockLogType, Notice, StudentStatus, DailyStudentAttendance
+    HostelDormitory, StockLogType, Notice, StudentStatus, DailyStudentAttendance, AdmissionSettings
 } from './types';
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -26,7 +26,7 @@ import { SpinnerIcon } from './components/Icons';
 
 // Data & Constants
 import { timetableData } from './timetableData';
-import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
+import { DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, DEFAULT_ADMISSION_SETTINGS } from './constants';
 import { calculateStudentResult, createDefaultFeePayments, formatStudentId, getNextAcademicYear, getNextGrade } from './utils';
 
 // Portal Pages
@@ -89,6 +89,7 @@ import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
 import ManageNoticesPage from './pages/ManageNoticesPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
+import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 
 // Modals
 import NewsFormModal from './components/NewsFormModal';
@@ -172,6 +173,7 @@ const App: React.FC = () => {
     const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
     const [sitemapContent, setSitemapContent] = useState<string>('');
     const [schoolConfig, setSchoolConfig] = useState<{ paymentQRCodeUrl?: string; upiId?: string }>({});
+    const [admissionConfig, setAdmissionConfig] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
 
     // Attendance State
     const [currentStudentAttendance, setCurrentStudentAttendance] = useState<DailyStudentAttendance | null>(null);
@@ -298,10 +300,10 @@ const App: React.FC = () => {
         });
         const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
         const unsubSchoolDetails = db.collection('config').doc('schoolDetails').onSnapshot(d => d.exists && setSchoolConfig(d.data() as any));
-
+        const unsubAdmissionConfig = db.collection('config').doc('admissionSettings').onSnapshot(d => d.exists && setAdmissionConfig(d.data() as AdmissionSettings));
 
         return () => {
-            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubSchoolDetails();
+            unsubNews(); unsubStaff(); unsubCal(); unsubFees(); unsubGradeDefs(); unsubAcademic(); unsubSitemap(); unsubExams(); unsubClasses(); unsubSyllabus(); unsubSchoolDetails(); unsubAdmissionConfig();
         };
     }, []);
 
@@ -1040,6 +1042,17 @@ const App: React.FC = () => {
         }
     };
 
+    const handleUpdateAdmissionConfig = async (newConfig: AdmissionSettings) => {
+        try {
+            await db.collection('config').doc('admissionSettings').set(newConfig, { merge: true });
+            addNotification("Admission settings updated successfully.", "success");
+            return true;
+        } catch (e: any) {
+            addNotification(e.message, "error", "Update Failed");
+            return false;
+        }
+    };
+
     const handleUpdateAcademicYear = async (year: string) => {
         try {
             await db.collection('settings').doc('academic').set({ currentYear: year }, { merge: true });
@@ -1205,7 +1218,7 @@ const App: React.FC = () => {
                     <Route path="/staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/routine" element={<RoutinePage examSchedules={examSchedules} classSchedules={classSchedules} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
                     <Route path="/admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
-                    <Route path="/admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={handleUpdateAdmissionPayment} addNotification={addNotification} schoolConfig={schoolConfig} />} />
+                    <Route path="/admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={handleUpdateAdmissionPayment} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionConfig} />} />
                     <Route path="/portal/syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
                     <Route path="/login" element={<LoginPage onLogin={async (e, p) => { try { await auth.signInWithEmailAndPassword(e, p); return {success:true}; } catch(err:any){ return {success:false, message:err.message}; } }} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
                     <Route path="/signup" element={<SignUpPage onSignUp={async () => ({success: true})} />} />
@@ -1234,7 +1247,12 @@ const App: React.FC = () => {
                             <DashboardPage user={user} studentCount={studentsForCurrentYear.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} />
                         } />
                         <Route path="/portal/parent-dashboard" element={<ParentDashboardPage feeStructure={feeStructure} user={user} allStudents={students} onLinkChild={handleLinkChildRequest} currentAttendance={currentStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth}/>} />
-                        {user.role === 'admin' && <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />}
+                        {user.role === 'admin' && (
+                            <>
+                                <Route path="/portal/admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />
+                                <Route path="/portal/admission-settings" element={<AdmissionSettingsPage admissionConfig={admissionConfig} onUpdateConfig={handleUpdateAdmissionConfig} />} />
+                            </>
+                        )}
                         <Route path="/portal/students" element={<StudentListPage students={studentsForCurrentYear} onAdd={() => undefined} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} />} />
                         <Route path="/portal/student/:studentId" element={<StudentDetailPage students={students} onEdit={() => undefined} academicYear={academicYear} user={user} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={handleAddConductEntry} onDeleteConductEntry={handleDeleteConductEntry} />} />
                         <Route path="/portal/classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => undefined} user={user} />} />

@@ -53,6 +53,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const academicYearLabel = "2026-27"; 
 
     const initialFormState = {
+        studentType: 'Newcomer' as 'Newcomer' | 'Existing',
+        previousStudentId: '',
         admissionGrade: Grade.NURSERY, academicYear: academicYearLabel, studentName: '', dateOfBirth: '', age: '', gender: Gender.MALE,
         placeOfBirth: '', religion: '', category: 'ST',
         studentAadhaar: '', fatherName: '', motherName: '', fatherOccupation: '', motherOccupation: '', parentAadhaar: '',
@@ -153,6 +155,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             alert("You must agree to the School Rules & Regulations before submitting.");
             return;
         }
+
+        if (formData.studentType === 'Existing' && !formData.previousStudentId) {
+            alert("Please enter your Previous Year Student ID.");
+            return;
+        }
         
         if (isNursery) {
             if (!fileUploads.birthCertificate) {
@@ -190,6 +197,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 presLocality, presCity, presState, presPin,
                 ...dataToSubmit 
             } = formData;
+
+            // If existing student, clear fields that shouldn't be sent or might contain stale data from newcomer flow
+            if (formData.studentType === 'Existing') {
+                 // Although typescript might see them as part of the object, we just leave them be, 
+                 // the backend or display logic should handle empty/ignored fields.
+                 // We specifically ensure previousStudentId is sent.
+            } else {
+                // If Newcomer, clear previousStudentId
+                dataToSubmit.previousStudentId = '';
+            }
 
             const permanentAddress = `${permLocality}, ${permCity}, ${permState} - ${permPin}`;
             const presentAddress = `${presLocality}, ${presCity}, ${presState} - ${presPin}`;
@@ -303,6 +320,37 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         {/* Student's Particulars */}
                         <fieldset className="space-y-4 border p-4 rounded-lg">
                             <legend className="text-xl font-bold text-slate-800 px-2">Student's Particulars</legend>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-800">Applicant Type <span className="text-red-600">*</span></label>
+                                    <select 
+                                        name="studentType" 
+                                        value={formData.studentType} 
+                                        onChange={handleChange} 
+                                        className="form-select w-full mt-1 bg-sky-50 border-sky-300"
+                                    >
+                                        <option value="Newcomer">Newcomer (Fresh Admission)</option>
+                                        <option value="Existing">Existing Student (Re-admission)</option>
+                                    </select>
+                                    <p className="text-xs text-slate-500 mt-1">Select "Newcomer" if you are applying to this school for the first time.</p>
+                                </div>
+                                {formData.studentType === 'Existing' && (
+                                    <div className="md:col-span-2 animate-fade-in">
+                                        <label className="block text-sm font-bold text-slate-800">Previous Year Student ID <span className="text-red-600">*</span></label>
+                                        <input 
+                                            type="text" 
+                                            name="previousStudentId" 
+                                            value={formData.previousStudentId} 
+                                            onChange={handleChange} 
+                                            className="form-input w-full mt-1" 
+                                            placeholder="e.g., BMS250101"
+                                            required={formData.studentType === 'Existing'}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label className="block text-sm font-bold">Applying for Class <span className="text-red-600">*</span></label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required><option value="" disabled>-- Select Class --</option>{GRADES_LIST.filter(g => g !== Grade.X).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                 <div><label className="block text-sm font-bold">Name (in CAPITAL) <span className="text-red-600">*</span></label><input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1 uppercase" required/></div>
@@ -408,32 +456,36 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                          <fieldset className="space-y-4 border p-4 rounded-lg">
                             <legend className="text-xl font-bold text-slate-800 px-2">Academic & Other Details</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
-                                    <select 
-                                        value={isOtherSchool ? 'Others' : (formData.lastSchoolAttended === 'Bethel Mission School' ? 'Bethel Mission School' : '')} 
-                                        onChange={handleSchoolSelectChange} 
-                                        className="form-select w-full mt-1"
-                                        required
-                                    >
-                                        <option value="" disabled>-- Select School --</option>
-                                        <option value="Bethel Mission School">Bethel Mission School</option>
-                                        <option value="Others">Others</option>
-                                    </select>
-                                    {isOtherSchool && (
-                                        <input 
-                                            type="text" 
-                                            name="lastSchoolAttended"
-                                            placeholder="Enter Name of School" 
-                                            value={customSchoolInput} 
-                                            onChange={handleCustomSchoolChange} 
-                                            className="form-input w-full mt-2" 
-                                            required 
-                                        />
-                                    )}
-                                </div>
-                                <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
-                                <div><label className="block text-sm font-bold">General Behaviour <span className="text-red-600">*</span></label><select name="generalBehaviour" value={formData.generalBehaviour} onChange={handleChange} className="form-select w-full mt-1" required><option>Mild</option><option>Normal</option><option>Hyperactive</option></select></div>
+                                {formData.studentType === 'Newcomer' && (
+                                    <>
+                                    <div>
+                                        <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
+                                        <select 
+                                            value={isOtherSchool ? 'Others' : (formData.lastSchoolAttended === 'Bethel Mission School' ? 'Bethel Mission School' : '')} 
+                                            onChange={handleSchoolSelectChange} 
+                                            className="form-select w-full mt-1"
+                                            required
+                                        >
+                                            <option value="" disabled>-- Select School --</option>
+                                            <option value="Bethel Mission School">Bethel Mission School</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                        {isOtherSchool && (
+                                            <input 
+                                                type="text" 
+                                                name="lastSchoolAttended"
+                                                placeholder="Enter Name of School" 
+                                                value={customSchoolInput} 
+                                                onChange={handleCustomSchoolChange} 
+                                                className="form-input w-full mt-2" 
+                                                required 
+                                            />
+                                        )}
+                                    </div>
+                                    <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                    <div><label className="block text-sm font-bold">General Behaviour <span className="text-red-600">*</span></label><select name="generalBehaviour" value={formData.generalBehaviour} onChange={handleChange} className="form-select w-full mt-1" required><option>Mild</option><option>Normal</option><option>Hyperactive</option></select></div>
+                                    </>
+                                )}
                                 <div><label className="block text-sm font-bold">Siblings in this school</label><input type="number" name="siblingsInSchool" value={formData.siblingsInSchool} onChange={handleChange} className="form-input w-full mt-1" min="0"/></div>
                                 <div className="md:col-span-2"><label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label><textarea name="achievements" value={formData.achievements} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
                                 

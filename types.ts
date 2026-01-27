@@ -67,6 +67,8 @@ export interface AdmissionItem {
 
 export interface OnlineAdmission {
     id: string;
+    studentType?: 'Newcomer' | 'Existing';
+    previousStudentId?: string;
     admissionGrade: string;
     studentName: string;
     dateOfBirth: string;

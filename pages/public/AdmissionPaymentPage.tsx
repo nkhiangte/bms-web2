@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType } from '../../types';
@@ -36,7 +37,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ onUpdateAdm
         { name: 'Admission Fee', price: ADMISSION_FEE_AMOUNT, mandatory: true, checkable: false, hasSize: false, sizes: undefined },
         { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined },
         { name: 'ID Card', price: OTHER_ADMISSION_ITEMS['ID Card'], mandatory: false, checkable: true, hasSize: false, sizes: undefined },
-        { name: 'Diary', price: OTHER_ADMISSION_ITEMS['Diary'], mandatory: false, checkable: true, hasSize: false, sizes: undefined },
+        { name: 'Diary', price: OTHER_ADMISSION_ITEMS['Diary'], mandatory: true, checkable: false, hasSize: false, sizes: undefined },
+        { name: 'Song Book', price: OTHER_ADMISSION_ITEMS['Song Book'], mandatory: true, checkable: false, hasSize: false, sizes: undefined },
         ...UNIFORM_ITEMS.map(item => ({ ...item, mandatory: false, checkable: true, hasSize: true })),
     ], [grade, notebookPrice]);
 

@@ -2,6 +2,7 @@
 
 
 
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -223,6 +224,7 @@ export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
 export const OTHER_ADMISSION_ITEMS = {
     'ID Card': 150,
     'Diary': 100,
+    'Song Book': 200,
 };
 
 export const UNIFORM_SIZES = ['22', '24', '26', '28', '30', '32', '34', '36', '38', '40'];

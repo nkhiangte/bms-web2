@@ -1,5 +1,5 @@
 
-import React, { useState, FormEvent, useRef } from 'react';
+import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
@@ -53,14 +53,22 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const academicYearLabel = "2026-27"; 
 
     const initialFormState = {
-        admissionGrade: Grade.NURSERY, academicYear: academicYearLabel, studentName: '', dateOfBirth: '', gender: Gender.MALE,
+        admissionGrade: Grade.NURSERY, academicYear: academicYearLabel, studentName: '', dateOfBirth: '', age: '', gender: Gender.MALE,
+        placeOfBirth: '', religion: '', category: 'ST',
         studentAadhaar: '', fatherName: '', motherName: '', fatherOccupation: '', motherOccupation: '', parentAadhaar: '',
-        guardianName: '', guardianRelationship: '', permanentAddress: '', presentAddress: '', contactNumber: '',
+        guardianName: '', guardianRelationship: '', contactNumber: '',
         penNumber: '', motherTongue: 'Mizo', isCWSN: 'No' as 'Yes' | 'No', bloodGroup: undefined, email: '', lastSchoolAttended: '', lastDivision: '',
         generalBehaviour: 'Normal' as 'Mild' | 'Normal' | 'Hyperactive', siblingsInSchool: 0, achievements: '', healthIssues: '',
+        hasMedicalCondition: 'No',
+        
+        // Granular Address Fields
+        permLocality: '', permCity: '', permState: 'Mizoram', permPin: '',
+        presLocality: '', presCity: '', presState: 'Mizoram', presPin: '',
     };
     
     const [formData, setFormData] = useState(initialFormState);
+    const [sameAsPermanent, setSameAsPermanent] = useState(false);
+
     const [fileUploads, setFileUploads] = useState<FileUploads>({ transferCertificate: null, birthCertificate: null, reportCard: null });
     const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ transferCertificate: 'idle', birthCertificate: 'idle', reportCard: 'idle' });
     const [agreed, setAgreed] = useState(false);
@@ -75,9 +83,47 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
+    // Calculate Age when Date of Birth changes
+    useEffect(() => {
+        if (formData.dateOfBirth) {
+            const birthDate = new Date(formData.dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            setFormData(prev => ({ ...prev, age: age >= 0 ? age.toString() : '' }));
+        } else {
+            setFormData(prev => ({ ...prev, age: '' }));
+        }
+    }, [formData.dateOfBirth]);
+
+    // Sync Present Address with Permanent Address if checkbox is checked
+    useEffect(() => {
+        if (sameAsPermanent) {
+            setFormData(prev => ({
+                ...prev,
+                presLocality: prev.permLocality,
+                presCity: prev.permCity,
+                presState: prev.permState,
+                presPin: prev.permPin
+            }));
+        }
+    }, [formData.permLocality, formData.permCity, formData.permState, formData.permPin, sameAsPermanent]);
+
     const handleChange = (e: any) => {
         const { name, value, type } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
+        
+        if (name === 'hasMedicalCondition') {
+            setFormData(prev => ({ 
+                ...prev, 
+                hasMedicalCondition: value, 
+                healthIssues: value === 'No' ? '' : prev.healthIssues 
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
+        }
     };
     
     const handleSchoolSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -137,8 +183,21 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 }
             }
 
+            // Exclude helper states before submission and construct full address strings
+            const { 
+                hasMedicalCondition, 
+                permLocality, permCity, permState, permPin,
+                presLocality, presCity, presState, presPin,
+                ...dataToSubmit 
+            } = formData;
+
+            const permanentAddress = `${permLocality}, ${permCity}, ${permState} - ${permPin}`;
+            const presentAddress = `${presLocality}, ${presCity}, ${presState} - ${presPin}`;
+
             const submissionData = {
-                ...formData,
+                ...dataToSubmit,
+                permanentAddress,
+                presentAddress,
                 transferCertificateUrl: uploadedFileUrls.transferCertificate,
                 birthCertificateUrl: uploadedFileUrls.birthCertificate,
                 reportCardUrl: uploadedFileUrls.reportCard,
@@ -257,7 +316,39 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                         minYear={2000}
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-800">Age</label>
+                                    <input type="text" name="age" value={formData.age} readOnly className="form-input w-full mt-1 bg-slate-100 cursor-not-allowed" />
+                                </div>
                                 <div><label className="block text-sm font-bold">Gender <span className="text-red-600">*</span></label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-800">Place of Birth</label>
+                                    <input type="text" name="placeOfBirth" value={formData.placeOfBirth} onChange={handleChange} className="form-input w-full mt-1" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-800">Religion <span className="text-red-600">*</span></label>
+                                    <select name="religion" value={formData.religion} onChange={handleChange} className="form-select w-full mt-1" required>
+                                        <option value="" disabled>-- Select --</option>
+                                        <option value="Christian">Christian</option>
+                                        <option value="Hindu">Hindu</option>
+                                        <option value="Muslim">Muslim</option>
+                                        <option value="Buddhist">Buddhist</option>
+                                        <option value="Sikh">Sikh</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-800">Category <span className="text-red-600">*</span></label>
+                                    <select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>
+                                        <option value="" disabled>-- Select --</option>
+                                        <option value="General">General</option>
+                                        <option value="SC">SC</option>
+                                        <option value="ST">ST</option>
+                                        <option value="OBC">OBC</option>
+                                    </select>
+                                </div>
+
                                 <div><label className="block text-sm font-bold">Aadhaar No. (Optional)</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1"/></div>
                                 <div><label className="block text-sm font-bold">PEN No.</label><input type="text" name="penNumber" value={formData.penNumber} onChange={handleChange} className="form-input w-full mt-1" /></div>
                                 <div><label className="block text-sm font-bold">Mother Tongue <span className="text-red-600">*</span></label><input type="text" name="motherTongue" value={formData.motherTongue} onChange={handleChange} className="form-input w-full mt-1" required/></div>
@@ -277,11 +368,40 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 <div className="md:col-span-2"><label className="block text-sm font-bold">Parent's Aadhaar No.</label><input type="text" name="parentAadhaar" value={formData.parentAadhaar} onChange={handleChange} className="form-input w-full mt-1" /></div>
                                 <div><label className="block text-sm font-bold">Guardian's Name</label><input type="text" name="guardianName" value={formData.guardianName} onChange={handleChange} className="form-input w-full mt-1" /></div>
                                 <div><label className="block text-sm font-bold">Relationship with Guardian</label><input type="text" name="guardianRelationship" value={formData.guardianRelationship} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address <span className="text-red-600">*</span></label><textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
-                                <div className="md:col-span-2"><label className="block text-sm font-bold">Present Address <span className="text-red-600">*</span></label><textarea name="presentAddress" value={formData.presentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
                                 <div><label className="block text-sm font-bold">Contact No. <span className="text-red-600">*</span></label><input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required/></div>
                                 <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" /></div>
                             </div>
+                            
+                            {/* Granular Address Fields */}
+                            <div className="md:col-span-2 space-y-4">
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-300 pb-1">Permanent Address</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label className="block text-sm font-bold">Locality/Veng <span className="text-red-600">*</span></label><input type="text" name="permLocality" value={formData.permLocality} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">Town/City <span className="text-red-600">*</span></label><input type="text" name="permCity" value={formData.permCity} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">State <span className="text-red-600">*</span></label><input type="text" name="permState" value={formData.permState} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">PIN Code <span className="text-red-600">*</span></label><input type="text" name="permPin" value={formData.permPin} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="checkbox" checked={sameAsPermanent} onChange={(e) => setSameAsPermanent(e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500" />
+                                        <span className="text-sm font-semibold text-slate-600">Present Address is same as Permanent Address</span>
+                                    </label>
+                                </div>
+
+                                <div className={`bg-slate-50 p-4 rounded-lg border border-slate-200 ${sameAsPermanent ? 'opacity-70 pointer-events-none' : ''}`}>
+                                    <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-300 pb-1">Present Address (Residential)</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label className="block text-sm font-bold">Locality/Veng <span className="text-red-600">*</span></label><input type="text" name="presLocality" value={formData.presLocality} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">Town/City <span className="text-red-600">*</span></label><input type="text" name="presCity" value={formData.presCity} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">State <span className="text-red-600">*</span></label><input type="text" name="presState" value={formData.presState} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">PIN Code <span className="text-red-600">*</span></label><input type="text" name="presPin" value={formData.presPin} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                    </div>
+                                </div>
+                            </div>
+
                          </fieldset>
                          
                          {/* Academic Details */}
@@ -316,7 +436,20 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 <div><label className="block text-sm font-bold">General Behaviour <span className="text-red-600">*</span></label><select name="generalBehaviour" value={formData.generalBehaviour} onChange={handleChange} className="form-select w-full mt-1" required><option>Mild</option><option>Normal</option><option>Hyperactive</option></select></div>
                                 <div><label className="block text-sm font-bold">Siblings in this school</label><input type="number" name="siblingsInSchool" value={formData.siblingsInSchool} onChange={handleChange} className="form-input w-full mt-1" min="0"/></div>
                                 <div className="md:col-span-2"><label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label><textarea name="achievements" value={formData.achievements} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
-                                <div className="md:col-span-2"><label className="block text-sm font-bold">Health issues the school should be aware of</label><textarea name="healthIssues" value={formData.healthIssues} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
+                                
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-800">Any known allergies/medical conditions (Yes/No) <span className="text-red-600">*</span></label>
+                                    <select name="hasMedicalCondition" value={formData.hasMedicalCondition} onChange={handleChange} className="form-select w-full mt-1" required>
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+                                {formData.hasMedicalCondition === 'Yes' && (
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-slate-800">Details (if any) <span className="text-red-600">*</span></label>
+                                        <textarea name="healthIssues" value={formData.healthIssues} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
+                                    </div>
+                                )}
                             </div>
                         </fieldset>
                         

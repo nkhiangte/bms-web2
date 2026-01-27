@@ -175,8 +175,28 @@ const App: React.FC = () => {
       setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  // Mock Handlers (Placeholder for Firebase logic)
-  const handleLogin = async () => ({ success: true });
+  const handleLogin = async (email?: string, password?: string) => {
+    // In a real application, you would validate credentials here.
+    // For this prototype/demo, we allow login and assign a role based on email.
+    
+    let role: User['role'] = 'admin'; // Default role
+    if (email?.includes('parent')) role = 'parent';
+    else if (email?.includes('user')) role = 'user';
+    else if (email?.includes('warden')) role = 'warden';
+
+    const mockUser: User = {
+        uid: 'mock-user-123',
+        email: email || 'admin@bms.edu',
+        displayName: email ? email.split('@')[0] : 'Admin User',
+        role: role,
+        photoURL: '',
+        studentIds: [], // Populate with dummy IDs if role is parent for demo
+    };
+
+    setUser(mockUser);
+    return { success: true };
+  };
+
   const handleLogout = () => setUser(null);
   const handleUpdateFeePayments = async () => {};
   const handleUpdateAcademic = async () => {};

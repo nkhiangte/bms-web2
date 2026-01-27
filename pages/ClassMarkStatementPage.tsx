@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
@@ -8,7 +7,6 @@ import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../const
 import { normalizeSubjectName } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import EditSubjectsModal from '../components/EditSubjectsModal';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -74,8 +72,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
-  const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
-
 
   useEffect(() => {
     if (classStudents.length === 0) return;

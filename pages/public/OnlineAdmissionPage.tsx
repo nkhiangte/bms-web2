@@ -161,15 +161,18 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             return;
         }
         
-        if (isNursery) {
-            if (!fileUploads.birthCertificate) {
-                alert("Please upload the Birth Certificate.");
-                return;
-            }
-        } else {
-            if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
-                alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
-                return;
+        // Validate document uploads only for Newcomers
+        if (formData.studentType === 'Newcomer') {
+            if (isNursery) {
+                if (!fileUploads.birthCertificate) {
+                    alert("Please upload the Birth Certificate.");
+                    return;
+                }
+            } else {
+                if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
+                    alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
+                    return;
+                }
             }
         }
 
@@ -179,14 +182,17 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         const uploadedFileUrls: Partial<Record<keyof FileUploads, string>> = {};
 
         try {
-            for (const key of Object.keys(fileUploads) as Array<keyof FileUploads>) {
-                const file = fileUploads[key];
-                if (file) {
-                    setUploadProgress(prev => ({ ...prev, [key]: 'uploading' }));
-                    const resized = await resizeImage(file, 1024, 1024, 0.8);
-                    const url = await uploadToImgBB(resized);
-                    uploadedFileUrls[key] = url;
-                    setUploadProgress(prev => ({ ...prev, [key]: 'success' }));
+            // Only attempt file upload if there are files (which happens only for Newcomers)
+            if (formData.studentType === 'Newcomer') {
+                for (const key of Object.keys(fileUploads) as Array<keyof FileUploads>) {
+                    const file = fileUploads[key];
+                    if (file) {
+                        setUploadProgress(prev => ({ ...prev, [key]: 'uploading' }));
+                        const resized = await resizeImage(file, 1024, 1024, 0.8);
+                        const url = await uploadToImgBB(resized);
+                        uploadedFileUrls[key] = url;
+                        setUploadProgress(prev => ({ ...prev, [key]: 'success' }));
+                    }
                 }
             }
 
@@ -505,7 +511,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             </div>
                         </fieldset>
                         
-                        {/* Document Upload */}
+                        {/* Document Upload - Only for Newcomers */}
+                        {formData.studentType === 'Newcomer' && (
                         <fieldset className="space-y-4 border p-4 rounded-lg">
                              <legend className="text-xl font-bold text-slate-800 px-2">Document Upload</legend>
                              <p className="text-sm text-slate-600">
@@ -516,6 +523,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                              <FileUploadField label="Transfer Certificate" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} required={!isNursery} />
                              <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required={!isNursery} />
                         </fieldset>
+                        )}
 
                         {/* Declaration */}
                          <div className="space-y-4">

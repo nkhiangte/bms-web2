@@ -4,7 +4,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { FeeStructure, Student, FeePayments, NotificationType, User } from '../../types';
 import { FEE_SET_GRADES, academicMonths } from '../../constants';
 import { getDuesSummary, formatStudentId } from '../../utils';
-import { SpinnerIcon, EditIcon, CogIcon } from '../../components/Icons';
+import { SpinnerIcon } from '../../components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -166,23 +166,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
                 <div className="text-center mb-12 relative">
                     <h1 className="text-4xl font-extrabold text-slate-800">Fee Structure & Online Payment</h1>
                     <p className="mt-4 text-lg text-slate-600">Review the fee structure and pay outstanding dues online.</p>
-                    
-                    {user && user.role === 'admin' && (
-                        <div className="absolute top-0 right-0 hidden md:block">
-                            <Link to="/portal/fees" className="btn btn-secondary flex items-center gap-2 text-sm shadow-sm">
-                                <CogIcon className="w-4 h-4" /> Edit Structure
-                            </Link>
-                        </div>
-                    )}
                 </div>
-
-                {user && user.role === 'admin' && (
-                     <div className="md:hidden text-center mb-8">
-                        <Link to="/portal/fees" className="btn btn-secondary flex items-center justify-center gap-2 text-sm shadow-sm inline-flex">
-                            <CogIcon className="w-4 h-4" /> Edit Fee Structure
-                        </Link>
-                     </div>
-                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
                     <FeeTable title="Set 1" grades={FEE_SET_GRADES.set1} fees={feeStructure.set1} />

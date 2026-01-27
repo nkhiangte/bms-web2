@@ -5,6 +5,7 @@ import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 interface OnlineAdmissionPageProps {
     onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>) => Promise<string | null>;
@@ -74,7 +75,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: any) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
     };
@@ -145,8 +146,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
             if (newAdmissionId) {
-                // If applying for Class IX (Merit-based), show the under review screen.
-                // For all other classes, redirect directly to payment.
                 if (formData.admissionGrade === Grade.IX) {
                     setSubmittedAdmissionId(newAdmissionId);
                     setSubmissionSuccess(true);
@@ -248,7 +247,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label className="block text-sm font-bold">Applying for Class <span className="text-red-600">*</span></label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required><option value="" disabled>-- Select Class --</option>{GRADES_LIST.filter(g => g !== Grade.X).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                 <div><label className="block text-sm font-bold">Name (in CAPITAL) <span className="text-red-600">*</span></label><input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1 uppercase" required/></div>
-                                <div><label className="block text-sm font-bold">Date of Birth <span className="text-red-600">*</span></label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div>
+                                    <CustomDatePicker
+                                        label="Date of Birth"
+                                        name="dateOfBirth"
+                                        value={formData.dateOfBirth}
+                                        onChange={handleChange}
+                                        required
+                                        minYear={2000}
+                                    />
+                                </div>
                                 <div><label className="block text-sm font-bold">Gender <span className="text-red-600">*</span></label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                 <div><label className="block text-sm font-bold">Aadhaar No. <span className="text-red-600">*</span></label><input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" required/></div>
                                 <div><label className="block text-sm font-bold">PEN No.</label><input type="text" name="penNumber" value={formData.penNumber} onChange={handleChange} className="form-input w-full mt-1" /></div>

@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition } from '../types';
+import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition, Staff } from '../types';
 import { BackIcon, HomeIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
@@ -360,12 +360,13 @@ const MultiTermReportCard: React.FC<{
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
-                        <div className="h-8 min-w-[150px]"></div>
+                        <div className="h-12 min-w-[150px]"></div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
                 <div className="flex justify-between mt-4 text-xs text-slate-500">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                    <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>
             </div>
         </div>

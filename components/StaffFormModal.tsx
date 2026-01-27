@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
 import { 
@@ -17,6 +15,7 @@ import {
 } from '../constants';
 import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from './Icons';
 import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '../utils';
+import CustomDatePicker from './CustomDatePicker';
 
 const AccordionSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -100,8 +99,10 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                     ...staffMember,
                     yearsOfExperience: staffMember.yearsOfExperience ?? 0,
                     basicSalary: staffMember.basicSalary ?? null,
-                    dateOfBirth: formatDateForDisplay(staffMember.dateOfBirth),
-                    dateOfJoining: formatDateForDisplay(staffMember.dateOfJoining),
+                    // Use ISO dates if stored that way, or whatever logic you have. 
+                    // CustomDatePicker expects YYYY-MM-DD for `value`.
+                    dateOfBirth: staffMember.dateOfBirth, 
+                    dateOfJoining: staffMember.dateOfJoining,
                 });
                 const assignedGradeKey = Object.keys(gradeDefinitions).find(
                     g => gradeDefinitions[g as Grade]?.classTeacherId === staffMember.id
@@ -114,9 +115,9 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
         }
     }, [staffMember, isOpen, gradeDefinitions]);
     
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const handleChange = (e: any) => {
+        const { name, value, type } = e.target;
+        setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
     };
     
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,8 +172,9 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
         
         const dataToSave: { [key: string]: any } = {
             ...formData,
-            dateOfBirth: formatDateForStorage(formData.dateOfBirth),
-            dateOfJoining: formatDateForStorage(formData.dateOfJoining),
+            // Date picker returns correct format
+            dateOfBirth: formData.dateOfBirth,
+            dateOfJoining: formData.dateOfJoining,
         };
         
         if (dataToSave.assignedSubjects) {
@@ -237,41 +239,46 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                 <AccordionSection title="Personal Details" defaultOpen={true}>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">First Name</label>
-                        <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Last Name</label>
-                        <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Gender</label>
-                        <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-800">Date of Birth</label>
-                        <input type="text" placeholder="DD/MM/YYYY" pattern="\d{1,2}/\d{1,2}/\d{4}" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <CustomDatePicker
+                            label="Date of Birth"
+                            name="dateOfBirth"
+                            value={formData.dateOfBirth}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Marital Status</label>
-                        <select name="maritalStatus" value={formData.maritalStatus} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="maritalStatus" value={formData.maritalStatus} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {MARITAL_STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Blood Group</label>
-                        <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                              {BLOOD_GROUP_LIST.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Aadhaar Number</label>
-                        <input type="text" name="aadhaarNumber" value={formData.aadhaarNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="aadhaarNumber" value={formData.aadhaarNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Nationality</label>
-                        <input type="text" name="nationality" value={formData.nationality} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="nationality" value={formData.nationality} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Photograph</label>
@@ -281,10 +288,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                             </div>
                             <div className="flex flex-col gap-2">
                                 <input type="file" ref={fileInputRef} onChange={handlePhotoChange} accept="image/*" className="hidden" id="photo-upload-staff" />
-                                <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-secondary" disabled={isUploading}>
-                                    {isUploading && <SpinnerIcon className="w-5 h-5" />}
-                                    {isUploading ? 'Uploading...' : 'Upload Photo'}
-                                </button>
+                                <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-secondary">Upload Photo</button>
                                 {formData.photographUrl && <button type="button" onClick={handleRemovePhoto} className="px-4 py-2 bg-red-50 border border-red-200 text-red-700 font-semibold rounded-lg shadow-sm hover:bg-red-100 text-sm">Remove</button>}
                             </div>
                         </div>
@@ -293,64 +297,70 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                 <AccordionSection title="Contact Information">
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Contact Number</label>
-                        <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Email</label>
-                        <input type="email" name="emailAddress" value={formData.emailAddress} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="email" name="emailAddress" value={formData.emailAddress} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Current Address</label>
-                        <textarea name="currentAddress" value={formData.currentAddress} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <textarea name="currentAddress" value={formData.currentAddress} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" required />
                     </div>
                      <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Permanent Address</label>
-                        <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" required />
                     </div>
                 </AccordionSection>
                  <AccordionSection title="Professional Details">
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Employee ID</label>
-                        <input type="text" name="employeeId" value={formData.employeeId} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" placeholder="e.g., BMS-T-001" required />
+                        <input type="text" name="employeeId" value={formData.employeeId} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" placeholder="e.g., BMS-T-001" required />
                     </div>
                      <div>
-                        <label className="block text-sm font-bold text-slate-800">Date of Joining</label>
-                        <input type="text" placeholder="DD/MM/YYYY" pattern="\d{1,2}/\d{1,2}/\d{4}" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <CustomDatePicker
+                            label="Date of Joining"
+                            name="dateOfJoining"
+                            value={formData.dateOfJoining}
+                            onChange={handleChange}
+                            required
+                            minYear={1990}
+                        />
                     </div>
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Staff Type</label>
-                        <select name="staffType" value={formData.staffType} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="staffType" value={formData.staffType} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {STAFF_TYPE_LIST.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Employment Status</label>
-                        <select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {EMPLOYMENT_STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Department</label>
-                        <select name="department" value={formData.department} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="department" value={formData.department} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {DEPARTMENT_LIST.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Designation</label>
-                        <select name="designation" value={formData.designation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="designation" value={formData.designation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {DESIGNATION_LIST.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Employee Type</label>
-                        <select name="employeeType" value={formData.employeeType} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="employeeType" value={formData.employeeType} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {EMPLOYEE_TYPE_LIST.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
                     {formData.staffType === StaffType.TEACHING && (
                         <div>
                             <label className="block text-sm font-bold text-slate-800">Assign as Class Teacher</label>
-                            <select value={assignedGrade} onChange={e => setAssignedGrade(e.target.value as Grade)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                            <select value={assignedGrade} onChange={e => setAssignedGrade(e.target.value as Grade)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                                 <option value="">-- Not a Class Teacher --</option>
                                 {gradeOptions.map(opt => (
                                     <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
@@ -362,17 +372,17 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                 <AccordionSection title="Qualifications & Experience">
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Highest Qualification</label>
-                        <select name="educationalQualification" value={formData.educationalQualification} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                        <select name="educationalQualification" value={formData.educationalQualification} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                             {QUALIFICATION_LIST.map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Specialization/Major</label>
-                        <input type="text" name="specialization" value={formData.specialization} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="specialization" value={formData.specialization} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Years of Experience</label>
-                        <input type="number" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="number" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     {formData.staffType === StaffType.TEACHING && (
                         <>
@@ -416,53 +426,53 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Teacher License No. (Optional)</label>
-                                <input type="text" name="teacherLicenseNumber" value={formData.teacherLicenseNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <input type="text" name="teacherLicenseNumber" value={formData.teacherLicenseNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                             </div>
                         </>
                     )}
                      <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Previous Experience (Optional)</label>
-                        <textarea name="previousExperience" value={formData.previousExperience} onChange={handleChange} rows={3} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <textarea name="previousExperience" value={formData.previousExperience} onChange={handleChange} rows={3} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" />
                     </div>
                 </AccordionSection>
                  <AccordionSection title="Payroll Details (Optional)">
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Basic Salary</label>
-                        <input type="number" name="basicSalary" value={formData.basicSalary ?? ''} onChange={handleChange} placeholder="e.g. 30000" className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <input type="number" name="basicSalary" value={formData.basicSalary ?? ''} onChange={handleChange} placeholder="e.g. 30000" className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Salary Grade</label>
-                        <input type="text" name="salaryGrade" value={formData.salaryGrade || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <input type="text" name="salaryGrade" value={formData.salaryGrade || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">PAN Number</label>
-                        <input type="text" name="panNumber" value={formData.panNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <input type="text" name="panNumber" value={formData.panNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Bank Name</label>
-                        <input type="text" name="bankName" value={formData.bankName || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <input type="text" name="bankName" value={formData.bankName || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                     </div>
                      <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Bank Account Number</label>
-                        <input type="text" name="bankAccountNumber" value={formData.bankAccountNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <input type="text" name="bankAccountNumber" value={formData.bankAccountNumber || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                     </div>
                 </AccordionSection>
                 <AccordionSection title="Emergency Contact">
                      <div>
                         <label className="block text-sm font-bold text-slate-800">Contact Name</label>
-                        <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-800">Relationship</label>
-                        <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Contact Number</label>
-                        <input type="tel" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                        <input type="tel" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Medical Conditions (Optional)</label>
-                        <textarea name="medicalConditions" value={formData.medicalConditions || ''} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                        <textarea name="medicalConditions" value={formData.medicalConditions || ''} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" />
                     </div>
                 </AccordionSection>
             </div>

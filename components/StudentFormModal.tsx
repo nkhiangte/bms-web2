@@ -4,6 +4,7 @@ import { Grade, Student, Gender, StudentStatus, Category, BloodGroup } from '../
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../constants';
 import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon } from './Icons';
 import { formatDateForDisplay, formatDateForStorage, formatStudentId, resizeImage, uploadToImgBB } from '../utils';
+import CustomDatePicker from './CustomDatePicker';
 
 interface StudentFormModalProps {
   isOpen: boolean;
@@ -75,23 +76,20 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
     useEffect(() => {
         if (isOpen) {
             if (student) {
-                // When editing, create a new object from the student prop containing only the form fields.
-                // This prevents `feePayments` etc. from ever entering the form's state.
                 const { feePayments, id, academicYear, ...formFields } = student;
                 setFormData({
-                    ...getInitialFormData(), // Start with defaults to ensure all keys are present
-                    ...formFields, // Overlay with actual student data
-                    dateOfBirth: formatDateForDisplay(student.dateOfBirth), // Handle date formatting
+                    ...getInitialFormData(), 
+                    ...formFields, 
+                    // Ensure date is in YYYY-MM-DD format for the picker, even if stored differently
+                    dateOfBirth: student.dateOfBirth, 
                 });
             } else {
-                // For new students, just use the initial empty form data.
                 const newStudentData = getInitialFormData();
                 setFormData(newStudentData);
             }
         }
     }, [student, isOpen, newStudentTargetGrade]);
     
-    // This effect remains to auto-generate the student ID for new students as they type.
     useEffect(() => {
         if (isOpen && !student) { 
             const tempStudentForId = { ...getInitialFormData(), ...formData, id: 'temp' } as Student;
@@ -102,7 +100,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
         }
     }, [formData.grade, formData.rollNo, isOpen, student, academicYear]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: any) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
     };
@@ -134,21 +132,17 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        // 1. Create a base object with only the data from our safe, managed form state.
         const dataToSave: { [key: string]: any } = {
             ...formData,
-            dateOfBirth: formatDateForStorage(formData.dateOfBirth),
-            academicYear: student ? student.academicYear : academicYear, // Keep existing year if edit, else use current
+            // CustomDatePicker returns YYYY-MM-DD, which is good for storage
+            dateOfBirth: formData.dateOfBirth,
+            academicYear: student ? student.academicYear : academicYear,
         };
         
-        // 2. If we are editing a student, we now explicitly pull the `feePayments`
-        // from the original `student` prop that was passed in.
-        // This ensures that this data is ALWAYS preserved and is never affected by the form's state.
         if (student) {
             dataToSave.feePayments = student.feePayments;
         }
 
-        // 3. Clean the final object for Firestore.
         Object.keys(dataToSave).forEach(key => {
             const value = dataToSave[key];
             if (value === undefined || value === null || value === '') {
@@ -182,21 +176,28 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                         <AccordionSection title="Personal Details" defaultOpen={true}>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Full Name</label>
-                                <input type="text" name="name" value={formData.name} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="name" value={formData.name} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-slate-800">Date of Birth</label>
-                                <input type="text" placeholder="DD/MM/YYYY" pattern="\d{1,2}/\d{1,2}/\d{4}" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <CustomDatePicker 
+                                    label="Date of Birth"
+                                    name="dateOfBirth"
+                                    value={formData.dateOfBirth}
+                                    onChange={handleChange}
+                                    required
+                                    minYear={2000}
+                                    maxYear={new Date().getFullYear()}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Gender</label>
-                                <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                                     {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Blood Group (Optional)</label>
-                                <select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                <select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                                     <option value="">-- Select --</option>
                                     {BLOOD_GROUP_LIST.map(b => <option key={b} value={b}>{b}</option>)}
                                 </select>
@@ -221,40 +222,40 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                         <AccordionSection title="Academic Details">
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Grade</label>
-                                <select name="grade" value={formData.grade} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm disabled:bg-slate-100" required disabled={!!newStudentTargetGrade}>
+                                <select name="grade" value={formData.grade} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm disabled:bg-slate-100 h-[42px] px-4" required disabled={!!newStudentTargetGrade}>
                                     {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Roll Number</label>
-                                <input type="number" name="rollNo" value={formData.rollNo} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="number" name="rollNo" value={formData.rollNo} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Student ID</label>
-                                <input type="text" name="studentId" value={formData.studentId || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="studentId" value={formData.studentId || ''} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                                 <p className="text-xs text-slate-500 mt-1">Can be edited. Defaults are based on year, class, and roll no.</p>
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Aadhaar Number</label>
-                                <input type="text" name="aadhaarNumber" value={formData.aadhaarNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="aadhaarNumber" value={formData.aadhaarNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">PEN (Permanent Education No.)</label>
-                                <input type="text" name="pen" value={formData.pen} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="pen" value={formData.pen} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Category</label>
-                                <select name="category" value={formData.category} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                <select name="category" value={formData.category} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                                     {CATEGORY_LIST.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Religion</label>
-                                <input type="text" name="religion" value={formData.religion} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="religion" value={formData.religion} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">CWSN (Children with Special Needs)</label>
-                                <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4">
                                     <option value="No">No</option>
                                     <option value="Yes">Yes</option>
                                 </select>
@@ -263,59 +264,59 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                         <AccordionSection title="Contact & Address">
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Contact Number</label>
-                                <input type="tel" name="contact" value={formData.contact} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="tel" name="contact" value={formData.contact} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Address</label>
-                                <textarea name="address" value={formData.address} onChange={handleChange} rows={3} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <textarea name="address" value={formData.address} onChange={handleChange} rows={3} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" required />
                             </div>
                         </AccordionSection>
                          <AccordionSection title="Parent & Guardian Information">
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Father's Name</label>
-                                <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Father's Occupation</label>
-                                <input type="text" name="fatherOccupation" value={formData.fatherOccupation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="fatherOccupation" value={formData.fatherOccupation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Father's Aadhaar</label>
-                                <input type="text" name="fatherAadhaar" value={formData.fatherAadhaar} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="fatherAadhaar" value={formData.fatherAadhaar} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Mother's Name</label>
-                                <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-800">Mother's Occupation</label>
-                                <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Mother's Aadhaar</label>
-                                <input type="text" name="motherAadhaar" value={formData.motherAadhaar} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                <input type="text" name="motherAadhaar" value={formData.motherAadhaar} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Guardian's Name (Optional)</label>
-                                <input type="text" name="guardianName" value={formData.guardianName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <input type="text" name="guardianName" value={formData.guardianName} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                             </div>
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Guardian's Relationship (Optional)</label>
-                                <input type="text" name="guardianRelationship" value={formData.guardianRelationship} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <input type="text" name="guardianRelationship" value={formData.guardianRelationship} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                             </div>
                         </AccordionSection>
                          <AccordionSection title="Other Information (Optional)">
                              <div>
                                 <label className="block text-sm font-bold text-slate-800">Last School Attended</label>
-                                <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Health Conditions</label>
-                                <textarea name="healthConditions" value={formData.healthConditions} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <textarea name="healthConditions" value={formData.healthConditions} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" />
                             </div>
                              <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-800">Achievements</label>
-                                <textarea name="achievements" value={formData.achievements} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+                                <textarea name="achievements" value={formData.achievements} onChange={handleChange} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm px-4 py-2" />
                             </div>
                         </AccordionSection>
                     </div>

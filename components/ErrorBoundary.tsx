@@ -1,4 +1,3 @@
-
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {
@@ -11,9 +10,8 @@ interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-// FIX: Explicitly extending React.Component to ensure type definitions for setState and props are correctly picked up.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
+  state: ErrorBoundaryState = {
     hasError: false,
     error: null,
     errorInfo: null,

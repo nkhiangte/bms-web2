@@ -78,10 +78,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
     const [submittedAdmissionId, setSubmittedAdmissionId] = useState<string | null>(null);
-    
-    // State for Last School Attended logic
-    const [isOtherSchool, setIsOtherSchool] = useState(false);
-    const [customSchoolInput, setCustomSchoolInput] = useState('');
 
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
@@ -126,23 +122,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         } else {
             setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
         }
-    };
-    
-    const handleSchoolSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const val = e.target.value;
-        if (val === 'Others') {
-            setIsOtherSchool(true);
-            setFormData(prev => ({ ...prev, lastSchoolAttended: customSchoolInput }));
-        } else {
-            setIsOtherSchool(false);
-            setFormData(prev => ({ ...prev, lastSchoolAttended: val }));
-        }
-    };
-
-    const handleCustomSchoolChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setCustomSchoolInput(val);
-        setFormData(prev => ({ ...prev, lastSchoolAttended: val }));
     };
     
     const handleFileChange = (id: keyof FileUploads, file: File | null) => {
@@ -468,27 +447,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                         <>
                                         <div>
                                             <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
-                                            <select 
-                                                value={isOtherSchool ? 'Others' : (formData.lastSchoolAttended === 'Bethel Mission School' ? 'Bethel Mission School' : '')} 
-                                                onChange={handleSchoolSelectChange} 
-                                                className="form-select w-full mt-1"
-                                                required
-                                            >
-                                                <option value="" disabled>-- Select School --</option>
-                                                <option value="Bethel Mission School">Bethel Mission School</option>
-                                                <option value="Others">Others</option>
-                                            </select>
-                                            {isOtherSchool && (
-                                                <input 
-                                                    type="text" 
-                                                    name="lastSchoolAttended"
-                                                    placeholder="Enter Name of School" 
-                                                    value={customSchoolInput} 
-                                                    onChange={handleCustomSchoolChange} 
-                                                    className="form-input w-full mt-2" 
-                                                    required 
-                                                />
-                                            )}
+                                            <input 
+                                                type="text" 
+                                                name="lastSchoolAttended" 
+                                                value={formData.lastSchoolAttended} 
+                                                onChange={handleChange} 
+                                                className="form-input w-full mt-1" 
+                                                placeholder="Enter name of previous school" 
+                                                required 
+                                            />
                                         </div>
                                         <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
                                         </>

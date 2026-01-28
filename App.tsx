@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -167,7 +168,8 @@ const App: React.FC = () => {
     if (!user) return null;
     const staffMember = staff.find(s => s.emailAddress === user.email);
     if (!staffMember) return null;
-    const entry = Object.entries(gradeDefinitions).find(([, def]) => def.classTeacherId === staffMember.id);
+    // Fix: Explicitly type the entry to avoid 'unknown' error
+    const entry = Object.entries(gradeDefinitions).find(([, def]: [string, GradeDefinition]) => def.classTeacherId === staffMember.id);
     return entry ? (entry[0] as Grade) : null;
   }, [user, staff, gradeDefinitions]);
 

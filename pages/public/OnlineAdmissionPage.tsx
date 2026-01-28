@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup, Student, Category } from '../../types';
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon, UserIcon, UsersIcon, ArrowRightIcon } from '../../components/Icons';
-import { resizeImage, uploadToImgBB } from '../../utils';
+import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import { db } from '../../firebaseConfig';
 
@@ -169,9 +169,17 @@ const handleStepOneNext = async () => {
             if (!snapshot.empty) {
                 const studentData = snapshot.docs[0].data() as Student;
                 
+                // Determine next grade for promotion
+                let targetGrade = studentData.grade;
+                const nextGrade = getNextGrade(studentData.grade);
+                if (nextGrade) {
+                    targetGrade = nextGrade;
+                }
+
                 // Map existing data to form
                 setFormData(prev => ({
                     ...prev,
+                    admissionGrade: targetGrade, // Pre-fill calculated next class
                     studentName: studentData.name || '',
                     dateOfBirth: studentData.dateOfBirth || '',
                     gender: (studentData.gender as any) || prev.gender,

@@ -127,6 +127,9 @@ setFormData(prev => ({
 hasMedicalCondition: value, 
 healthIssues: value === 'No' ? '' : prev.healthIssues 
 }));
+} else if (name === 'previousStudentId' || name === 'studentName') {
+    // Force uppercase for IDs and Names
+    setFormData(prev => ({ ...prev, [name]: value.toUpperCase() }));
 } else {
 setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
 }
@@ -155,7 +158,7 @@ setFileUploads(prev => ({ ...prev, [id]: file }));
 
 const handleStepOneNext = async () => {
     if (formData.studentType === 'Existing') {
-        const searchId = formData.previousStudentId.trim();
+        const searchId = formData.previousStudentId.trim().toUpperCase();
         if (!searchId) {
             alert("Please enter your Previous Student ID.");
             return;
@@ -422,7 +425,10 @@ if (step === 1) {
                     </div>
 
                     {formData.studentType === 'Existing' && (
-                         <div className="mb-8 max-w-sm mx-auto animate-fade-in text-left">
+                         <form 
+                             onSubmit={(e) => { e.preventDefault(); handleStepOneNext(); }} 
+                             className="mb-8 max-w-sm mx-auto animate-fade-in text-left"
+                         >
                             <label className="block text-sm font-bold text-slate-700 mb-1">Enter Previous Student ID <span className="text-red-600">*</span></label>
                             <input 
                                 type="text" 
@@ -432,9 +438,13 @@ if (step === 1) {
                                 className="form-input w-full border-slate-300" 
                                 placeholder="e.g., BMS250101"
                                 autoFocus
+                                autoCapitalize="characters"
+                                autoComplete="off" 
+                                autoCorrect="off"
+                                spellCheck="false"
                             />
                             <p className="text-xs text-slate-500 mt-1">Found on your report card or ID card.</p>
-                        </div>
+                        </form>
                     )}
 
                     <button 

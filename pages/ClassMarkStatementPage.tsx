@@ -1,17 +1,14 @@
 
 
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
-import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '../components/Icons';
+import { Student, Grade, User, GradeDefinition, Exam, SubjectMark, StudentStatus, Attendance, SubjectDefinition, Staff } from '../types';
+import { BackIcon, HomeIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditSubjectsModal from '../components/EditSubjectsModal';
-import { db } from '../firebaseConfig';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -450,6 +447,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                            {/* Fix: Explicitly convert to number before adding */}
                                             <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )

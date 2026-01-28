@@ -1,107 +1,212 @@
 
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Grade, Gender, Category, BloodGroup } from '../../types';
-import { SpinnerIcon, UploadIcon, CheckCircleIcon, XCircleIcon } from '../../components/Icons';
-import { GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../../constants';
-import { uploadToImgBB, resizeImage } from '../../utils';
+import React, { useState, FormEvent, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
+import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon } from '../../components/Icons';
+import { resizeImage, uploadToImgBB } from '../../utils';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 interface OnlineAdmissionPageProps {
-    onOnlineAdmissionSubmit: (data: any) => Promise<string>;
+    onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>) => Promise<string | null>;
 }
+
+type FileUploads = {
+    transferCertificate: File | null;
+    birthCertificate: File | null;
+    reportCard: File | null;
+};
+
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+type UploadProgress = Record<keyof FileUploads, UploadStatus>;
+
+const FileUploadField: React.FC<{
+    label: string;
+    id: keyof FileUploads;
+    file: File | null;
+    status: UploadStatus;
+    onFileChange: (id: keyof FileUploads, file: File | null) => void;
+    required?: boolean;
+}> = ({ label, id, file, status, onFileChange, required }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    return (
+        <div>
+            <label className="block text-sm font-bold text-slate-800">{label} {required && <span className="text-red-600">*</span>}</label>
+            <div className="mt-1 flex items-center gap-3">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-secondary whitespace-nowrap">
+                    <UploadIcon className="w-5 h-5"/> Choose File
+                </button>
+                <input type="file" ref={fileInputRef} onChange={(e) => onFileChange(id, e.target.files?.[0] || null)} accept="image/jpeg,image/png,image/webp" className="hidden"/>
+                {file && <span className="text-sm text-slate-700 truncate">{file.name}</span>}
+                {status === 'uploading' && <SpinnerIcon className="w-5 h-5 text-sky-600"/>}
+                {status === 'success' && <CheckCircleIcon className="w-5 h-5 text-emerald-600"/>}
+                {status === 'error' && <XCircleIcon className="w-5 h-5 text-red-600"/>}
+            </div>
+        </div>
+    );
+};
+
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
-    
-    // Full form state
-    const [formData, setFormData] = useState({
-        admissionGrade: Grade.NURSERY,
-        studentName: '',
-        dateOfBirth: '',
-        gender: 'Male',
-        category: 'General',
-        religion: '',
-        bloodGroup: '',
-        isCWSN: 'No',
-        studentAadhaar: '',
-        
-        fatherName: '',
-        fatherOccupation: '',
-        fatherAadhaar: '',
-        motherName: '',
-        motherOccupation: '',
-        motherAadhaar: '',
-        guardianName: '',
-        guardianRelationship: '',
-        
-        presentAddress: '',
-        permanentAddress: '',
-        contactNumber: '',
-        email: '',
-        
-        lastSchoolAttended: '',
-        studentType: 'Newcomer', // 'Newcomer' or 'Existing'
+    // FUTURE TODO: Fetch this from config if needed
+    const academicYearLabel = "2026-27"; 
 
-        // Documents
-        photographUrl: '',
-        birthCertificateUrl: '',
-        transferCertificateUrl: '',
-        reportCardUrl: ''
-    });
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [uploadingField, setUploadingField] = useState<string | null>(null);
-    const [error, setError] = useState('');
-    const [submissionSuccess, setSubmissionSuccess] = useState(false);
-    const [submittedAdmissionId, setSubmittedAdmissionId] = useState('');
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const initialFormState = {
+        studentType: 'Newcomer' as 'Newcomer' | 'Existing',
+        previousStudentId: '',
+        admissionGrade: Grade.NURSERY, academicYear: academicYearLabel, studentName: '', dateOfBirth: '', age: '', gender: Gender.MALE,
+        placeOfBirth: '', religion: '', category: 'ST',
+        studentAadhaar: '', fatherName: '', motherName: '', fatherOccupation: '', motherOccupation: '', parentAadhaar: '',
+        guardianName: '', guardianRelationship: '', contactNumber: '',
+        penNumber: '', motherTongue: 'Mizo', isCWSN: 'No' as 'Yes' | 'No', bloodGroup: undefined, email: '', lastSchoolAttended: '', lastDivision: '',
+        generalBehaviour: 'Normal' as 'Mild' | 'Normal' | 'Hyperactive', siblingsInSchool: 0, achievements: '', healthIssues: '',
+        hasMedicalCondition: 'No',
+        
+        // Granular Address Fields
+        permLocality: '', permCity: '', permState: 'Mizoram', permPin: '',
+        presLocality: '', presCity: '', presState: 'Mizoram', presPin: '',
     };
+    
+    const [formData, setFormData] = useState(initialFormState);
+    const [sameAsPermanent, setSameAsPermanent] = useState(false);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const [fileUploads, setFileUploads] = useState<FileUploads>({ transferCertificate: null, birthCertificate: null, reportCard: null });
+    const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ transferCertificate: 'idle', birthCertificate: 'idle', reportCard: 'idle' });
+    const [agreed, setAgreed] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
+    const [submissionSuccess, setSubmissionSuccess] = useState(false);
+    const [submittedAdmissionId, setSubmittedAdmissionId] = useState<string | null>(null);
 
-        setUploadingField(fieldName);
-        try {
-            // Resize image to reduce bandwidth (800x800 max, 80% quality)
-            const resizedImage = await resizeImage(file, 800, 800, 0.8);
-            const url = await uploadToImgBB(resizedImage);
-            setFormData(prev => ({ ...prev, [fieldName]: url }));
-        } catch (err: any) {
-            console.error("Upload failed", err);
-            alert("Failed to upload image. Please try again.");
-        } finally {
-            setUploadingField(null);
+    const isNursery = formData.admissionGrade === Grade.NURSERY;
+
+    // Calculate Age when Date of Birth changes
+    useEffect(() => {
+        if (formData.dateOfBirth) {
+            const birthDate = new Date(formData.dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            setFormData(prev => ({ ...prev, age: age >= 0 ? age.toString() : '' }));
+        } else {
+            setFormData(prev => ({ ...prev, age: '' }));
+        }
+    }, [formData.dateOfBirth]);
+
+    // Sync Present Address with Permanent Address if checkbox is checked
+    useEffect(() => {
+        if (sameAsPermanent) {
+            setFormData(prev => ({
+                ...prev,
+                presLocality: prev.permLocality,
+                presCity: prev.permCity,
+                presState: prev.permState,
+                presPin: prev.permPin
+            }));
+        }
+    }, [formData.permLocality, formData.permCity, formData.permState, formData.permPin, sameAsPermanent]);
+
+    const handleChange = (e: any) => {
+        const { name, value, type } = e.target;
+        
+        if (name === 'hasMedicalCondition') {
+            setFormData(prev => ({ 
+                ...prev, 
+                hasMedicalCondition: value, 
+                healthIssues: value === 'No' ? '' : prev.healthIssues 
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
         }
     };
+    
+    const handleFileChange = (id: keyof FileUploads, file: File | null) => {
+        setFileUploads(prev => ({ ...prev, [id]: file }));
+    };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        
-        if (!formData.studentName || !formData.fatherName || !formData.contactNumber || !formData.dateOfBirth) {
-            setError("Please fill in all mandatory fields.");
-            window.scrollTo(0, 0);
+        if (!agreed) {
+            alert("You must agree to the School Rules & Regulations before submitting.");
             return;
         }
 
+        if (formData.studentType === 'Existing' && !formData.previousStudentId) {
+            alert("Please enter your Previous Year Student ID.");
+            return;
+        }
+        
+        // Validate document uploads only for Newcomers
+        if (formData.studentType === 'Newcomer') {
+            if (isNursery) {
+                if (!fileUploads.birthCertificate) {
+                    alert("Please upload the Birth Certificate.");
+                    return;
+                }
+            } else {
+                if (!fileUploads.birthCertificate || !fileUploads.transferCertificate || !fileUploads.reportCard) {
+                    alert("Please upload all required documents: Birth Certificate, Transfer Certificate, and Report Card.");
+                    return;
+                }
+            }
+        }
+
         setIsSubmitting(true);
-        setError('');
+        setSubmissionError(null);
+
+        const uploadedFileUrls: Partial<Record<keyof FileUploads, string>> = {};
 
         try {
+            // Only attempt file upload if there are files (which happens only for Newcomers)
+            if (formData.studentType === 'Newcomer') {
+                for (const key of Object.keys(fileUploads) as Array<keyof FileUploads>) {
+                    const file = fileUploads[key];
+                    if (file) {
+                        setUploadProgress(prev => ({ ...prev, [key]: 'uploading' }));
+                        const resized = await resizeImage(file, 1024, 1024, 0.8);
+                        const url = await uploadToImgBB(resized);
+                        uploadedFileUrls[key] = url;
+                        setUploadProgress(prev => ({ ...prev, [key]: 'success' }));
+                    }
+                }
+            }
+
+            // Exclude helper states before submission and construct full address strings
+            const { 
+                hasMedicalCondition, 
+                permLocality, permCity, permState, permPin,
+                presLocality, presCity, presState, presPin,
+                ...dataToSubmit 
+            } = formData;
+
+            // If existing student, clear fields that shouldn't be sent or might contain stale data from newcomer flow
+            if (formData.studentType === 'Existing') {
+                 // Although typescript might see them as part of the object, we just leave them be, 
+                 // the backend or display logic should handle empty/ignored fields.
+                 // We specifically ensure previousStudentId is sent.
+            } else {
+                // If Newcomer, clear previousStudentId
+                dataToSubmit.previousStudentId = '';
+            }
+
+            const permanentAddress = `${permLocality}, ${permCity}, ${permState} - ${permPin}`;
+            const presentAddress = `${presLocality}, ${presCity}, ${presState} - ${presPin}`;
+
             const submissionData = {
-                ...formData,
-                submissionDate: new Date().toISOString(),
-                status: 'pending',
-                paymentStatus: 'pending'
+                ...dataToSubmit,
+                permanentAddress,
+                presentAddress,
+                transferCertificateUrl: uploadedFileUrls.transferCertificate,
+                birthCertificateUrl: uploadedFileUrls.birthCertificate,
+                reportCardUrl: uploadedFileUrls.reportCard,
             };
 
             const newAdmissionId = await onOnlineAdmissionSubmit(submissionData);
-            
             if (newAdmissionId) {
-                // Special handling for Class IX (Entrance Test) vs others (Direct Payment)
                 if (formData.admissionGrade === Grade.IX) {
                     setSubmittedAdmissionId(newAdmissionId);
                     setSubmissionSuccess(true);
@@ -112,18 +217,26 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             grade: formData.admissionGrade, 
                             studentName: formData.studentName, 
                             fatherName: formData.fatherName, 
-                            contact: formData.contactNumber,
-                            studentType: formData.studentType 
+                            contact: formData.contactNumber 
                         } 
                     });
                 }
             } else {
                 throw new Error("Failed to get admission ID from the server.");
             }
-        } catch (err: any) {
-            console.error("Submission error:", err);
-            setError(err.message || "Failed to submit application.");
-            window.scrollTo(0, 0);
+
+        } catch (error: any) {
+            console.error("Submission failed:", error);
+            setSubmissionError("An error occurred during submission. Please check your connection and try again.");
+            setUploadProgress(prev => {
+                const newProgress = {...prev};
+                for (const key in newProgress) {
+                    if (newProgress[key as keyof UploadProgress] === 'uploading') {
+                        newProgress[key as keyof UploadProgress] = 'error';
+                    }
+                }
+                return newProgress;
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -131,246 +244,282 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
     if (submissionSuccess) {
         return (
-            <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md border-t-4 border-emerald-500">
-                    <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Application Submitted!</h2>
-                    <p className="text-slate-600 mb-6">
-                        Your application for <strong>{formData.admissionGrade}</strong> has been received successfully.
-                    </p>
-                    <div className="bg-slate-100 p-4 rounded-md mb-6">
-                        <p className="text-xs text-slate-500 uppercase font-bold">Reference ID</p>
-                        <p className="text-xl font-mono font-bold text-slate-800">{submittedAdmissionId}</p>
+            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+                    <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg text-center">
+                         <CheckCircleIcon className="w-20 h-20 text-emerald-500 mx-auto mb-4"/>
+                         <h1 className="text-3xl font-extrabold text-slate-800">Application Submitted!</h1>
+                         <p className="mt-4 text-lg text-slate-600">
+                             Thank you for applying to {formData.admissionGrade} at Bethel Mission School.
+                         </p>
+                         
+                         {submittedAdmissionId && (
+                            <div className="mt-6 text-center">
+                                <p className="text-slate-600">Your Application Reference ID is:</p>
+                                <p className="font-mono text-lg font-bold bg-slate-100 inline-block px-4 py-2 rounded-lg mt-1 border">{submittedAdmissionId}</p>
+                                <p className="text-sm text-red-600 font-semibold mt-1">Please save this ID to check your application status later.</p>
+                            </div>
+                         )}
+
+                         <div className="mt-8 bg-sky-50 p-6 rounded-lg border border-sky-100 text-left">
+                             <h3 className="font-bold text-sky-800 mb-3 text-lg">Next Steps:</h3>
+                             {formData.admissionGrade === Grade.IX ? (
+                                <div className="text-sky-800 leading-relaxed space-y-2">
+                                    <p>Admission to {formData.admissionGrade} is on a <strong>merit basis</strong>. Your application is now <strong className="bg-amber-200 text-amber-900 px-2 py-1 rounded">Under Review</strong>.</p>
+                                    <ul className="list-disc list-inside pl-4 text-sm">
+                                         <li>Our administration will review your academic records and submitted documents.</li>
+                                         <li>If your application is approved, you will be notified via SMS or call.</li>
+                                         <li>You can check your status anytime using your Application Reference ID.</li>
+                                    </ul>
+                                </div>
+                             ) : (
+                                 <div className="text-sky-800 leading-relaxed space-y-2">
+                                     <p>Your application has been received. To complete your registration for {formData.admissionGrade}, please proceed to the payment page.</p>
+                                     <ul className="list-disc list-inside pl-4 text-sm">
+                                         <li>On the next page, you can select uniforms and other required items.</li>
+                                         <li>Complete the online payment as instructed to finalize your admission.</li>
+                                     </ul>
+                                 </div>
+                             )}
+                         </div>
+                         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                            <Link to="/admissions/status" className="btn btn-secondary">Check Status Now</Link>
+                         </div>
                     </div>
-                    <p className="text-sm text-slate-500">
-                        Please save your Reference ID. You will be contacted via the provided phone number regarding the entrance test/interview.
-                    </p>
-                    <button onClick={() => navigate('/')} className="mt-8 btn btn-primary w-full">Return to Home</button>
                 </div>
             </div>
         );
     }
 
-    const FileInput: React.FC<{ label: string, name: string, value: string }> = ({ label, name, value }) => (
-        <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition-colors relative">
-            {value ? (
-                <div className="relative group">
-                    <img src={value} alt="Preview" className="h-32 mx-auto object-contain rounded" />
-                    <button 
-                        type="button" 
-                        onClick={() => setFormData(prev => ({...prev, [name]: ''}))}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                        <XCircleIcon className="w-4 h-4" />
-                    </button>
-                    <p className="text-xs text-emerald-600 font-semibold mt-2 flex items-center justify-center gap-1">
-                        <CheckCircleIcon className="w-3 h-3" /> Uploaded
-                    </p>
-                </div>
-            ) : (
-                <label className="cursor-pointer block w-full h-full">
-                    {uploadingField === name ? (
-                        <div className="flex flex-col items-center justify-center h-24 text-sky-600">
-                            <SpinnerIcon className="w-6 h-6 mb-2" />
-                            <span className="text-xs">Uploading...</span>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-24 text-slate-500 hover:text-sky-600">
-                            <UploadIcon className="w-8 h-8 mb-2" />
-                            <span className="text-sm font-medium">{label}</span>
-                            <span className="text-xs mt-1 text-slate-400">Click to browse</span>
-                        </div>
-                    )}
-                    <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleFileUpload(e, name)} 
-                        className="hidden" 
-                        disabled={!!uploadingField}
-                    />
-                </label>
-            )}
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-10">
-                    <h1 className="text-4xl font-extrabold text-slate-900">Online Admission</h1>
-                    <p className="mt-2 text-lg text-slate-600">Application Form for Academic Session 2026-2027</p>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
-                    {/* Progress Header */}
-                    <div className="bg-sky-600 p-4 text-white text-center">
-                        <p className="text-sm opacity-90">Please fill in all details correctly. Fields marked with * are mandatory.</p>
+        <div className="bg-slate-50 py-16">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+                <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg">
+                    <div className="text-center mb-8">
+                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-24 mx-auto mb-4" />
+                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
+                        <p className="mt-2 text-lg text-slate-600">Academic Year: {academicYearLabel}</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-10">
-                        {error && (
-                            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm">
-                                <p className="font-bold">Error</p>
-                                <p>{error}</p>
-                            </div>
-                        )}
-
-                        {/* Section 1: Admission Details */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">1. Admission Details</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="form-label">Admission for Class <span className="text-red-500">*</span></label>
-                                    <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1">
-                                        {Object.values(Grade).map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="form-label">Student Type <span className="text-red-500">*</span></label>
-                                    <select name="studentType" value={formData.studentType} onChange={handleChange} className="form-select w-full mt-1">
-                                        <option value="Newcomer">Newcomer (New Admission)</option>
-                                        <option value="Existing">Existing Student (Promotion)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Section 2: Personal Details */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">2. Student Personal Details</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Student's Particulars */}
+                        <fieldset className="space-y-4 border p-4 rounded-lg">
+                            <legend className="text-xl font-bold text-slate-800 px-2">Student's Particulars</legend>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b">
                                 <div className="md:col-span-2">
-                                    <label className="form-label">Student Full Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1" placeholder="As per Birth Certificate" required />
+                                    <label className="block text-sm font-bold text-slate-800">Applicant Type <span className="text-red-600">*</span></label>
+                                    <select 
+                                        name="studentType" 
+                                        value={formData.studentType} 
+                                        onChange={handleChange} 
+                                        className="form-select w-full mt-1 bg-sky-50 border-sky-300"
+                                    >
+                                        <option value="Newcomer">Newcomer (Fresh Admission)</option>
+                                        <option value="Existing">Existing Student (Re-admission)</option>
+                                    </select>
+                                    <p className="text-xs text-slate-500 mt-1">Select "Newcomer" if you are applying to this school for the first time.</p>
+                                </div>
+                                {formData.studentType === 'Existing' && (
+                                    <div className="md:col-span-2 animate-fade-in">
+                                        <label className="block text-sm font-bold text-slate-800">Previous Year Student ID <span className="text-red-600">*</span></label>
+                                        <input 
+                                            type="text" 
+                                            name="previousStudentId" 
+                                            value={formData.previousStudentId} 
+                                            onChange={handleChange} 
+                                            className="form-input w-full mt-1" 
+                                            placeholder="e.g., BMS250101"
+                                            required={formData.studentType === 'Existing'}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className="block text-sm font-bold">Applying for Class <span className="text-red-600">*</span></label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required><option value="" disabled>-- Select Class --</option>{GRADES_LIST.filter(g => g !== Grade.X).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                <div><label className="block text-sm font-bold">Name (in CAPITAL) <span className="text-red-600">*</span></label><input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1 uppercase" required/></div>
+                                <div>
+                                    <CustomDatePicker
+                                        label="Date of Birth"
+                                        name="dateOfBirth"
+                                        value={formData.dateOfBirth}
+                                        onChange={handleChange}
+                                        required
+                                        minYear={2000}
+                                    />
                                 </div>
                                 <div>
-                                    <label className="form-label">Date of Birth <span className="text-red-500">*</span></label>
-                                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required />
+                                    <label className="block text-sm font-bold text-slate-800">Age</label>
+                                    <input type="text" name="age" value={formData.age} readOnly className="form-input w-full mt-1 bg-slate-100 cursor-not-allowed" />
+                                </div>
+                                <div><label className="block text-sm font-bold">Gender <span className="text-red-600">*</span></label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-800">Place of Birth</label>
+                                    <input type="text" name="placeOfBirth" value={formData.placeOfBirth} onChange={handleChange} className="form-input w-full mt-1" />
                                 </div>
                                 <div>
-                                    <label className="form-label">Gender <span className="text-red-500">*</span></label>
-                                    <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1">
-                                        {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                    <label className="block text-sm font-bold text-slate-800">Religion <span className="text-red-600">*</span></label>
+                                    <select name="religion" value={formData.religion} onChange={handleChange} className="form-select w-full mt-1" required>
+                                        <option value="" disabled>-- Select --</option>
+                                        <option value="Christian">Christian</option>
+                                        <option value="Hindu">Hindu</option>
+                                        <option value="Muslim">Muslim</option>
+                                        <option value="Buddhist">Buddhist</option>
+                                        <option value="Sikh">Sikh</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="form-label">Category</label>
-                                    <select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1">
-                                        {CATEGORY_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+                                    <label className="block text-sm font-bold text-slate-800">Category <span className="text-red-600">*</span></label>
+                                    <select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>
+                                        <option value="" disabled>-- Select --</option>
+                                        <option value="General">General</option>
+                                        <option value="SC">SC</option>
+                                        <option value="ST">ST</option>
+                                        <option value="OBC">OBC</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="form-label">Religion</label>
-                                    <input type="text" name="religion" value={formData.religion} onChange={handleChange} className="form-input w-full mt-1" placeholder="Christianity, etc." />
+
+                                <div><label className="block text-sm font-bold">Aadhaar No. (Optional)</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1"/></div>
+                                <div><label className="block text-sm font-bold">PEN No.</label><input type="text" name="penNumber" value={formData.penNumber} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                <div><label className="block text-sm font-bold">Mother Tongue <span className="text-red-600">*</span></label><input type="text" name="motherTongue" value={formData.motherTongue} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div><label className="block text-sm font-bold">CWSN?</label><select name="isCWSN" value={formData.isCWSN} onChange={handleChange} className="form-select w-full mt-1"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                                <div><label className="block text-sm font-bold">Blood Group</label><select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1"><option value="">-- Select --</option>{BLOOD_GROUP_LIST.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                            </div>
+                        </fieldset>
+
+                        {/* Parent/Guardian Details */}
+                         <fieldset className="space-y-4 border p-4 rounded-lg">
+                            <legend className="text-xl font-bold text-slate-800 px-2">Parent's/Guardian's Details</legend>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className="block text-sm font-bold">Father's Name <span className="text-red-600">*</span></label><input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div><label className="block text-sm font-bold">Mother's Name <span className="text-red-600">*</span></label><input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div><label className="block text-sm font-bold">Father's Occupation <span className="text-red-600">*</span></label><input type="text" name="fatherOccupation" value={formData.fatherOccupation} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div><label className="block text-sm font-bold">Mother's Occupation <span className="text-red-600">*</span></label><input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div className="md:col-span-2"><label className="block text-sm font-bold">Parent's Aadhaar No.</label><input type="text" name="parentAadhaar" value={formData.parentAadhaar} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                <div><label className="block text-sm font-bold">Guardian's Name</label><input type="text" name="guardianName" value={formData.guardianName} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                <div><label className="block text-sm font-bold">Relationship with Guardian</label><input type="text" name="guardianRelationship" value={formData.guardianRelationship} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                <div><label className="block text-sm font-bold">Contact No. <span className="text-red-600">*</span></label><input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                            </div>
+                            
+                            {/* Granular Address Fields */}
+                            <div className="md:col-span-2 space-y-4">
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-300 pb-1">Permanent Address</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label className="block text-sm font-bold">Locality/Veng <span className="text-red-600">*</span></label><input type="text" name="permLocality" value={formData.permLocality} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">Town/City <span className="text-red-600">*</span></label><input type="text" name="permCity" value={formData.permCity} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">State <span className="text-red-600">*</span></label><input type="text" name="permState" value={formData.permState} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        <div><label className="block text-sm font-bold">PIN Code <span className="text-red-600">*</span></label><input type="text" name="permPin" value={formData.permPin} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="form-label">Blood Group</label>
-                                    <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="form-select w-full mt-1">
-                                        <option value="">Select...</option>
-                                        {BLOOD_GROUP_LIST.map(b => <option key={b} value={b}>{b}</option>)}
-                                    </select>
+
+                                <div className="md:col-span-2">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="checkbox" checked={sameAsPermanent} onChange={(e) => setSameAsPermanent(e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500" />
+                                        <span className="text-sm font-semibold text-slate-600">Present Address is same as Permanent Address</span>
+                                    </label>
                                 </div>
-                                <div>
-                                    <label className="form-label">Child with Special Needs (CWSN)</label>
-                                    <select name="isCWSN" value={formData.isCWSN} onChange={handleChange} className="form-select w-full mt-1">
+
+                                <div className={`bg-slate-50 p-4 rounded-lg border border-slate-200 ${sameAsPermanent ? 'opacity-70 pointer-events-none' : ''}`}>
+                                    <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-300 pb-1">Present Address (Residential)</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label className="block text-sm font-bold">Locality/Veng <span className="text-red-600">*</span></label><input type="text" name="presLocality" value={formData.presLocality} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">Town/City <span className="text-red-600">*</span></label><input type="text" name="presCity" value={formData.presCity} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">State <span className="text-red-600">*</span></label><input type="text" name="presState" value={formData.presState} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                        <div><label className="block text-sm font-bold">PIN Code <span className="text-red-600">*</span></label><input type="text" name="presPin" value={formData.presPin} onChange={handleChange} className="form-input w-full mt-1" required readOnly={sameAsPermanent}/></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                         </fieldset>
+                         
+                         {/* Academic Details */}
+                         <fieldset className="space-y-4 border p-4 rounded-lg">
+                            <legend className="text-xl font-bold text-slate-800 px-2">Academic & Other Details</legend>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {formData.studentType === 'Newcomer' && (
+                                    <>
+                                    {!isNursery && (
+                                        <>
+                                        <div>
+                                            <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
+                                            <input 
+                                                type="text" 
+                                                name="lastSchoolAttended" 
+                                                value={formData.lastSchoolAttended} 
+                                                onChange={handleChange} 
+                                                className="form-input w-full mt-1" 
+                                                placeholder="Enter name of previous school" 
+                                                required 
+                                            />
+                                        </div>
+                                        <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        </>
+                                    )}
+                                    <div><label className="block text-sm font-bold">General Behaviour <span className="text-red-600">*</span></label><select name="generalBehaviour" value={formData.generalBehaviour} onChange={handleChange} className="form-select w-full mt-1" required><option>Mild</option><option>Normal</option><option>Hyperactive</option></select></div>
+                                    </>
+                                )}
+                                <div><label className="block text-sm font-bold">Siblings in this school</label><input type="number" name="siblingsInSchool" value={formData.siblingsInSchool} onChange={handleChange} className="form-input w-full mt-1" min="0"/></div>
+                                {!isNursery && (
+                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label><textarea name="achievements" value={formData.achievements} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
+                                )}
+                                
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-800">Any known allergies/medical conditions (Yes/No) <span className="text-red-600">*</span></label>
+                                    <select name="hasMedicalCondition" value={formData.hasMedicalCondition} onChange={handleChange} className="form-select w-full mt-1" required>
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
                                     </select>
                                 </div>
-                                <div className="md:col-span-2">
-                                    <label className="form-label">Aadhaar Number</label>
-                                    <input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" placeholder="12-digit Aadhaar Number" />
-                                </div>
+                                {formData.hasMedicalCondition === 'Yes' && (
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-slate-800">Details (if any) <span className="text-red-600">*</span></label>
+                                        <textarea name="healthIssues" value={formData.healthIssues} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
+                                    </div>
+                                )}
                             </div>
-                        </section>
+                        </fieldset>
+                        
+                        {/* Document Upload - Only for Newcomers */}
+                        {formData.studentType === 'Newcomer' && (
+                        <fieldset className="space-y-4 border p-4 rounded-lg">
+                             <legend className="text-xl font-bold text-slate-800 px-2">Document Upload</legend>
+                             <p className="text-sm text-slate-600">
+                                Please upload clear images (JPG, PNG) of the following documents.
+                                {isNursery && <span className="block text-sky-700 font-semibold">For Nursery admission, only the Birth Certificate is required.</span>}
+                             </p>
+                             <FileUploadField label="Birth Certificate" id="birthCertificate" file={fileUploads.birthCertificate} status={uploadProgress.birthCertificate} onFileChange={handleFileChange} required />
+                             <FileUploadField label="Transfer Certificate" id="transferCertificate" file={fileUploads.transferCertificate} status={uploadProgress.transferCertificate} onFileChange={handleFileChange} required={!isNursery} />
+                             <FileUploadField label="Previous Progress Report Card" id="reportCard" file={fileUploads.reportCard} status={uploadProgress.reportCard} onFileChange={handleFileChange} required={!isNursery} />
+                        </fieldset>
+                        )}
 
-                        {/* Section 3: Parent/Guardian Details */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">3. Parent / Guardian Details</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="form-label">Father's Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="form-label">Father's Occupation</label>
-                                    <input type="text" name="fatherOccupation" value={formData.fatherOccupation} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="form-label">Mother's Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="form-label">Mother's Occupation</label>
-                                    <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="form-label">Guardian's Name (If applicable)</label>
-                                    <input type="text" name="guardianName" value={formData.guardianName} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="form-label">Relationship with Guardian</label>
-                                    <input type="text" name="guardianRelationship" value={formData.guardianRelationship} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
+                        {/* Declaration */}
+                         <div className="space-y-4">
+                            <div className="h-48 overflow-y-auto p-4 border border-slate-300 rounded bg-white text-sm text-slate-700 space-y-4 mb-4 shadow-inner">
+                                <h3 className="font-bold text-center text-lg text-slate-800">School Rules & Regulations</h3>
+                                <p>By submitting this form, you agree to abide by all the rules, regulations, and decisions of the school authorities.</p>
+                                <p>This includes policies on academic integrity, attendance, uniform & grooming, discipline, fees, and safety. Misrepresentation of information in this form may lead to cancellation of admission.</p>
+                                <p>Full rules can be viewed on the school website.</p>
                             </div>
-                        </section>
-
-                        {/* Section 4: Contact & Address */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">4. Contact & Address</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="form-label">Mobile Number (WhatsApp) <span className="text-red-500">*</span></label>
-                                    <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required placeholder="+91..." />
-                                </div>
-                                <div>
-                                    <label className="form-label">Email Address</label>
-                                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" placeholder="Optional" />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="form-label">Present Address <span className="text-red-500">*</span></label>
-                                    <textarea name="presentAddress" value={formData.presentAddress} onChange={handleChange} rows={2} className="form-textarea w-full mt-1" required placeholder="House No, Veng, City"></textarea>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="form-label">Permanent Address</label>
-                                    <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} rows={2} className="form-textarea w-full mt-1" placeholder="Same as present address if empty"></textarea>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Section 5: Academic History */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">5. Academic History</h3>
-                            <div className="grid grid-cols-1 gap-6">
-                                <div>
-                                    <label className="form-label">Last School Attended</label>
-                                    <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Section 6: Document Uploads */}
-                        <section>
-                            <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-6">6. Document Uploads</h3>
-                            <p className="text-sm text-slate-500 mb-4">Please upload clear images/scans. Max size 2MB per file.</p>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FileInput label="Passport Photo" name="photographUrl" value={formData.photographUrl} />
-                                <FileInput label="Birth Certificate" name="birthCertificateUrl" value={formData.birthCertificateUrl} />
-                                <FileInput label="Transfer Cert. (TC)" name="transferCertificateUrl" value={formData.transferCertificateUrl} />
-                                <FileInput label="Last Report Card" name="reportCardUrl" value={formData.reportCardUrl} />
-                            </div>
-                        </section>
-
-                        <div className="pt-6 border-t border-slate-200">
-                             <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-6 text-sm text-amber-800">
-                                <p className="font-bold mb-1">Declaration:</p>
-                                <p>I hereby declare that the particulars entered in this form are true and correct to the best of my knowledge and belief.</p>
-                            </div>
-
-                            <button type="submit" disabled={isSubmitting} className="w-full md:w-auto md:min-w-[200px] flex justify-center items-center gap-2 py-4 px-8 border border-transparent rounded-lg shadow-lg text-lg font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500"/>
+                                <span className="font-semibold text-slate-800">I have read, understood, and agree to abide by the School Rules & Regulations.</span>
+                            </label>
+                        </div>
+                        
+                        {submissionError && (
+                             <p className="text-red-600 font-bold text-center">{submissionError}</p>
+                        )}
+                        
+                        <div className="pt-4 flex justify-end">
+                            <button type="submit" disabled={!agreed || isSubmitting} className="btn btn-primary !text-lg !font-bold !px-8 !py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
                                 {isSubmitting ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
+                                {isSubmitting ? 'Submitting...' : 'Submit Application'}
                             </button>
                         </div>
                     </form>
@@ -379,5 +528,4 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         </div>
     );
 };
-
 export default OnlineAdmissionPage;

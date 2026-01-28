@@ -464,36 +464,42 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {formData.studentType === 'Newcomer' && (
                                     <>
-                                    <div>
-                                        <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
-                                        <select 
-                                            value={isOtherSchool ? 'Others' : (formData.lastSchoolAttended === 'Bethel Mission School' ? 'Bethel Mission School' : '')} 
-                                            onChange={handleSchoolSelectChange} 
-                                            className="form-select w-full mt-1"
-                                            required
-                                        >
-                                            <option value="" disabled>-- Select School --</option>
-                                            <option value="Bethel Mission School">Bethel Mission School</option>
-                                            <option value="Others">Others</option>
-                                        </select>
-                                        {isOtherSchool && (
-                                            <input 
-                                                type="text" 
-                                                name="lastSchoolAttended"
-                                                placeholder="Enter Name of School" 
-                                                value={customSchoolInput} 
-                                                onChange={handleCustomSchoolChange} 
-                                                className="form-input w-full mt-2" 
-                                                required 
-                                            />
-                                        )}
-                                    </div>
-                                    <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                    {!isNursery && (
+                                        <>
+                                        <div>
+                                            <label className="block text-sm font-bold">Last School Attended <span className="text-red-600">*</span></label>
+                                            <select 
+                                                value={isOtherSchool ? 'Others' : (formData.lastSchoolAttended === 'Bethel Mission School' ? 'Bethel Mission School' : '')} 
+                                                onChange={handleSchoolSelectChange} 
+                                                className="form-select w-full mt-1"
+                                                required
+                                            >
+                                                <option value="" disabled>-- Select School --</option>
+                                                <option value="Bethel Mission School">Bethel Mission School</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                            {isOtherSchool && (
+                                                <input 
+                                                    type="text" 
+                                                    name="lastSchoolAttended"
+                                                    placeholder="Enter Name of School" 
+                                                    value={customSchoolInput} 
+                                                    onChange={handleCustomSchoolChange} 
+                                                    className="form-input w-full mt-2" 
+                                                    required 
+                                                />
+                                            )}
+                                        </div>
+                                        <div><label className="block text-sm font-bold">Division in which he/she passed <span className="text-red-600">*</span></label><input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required/></div>
+                                        </>
+                                    )}
                                     <div><label className="block text-sm font-bold">General Behaviour <span className="text-red-600">*</span></label><select name="generalBehaviour" value={formData.generalBehaviour} onChange={handleChange} className="form-select w-full mt-1" required><option>Mild</option><option>Normal</option><option>Hyperactive</option></select></div>
                                     </>
                                 )}
                                 <div><label className="block text-sm font-bold">Siblings in this school</label><input type="number" name="siblingsInSchool" value={formData.siblingsInSchool} onChange={handleChange} className="form-input w-full mt-1" min="0"/></div>
-                                <div className="md:col-span-2"><label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label><textarea name="achievements" value={formData.achievements} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
+                                {!isNursery && (
+                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label><textarea name="achievements" value={formData.achievements} onChange={handleChange} className="form-textarea w-full mt-1" rows={2}></textarea></div>
+                                )}
                                 
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-bold text-slate-800">Any known allergies/medical conditions (Yes/No) <span className="text-red-600">*</span></label>

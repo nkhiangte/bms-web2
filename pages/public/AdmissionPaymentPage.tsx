@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, AdmissionSettings, NotificationType } from '../../types';
@@ -20,7 +22,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     schoolConfig,
     admissionConfig = DEFAULT_ADMISSION_SETTINGS 
 }) => {
-    const { admissionId } = useParams<{ admissionId: string }>();
+    const { admissionId } = useParams() as { admissionId: string };
     const location = useLocation();
     
     const { grade, studentName, fatherName, contact, studentType } = location.state || {};
@@ -80,7 +82,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
     const totalCost = useMemo(() => {
         let total = 0;
-        Object.entries(selectedItems).forEach(([itemName, details]) => {
+        Object.entries(selectedItems).forEach(([itemName, details]: [string, { quantity: number; size?: string }]) => {
             const itemDef = allItems.find(i => i.name === itemName);
             if (itemDef) {
                 let price = itemDef.price;
@@ -134,8 +136,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                  paymentAmount: totalCost,
                  paymentTransactionId: transactionId,
                  purchasedItems: Object.entries(selectedItems).map(([name, details]) => {
+                     const d = details as { quantity: number; size?: string };
                      const item = allItems.find(i => i.name === name);
-                     return { name, price: item?.price || 0, ...details };
+                     return { name, price: item?.price || 0, ...d };
                  }),
                  billId
              });

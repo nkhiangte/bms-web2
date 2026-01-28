@@ -12,7 +12,7 @@ interface ErrorBoundaryProps {
 }
 
 // FIX: Explicitly extending React.Component to ensure type definitions for setState and props are correctly picked up.
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,

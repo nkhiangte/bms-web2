@@ -3,7 +3,7 @@ import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon } from '../../components/Icons';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon, UserIcon, UsersIcon, ArrowRightIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
 
@@ -51,6 +51,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 const navigate = useNavigate();
 // FUTURE TODO: Fetch this from config if needed
 const academicYearLabel = "2026-27"; 
+
+const [step, setStep] = useState(1); // 1 = Selection, 2 = Form
 
 const initialFormState = {
 studentType: 'Newcomer' as 'Newcomer' | 'Existing',
@@ -149,15 +151,19 @@ const handleFileChange = (id: keyof FileUploads, file: File | null) => {
 setFileUploads(prev => ({ ...prev, [id]: file }));
 };
 
+const handleStepOneNext = () => {
+    if (formData.studentType === 'Existing' && !formData.previousStudentId.trim()) {
+        alert("Please enter your Previous Student ID.");
+        return;
+    }
+    setStep(2);
+    window.scrollTo(0,0);
+};
+
 const handleSubmit = async (e: FormEvent) => {
 e.preventDefault();
 if (!agreed) {
 alert("You must agree to the School Rules & Regulations before submitting.");
-return;
-}
-
-if (formData.studentType === 'Existing' && !formData.previousStudentId) {
-alert("Please enter your Previous Year Student ID.");
 return;
 }
 
@@ -203,16 +209,6 @@ permLocality, permCity, permState, permPin,
 presLocality, presCity, presState, presPin,
 ...dataToSubmit 
 } = formData;
-
-// If existing student, clear fields that shouldn't be sent or might contain stale data from newcomer flow
-if (formData.studentType === 'Existing') {
-// Although typescript might see them as part of the object, we just leave them be, 
-// the backend or display logic should handle empty/ignored fields.
-// We specifically ensure previousStudentId is sent.
-} else {
-// If Newcomer, clear previousStudentId
-dataToSubmit.previousStudentId = '';
-}
 
 const permanentAddress = `${permLocality}, ${permCity}, ${permState} - ${permPin}`;
 const presentAddress = `${presLocality}, ${presCity}, ${presState} - ${presPin}`;
@@ -312,6 +308,78 @@ Thank you for applying to {formData.admissionGrade} at Bethel Mission School.
 );
 }
 
+// STEP 1: Applicant Type Selection
+if (step === 1) {
+    return (
+        <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+            <div className="container mx-auto px-4 max-w-2xl">
+                <div className="bg-white p-8 rounded-xl shadow-xl border border-slate-200 text-center">
+                     <div className="mb-6">
+                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-20 mx-auto mb-3" />
+                        <h1 className="text-2xl font-bold text-slate-800">Online Admission Portal</h1>
+                        <p className="text-slate-600">Session {academicYearLabel}</p>
+                    </div>
+
+                    <h2 className="text-xl font-bold text-slate-700 mb-6">Select Applicant Type</h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div 
+                            onClick={() => setFormData(prev => ({ ...prev, studentType: 'Newcomer' }))}
+                            className={`p-6 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md flex flex-col items-center gap-3 ${formData.studentType === 'Newcomer' ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:border-sky-200'}`}
+                        >
+                            <div className={`p-3 rounded-full ${formData.studentType === 'Newcomer' ? 'bg-sky-200 text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                                <UserIcon className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className={`font-bold ${formData.studentType === 'Newcomer' ? 'text-sky-800' : 'text-slate-700'}`}>New Admission</h3>
+                                <p className="text-sm text-slate-500 mt-1">Applying for the first time</p>
+                            </div>
+                        </div>
+
+                        <div 
+                            onClick={() => setFormData(prev => ({ ...prev, studentType: 'Existing' }))}
+                            className={`p-6 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md flex flex-col items-center gap-3 ${formData.studentType === 'Existing' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200'}`}
+                        >
+                             <div className={`p-3 rounded-full ${formData.studentType === 'Existing' ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                <UsersIcon className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className={`font-bold ${formData.studentType === 'Existing' ? 'text-emerald-800' : 'text-slate-700'}`}>Existing Student</h3>
+                                <p className="text-sm text-slate-500 mt-1">Re-admission / Promotion</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {formData.studentType === 'Existing' && (
+                         <div className="mb-8 max-w-sm mx-auto animate-fade-in text-left">
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Enter Previous Student ID <span className="text-red-600">*</span></label>
+                            <input 
+                                type="text" 
+                                name="previousStudentId" 
+                                value={formData.previousStudentId} 
+                                onChange={handleChange} 
+                                className="form-input w-full border-slate-300" 
+                                placeholder="e.g., BMS250101"
+                                autoFocus
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Found on your report card or ID card.</p>
+                        </div>
+                    )}
+
+                    <button 
+                        onClick={handleStepOneNext}
+                        className="btn btn-primary text-lg px-8 py-3 w-full sm:w-auto"
+                        disabled={formData.studentType === 'Existing' && !formData.previousStudentId}
+                    >
+                        Proceed to Application <ArrowRightIcon className="w-5 h-5 inline ml-2"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// STEP 2: Main Form
 return (
 <div className="bg-slate-50 py-16">
 <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
@@ -320,42 +388,15 @@ return (
 <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-24 mx-auto mb-4" />
 <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
 <p className="mt-2 text-lg text-slate-600">Academic Year: {academicYearLabel}</p>
+<div className="mt-4 inline-block bg-slate-100 px-3 py-1 rounded-full text-sm font-semibold text-slate-600">
+    Type: {formData.studentType} {formData.studentType === 'Existing' && `(ID: ${formData.previousStudentId})`}
+</div>
 </div>
 
 <form onSubmit={handleSubmit} className="space-y-8">
 {/* Student's Particulars */}
 <fieldset className="space-y-4 border p-4 rounded-lg">
 <legend className="text-xl font-bold text-slate-800 px-2">Student's Particulars</legend>
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b">
-<div className="md:col-span-2">
-<label className="block text-sm font-bold text-slate-800">Applicant Type <span className="text-red-600">*</span></label>
-<select 
-name="studentType" 
-value={formData.studentType} 
-onChange={handleChange} 
-className="form-select w-full mt-1 bg-sky-50 border-sky-300"
->
-<option value="Newcomer">Newcomer (Fresh Admission)</option>
-<option value="Existing">Existing Student (Re-admission)</option>
-</select>
-<p className="text-xs text-slate-500 mt-1">Select "Newcomer" if you are applying to this school for the first time.</p>
-</div>
-{formData.studentType === 'Existing' && (
-<div className="md:col-span-2 animate-fade-in">
-<label className="block text-sm font-bold text-slate-800">Previous Year Student ID <span className="text-red-600">*</span></label>
-<input 
-type="text" 
-name="previousStudentId" 
-value={formData.previousStudentId} 
-onChange={handleChange} 
-className="form-input w-full mt-1" 
-placeholder="e.g., BMS250101"
-required={formData.studentType === 'Existing'}
-/>
-</div>
-)}
-</div>
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div><label className="block text-sm font-bold">Applying for Class <span className="text-red-600">*</span></label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required><option value="" disabled>-- Select Class --</option>{GRADES_LIST.filter(g => g !== Grade.X).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
@@ -575,7 +616,8 @@ Please upload clear images (JPG, PNG) of the following documents.
 <p className="text-red-600 font-bold text-center">{submissionError}</p>
 )}
 
-<div className="pt-4 flex justify-end">
+<div className="pt-4 flex justify-between">
+<button type="button" onClick={() => setStep(1)} className="btn btn-secondary !px-6 !py-3">Back</button>
 <button type="submit" disabled={!agreed || isSubmitting} className="btn btn-primary !text-lg !font-bold !px-8 !py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
 {isSubmitting ? <SpinnerIcon className="w-6 h-6"/> : null}
 {isSubmitting ? 'Submitting...' : 'Submit Application'}

@@ -1,11 +1,12 @@
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { OnlineAdmission, Grade, Gender, BloodGroup } from '../../types';
+import { OnlineAdmission, Grade, Gender, BloodGroup, Student, Category } from '../../types';
 import { GRADES_LIST, BLOOD_GROUP_LIST, GENDER_LIST } from '../../constants';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, UploadIcon, UserIcon, UsersIcon, ArrowRightIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
+import { db } from '../../firebaseConfig';
 
 interface OnlineAdmissionPageProps {
 onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>) => Promise<string | null>;
@@ -66,8 +67,8 @@ generalBehaviour: 'Normal' as 'Mild' | 'Normal' | 'Hyperactive', siblingsInSchoo
 hasMedicalCondition: 'No',
 
 // Granular Address Fields
-permLocality: '', permCity: '', permState: 'Mizoram', permPin: '',
-presLocality: '', presCity: '', presState: 'Mizoram', presPin: '',
+permLocality: '', permCity: 'Champhai', permState: 'Mizoram', permPin: '796321',
+presLocality: '', presCity: 'Champhai', presState: 'Mizoram', presPin: '796321',
 };
 
 const [formData, setFormData] = useState(initialFormState);
@@ -77,6 +78,7 @@ const [fileUploads, setFileUploads] = useState<FileUploads>({ transferCertificat
 const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ transferCertificate: 'idle', birthCertificate: 'idle', reportCard: 'idle' });
 const [agreed, setAgreed] = useState(false);
 const [isSubmitting, setIsSubmitting] = useState(false);
+const [isFetchingData, setIsFetchingData] = useState(false);
 const [submissionError, setSubmissionError] = useState<string | null>(null);
 const [submissionSuccess, setSubmissionSuccess] = useState(false);
 const [submittedAdmissionId, setSubmittedAdmissionId] = useState<string | null>(null);
@@ -151,13 +153,74 @@ const handleFileChange = (id: keyof FileUploads, file: File | null) => {
 setFileUploads(prev => ({ ...prev, [id]: file }));
 };
 
-const handleStepOneNext = () => {
-    if (formData.studentType === 'Existing' && !formData.previousStudentId.trim()) {
-        alert("Please enter your Previous Student ID.");
-        return;
+const handleStepOneNext = async () => {
+    if (formData.studentType === 'Existing') {
+        const searchId = formData.previousStudentId.trim();
+        if (!searchId) {
+            alert("Please enter your Previous Student ID.");
+            return;
+        }
+
+        setIsFetchingData(true);
+        try {
+            // Search for student in Firestore
+            const snapshot = await db.collection('students').where('studentId', '==', searchId).limit(1).get();
+            
+            if (!snapshot.empty) {
+                const studentData = snapshot.docs[0].data() as Student;
+                
+                // Map existing data to form
+                setFormData(prev => ({
+                    ...prev,
+                    studentName: studentData.name || '',
+                    dateOfBirth: studentData.dateOfBirth || '',
+                    gender: (studentData.gender as any) || prev.gender,
+                    category: (studentData.category as any) || prev.category,
+                    religion: studentData.religion || prev.religion,
+                    studentAadhaar: studentData.aadhaarNumber || '',
+                    penNumber: studentData.pen || '',
+                    bloodGroup: (studentData.bloodGroup as any) || undefined,
+                    isCWSN: (studentData.cwsn === 'Yes' || studentData.cwsn === 'No') ? studentData.cwsn : 'No',
+                    
+                    fatherName: studentData.fatherName || '',
+                    fatherOccupation: studentData.fatherOccupation || '',
+                    fatherAadhaar: studentData.fatherAadhaar || '',
+                    motherName: studentData.motherName || '',
+                    motherOccupation: studentData.motherOccupation || '',
+                    motherAadhaar: studentData.motherAadhaar || '',
+                    guardianName: studentData.guardianName || '',
+                    guardianRelationship: studentData.guardianRelationship || '',
+                    
+                    contactNumber: studentData.contact || '',
+                    
+                    // Put the full address string into the Locality field for now
+                    permLocality: studentData.address || '',
+                    presLocality: studentData.address || '',
+                    
+                    // Since they are existing, last school is this school
+                    lastSchoolAttended: 'Bethel Mission School',
+                    
+                    healthIssues: studentData.healthConditions || '',
+                    achievements: studentData.achievements || '',
+                    hasMedicalCondition: studentData.healthConditions ? 'Yes' : 'No'
+                }));
+                
+                setStep(2);
+                window.scrollTo(0,0);
+            } else {
+                alert("Student ID not found in our records. Please check and try again.");
+            }
+        } catch (error) {
+            console.error("Error fetching student data:", error);
+            alert("An error occurred while fetching student data. Please try again.");
+        } finally {
+            setIsFetchingData(false);
+        }
+    } else {
+        // Newcomer
+        setStep(2);
+        window.scrollTo(0,0);
     }
-    setStep(2);
-    window.scrollTo(0,0);
 };
 
 const handleSubmit = async (e: FormEvent) => {
@@ -369,9 +432,10 @@ if (step === 1) {
                     <button 
                         onClick={handleStepOneNext}
                         className="btn btn-primary text-lg px-8 py-3 w-full sm:w-auto"
-                        disabled={formData.studentType === 'Existing' && !formData.previousStudentId}
+                        disabled={(formData.studentType === 'Existing' && !formData.previousStudentId) || isFetchingData}
                     >
-                        Proceed to Application <ArrowRightIcon className="w-5 h-5 inline ml-2"/>
+                        {isFetchingData ? <SpinnerIcon className="w-6 h-6 mr-2" /> : <ArrowRightIcon className="w-5 h-5 inline ml-2"/>}
+                        {isFetchingData ? 'Fetching Data...' : 'Proceed to Application'}
                     </button>
                 </div>
             </div>

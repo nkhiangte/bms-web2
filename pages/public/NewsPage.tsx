@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { NewsItem } from '../../types';
 import { formatDateForNews } from '../../utils';
@@ -10,6 +11,46 @@ const NewsPage: React.FC<NewsPageProps> = ({ news }) => {
     const sortedNews = useMemo(() => {
         return [...news].sort((a, b) => b.date.localeCompare(a.date));
     }, [news]);
+
+    // Helper to render text with links
+    const renderContentWithLinks = (text: string) => {
+        // Regex to find [text](url) patterns
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = linkRegex.exec(text)) !== null) {
+            // Push text before the link
+            if (match.index > lastIndex) {
+                parts.push(text.substring(lastIndex, match.index));
+            }
+            
+            // Push the link component
+            const linkText = match[1];
+            const linkUrl = match[2];
+            parts.push(
+                <a 
+                    key={match.index} 
+                    href={linkUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-sky-600 hover:text-sky-800 underline font-medium break-all"
+                >
+                    {linkText}
+                </a>
+            );
+
+            lastIndex = linkRegex.lastIndex;
+        }
+
+        // Push remaining text
+        if (lastIndex < text.length) {
+            parts.push(text.substring(lastIndex));
+        }
+
+        return parts;
+    };
 
     return (
         <div className="bg-white py-16">
@@ -31,7 +72,9 @@ const NewsPage: React.FC<NewsPageProps> = ({ news }) => {
                                 )}
                                 <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
                                 <h2 className="mt-2 text-2xl font-bold text-slate-800">{item.title}</h2>
-                                <p className="mt-3 text-slate-600 whitespace-pre-wrap">{item.content}</p>
+                                <p className="mt-3 text-slate-600 whitespace-pre-wrap">
+                                    {renderContentWithLinks(item.content)}
+                                </p>
                             </div>
                         ))
                     ) : (

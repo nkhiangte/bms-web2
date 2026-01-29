@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { NewsItem } from '../types';
-import { PlusIcon, XIcon, SpinnerIcon } from './Icons';
+import { PlusIcon, XIcon, SpinnerIcon, LinkIcon } from './Icons';
 import { uploadToImgBB, resizeImage } from '../utils';
 
 interface NewsFormModalProps {
@@ -23,12 +23,22 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
 
     const [formData, setFormData] = useState(getInitialFormData());
     const [isUploading, setIsUploading] = useState(false);
+    
+    // Link State
+    const [isLinkInputVisible, setIsLinkInputVisible] = useState(false);
+    const [linkText, setLinkText] = useState('');
+    const [linkUrl, setLinkUrl] = useState('');
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const contentRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             const initialData = item ? { ...item, imageUrls: item.imageUrls || [] } : getInitialFormData();
             setFormData(initialData);
+            setIsLinkInputVisible(false);
+            setLinkText('');
+            setLinkUrl('');
         }
     }, [item, isOpen]);
 
@@ -67,6 +77,35 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
         }));
     };
 
+    const handleInsertLink = () => {
+        if (!linkText || !linkUrl) {
+            alert("Please enter both link text and URL.");
+            return;
+        }
+
+        const linkMarkdown = `[${linkText}](${linkUrl})`;
+        const currentContent = formData.content;
+        
+        // If textarea ref is available, insert at cursor position
+        if (contentRef.current) {
+            const startPos = contentRef.current.selectionStart;
+            const endPos = contentRef.current.selectionEnd;
+            
+            const newContent = 
+                currentContent.substring(0, startPos) + 
+                linkMarkdown + 
+                currentContent.substring(endPos);
+            
+            setFormData(prev => ({ ...prev, content: newContent }));
+        } else {
+            // Fallback: append to end
+            setFormData(prev => ({ ...prev, content: currentContent + (currentContent ? '\n' : '') + linkMarkdown }));
+        }
+
+        setLinkText('');
+        setLinkUrl('');
+        setIsLinkInputVisible(false);
+    };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -144,16 +183,58 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="content" className="block text-sm font-bold text-slate-800">Content</label>
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="content" className="block text-sm font-bold text-slate-800">Content</label>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsLinkInputVisible(!isLinkInputVisible)}
+                                    className="text-xs flex items-center gap-1 text-sky-600 hover:text-sky-800 font-semibold"
+                                >
+                                    <LinkIcon className="w-3 h-3"/> {isLinkInputVisible ? 'Cancel Link' : 'Insert Link'}
+                                </button>
+                            </div>
+                            
+                            {isLinkInputVisible && (
+                                <div className="mb-2 p-3 bg-slate-50 border rounded-md flex flex-col sm:flex-row gap-2 items-end sm:items-center">
+                                    <div className="flex-grow w-full">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Link Text (e.g. Click Here)" 
+                                            value={linkText}
+                                            onChange={(e) => setLinkText(e.target.value)}
+                                            className="form-input w-full text-sm"
+                                        />
+                                    </div>
+                                    <div className="flex-grow w-full">
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL (e.g. https://google.com)" 
+                                            value={linkUrl}
+                                            onChange={(e) => setLinkUrl(e.target.value)}
+                                            className="form-input w-full text-sm"
+                                        />
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        onClick={handleInsertLink}
+                                        className="btn btn-primary text-xs py-2 px-3 whitespace-nowrap"
+                                    >
+                                        Insert
+                                    </button>
+                                </div>
+                            )}
+
                             <textarea
                                 id="content"
                                 name="content"
+                                ref={contentRef}
                                 value={formData.content}
                                 onChange={handleChange}
                                 rows={8}
                                 className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
                                 required
                             />
+                            <p className="text-xs text-slate-500 mt-1">Use [Link Text](URL) to add manual links.</p>
                         </div>
                     </div>
                     <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl border-t">

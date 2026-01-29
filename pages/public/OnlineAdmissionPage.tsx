@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, FormEvent, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student } from '../../types';
@@ -229,7 +231,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 status: 'pending'
             } as any);
 
-            navigate('/admissions/status', { state: { submissionId } });
+            // Pass studentType explicitly in state
+            navigate('/admissions/status', { state: { submissionId, studentType: formData.studentType } });
             alert(`Application Submitted Successfully! Your Reference ID is: ${submissionId}`);
         } catch (error) {
             console.error("Submission error:", error);

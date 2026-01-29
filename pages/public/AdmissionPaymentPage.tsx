@@ -1,11 +1,13 @@
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType, AdmissionSettings } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
-import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
+import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES, ADMISSION_FEE_STRUCTURE } from '../../constants';
 
 interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
@@ -23,7 +25,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const { admissionId } = useParams<{ admissionId: string }>();
     const location = useLocation();
     
-    const { grade, studentName, fatherName, contact } = location.state || {};
+    // studentType is now expected from location state (default to Newcomer if missing)
+    const { grade, studentName, fatherName, contact, studentType = 'Newcomer' } = location.state || {};
 
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
@@ -37,12 +40,22 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
     const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set';
 
+    // Get the correct fee structure based on student type
+    const feeStructure = studentType === 'Existing' ? ADMISSION_FEE_STRUCTURE.existingStudent : ADMISSION_FEE_STRUCTURE.newStudent;
+    
+    // Calculate Base Fee Total from the structured data
+    const baseFeeTotal = useMemo(() => {
+        const oneTimeTotal = feeStructure.oneTime.reduce((sum, item) => sum + item.amount, 0);
+        const annualTotal = feeStructure.annual.reduce((sum, item) => sum + item.amount, 0);
+        return oneTimeTotal + annualTotal;
+    }, [feeStructure]);
+
     const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
 
     const allItems = useMemo(() => {
+        // Start with optional/merchandise items. The main Admission Fees are now handled separately.
         const items = [
-            { name: 'Admission Fee', price: admissionConfig.admissionFee, mandatory: true, checkable: false, hasSize: false, sizes: undefined as string[] | undefined, priceBySize: undefined as Record<string, number> | undefined },
-            { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined, priceBySize: undefined },
+            { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined as string[] | undefined, priceBySize: undefined as Record<string, number> | undefined },
         ];
 
         admissionConfig.items.forEach(itemConfig => {
@@ -70,7 +83,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         setSelectedItems(mandatory);
     }, [allItems]);
 
-    const totalCost = useMemo(() => {
+    const merchandiseTotal = useMemo(() => {
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             if (!item) return total;
@@ -84,6 +97,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             return total + (effectivePrice * details.quantity);
         }, 0);
     }, [selectedItems, allItems]);
+    
+    // Grand Total is now Base Fee + Merchandise
+    const grandTotal = baseFeeTotal + merchandiseTotal;
 
     const handleItemToggle = (itemName: string, isChecked: boolean) => {
         setSelectedItems(prev => {
@@ -145,7 +161,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     finalPrice = item.priceBySize[details.size];
                 }
 
-                // FIX: Ensure size is null if undefined, as Firestore doesn't support undefined
                 return { 
                     name, 
                     price: finalPrice, 
@@ -153,9 +168,22 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     size: details.size || null 
                 };
             });
+            
+            // Add the base fee breakdown as purchased items for record keeping
+            // Note: This is simplified. In a real DB, you might want to store structure separately.
+            // Here we aggregate them into a single "Admission & Annual Charges" item or list them.
+            // Let's list them all to be explicit in the DB record.
+            [...feeStructure.oneTime, ...feeStructure.annual].forEach(fee => {
+                purchasedItems.push({
+                    name: fee.name,
+                    price: fee.amount,
+                    quantity: 1,
+                    size: null
+                });
+            });
 
             const success = await onUpdateAdmissionPayment(admissionId!, {
-                paymentAmount: totalCost,
+                paymentAmount: grandTotal,
                 purchasedItems,
                 paymentScreenshotUrl: screenshotUrl,
                 paymentTransactionId: transactionId,
@@ -209,34 +237,53 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.text(`Contact: ${contact || 'N/A'}`, pageWidth / 2 + 10, 59);
         
         let yPos = 70;
-        doc.setFillColor(240, 240, 240);
-        doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.text("Item Description", 20, yPos);
-        doc.text("Size", 110, yPos);
-        doc.text("Price", 140, yPos);
-        doc.text("Amount", 180, yPos);
         
-        yPos += 8;
+        // Fee Structure Section in PDF
+        doc.setFont("helvetica", "bold");
+        doc.text("A. ONE-TIME CHARGES", 15, yPos);
+        yPos += 6;
         doc.setFont("helvetica", "normal");
-
-        const items = Object.entries(selectedItems) as [string, { quantity: number; size?: string }][];
-        items.forEach(([name, details]) => {
-            const itemDef = allItems.find(i => i.name === name);
-            let price = itemDef ? itemDef.price : 0;
-            
-            if (itemDef?.hasSize && details.size && itemDef.priceBySize && itemDef.priceBySize[details.size]) {
-                price = itemDef.priceBySize[details.size];
-            }
-
-            const amount = price * details.quantity;
-
-            doc.text(name, 20, yPos);
-            doc.text(details.size || '-', 110, yPos);
-            doc.text(`${price}`, 140, yPos);
-            doc.text(`${amount}`, 180, yPos);
-            yPos += 7;
+        feeStructure.oneTime.forEach(item => {
+            doc.text(item.name, 20, yPos);
+            doc.text(`${item.amount}`, 180, yPos);
+            yPos += 6;
         });
+
+        yPos += 4;
+        doc.setFont("helvetica", "bold");
+        doc.text("B. ANNUAL / PERIODIC CHARGES", 15, yPos);
+        yPos += 6;
+        doc.setFont("helvetica", "normal");
+        feeStructure.annual.forEach(item => {
+            doc.text(item.name, 20, yPos);
+            doc.text(`${item.amount}`, 180, yPos);
+            yPos += 6;
+        });
+        
+        // Merchandise Section in PDF
+        if (Object.keys(selectedItems).length > 0) {
+            yPos += 4;
+            doc.setFont("helvetica", "bold");
+            doc.text("C. ADDITIONAL ITEMS", 15, yPos);
+            yPos += 6;
+            doc.setFont("helvetica", "normal");
+            
+            const items = Object.entries(selectedItems) as [string, { quantity: number; size?: string }][];
+            items.forEach(([name, details]) => {
+                const itemDef = allItems.find(i => i.name === name);
+                let price = itemDef ? itemDef.price : 0;
+                
+                if (itemDef?.hasSize && details.size && itemDef.priceBySize && itemDef.priceBySize[details.size]) {
+                    price = itemDef.priceBySize[details.size];
+                }
+
+                const amount = price * details.quantity;
+
+                doc.text(`${name} ${details.size ? `(${details.size})` : ''}`, 20, yPos);
+                doc.text(`${amount}`, 180, yPos);
+                yPos += 6;
+            });
+        }
 
         doc.line(15, yPos, pageWidth - 15, yPos);
         yPos += 8;
@@ -244,7 +291,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text("Grand Total", 140, yPos);
-        doc.text(`Rs. ${totalCost}`, 180, yPos);
+        doc.text(`Rs. ${grandTotal}`, 180, yPos);
 
         yPos += 15;
         doc.setFontSize(10);
@@ -288,7 +335,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                         </div>
                         <div className="flex justify-between text-sm mb-4">
                             <span className="text-slate-600">Total Amount:</span>
-                            <span className="font-bold text-emerald-600">₹{totalCost}</span>
+                            <span className="font-bold text-emerald-600">₹{grandTotal}</span>
                         </div>
                         <div className="bg-sky-50 p-3 rounded text-sm text-sky-800 mb-6">
                             <strong>Note:</strong> Please download this receipt and show it at the school store to collect your Uniforms, Books, and Diary.
@@ -318,40 +365,103 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     return (
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4">
-                <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-5xl mx-auto">
+                <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-6xl mx-auto">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment (Step 2 of 2)</h1>
-                        <p className="mt-2 text-lg text-slate-600">Select items and complete the payment to finalize your application for <span className="font-bold">{studentName}</span>.</p>
+                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
+                        <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{studentName}</span> ({studentType})</p>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-4">
-                            {allItems.map(item => {
-                                const currentSize = selectedItems[item.name]?.size;
-                                const displayPrice = getItemPriceDisplay(item, currentSize);
-                                
-                                return (
-                                <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : ''}`}>
-                                    <div className="flex items-center gap-4">
-                                        {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
-                                        <div>
-                                            <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
-                                            <p className="text-sm text-slate-600">₹{displayPrice}</p>
-                                        </div>
-                                    </div>
-                                    {item.hasSize && selectedItems[item.name] && (
-                                        <select value={selectedItems[item.name]?.size} onChange={e => handleSizeChange(item.name, e.target.value)} className="form-select text-sm py-1">
-                                            {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
-                                        </select>
-                                    )}
+                        <div className="lg:col-span-2 space-y-6">
+                            
+                            {/* Detailed Fee Structure Table */}
+                            <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+                                <div className="bg-slate-100 p-3 border-b">
+                                    <h2 className="font-bold text-slate-800">Fee Structure Breakdown</h2>
                                 </div>
-                            )})}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-slate-50 text-slate-600 border-b">
+                                                <th className="py-2 px-4 text-left w-12">S.No</th>
+                                                <th className="py-2 px-4 text-left">Description of Fee Head</th>
+                                                <th className="py-2 px-4 text-right">Amount (₹)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-slate-800">
+                                            {/* ONE-TIME CHARGES */}
+                                            <tr className="bg-slate-50/50 font-bold border-b">
+                                                <td className="py-2 px-4">A</td>
+                                                <td className="py-2 px-4" colSpan={2}>ONE-TIME CHARGES ({studentType === 'Newcomer' ? 'New Admissions Only' : 'Existing Student'})</td>
+                                            </tr>
+                                            {feeStructure.oneTime.map((fee, idx) => (
+                                                <tr key={fee.id} className="border-b">
+                                                    <td className="py-2 px-4">{idx + 1}</td>
+                                                    <td className="py-2 px-4">{fee.name}</td>
+                                                    <td className="py-2 px-4 text-right">{fee.amount}</td>
+                                                </tr>
+                                            ))}
+
+                                            {/* ANNUAL CHARGES */}
+                                            <tr className="bg-slate-50/50 font-bold border-b">
+                                                <td className="py-2 px-4">B</td>
+                                                <td className="py-2 px-4" colSpan={2}>ANNUAL / PERIODIC CHARGES</td>
+                                            </tr>
+                                            {feeStructure.annual.map((fee, idx) => (
+                                                <tr key={fee.id} className="border-b">
+                                                    <td className="py-2 px-4">{idx + 1}</td>
+                                                    <td className="py-2 px-4">{fee.name}</td>
+                                                    <td className="py-2 px-4 text-right">{fee.amount}</td>
+                                                </tr>
+                                            ))}
+                                            
+                                            {/* TOTAL */}
+                                            <tr className="bg-slate-200 font-bold">
+                                                <td className="py-3 px-4"></td>
+                                                <td className="py-3 px-4">TOTAL PAYABLE AMOUNT (FEES)</td>
+                                                <td className="py-3 px-4 text-right">{baseFeeTotal}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Additional Items Section */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Additional Items (Optional)</h3>
+                                {allItems.map(item => {
+                                    const currentSize = selectedItems[item.name]?.size;
+                                    const displayPrice = getItemPriceDisplay(item, currentSize);
+                                    
+                                    return (
+                                    <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : 'hover:bg-slate-50 transition'}`}>
+                                        <div className="flex items-center gap-4">
+                                            {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
+                                            <div>
+                                                <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
+                                                <p className="text-sm text-slate-600">₹{displayPrice}</p>
+                                            </div>
+                                        </div>
+                                        {item.hasSize && selectedItems[item.name] && (
+                                            <select value={selectedItems[item.name]?.size} onChange={e => handleSizeChange(item.name, e.target.value)} className="form-select text-sm py-1">
+                                                {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
+                                            </select>
+                                        )}
+                                    </div>
+                                )})}
+                            </div>
                         </div>
+
                         <div className="lg:col-span-1">
                             <div className="bg-slate-50 p-6 rounded-lg border sticky top-28 space-y-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-800 mb-4">Cart Summary</h3>
+                                    <h3 className="text-xl font-bold text-slate-800 mb-4">Payment Summary</h3>
                                     <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between font-medium">
+                                            <span className="text-slate-700">Base Admission Fees</span>
+                                            <span className="text-slate-900">₹{baseFeeTotal}</span>
+                                        </div>
+                                        {Object.keys(selectedItems).length > 0 && <hr className="border-slate-300 my-2" />}
                                         {(Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([name, details]) => {
                                             const item = allItems.find(i => i.name === name);
                                             let effectivePrice = item ? item.price : 0;
@@ -361,15 +471,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
                                             return (
                                                 <div key={name} className="flex justify-between">
-                                                    <span className="text-slate-600">{name} {details.size && `(Size: ${details.size})`}</span>
+                                                    <span className="text-slate-600">{name} {details.size && `(${details.size})`}</span>
                                                     <span className="font-semibold">₹{effectivePrice}</span>
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                    <div className="mt-4 pt-4 border-t flex justify-between font-bold text-lg">
-                                        <span>Total</span>
-                                        <span>₹{totalCost}</span>
+                                    <div className="mt-4 pt-4 border-t border-slate-300 flex justify-between font-extrabold text-lg text-slate-900">
+                                        <span>Grand Total</span>
+                                        <span className="text-emerald-700">₹{grandTotal}</span>
                                     </div>
                                 </div>
                                 
@@ -379,7 +489,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                      <div className="flex justify-center">
                                         <img src={qrCodeUrl} alt="UPI QR Code" className="w-48 h-48 border p-1 bg-white shadow-sm"/>
                                      </div>
-                                     <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700">{upiId}</span></p>
+                                     <p className="text-center font-semibold mt-2">UPI ID: <span className="text-sky-700 font-mono">{upiId}</span></p>
                                 </div>
                                 
                                 <div>
@@ -400,7 +510,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                 
                                 <button onClick={handleSubmit} disabled={isProcessing || !paymentScreenshot || !transactionId} className="w-full btn btn-primary !py-3 !text-base mt-2">
                                     {isProcessing ? <SpinnerIcon className="w-6 h-6"/> : null}
-                                    {isProcessing ? 'Submitting...' : 'Submit Payment & Finalize Application'}
+                                    {isProcessing ? 'Submitting...' : 'Submit Payment & Finalize'}
                                 </button>
                             </div>
                         </div>

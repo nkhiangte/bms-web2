@@ -1,6 +1,4 @@
 
-
-
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -193,6 +191,44 @@ export const FEE_SET_GRADES: Record<string, Grade[]> = {
     set1: [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II],
     set2: [Grade.III, Grade.IV, Grade.V, Grade.VI],
     set3: [Grade.VII, Grade.VIII, Grade.IX, Grade.X],
+};
+
+// --- NEW: Admission Fee Detailed Structure (For Payment Page) ---
+export const ADMISSION_FEE_STRUCTURE = {
+    newStudent: {
+        oneTime: [
+            { id: 'reg', name: 'Registration', amount: 100 },
+            { id: 'adm', name: 'Admission Fee', amount: 3000 },
+            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000 },
+        ],
+        annual: [
+            { id: 'dev', name: 'Annual Development Fund', amount: 100 },
+            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000 },
+            { id: 'exam', name: 'Term Examination Fee', amount: 1000 },
+            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100 },
+            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100 },
+            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100 },
+            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150 },
+            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100 },
+        ]
+    },
+    existingStudent: {
+        oneTime: [
+            { id: 'reg', name: 'Registration', amount: 100 },
+            { id: 'adm', name: 'Admission Fee', amount: 2000 },
+            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000 },
+        ],
+        annual: [
+            { id: 'dev', name: 'Annual Development Fund', amount: 100 },
+            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000 },
+            { id: 'exam', name: 'Term Examination Fee', amount: 1000 },
+            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100 },
+            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100 },
+            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100 },
+            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150 },
+            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100 },
+        ]
+    }
 };
 
 export const INVENTORY_CATEGORY_LIST: InventoryCategory[] = Object.values(InventoryCategory);

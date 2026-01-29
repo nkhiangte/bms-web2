@@ -1,12 +1,12 @@
 
-
 import React, { useState, FormEvent, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, OnlineAdmission, Gender, Category, BloodGroup } from '../../types';
+import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student } from '../../types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon } from '../../components/Icons';
-import { uploadToImgBB, resizeImage } from '../../utils';
+import { UploadIcon, SpinnerIcon, CheckIcon, UserIcon, SearchIcon, ArrowRightIcon, BackIcon } from '../../components/Icons';
+import { uploadToImgBB, resizeImage, getNextGrade } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
+import { db } from '../../firebaseConfig';
 
 const { useNavigate } = ReactRouterDOM as any;
 
@@ -16,7 +16,11 @@ interface OnlineAdmissionPageProps {
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
+    const [step, setStep] = useState<1 | 2>(1); // 1: Selection, 2: Form
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    const [fetchError, setFetchError] = useState('');
+    const [searchId, setSearchId] = useState('');
     const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
 
     const [formData, setFormData] = useState<Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>>({
@@ -50,8 +54,76 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         birthCertificateUrl: '',
         transferCertificateUrl: '',
         reportCardUrl: '',
-        paymentScreenshotUrl: '', // Not used in initial submission, handled in payment page
+        paymentScreenshotUrl: '', 
     });
+
+    const handleNewcomerSelect = () => {
+        setFormData(prev => ({ ...prev, studentType: 'Newcomer', lastSchoolAttended: '' }));
+        setStep(2);
+    };
+
+    const handleFetchStudent = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!searchId.trim()) {
+            setFetchError("Please enter a Student ID.");
+            return;
+        }
+
+        setIsFetching(true);
+        setFetchError('');
+
+        try {
+            // Case-insensitive search simulation (store uppercase IDs usually)
+            const idToSearch = searchId.trim().toUpperCase();
+            
+            const querySnapshot = await db.collection('students')
+                .where('studentId', '==', idToSearch)
+                .limit(1)
+                .get();
+
+            if (!querySnapshot.empty) {
+                const studentData = querySnapshot.docs[0].data() as Student;
+                const nextGrade = getNextGrade(studentData.grade);
+
+                setFormData(prev => ({
+                    ...prev,
+                    studentType: 'Existing',
+                    previousStudentId: studentData.studentId,
+                    admissionGrade: nextGrade || '', // Pre-select next grade if applicable
+                    studentName: studentData.name,
+                    dateOfBirth: studentData.dateOfBirth,
+                    gender: studentData.gender,
+                    studentAadhaar: studentData.aadhaarNumber,
+                    fatherName: studentData.fatherName,
+                    motherName: studentData.motherName,
+                    fatherOccupation: studentData.fatherOccupation,
+                    motherOccupation: studentData.motherOccupation,
+                    parentAadhaar: studentData.fatherAadhaar || studentData.motherAadhaar, // Priority
+                    guardianName: studentData.guardianName,
+                    guardianRelationship: studentData.guardianRelationship,
+                    permanentAddress: studentData.address,
+                    presentAddress: studentData.address, // Assuming same initially
+                    contactNumber: studentData.contact,
+                    penNumber: studentData.pen,
+                    religion: studentData.religion,
+                    category: studentData.category,
+                    isCWSN: studentData.cwsn?.toLowerCase() === 'yes' ? 'Yes' : 'No',
+                    bloodGroup: studentData.bloodGroup,
+                    lastSchoolAttended: 'Bethel Mission School',
+                    healthIssues: studentData.healthConditions,
+                    achievements: studentData.achievements,
+                }));
+                setStep(2);
+            } else {
+                setFetchError("No student found with this ID. Please check and try again.");
+            }
+        } catch (error) {
+            console.error("Error fetching student:", error);
+            setFetchError("An error occurred while fetching details.");
+        } finally {
+            setIsFetching(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | { target: { name: string, value: any, type?: string } }) => {
         const { name, value } = e.target;
@@ -84,8 +156,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             return;
         }
 
-        if (formData.admissionGrade !== Grade.NURSERY && !formData.transferCertificateUrl) {
-            alert("Transfer Certificate is required for classes above Nursery.");
+        if (formData.admissionGrade !== Grade.NURSERY && !formData.transferCertificateUrl && formData.studentType === 'Newcomer') {
+            alert("Transfer Certificate is required for newcomers in classes above Nursery.");
             return;
         }
 
@@ -97,7 +169,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 status: 'pending'
             } as any);
 
-            // Redirect to status page or payment page if immediate payment logic is added later
             navigate('/admissions/status', { state: { submissionId } });
             alert(`Application Submitted Successfully! Your Reference ID is: ${submissionId}`);
         } catch (error) {
@@ -108,10 +179,85 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         }
     };
 
+    if (step === 1) {
+        return (
+            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                <div className="container mx-auto px-4 max-w-4xl">
+                    <div className="text-center mb-12">
+                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Online Admission 2026-27</h1>
+                        <p className="text-slate-600 mt-2 text-lg">Please select your admission type to proceed.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Newcomer Option */}
+                        <div 
+                            onClick={handleNewcomerSelect}
+                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-xl transition-all cursor-pointer group flex flex-col items-center text-center"
+                        >
+                            <div className="bg-sky-100 p-4 rounded-full mb-6 group-hover:bg-sky-200 transition-colors">
+                                <UserIcon className="w-12 h-12 text-sky-600" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-2">New Admission</h2>
+                            <p className="text-slate-600 mb-6">For students applying to Bethel Mission School for the first time.</p>
+                            <button className="btn btn-primary mt-auto w-full group-hover:-translate-y-1 transition-transform">
+                                Apply as Newcomer
+                            </button>
+                        </div>
+
+                        {/* Existing Student Option */}
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-indigo-500 hover:shadow-xl transition-all flex flex-col">
+                             <div className="flex flex-col items-center text-center mb-6">
+                                <div className="bg-indigo-100 p-4 rounded-full mb-6">
+                                    <SearchIcon className="w-12 h-12 text-indigo-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h2>
+                                <p className="text-slate-600">Re-admission for current students promoting to the next class.</p>
+                            </div>
+                            
+                            <form onSubmit={handleFetchStudent} className="mt-auto space-y-4">
+                                <div>
+                                    <label htmlFor="searchId" className="sr-only">Student ID</label>
+                                    <input 
+                                        type="text" 
+                                        id="searchId"
+                                        placeholder="Enter Student ID (e.g. BMS24...)" 
+                                        value={searchId}
+                                        onChange={e => setSearchId(e.target.value)}
+                                        className="form-input w-full text-center font-mono uppercase placeholder:normal-case"
+                                    />
+                                </div>
+                                {fetchError && <p className="text-red-500 text-sm text-center">{fetchError}</p>}
+                                <button 
+                                    type="submit" 
+                                    disabled={isFetching || !searchId}
+                                    className="btn btn-secondary w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200 disabled:opacity-50"
+                                >
+                                    {isFetching ? <SpinnerIcon className="w-5 h-5" /> : "Fetch Details & Proceed"}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4">
                 <div className="max-w-4xl mx-auto bg-white p-8 md:p-12 rounded-lg shadow-lg">
+                    <div className="flex items-center justify-between mb-8">
+                        <button onClick={() => setStep(1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
+                            <BackIcon className="w-5 h-5"/>
+                            <span className="text-sm font-semibold">Change Type</span>
+                        </button>
+                        <div className="text-right">
+                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${formData.studentType === 'Existing' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800'}`}>
+                                {formData.studentType} Application
+                            </span>
+                        </div>
+                    </div>
+
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
                         <p className="text-slate-600 mt-2">Academic Session 2026-2027</p>
@@ -125,10 +271,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700">Admission Type</label>
-                                    <select name="studentType" value={formData.studentType} onChange={handleChange} className="form-select w-full mt-1">
-                                        <option value="Newcomer">New Admission</option>
-                                        <option value="Existing">Existing Student (Re-admission)</option>
-                                    </select>
+                                    <input type="text" value={formData.studentType} disabled className="form-input w-full mt-1 bg-slate-100 text-slate-500 cursor-not-allowed" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700">Applying for Class <span className="text-red-600">*</span></label>
@@ -296,7 +439,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                         {uploadStatus.transferCertificateUrl === 'uploading' && <SpinnerIcon className="w-5 h-5 text-sky-600" />}
                                         {uploadStatus.transferCertificateUrl === 'success' && <CheckIcon className="w-5 h-5 text-emerald-600" />}
                                     </div>
-                                    {formData.admissionGrade !== Grade.NURSERY && !formData.transferCertificateUrl && (
+                                    {formData.admissionGrade !== Grade.NURSERY && !formData.transferCertificateUrl && formData.studentType === 'Newcomer' && (
                                         <p className="text-xs text-amber-600 mt-1">Required for classes above Nursery.</p>
                                     )}
                                 </div>

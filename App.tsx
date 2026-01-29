@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -212,10 +211,24 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Fetch Public Data (News, School Config)
+  // Fetch Public Data (News, School Config, Routines)
   useEffect(() => {
     const unsubNews = db.collection('news').onSnapshot(snapshot => {
         setNews(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem)));
+    });
+
+    // Routines (Publicly accessible)
+    const unsubExamRoutines = db.collection('examRoutines').onSnapshot(snapshot => {
+        setExamRoutines(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine)));
+    });
+    
+    // Class Routines (Publicly accessible)
+    const unsubClassRoutines = db.collection('classRoutines').onSnapshot(snapshot => {
+         const routines: Record<string, DailyRoutine> = {};
+         snapshot.docs.forEach(doc => {
+             routines[doc.id] = doc.data().routine as DailyRoutine;
+         });
+         setClassRoutines(routines);
     });
 
     const fetchConfig = async () => {
@@ -235,6 +248,8 @@ const App: React.FC = () => {
 
     return () => {
         unsubNews();
+        unsubExamRoutines();
+        unsubClassRoutines();
     };
   }, []);
 
@@ -270,20 +285,6 @@ const App: React.FC = () => {
     // Syllabus
     const unsubSyllabus = db.collection('syllabus').onSnapshot(snapshot => {
         setSyllabus(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)));
-    });
-
-    // Routines
-    const unsubExamRoutines = db.collection('examRoutines').onSnapshot(snapshot => {
-        setExamRoutines(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine)));
-    });
-    
-    // Class Routines (Assumed stored by day document ID)
-    const unsubClassRoutines = db.collection('classRoutines').onSnapshot(snapshot => {
-         const routines: Record<string, DailyRoutine> = {};
-         snapshot.docs.forEach(doc => {
-             routines[doc.id] = doc.data().routine as DailyRoutine;
-         });
-         setClassRoutines(routines);
     });
 
     // Admin/Staff specific data
@@ -353,8 +354,6 @@ const App: React.FC = () => {
         unsubNotices();
         unsubHomework();
         unsubSyllabus();
-        unsubExamRoutines();
-        unsubClassRoutines();
         unsubAdmissions();
         unsubUsers();
         unsubInventory();
@@ -611,7 +610,30 @@ const App: React.FC = () => {
            <Route path="reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
            <Route path="progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
            
-           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user!} onSaveExamRoutine={async (r) => { await db.collection('examRoutines').add(r); return true; }} onDeleteExamRoutine={() => {}} onUpdateClassRoutine={() => {}} />} />
+           <Route 
+             path="routine" 
+             element={
+               <RoutinePage 
+                 examSchedules={examRoutines} 
+                 classSchedules={classRoutines} 
+                 user={user!} 
+                 onSaveExamRoutine={async (r, id) => { 
+                   if (id) {
+                     await db.collection('examRoutines').doc(id).update(r);
+                   } else {
+                     await db.collection('examRoutines').add(r); 
+                   }
+                   return true; 
+                 }} 
+                 onDeleteExamRoutine={async (r) => { 
+                    await db.collection('examRoutines').doc(r.id).delete();
+                 }} 
+                 onUpdateClassRoutine={async (day, routine) => {
+                    await db.collection('classRoutines').doc(day).set({ routine });
+                 }} 
+               />
+             } 
+           />
            <Route path="exams" element={<ExamSelectionPage />} />
            <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />
            

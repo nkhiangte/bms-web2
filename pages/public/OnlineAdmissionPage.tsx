@@ -225,15 +225,33 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
         setIsSubmitting(true);
         try {
+            // Determine if direct approval is allowed (Excluding IX and X)
+            const requiresReview = formData.admissionGrade === Grade.IX || formData.admissionGrade === Grade.X;
+            const initialStatus = requiresReview ? 'pending' : 'approved';
+
             const submissionId = await onOnlineAdmissionSubmit({
                 ...formData,
                 submissionDate: new Date().toISOString(),
-                status: 'pending'
+                status: initialStatus
             } as any);
 
-            // Pass studentType explicitly in state
-            navigate('/admissions/status', { state: { submissionId, studentType: formData.studentType } });
-            alert(`Application Submitted Successfully! Your Reference ID is: ${submissionId}`);
+            if (requiresReview) {
+                // Go to status page for review
+                navigate('/admissions/status', { state: { submissionId, studentType: formData.studentType } });
+                alert(`Application Submitted Successfully! Your Reference ID is: ${submissionId}`);
+            } else {
+                // Direct to payment for auto-approved grades
+                navigate(`/admissions/payment/${submissionId}`, { 
+                    state: { 
+                        grade: formData.admissionGrade, 
+                        studentName: formData.studentName, 
+                        fatherName: formData.fatherName, 
+                        contact: formData.contactNumber,
+                        studentType: formData.studentType 
+                    } 
+                });
+                alert(`Application Submitted & Approved! Redirecting to payment...`);
+            }
         } catch (error) {
             console.error("Submission error:", error);
             alert("Failed to submit application. Please try again.");

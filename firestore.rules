@@ -60,10 +60,6 @@ service cloud.firestore {
     
     function canAccessGrade(grade) {
       let studentIds = getParentStudentIds();
-      // This is a simplified check. It assumes a parent might have access
-      // if they have a child in any class. A more complex rule might check
-      // if any of their children are in the specified grade. For now, this is
-      // a basic guard.
       return isStaff() || (isParent() && studentIds.size() > 0);
     }
 
@@ -71,10 +67,9 @@ service cloud.firestore {
     // Online Admissions
     // ---------------------------
     match /online_admissions/{admissionId} {
-      allow create: if true; // Public can submit forms
-      allow get: if true;    // FIX: Public can retrieve their specific record via Ref ID
+      allow create: if true; 
+      allow get: if true;    
       allow list, delete: if isAdmin();
-      // FIX: Allow public to update (for payment step) if the application is not rejected.
       allow update: if isAdmin() || (resource.data.status != 'rejected');
     }
     
@@ -99,9 +94,9 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Config collection (Fees, GradeDefs, Sitemap, SchoolDetails)
+    // Config collection
     match /config/{configDoc} {
-      allow read: if true; // Public read required for website and settings
+      allow read: if true;
       allow write: if isStaff();
     }
 
@@ -116,7 +111,7 @@ service cloud.firestore {
     }
 
     // ---------------------------
-    // Routines (Class & Exam)
+    // Routines
     // ---------------------------
     match /examRoutines/{docId} {
       allow read, list: if true;
@@ -140,8 +135,8 @@ service cloud.firestore {
     // Student Records
     // ---------------------------
     match /students/{studentId} {
-      // ALLOW PUBLIC READ to enable "Existing Student" lookup during admission
-      allow read, list: if true; 
+      // ENABLE PUBLIC READ for admission search
+      allow read, list: if true;
       allow create, update, delete: if isStaff();
     }
 

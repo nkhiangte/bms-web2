@@ -71,48 +71,90 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
         setIsFetching(true);
         setFetchError('');
+        
+        const idToSearch = searchId.trim().toUpperCase();
 
         try {
-            // Case-insensitive search simulation (store uppercase IDs usually)
-            const idToSearch = searchId.trim().toUpperCase();
-            
-            // Note: firestore.rules must allow public read access to 'students' collection for this to work
+            let foundStudent: Student | null = null;
+
+            // Strategy 1: Direct lookup by studentId field
             const querySnapshot = await db.collection('students')
                 .where('studentId', '==', idToSearch)
                 .limit(1)
                 .get();
 
             if (!querySnapshot.empty) {
-                const studentData = querySnapshot.docs[0].data() as Student;
-                const nextGrade = getNextGrade(studentData.grade);
+                foundStudent = querySnapshot.docs[0].data() as Student;
+            } 
+            
+            // Strategy 2: If not found and ID format is valid (BMS + Year + Grade + Roll), search by Grade + Roll
+            if (!foundStudent && idToSearch.startsWith('BMS') && idToSearch.length >= 9) {
+                // Parse ID: BMS(3) + YY(2) + GG(2) + RR(2+)
+                const yearSuffix = idToSearch.substring(3, 5); // e.g., '25'
+                const gradeCode = idToSearch.substring(5, 7); // e.g., '09'
+                const rollNoStr = idToSearch.substring(7); // e.g., '02'
+                const rollNo = parseInt(rollNoStr, 10);
+
+                const gradeMap: Record<string, Grade> = {
+                    'NU': Grade.NURSERY, 'KG': Grade.KINDERGARTEN,
+                    '01': Grade.I, '02': Grade.II, '03': Grade.III, '04': Grade.IV, '05': Grade.V,
+                    '06': Grade.VI, '07': Grade.VII, '08': Grade.VIII, '09': Grade.IX, '10': Grade.X
+                };
+                const grade = gradeMap[gradeCode];
+
+                if (grade && !isNaN(rollNo)) {
+                    // Try to find active student with this Grade and Roll
+                    const fallbackSnapshot = await db.collection('students')
+                        .where('grade', '==', grade)
+                        .where('rollNo', '==', rollNo)
+                        .where('status', '==', 'Active')
+                        .get();
+                    
+                    if (!fallbackSnapshot.empty) {
+                        const targetStartYear = `20${yearSuffix}`; // e.g., '2025'
+                        // Find student matching the academic year from ID
+                        const match = fallbackSnapshot.docs.find(doc => {
+                            const s = doc.data() as Student;
+                            return s.academicYear && s.academicYear.startsWith(targetStartYear);
+                        });
+                        
+                        if (match) {
+                            foundStudent = match.data() as Student;
+                        }
+                    }
+                }
+            }
+
+            if (foundStudent) {
+                const nextGrade = getNextGrade(foundStudent.grade);
 
                 setFormData(prev => ({
                     ...prev,
                     studentType: 'Existing',
-                    previousStudentId: studentData.studentId,
-                    admissionGrade: nextGrade || '', // Pre-select next grade if applicable
-                    studentName: studentData.name,
-                    dateOfBirth: studentData.dateOfBirth,
-                    gender: studentData.gender,
-                    studentAadhaar: studentData.aadhaarNumber,
-                    fatherName: studentData.fatherName,
-                    motherName: studentData.motherName,
-                    fatherOccupation: studentData.fatherOccupation,
-                    motherOccupation: studentData.motherOccupation,
-                    parentAadhaar: studentData.fatherAadhaar || studentData.motherAadhaar, // Priority
-                    guardianName: studentData.guardianName,
-                    guardianRelationship: studentData.guardianRelationship,
-                    permanentAddress: studentData.address,
-                    presentAddress: studentData.address, // Assuming same initially
-                    contactNumber: studentData.contact,
-                    penNumber: studentData.pen,
-                    religion: studentData.religion,
-                    category: studentData.category,
-                    isCWSN: studentData.cwsn?.toLowerCase() === 'yes' ? 'Yes' : 'No',
-                    bloodGroup: studentData.bloodGroup,
+                    previousStudentId: foundStudent!.studentId || idToSearch,
+                    admissionGrade: nextGrade || '',
+                    studentName: foundStudent!.name,
+                    dateOfBirth: foundStudent!.dateOfBirth,
+                    gender: foundStudent!.gender,
+                    studentAadhaar: foundStudent!.aadhaarNumber,
+                    fatherName: foundStudent!.fatherName,
+                    motherName: foundStudent!.motherName,
+                    fatherOccupation: foundStudent!.fatherOccupation,
+                    motherOccupation: foundStudent!.motherOccupation,
+                    parentAadhaar: foundStudent!.fatherAadhaar || foundStudent!.motherAadhaar,
+                    guardianName: foundStudent!.guardianName,
+                    guardianRelationship: foundStudent!.guardianRelationship,
+                    permanentAddress: foundStudent!.address,
+                    presentAddress: foundStudent!.address,
+                    contactNumber: foundStudent!.contact,
+                    penNumber: foundStudent!.pen,
+                    religion: foundStudent!.religion,
+                    category: foundStudent!.category,
+                    isCWSN: foundStudent!.cwsn?.toLowerCase() === 'yes' ? 'Yes' : 'No',
+                    bloodGroup: foundStudent!.bloodGroup,
                     lastSchoolAttended: 'Bethel Mission School',
-                    healthIssues: studentData.healthConditions,
-                    achievements: studentData.achievements,
+                    healthIssues: foundStudent!.healthConditions,
+                    achievements: foundStudent!.achievements,
                 }));
                 setStep(2);
             } else {

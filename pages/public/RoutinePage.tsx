@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, EditIcon, PlusIcon, TrashIcon } from '../../components/Icons';
+import { BackIcon, HomeIcon, EditIcon, PlusIcon, TrashIcon, SyncIcon, SpinnerIcon } from '../../components/Icons';
 import { ROUTINE_DAYS, PERIOD_LABELS, PERIOD_TIMES } from '../../constants';
 import { ExamRoutine, DailyRoutine, User, ClassRoutine } from '../../types';
 import ExamRoutineModal from '../../components/ExamRoutineModal';
 import ClassRoutineModal from '../../components/ClassRoutineModal';
+import { timetableData } from '../../timetableData';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 
@@ -50,7 +52,7 @@ interface RoutinePageProps {
     user?: User | null;
     onSaveExamRoutine?: (routine: Omit<ExamRoutine, 'id'>, id?: string) => Promise<boolean>;
     onDeleteExamRoutine?: (routine: ExamRoutine) => void;
-    onUpdateClassRoutine?: (day: string, routine: DailyRoutine) => void;
+    onUpdateClassRoutine?: (day: string, routine: DailyRoutine) => Promise<void>;
 }
 
 const RoutinePage: React.FC<RoutinePageProps> = ({ 
@@ -71,6 +73,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     const [editingExamRoutine, setEditingExamRoutine] = useState<ExamRoutine | null>(null);
     
     const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false);
 
     useEffect(() => {
         // If navigating from parent dashboard, default to class routine
@@ -97,6 +100,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     }, [classSchedules, activeDay, user, parentGradeFilter]);
     
     const isAdmin = user?.role === 'admin';
+    const hasClassData = Object.keys(classSchedules).length > 0;
 
     const allTeachers = useMemo(() => {
         const teacherSet = new Set<string>();
@@ -142,6 +146,25 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     const handleEditExamRoutine = (routine: ExamRoutine) => {
         setEditingExamRoutine(routine);
         setIsExamModalOpen(true);
+    };
+
+    const handleInitializeDefaults = async () => {
+        if (!onUpdateClassRoutine) return;
+        if (!window.confirm("This will overwrite any existing class routines in the database with the default static data. Are you sure?")) return;
+        
+        setIsInitializing(true);
+        try {
+            const promises = Object.entries(timetableData).map(([day, routine]) => 
+                onUpdateClassRoutine(day, routine)
+            );
+            await Promise.all(promises);
+            alert("Class routines have been successfully initialized from defaults.");
+        } catch (error) {
+            console.error("Initialization failed:", error);
+            alert("Failed to initialize routines. Please check the console for details.");
+        } finally {
+            setIsInitializing(false);
+        }
     };
 
     const ExamRoutineSection = () => (
@@ -215,9 +238,17 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                     </button>
                 ))}
                 {isAdmin && onUpdateClassRoutine && (
-                    <button onClick={() => setIsClassModalOpen(true)} className="ml-4 btn btn-secondary text-xs">
-                        <EditIcon className="w-4 h-4" /> Edit {activeDay}
-                    </button>
+                    <div className="ml-4 flex gap-2">
+                        <button onClick={() => setIsClassModalOpen(true)} className="btn btn-secondary text-xs">
+                            <EditIcon className="w-4 h-4" /> Edit {activeDay}
+                        </button>
+                        {!hasClassData && (
+                             <button onClick={handleInitializeDefaults} disabled={isInitializing} className="btn btn-secondary text-xs bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
+                                {isInitializing ? <SpinnerIcon className="w-4 h-4" /> : <SyncIcon className="w-4 h-4" />}
+                                Initialize Defaults
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -279,7 +310,9 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={10} className="text-center py-8 text-slate-500">No schedule available for this day.</td>
+                                <td colSpan={10} className="text-center py-8 text-slate-500">
+                                    {user ? "No schedule available for this day." : "No schedule available. Please ask an admin to initialize the routine."}
+                                </td>
                             </tr>
                         )}
                         {user?.role !== 'parent' && (

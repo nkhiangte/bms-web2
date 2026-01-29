@@ -76,6 +76,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             // Case-insensitive search simulation (store uppercase IDs usually)
             const idToSearch = searchId.trim().toUpperCase();
             
+            // Note: firestore.rules must allow public read access to 'students' collection for this to work
             const querySnapshot = await db.collection('students')
                 .where('studentId', '==', idToSearch)
                 .limit(1)
@@ -115,11 +116,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 }));
                 setStep(2);
             } else {
-                setFetchError("No student found with this ID. Please check and try again.");
+                setFetchError("No student found with this ID. Please check the ID and try again.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching student:", error);
-            setFetchError("An error occurred while fetching details.");
+            if (error.code === 'permission-denied') {
+                 setFetchError("System Error: Permission denied. Please contact the administrator.");
+            } else {
+                 setFetchError("An error occurred while fetching details. Please check your internet connection.");
+            }
         } finally {
             setIsFetching(false);
         }
@@ -277,6 +282,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                     <label className="block text-sm font-bold text-slate-700">Applying for Class <span className="text-red-600">*</span></label>
                                     <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>
                                         <option value="" disabled>-- Select Class --</option>
+                                        {/* Logic: Show Grade X only if studentType is 'Existing' */}
                                         {GRADES_LIST.filter(g => formData.studentType === 'Existing' || g !== Grade.X).map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
                                 </div>

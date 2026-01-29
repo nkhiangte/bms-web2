@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -139,8 +140,8 @@ service cloud.firestore {
     // Student Records
     // ---------------------------
     match /students/{studentId} {
-      allow list: if isStaff();
-      allow get: if canAccessStudent(studentId);
+      // ALLOW PUBLIC READ to enable "Existing Student" lookup during admission
+      allow read, list: if true; 
       allow create, update, delete: if isStaff();
     }
 

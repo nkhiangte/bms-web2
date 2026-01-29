@@ -662,17 +662,23 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
-      let failedSubjectsCount = 0, gradedSubjectsPassed = 0;
+      let grandTotal: number = 0;
+      let examTotal: number = 0;
+      let activityTotal: number = 0;
+      let fullMarksTotal: number = 0;
+      let failedSubjectsCount = 0;
+      let gradedSubjectsPassed = 0;
       const studentMarks = marksData[student.id] || {};
       const failedSubjects: string[] = [];
 
       numericSubjects.forEach(sd => {
-        let totalSubjectMark = 0, subjectFullMarks = 0;
+        let totalSubjectMark: number = 0;
+        let subjectFullMarks: number = 0;
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            examTotal += examMark; activityTotal += activityMark;
+            examTotal += examMark; 
+            activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
             const eFM = Number(sd.examFullMarks || 0);
             const aFM = Number(sd.activityFullMarks || 0);
@@ -686,7 +692,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }
-        grandTotal += totalSubjectMark; fullMarksTotal += subjectFullMarks;
+        grandTotal += totalSubjectMark; 
+        fullMarksTotal += subjectFullMarks;
       });
 
       gradedSubjects.forEach(sd => {

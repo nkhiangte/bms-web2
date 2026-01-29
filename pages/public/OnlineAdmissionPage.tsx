@@ -103,23 +103,36 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                 const grade = gradeMap[gradeCode];
 
                 if (grade && !isNaN(rollNo)) {
-                    // Try to find active student with this Grade and Roll
+                    // Try to find active student with this Grade and Roll. 
+                    // Note: Removing 'status' filter from query to handle potential casing issues or manual data entry errors.
                     const fallbackSnapshot = await db.collection('students')
                         .where('grade', '==', grade)
                         .where('rollNo', '==', rollNo)
-                        .where('status', '==', 'Active')
                         .get();
                     
                     if (!fallbackSnapshot.empty) {
                         const targetStartYear = `20${yearSuffix}`; // e.g., '2025'
-                        // Find student matching the academic year from ID
+                        
+                        // Find best match in memory
                         const match = fallbackSnapshot.docs.find(doc => {
                             const s = doc.data() as Student;
-                            return s.academicYear && s.academicYear.startsWith(targetStartYear);
+                            
+                            // Check status (case-insensitive)
+                            const status = s.status ? s.status.toLowerCase() : '';
+                            if (status !== 'active') return false;
+
+                            // Check Academic Year if present
+                            if (s.academicYear) {
+                                return s.academicYear.startsWith(targetStartYear);
+                            }
+                            // If academic year is missing but they are active, assume it's the correct student (legacy data support)
+                            return true;
                         });
                         
                         if (match) {
                             foundStudent = match.data() as Student;
+                            // Ensure studentId is set if it was missing in the doc
+                            if (!foundStudent.studentId) foundStudent.studentId = idToSearch;
                         }
                     }
                 }

@@ -598,7 +598,27 @@ const App: React.FC = () => {
            <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} notificationDaysBefore={-1} onUpdatePrefs={() => {}} />} />
            <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
            <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={async (n) => { await db.collection('notices').add(n); }} onDelete={async (id) => { await db.collection('notices').doc(id).delete(); }} />} />
-           <Route path="news-management" element={<ManageNewsPage news={news} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user!} />} />
+           
+           <Route 
+             path="news-management" 
+             element={
+               <ManageNewsPage 
+                 news={news} 
+                 user={user!}
+                 onSave={async (item, id) => {
+                   if (id) {
+                     await db.collection('news').doc(id).update(item);
+                   } else {
+                     await db.collection('news').add(item);
+                   }
+                 }}
+                 onDelete={async (id) => {
+                   await db.collection('news').doc(id).delete();
+                 }}
+               />
+             } 
+           />
+           
            <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={(uid, role) => db.collection('users').doc(uid).update({ role })} onDeleteUser={(uid) => db.collection('users').doc(uid).delete()} />} />
            <Route path="parents" element={<ParentsManagementPage allUsers={users} students={students} academicYear={academicYear} currentUser={user!} onDeleteUser={(uid) => db.collection('users').doc(uid).delete()} onUpdateUser={async (uid, data) => { await db.collection('users').doc(uid).update(data); }} />} />
            <Route path="promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user!} />} />

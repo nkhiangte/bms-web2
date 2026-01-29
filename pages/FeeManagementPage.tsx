@@ -1,7 +1,9 @@
 
+
+
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon } from '../components/Icons';
 import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType } from '../types';
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
 import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
@@ -88,6 +90,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const handleSaveStructure = () => {
     onUpdateFeeStructure(editableStructure);
     setIsEditingStructure(false);
+    addNotification('Fee structure updated successfully!', 'success');
   };
 
   const handleCancelEditStructure = () => {
@@ -265,42 +268,92 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     <div className="space-y-8">
       {user.role === 'admin' && (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-slate-800">Fee Structure Management</h2>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800">Fee Structure Management</h2>
+                    <p className="text-slate-600">Update the fee amounts visible on the public website and used for calculations.</p>
+                </div>
                 {!isEditingStructure ? (
-                    <button onClick={() => setIsEditingStructure(true)} className="btn btn-secondary">Edit Structure</button>
+                    <button onClick={() => setIsEditingStructure(true)} className="btn btn-secondary flex items-center gap-2">
+                        <EditIcon className="w-5 h-5"/> Edit Structure
+                    </button>
                 ) : (
                     <div className="flex gap-2">
                         <button onClick={handleCancelEditStructure} className="btn btn-secondary">Cancel</button>
-                        <button onClick={handleSaveStructure} className="btn btn-primary">Save Structure</button>
+                        <button onClick={handleSaveStructure} className="btn btn-primary flex items-center gap-2">
+                            <SaveIcon className="w-5 h-5"/> Save Changes
+                        </button>
                     </div>
                 )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {(Object.keys(feeStructure) as Array<keyof FeeStructure>).map(setKey => (
-                    <div key={setKey} className="bg-slate-50 p-4 rounded-lg border">
-                        <h3 className="font-bold text-lg text-slate-800 capitalize">{setKey.replace('set', 'Set ')}</h3>
+                    <div key={setKey} className={`p-4 rounded-lg border ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
+                        <h3 className="font-bold text-lg text-slate-800 capitalize mb-1">{setKey.replace('set', 'Set ')}</h3>
                         <p className="text-xs text-slate-600 mb-4 h-8">
                             Applies to: {FEE_SET_GRADES[setKey as keyof typeof FEE_SET_GRADES].join(', ')}
                         </p>
-                        <div className="space-y-3">
-                            {Object.keys(feeStructure[setKey as keyof FeeStructure]).map(feeKey => (
-                                <div key={feeKey}>
-                                    <label className="text-sm font-medium text-slate-700 capitalize">{feeKey.replace(/([A-Z])/g, ' $1')}</label>
-                                    {isEditingStructure ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Admission Fee</label>
+                                {isEditingStructure ? (
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                          <span className="text-gray-500 sm:text-sm">₹</span>
+                                        </div>
                                         <input
                                             type="number"
-                                            value={editableStructure[setKey as keyof FeeStructure][feeKey as keyof FeeSet]}
-                                            onChange={e => handleStructureChange(setKey as keyof FeeStructure, feeKey as keyof FeeSet, e.target.value)}
-                                            className="mt-1 block w-full border-slate-300 rounded-md shadow-sm"
+                                            value={editableStructure[setKey].admissionFee}
+                                            onChange={e => handleStructureChange(setKey, 'admissionFee', e.target.value)}
+                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
                                         />
-                                    ) : (
-                                        <p className="font-semibold text-slate-800 text-lg">
-                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey as keyof FeeStructure][feeKey as keyof FeeSet])}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                                    </div>
+                                ) : (
+                                    <p className="font-semibold text-slate-800 text-lg">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].admissionFee)}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Tuition Fee (Monthly)</label>
+                                {isEditingStructure ? (
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                          <span className="text-gray-500 sm:text-sm">₹</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={editableStructure[setKey].tuitionFee}
+                                            onChange={e => handleStructureChange(setKey, 'tuitionFee', e.target.value)}
+                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="font-semibold text-slate-800 text-lg">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].tuitionFee)}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Exam Fee (Per Term)</label>
+                                {isEditingStructure ? (
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                          <span className="text-gray-500 sm:text-sm">₹</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={editableStructure[setKey].examFee}
+                                            onChange={e => handleStructureChange(setKey, 'examFee', e.target.value)}
+                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="font-semibold text-slate-800 text-lg">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].examFee)}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}

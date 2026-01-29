@@ -1,5 +1,6 @@
 
 
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/

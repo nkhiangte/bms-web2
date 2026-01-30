@@ -203,7 +203,7 @@ const calculateTermSummary = (
         else remark = "Passed. Needs to work harder to improve scores.";
     }
 
-    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark, rank };
+    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
 };
 
 const MultiTermReportCard: React.FC<{
@@ -350,7 +350,7 @@ const MultiTermReportCard: React.FC<{
             <div className="mt-8 text-sm break-inside-avoid">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
                              {classTeacher ? (
                                  <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
                              ) : (
@@ -364,7 +364,7 @@ const MultiTermReportCard: React.FC<{
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
-                <div className="flex justify-between mt-4 text-xs text-slate-500">
+                <div className="flex justify-between mt-4 print:mt-1">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
                     <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>

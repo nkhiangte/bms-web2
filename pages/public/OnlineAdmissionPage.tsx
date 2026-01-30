@@ -5,8 +5,8 @@ import React, { useState, FormEvent, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student } from '../../types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon, UserIcon, SearchIcon, ArrowRightIcon, BackIcon } from '../../components/Icons';
-import { uploadToImgBB, resizeImage, getNextGrade } from '../../utils';
+import { UploadIcon, SpinnerIcon, CheckIcon, UserIcon, SearchIcon, ArrowRightIcon, BackIcon, SaveIcon, DocumentReportIcon } from '../../components/Icons';
+import { uploadToImgBB, resizeImage, getNextGrade, formatDateForDisplay, formatDateForStorage } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import { db } from '../../firebaseConfig';
 
@@ -23,9 +23,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [isFetching, setIsFetching] = useState(false);
     const [fetchError, setFetchError] = useState('');
     const [searchId, setSearchId] = useState('');
+    
+    // Retrieval State
+    const [retrieveAppId, setRetrieveAppId] = useState('');
+    const [retrieveDob, setRetrieveDob] = useState('');
+    const [retrievalError, setRetrievalError] = useState('');
+
     const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
 
-    const [formData, setFormData] = useState<Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>>({
+    // Added 'id' field to track if we are editing an existing draft
+    const [formData, setFormData] = useState<Partial<OnlineAdmission> & Omit<OnlineAdmission, 'id' | 'submissionDate' | 'status'>>({
         studentType: 'Newcomer',
         admissionGrade: '',
         studentName: '',
@@ -62,6 +69,45 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const handleNewcomerSelect = () => {
         setFormData(prev => ({ ...prev, studentType: 'Newcomer', lastSchoolAttended: '' }));
         setStep(2);
+    };
+
+    const handleRetrieveApplication = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!retrieveAppId || !retrieveDob) {
+            setRetrievalError("Please enter both Application ID and Date of Birth.");
+            return;
+        }
+
+        setIsFetching(true);
+        setRetrievalError('');
+
+        try {
+            const docRef = db.collection('online_admissions').doc(retrieveAppId.trim());
+            const doc = await docRef.get();
+
+            if (doc.exists) {
+                const data = doc.data() as OnlineAdmission;
+                // Basic security check: DOB match (Simple string compare, assuming YYYY-MM-DD storage)
+                // Also check if status is draft or pending payment (not approved/enrolled)
+                if (data.dateOfBirth === retrieveDob) {
+                    if (data.isEnrolled) {
+                         setRetrievalError("This student is already enrolled. Please contact the office.");
+                    } else {
+                        setFormData({ ...data, id: doc.id }); // Set ID to enable update mode
+                        setStep(2);
+                    }
+                } else {
+                    setRetrievalError("Date of Birth does not match the application record.");
+                }
+            } else {
+                setRetrievalError("No application found with this ID.");
+            }
+        } catch (error) {
+            console.error("Error retrieving application:", error);
+            setRetrievalError("Failed to retrieve application. Please try again.");
+        } finally {
+            setIsFetching(false);
+        }
     };
 
     const handleFetchStudent = async (e: FormEvent) => {
@@ -209,6 +255,41 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         }
     };
 
+    const handleSaveDraft = async () => {
+        if (!formData.studentName || !formData.dateOfBirth) {
+            alert("Please provide at least Name and Date of Birth to save a draft.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const draftData = {
+                ...formData,
+                submissionDate: formData.submissionDate || new Date().toISOString(),
+                status: 'draft',
+            };
+
+            let draftId = formData.id;
+
+            if (draftId) {
+                // Update existing
+                await db.collection('online_admissions').doc(draftId).update(draftData);
+            } else {
+                // Create new
+                const docRef = await db.collection('online_admissions').add(draftData);
+                draftId = docRef.id;
+                setFormData(prev => ({ ...prev, id: draftId })); // Update local state
+            }
+
+            alert(`Application Saved as Draft! \n\nYour Temporary ID is: ${draftId} \n\nPlease save this ID to resume your application later.`);
+        } catch (error) {
+            console.error("Error saving draft:", error);
+            alert("Failed to save draft. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         
@@ -228,12 +309,23 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             // Determine if direct approval is allowed (Excluding IX and X)
             const requiresReview = formData.admissionGrade === Grade.IX || formData.admissionGrade === Grade.X;
             const initialStatus = requiresReview ? 'pending' : 'approved';
-
-            const submissionId = await onOnlineAdmissionSubmit({
+            
+            let submissionId = formData.id;
+            
+            const submissionData = {
                 ...formData,
-                submissionDate: new Date().toISOString(),
+                submissionDate: formData.submissionDate || new Date().toISOString(),
                 status: initialStatus
-            } as any);
+            };
+
+            if (submissionId) {
+                 // Update existing draft/record
+                await db.collection('online_admissions').doc(submissionId).update(submissionData);
+            } else {
+                // Create new record
+                const docRef = await db.collection('online_admissions').add(submissionData);
+                submissionId = docRef.id;
+            }
 
             if (requiresReview) {
                 // Go to status page for review
@@ -263,17 +355,17 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     if (step === 1) {
         return (
             <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
-                <div className="container mx-auto px-4 max-w-4xl">
+                <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-12">
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Online Admission 2026-27</h1>
                         <p className="text-slate-600 mt-2 text-lg">Please select your admission type to proceed.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Newcomer Option */}
                         <div 
                             onClick={handleNewcomerSelect}
-                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-xl transition-all cursor-pointer group flex flex-col items-center text-center"
+                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-xl transition-all cursor-pointer group flex flex-col items-center text-center h-full"
                         >
                             <div className="bg-sky-100 p-4 rounded-full mb-6 group-hover:bg-sky-200 transition-colors">
                                 <UserIcon className="w-12 h-12 text-sky-600" />
@@ -286,7 +378,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         </div>
 
                         {/* Existing Student Option */}
-                        <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-indigo-500 hover:shadow-xl transition-all flex flex-col">
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-indigo-500 hover:shadow-xl transition-all flex flex-col h-full">
                              <div className="flex flex-col items-center text-center mb-6">
                                 <div className="bg-indigo-100 p-4 rounded-full mb-6">
                                     <SearchIcon className="w-12 h-12 text-indigo-600" />
@@ -317,6 +409,45 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 </button>
                             </form>
                         </div>
+                        
+                        {/* Resume Application Option */}
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-xl transition-all flex flex-col h-full">
+                             <div className="flex flex-col items-center text-center mb-6">
+                                <div className="bg-emerald-100 p-4 rounded-full mb-6">
+                                    <DocumentReportIcon className="w-12 h-12 text-emerald-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Resume Application</h2>
+                                <p className="text-slate-600">Continue an existing or saved application.</p>
+                            </div>
+                            
+                            <form onSubmit={handleRetrieveApplication} className="mt-auto space-y-4">
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Application ID (Temp ID)" 
+                                        value={retrieveAppId}
+                                        onChange={e => setRetrieveAppId(e.target.value)}
+                                        className="form-input w-full text-center mb-2"
+                                    />
+                                     <input 
+                                        type="date" 
+                                        placeholder="Date of Birth" 
+                                        value={retrieveDob}
+                                        onChange={e => setRetrieveDob(e.target.value)}
+                                        className="form-input w-full text-center"
+                                        required
+                                    />
+                                </div>
+                                {retrievalError && <p className="text-red-500 text-sm text-center">{retrievalError}</p>}
+                                <button 
+                                    type="submit" 
+                                    disabled={isFetching || !retrieveAppId || !retrieveDob}
+                                    className="btn btn-secondary w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 disabled:opacity-50"
+                                >
+                                    {isFetching ? <SpinnerIcon className="w-5 h-5" /> : "Resume Application"}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -336,6 +467,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${formData.studentType === 'Existing' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800'}`}>
                                 {formData.studentType} Application
                             </span>
+                            {formData.id && <div className="text-xs text-emerald-600 mt-1 font-semibold">Draft ID: {formData.id}</div>}
                         </div>
                     </div>
 
@@ -370,7 +502,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                     <CustomDatePicker 
                                         label="Date of Birth"
                                         name="dateOfBirth"
-                                        value={formData.dateOfBirth}
+                                        value={formData.dateOfBirth || ''}
                                         onChange={handleChange}
                                         required
                                     />
@@ -528,7 +660,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             </div>
                         </fieldset>
                         
-                        <div className="flex justify-end pt-6 border-t border-slate-200">
+                        <div className="flex justify-between items-center pt-6 border-t border-slate-200">
+                             <button
+                                type="button"
+                                onClick={handleSaveDraft}
+                                disabled={isSubmitting}
+                                className="flex items-center gap-2 text-slate-600 hover:text-sky-700 font-semibold px-4 py-2 rounded transition-colors"
+                             >
+                                 <SaveIcon className="w-5 h-5" />
+                                 Save as Draft
+                             </button>
                              <button 
                                 type="submit" 
                                 disabled={isSubmitting || Object.values(uploadStatus).includes('uploading')}
@@ -539,7 +680,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                         <SpinnerIcon className="w-6 h-6 mr-2" /> Submitting...
                                     </>
                                 ) : (
-                                    "Submit Application"
+                                    formData.id ? "Update & Proceed" : "Submit Application"
                                 )}
                             </button>
                         </div>

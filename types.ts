@@ -100,7 +100,7 @@ export interface OnlineAdmission {
     reportCardUrl?: string;
     paymentScreenshotUrl?: string;
     submissionDate: string;
-    status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+    status: 'draft' | 'pending' | 'reviewed' | 'approved' | 'rejected';
     paymentStatus?: 'pending' | 'paid';
     paymentAmount?: number;
     paymentTransactionId?: string;

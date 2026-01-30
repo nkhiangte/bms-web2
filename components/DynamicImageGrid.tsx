@@ -26,7 +26,8 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
     const [isAdding, setIsAdding] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<GridItem | null>(null);
     
-    const isAdmin = user?.role === 'admin';
+    // Strict check: User must exist AND have role 'admin'
+    const isAdmin = !!user && user.role === 'admin';
 
     // New Item State
     const [newItemTitle, setNewItemTitle] = useState('');
@@ -45,7 +46,6 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
                     setItems([]);
                 }
             } else {
-                 // If doc doesn't exist, use default items provided by parent
                  setItems(defaultItems);
             }
             setIsLoading(false);
@@ -55,11 +55,10 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
         });
 
         return () => unsubscribe();
-    }, [id, defaultItems]); // Added defaultItems dependency
+    }, [id, defaultItems]); 
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In 'grid' mode, title might be optional or hidden, but we'll enforce it as 'alt' text at least
         if (!newItemImage) {
             alert("Image is required.");
             return;
@@ -98,7 +97,6 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
         setIsSaving(true);
         try {
             const updatedItems = items.filter(i => i.id !== itemId);
-            // This will create the document if it doesn't exist (e.g. deleting a default item)
             await db.collection('website_content').doc(id).set({ items: updatedItems }, { merge: true });
         } catch (error) {
             console.error("Failed to delete item:", error);

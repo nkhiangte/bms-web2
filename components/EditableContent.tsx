@@ -33,7 +33,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const isAdmin = user?.role === 'admin';
+    // Strict check: User must exist AND have role 'admin'
+    const isAdmin = !!user && user.role === 'admin';
 
     // Fetch content on mount
     useEffect(() => {
@@ -44,7 +45,6 @@ const EditableContent: React.FC<EditableContentProps> = ({
                     setContent(data.value);
                 }
             } else {
-                // If doc doesn't exist, use default, but don't save yet to avoid spamming DB
                 setContent(defaultContent);
             }
             setIsLoading(false);
@@ -94,12 +94,10 @@ const EditableContent: React.FC<EditableContentProps> = ({
 
         setIsSaving(true);
         try {
-            // Resize if it's too huge, max 1920px wide or high
             const resized = await resizeImage(file, 1920, 1920, 0.9);
             const url = await uploadToImgBB(resized);
             setTempContent(url);
             
-            // Auto save for images after upload
             await db.collection('website_content').doc(id).set({
                 value: url,
                 updatedAt: new Date().toISOString(),
@@ -114,8 +112,6 @@ const EditableContent: React.FC<EditableContentProps> = ({
             setIsSaving(false);
         }
     };
-
-    // --- RENDER LOGIC ---
 
     if (type === 'image') {
         return (
@@ -133,7 +129,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 )}
 
                 {isAdmin && (
-                    <div className="absolute top-4 right-4 z-20">
+                    <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -158,7 +154,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
         );
     }
 
-    if (isEditing) {
+    if (isEditing && isAdmin) {
         return (
             <div className="relative border-2 border-sky-500 rounded p-1 bg-white shadow-xl z-30">
                 {type === 'textarea' ? (
@@ -192,7 +188,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
     }
 
     return (
-        <div className={`relative group inline-block w-full ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all' : ''}`}>
+        <div className={`relative group inline-block w-full ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all cursor-text' : ''}`}>
             {type === 'textarea' ? (
                  <div className={`whitespace-pre-wrap ${className}`} style={style}>{content}</div>
             ) : (
@@ -202,7 +198,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
             {isAdmin && (
                 <button 
                     onClick={handleEditClick}
-                    className="absolute -top-3 -right-3 bg-sky-600 text-white p-1.5 rounded-full shadow-md z-20 hover:bg-sky-700 transition-transform hover:scale-110"
+                    className="absolute -top-3 -right-3 bg-sky-600 text-white p-1.5 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sky-700 hover:scale-110"
                     title="Edit Content (Admin)"
                 >
                     <EditIcon className="w-3 h-3" />

@@ -127,17 +127,17 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 />
                 
                 {isSaving && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <SpinnerIcon className="w-8 h-8 text-sky-600" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
+                        <SpinnerIcon className="w-10 h-10 text-white" />
                     </div>
                 )}
 
                 {isAdmin && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="absolute top-4 right-4 z-20">
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm"
-                            title="Change Image"
+                            className="bg-white text-sky-700 p-2 rounded-full shadow-lg border border-sky-100 hover:bg-sky-50 transition-transform hover:scale-110 flex items-center justify-center"
+                            title="Change Image (Admin)"
                         >
                             <EditIcon className="w-5 h-5" />
                         </button>
@@ -156,12 +156,12 @@ const EditableContent: React.FC<EditableContentProps> = ({
 
     if (isEditing) {
         return (
-            <div className="relative border-2 border-sky-500 rounded p-1 bg-white shadow-lg z-20">
+            <div className="relative border-2 border-sky-500 rounded p-1 bg-white shadow-xl z-30">
                 {type === 'textarea' ? (
                     <textarea 
                         value={tempContent} 
                         onChange={(e) => setTempContent(e.target.value)} 
-                        className="w-full form-textarea text-slate-800"
+                        className="w-full form-textarea text-slate-800 text-base"
                         rows={6}
                         autoFocus
                     />
@@ -170,16 +170,16 @@ const EditableContent: React.FC<EditableContentProps> = ({
                         type="text" 
                         value={tempContent} 
                         onChange={(e) => setTempContent(e.target.value)} 
-                        className="w-full form-input text-slate-800"
+                        className="w-full form-input text-slate-800 text-lg font-bold"
                         autoFocus
                     />
                 )}
                 
                 <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={handleCancel} className="p-1 text-red-600 hover:bg-red-50 rounded" title="Cancel">
+                    <button onClick={handleCancel} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Cancel">
                         <XIcon className="w-5 h-5" />
                     </button>
-                    <button onClick={handleSave} disabled={isSaving} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded" title="Save">
+                    <button onClick={handleSave} disabled={isSaving} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Save">
                         {isSaving ? <SpinnerIcon className="w-5 h-5" /> : <SaveIcon className="w-5 h-5" />}
                     </button>
                 </div>
@@ -188,7 +188,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
     }
 
     return (
-        <div className="relative group inline-block w-full">
+        <div className={`relative group inline-block w-full ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all' : ''}`}>
             {type === 'textarea' ? (
                  <div className={`whitespace-pre-wrap ${className}`} style={style}>{content}</div>
             ) : (
@@ -198,8 +198,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
             {isAdmin && (
                 <button 
                     onClick={handleEditClick}
-                    className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-sky-100 text-sky-600 p-1.5 rounded-full shadow-sm hover:bg-sky-200 z-10"
-                    title="Edit Content"
+                    className="absolute -top-3 -right-3 bg-sky-600 text-white p-1.5 rounded-full shadow-md z-20 hover:bg-sky-700 transition-transform hover:scale-110"
+                    title="Edit Content (Admin)"
                 >
                     <EditIcon className="w-3 h-3" />
                 </button>

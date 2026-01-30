@@ -1,7 +1,9 @@
 
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { ChevronDownIcon } from './Icons';
+import { ChevronDownIcon, UserIcon } from './Icons';
+import { User } from '../types';
 
 const { Link, NavLink, useLocation } = ReactRouterDOM as any;
 
@@ -55,8 +57,11 @@ const NavLinks: NavLinkItem[] = [
     { name: 'Contact', path: '/contact' },
 ];
 
+interface PublicHeaderProps {
+    user: User | null;
+}
 
-const PublicHeader: React.FC = () => {
+const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const location = useLocation();
@@ -66,6 +71,9 @@ const PublicHeader: React.FC = () => {
     const handleMobileDropdown = (name: string) => {
         setOpenDropdown(prev => (prev === name ? null : name));
     };
+    
+    // Determine dashboard link based on user role
+    const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-30">
@@ -79,9 +87,17 @@ const PublicHeader: React.FC = () => {
 
                     {/* Login Button & Mobile Menu Toggle */}
                     <div className="flex items-center gap-2">
-                        <Link to="/login" className="btn btn-primary hidden sm:inline-flex">
-                            Portal Login
-                        </Link>
+                        {user ? (
+                             <Link to={dashboardLink} className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-700 font-semibold rounded-lg hover:bg-sky-100 transition-colors border border-sky-200">
+                                <UserIcon className="w-5 h-5"/>
+                                <span>Dashboard</span>
+                            </Link>
+                        ) : (
+                            <Link to="/login" className="btn btn-primary hidden sm:inline-flex">
+                                Portal Login
+                            </Link>
+                        )}
+
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100"
@@ -179,9 +195,15 @@ const PublicHeader: React.FC = () => {
                                 </NavLink>
                             )
                         ))}
-                         <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="sm:hidden mt-4 mx-3 btn btn-primary w-auto">
-                            Portal Login
-                        </Link>
+                         {user ? (
+                            <Link to={dashboardLink} onClick={() => setIsMobileMenuOpen(false)} className="sm:hidden mt-4 mx-3 btn btn-secondary w-auto flex items-center justify-center gap-2">
+                                <UserIcon className="w-5 h-5"/> Dashboard
+                            </Link>
+                         ) : (
+                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="sm:hidden mt-4 mx-3 btn btn-primary w-auto">
+                                Portal Login
+                            </Link>
+                         )}
                     </nav>
                 </div>
             )}

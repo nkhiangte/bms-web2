@@ -14,44 +14,53 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
         return [...news].sort((a, b) => b.date.localeCompare(a.date));
     }, [news]);
 
-    // Helper to render text with links
-    const renderContentWithLinks = (text: string) => {
-        // Regex to find [text](url) patterns
-        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-        const parts = [];
-        let lastIndex = 0;
-        let match;
-
-        while ((match = linkRegex.exec(text)) !== null) {
-            // Push text before the link
-            if (match.index > lastIndex) {
-                parts.push(text.substring(lastIndex, match.index));
+    // Helper to render text with links AND images
+    const renderRichContent = (text: string) => {
+        // 1. Split by image pattern: ![alt](url)
+        const parts = text.split(/(!\[.*?\]\(.*?\))/g);
+        
+        return parts.map((part, index) => {
+            const imgMatch = part.match(/^!\[(.*?)\]\((.*?)\)$/);
+            if (imgMatch) {
+                return (
+                    <img 
+                        key={index} 
+                        src={imgMatch[2]} 
+                        alt={imgMatch[1] || 'News Image'} 
+                        className="max-w-full h-auto rounded-lg my-4 shadow-sm block" 
+                    />
+                );
             }
-            
-            // Push the link component
-            const linkText = match[1];
-            const linkUrl = match[2];
-            parts.push(
-                <a 
-                    key={match.index} 
-                    href={linkUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-sky-600 hover:text-sky-800 underline font-medium break-all"
-                >
-                    {linkText}
-                </a>
-            );
 
-            lastIndex = linkRegex.lastIndex;
-        }
+            // 2. Parse Links: [text](url) within text parts
+            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+            const textElements = [];
+            let lastIdx = 0;
+            let match;
 
-        // Push remaining text
-        if (lastIndex < text.length) {
-            parts.push(text.substring(lastIndex));
-        }
+            while ((match = linkRegex.exec(part)) !== null) {
+                if (match.index > lastIdx) {
+                    textElements.push(part.substring(lastIdx, match.index));
+                }
+                textElements.push(
+                    <a 
+                        key={`${index}-${match.index}`} 
+                        href={match[2]} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-sky-600 hover:text-sky-800 underline font-medium break-all"
+                    >
+                        {match[1]}
+                    </a>
+                );
+                lastIdx = linkRegex.lastIndex;
+            }
+            if (lastIdx < part.length) {
+                textElements.push(part.substring(lastIdx));
+            }
 
-        return parts;
+            return <span key={index}>{textElements}</span>;
+        });
     };
 
     return (
@@ -78,9 +87,9 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
                                 )}
                                 <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
                                 <h2 className="mt-2 text-2xl font-bold text-slate-800">{item.title}</h2>
-                                <p className="mt-3 text-slate-600 whitespace-pre-wrap">
-                                    {renderContentWithLinks(item.content)}
-                                </p>
+                                <div className="mt-3 text-slate-600 whitespace-pre-wrap">
+                                    {renderRichContent(item.content)}
+                                </div>
                             </div>
                         ))
                     ) : (

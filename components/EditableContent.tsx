@@ -31,7 +31,11 @@ const EditableContent: React.FC<EditableContentProps> = ({
     const [tempContent, setTempContent] = useState<string>(defaultContent);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Refs
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textImageInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Strict check: User must exist AND have role 'admin'
     const isAdmin = !!user && user.role === 'admin';
@@ -88,6 +92,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
         }
     };
 
+    // Handle Image Replacement (type='image')
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -111,6 +116,84 @@ const EditableContent: React.FC<EditableContentProps> = ({
         } finally {
             setIsSaving(false);
         }
+    };
+
+    // Handle Image Insertion into Textarea
+    const handleTextImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsSaving(true);
+        try {
+            const resized = await resizeImage(file, 1024, 1024, 0.9);
+            const url = await uploadToImgBB(resized);
+            
+            const imageMarkdown = `\n![Image](${url})\n`;
+            
+            if (textareaRef.current) {
+                const start = textareaRef.current.selectionStart;
+                const end = textareaRef.current.selectionEnd;
+                const newText = tempContent.substring(0, start) + imageMarkdown + tempContent.substring(end);
+                setTempContent(newText);
+            } else {
+                setTempContent(prev => prev + imageMarkdown);
+            }
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            alert("Failed to upload image.");
+        } finally {
+            setIsSaving(false);
+            if(textImageInputRef.current) textImageInputRef.current.value = '';
+        }
+    };
+
+    // Render text with Markdown-style images and links
+    const renderRichText = (text: string) => {
+        // 1. Split by image pattern: ![alt](url)
+        const parts = text.split(/(!\[.*?\]\(.*?\))/g);
+        
+        return parts.map((part, index) => {
+            const imgMatch = part.match(/^!\[(.*?)\]\((.*?)\)$/);
+            if (imgMatch) {
+                return (
+                    <img 
+                        key={index} 
+                        src={imgMatch[2]} 
+                        alt={imgMatch[1] || 'Embedded Image'} 
+                        className="max-w-full h-auto rounded-lg my-4 shadow-sm block" 
+                    />
+                );
+            }
+
+            // 2. Parse Links: [text](url) within text parts
+            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+            const textElements = [];
+            let lastIdx = 0;
+            let match;
+
+            while ((match = linkRegex.exec(part)) !== null) {
+                if (match.index > lastIdx) {
+                    textElements.push(part.substring(lastIdx, match.index));
+                }
+                textElements.push(
+                    <a 
+                        key={`${index}-${match.index}`} 
+                        href={match[2]} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-sky-600 hover:underline font-medium break-all"
+                    >
+                        {match[1]}
+                    </a>
+                );
+                lastIdx = linkRegex.lastIndex;
+            }
+            if (lastIdx < part.length) {
+                textElements.push(part.substring(lastIdx));
+            }
+
+            return <span key={index}>{textElements}</span>;
+        });
     };
 
     if (type === 'image') {
@@ -158,13 +241,33 @@ const EditableContent: React.FC<EditableContentProps> = ({
         return (
             <div className="relative border-2 border-sky-500 rounded p-1 bg-white shadow-xl z-30">
                 {type === 'textarea' ? (
-                    <textarea 
-                        value={tempContent} 
-                        onChange={(e) => setTempContent(e.target.value)} 
-                        className="w-full form-textarea text-slate-800 text-base"
-                        rows={6}
-                        autoFocus
-                    />
+                    <>
+                        <div className="flex justify-end mb-1">
+                             <button 
+                                type="button" 
+                                onClick={() => textImageInputRef.current?.click()}
+                                className="text-xs flex items-center gap-1 text-sky-600 hover:text-sky-800 font-semibold bg-sky-50 px-2 py-1 rounded"
+                                disabled={isSaving}
+                            >
+                                <UploadIcon className="w-3 h-3"/> Insert Image
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={textImageInputRef} 
+                                onChange={handleTextImageUpload} 
+                                accept="image/*" 
+                                className="hidden" 
+                            />
+                        </div>
+                        <textarea 
+                            ref={textareaRef}
+                            value={tempContent} 
+                            onChange={(e) => setTempContent(e.target.value)} 
+                            className="w-full form-textarea text-slate-800 text-base min-h-[150px]"
+                            rows={6}
+                            autoFocus
+                        />
+                    </>
                 ) : (
                     <input 
                         type="text" 
@@ -190,7 +293,9 @@ const EditableContent: React.FC<EditableContentProps> = ({
     return (
         <div className={`relative group inline-block w-full ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all cursor-text' : ''}`}>
             {type === 'textarea' ? (
-                 <div className={`whitespace-pre-wrap ${className}`} style={style}>{content}</div>
+                 <div className={`whitespace-pre-wrap ${className}`} style={style}>
+                     {renderRichText(content)}
+                 </div>
             ) : (
                  <span className={className} style={style}>{content}</span>
             )}

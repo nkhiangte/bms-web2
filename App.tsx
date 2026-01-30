@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -444,6 +446,10 @@ const App: React.FC = () => {
   const handleUpdateAdmissionStatus = async (id: string, status: any) => {
       await db.collection('online_admissions').doc(id).update({ status });
   };
+
+  const handleDeleteAdmission = async (id: string) => {
+      await db.collection('online_admissions').doc(id).delete();
+  };
   
   // ... (Other handlers like onAddStaff, onDeleteStaff would be implemented similarly in their respective components) ...
 
@@ -469,6 +475,8 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage />} />
           <Route path="admissions" element={<AdmissionsPage />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async (data) => {
+               // Initial submission logic for non-drafts is handled inside OnlineAdmissionPage
+               // but we can provide a fallback here if needed, or update OnlineAdmissionPage to use this
                const doc = await db.collection('online_admissions').add({ ...data, submissionDate: new Date().toISOString(), status: 'pending' });
                return doc.id;
           }} />} />
@@ -658,7 +666,17 @@ const App: React.FC = () => {
            <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />
            
            <Route path="admission-settings" element={<AdmissionSettingsPage admissionConfig={admissionSettings} onUpdateConfig={async (c) => { await db.collection('config').doc('admissionSettings').set(c); return true; }} />} />
-           <Route path="admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={handleUpdateAdmissionStatus} />} />
+           
+           <Route 
+                path="admissions" 
+                element={
+                    <OnlineAdmissionsListPage 
+                        admissions={onlineAdmissions} 
+                        onUpdateStatus={handleUpdateAdmissionStatus} 
+                        onDelete={handleDeleteAdmission}
+                    />
+                } 
+           />
            
            <Route path="homework-scanner" element={<HomeworkScannerPage />} />
            <Route path="activity-log" element={<ActivityLogPage students={students} user={user!} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => {}} />} />

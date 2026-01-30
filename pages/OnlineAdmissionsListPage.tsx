@@ -1,8 +1,11 @@
 
+
+
 import React, { useState } from 'react';
 import { OnlineAdmission } from '../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon } from '../components/Icons';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 // Simple Lightbox component for this page
 const Lightbox: React.FC<{ src: string; alt: string; onClose: () => void }> = ({ src, alt, onClose }) => {
@@ -17,10 +20,12 @@ const Lightbox: React.FC<{ src: string; alt: string; onClose: () => void }> = ({
 interface OnlineAdmissionsListPageProps {
     admissions: OnlineAdmission[];
     onUpdateStatus: (id: string, status: OnlineAdmission['status']) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
 }
 
 const getStatusBadge = (status: OnlineAdmission['status']) => {
     switch (status) {
+        case 'draft': return <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold flex items-center gap-1 w-fit"><ClockIcon className="w-3 h-3"/> Draft</span>;
         case 'pending': return <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 w-fit"><ClockIcon className="w-3 h-3"/> Pending</span>;
         case 'reviewed': return <span className="px-2 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold flex items-center gap-1 w-fit"><InformationCircleIcon className="w-3 h-3"/> Reviewed</span>;
         case 'approved': return <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1 w-fit"><CheckCircleIcon className="w-3 h-3"/> Approved</span>;
@@ -151,6 +156,7 @@ const AdmissionDetailsModal: React.FC<{
                                         disabled={admission.isEnrolled}
                                         className="form-select text-sm border-slate-300 shadow-sm focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-200 disabled:text-slate-500"
                                     >
+                                        <option value="draft">Draft</option>
                                         <option value="pending">Pending</option>
                                         <option value="reviewed">Reviewed</option>
                                         <option value="approved">Approved (Enroll)</option>
@@ -172,11 +178,13 @@ const AdmissionDetailsModal: React.FC<{
     );
 }
 
-const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ admissions, onUpdateStatus }) => {
+const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ admissions, onUpdateStatus, onDelete }) => {
     const [filterStatus, setFilterStatus] = useState<'all' | OnlineAdmission['status']>('all');
     const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
     const [lightboxImage, setLightboxImage] = useState<{ src: string, alt: string } | null>(null);
     const [selectedAdmission, setSelectedAdmission] = useState<OnlineAdmission | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const filteredAdmissions = admissions.filter(a => filterStatus === 'all' || a.status === filterStatus)
         .sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
@@ -185,16 +193,13 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
         setUpdatingStatus(prev => ({ ...prev, [id]: true }));
         await onUpdateStatus(id, newStatus);
         setUpdatingStatus(prev => ({ ...prev, [id]: false }));
-        // Update the local selectedAdmission state to reflect changes immediately in modal
         if (selectedAdmission && selectedAdmission.id === id) {
-             const updated = admissions.find(a => a.id === id); // This might be stale if parent doesn't update prop immediately, 
-             // but usually parent re-renders. Ideally we optimistically update or rely on parent re-render.
-             // We'll optimistically update the modal view for smoothness.
+             const updated = admissions.find(a => a.id === id); 
              setSelectedAdmission(prev => prev ? ({ ...prev, status: newStatus }) : null);
         }
     };
     
-    // Sync selectedAdmission with props update (e.g. when enrollment happens and admission object changes)
+    // Sync selectedAdmission with props update
     React.useEffect(() => {
         if(selectedAdmission) {
             const updated = admissions.find(a => a.id === selectedAdmission.id);
@@ -202,6 +207,14 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
         }
     }, [admissions]);
 
+    const confirmDelete = async () => {
+        if (deletingId && onDelete) {
+            setIsDeleting(true);
+            await onDelete(deletingId);
+            setIsDeleting(false);
+            setDeletingId(null);
+        }
+    };
 
     return (
         <>
@@ -216,7 +229,7 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
 
                 {/* Filters */}
                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                    {['all', 'pending', 'reviewed', 'approved', 'rejected'].map(status => (
+                    {['all', 'draft', 'pending', 'reviewed', 'approved', 'rejected'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilterStatus(status as any)}
@@ -264,13 +277,24 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                             {getStatusBadge(app.status)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <button 
-                                                onClick={() => setSelectedAdmission(app)}
-                                                className="text-sky-600 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 p-2 rounded-full transition-colors"
-                                                title="View Details"
-                                            >
-                                                <EyeIcon className="w-5 h-5" />
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button 
+                                                    onClick={() => setSelectedAdmission(app)}
+                                                    className="text-sky-600 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 p-2 rounded-full transition-colors"
+                                                    title="View Details"
+                                                >
+                                                    <EyeIcon className="w-5 h-5" />
+                                                </button>
+                                                {onDelete && (
+                                                    <button 
+                                                        onClick={() => setDeletingId(app.id)}
+                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                        title="Delete Application"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -299,6 +323,18 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
 
             {/* Lightbox */}
             {lightboxImage && <Lightbox src={lightboxImage.src} alt={lightboxImage.alt} onClose={() => setLightboxImage(null)} />}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Application"
+                confirmDisabled={isDeleting}
+            >
+                <p>Are you sure you want to permanently delete this application? This action cannot be undone.</p>
+                {isDeleting && <p className="text-sm text-slate-500 mt-2">Deleting...</p>}
+            </ConfirmationModal>
         </>
     );
 };

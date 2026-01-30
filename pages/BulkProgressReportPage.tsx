@@ -72,12 +72,12 @@ const calculateTermSummary = (
             const r = findResultWithAliases(sExam?.results, sd);
             let totalMark = 0;
             if (hasActivities) {
-                const eMark = r?.examMarks ?? 0;
-                const aMark = r?.activityMarks ?? 0;
+                const eMark = Number(r?.examMarks ?? 0);
+                const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
             } else {
-                totalMark = r?.marks ?? 0;
+                totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
                 if (totalMark < limit) fSubjects++;
             }
@@ -122,17 +122,17 @@ const calculateTermSummary = (
         let subjectFullMarks = 0;
 
         if (hasActivities) {
-            const examMark = result?.examMarks ?? 0;
-            const activityMark = result?.activityMarks ?? 0;
+            const examMark = Number(result?.examMarks ?? 0);
+            const activityMark = Number(result?.activityMarks ?? 0);
             examTotal += examMark;
             activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
+            subjectFullMarks = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
-            totalSubjectMark = result?.marks ?? 0;
+            totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks;
+            subjectFullMarks = Number(sd.examFullMarks);
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }
@@ -333,7 +333,7 @@ const MultiTermReportCard: React.FC<{
             <div className="mt-8 text-sm break-inside-avoid">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
                              {classTeacher ? (
                                  <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
                              ) : (
@@ -343,12 +343,13 @@ const MultiTermReportCard: React.FC<{
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
-                        <div className="h-8 min-w-[150px]"></div>
+                        <div className="h-12 min-w-[150px]"></div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
-                <div className="flex justify-between mt-4 text-xs text-slate-500">
+                <div className="flex justify-between mt-4 print:mt-1">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                    <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>
             </div>
         </div>
@@ -428,7 +429,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{(result?.examMarks ?? 0) + (result?.activityMarks ?? 0)}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )
                                 ) : ( // IX & X

@@ -87,9 +87,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
             if (doc.exists) {
                 const data = doc.data() as OnlineAdmission;
-                // Basic security check: DOB match (Simple string compare, assuming YYYY-MM-DD storage)
-                // Also check if status is draft or pending payment (not approved/enrolled)
-                if (data.dateOfBirth === retrieveDob) {
+                // Normalize dates for comparison (assuming storage is YYYY-MM-DD or ISO)
+                // A simple string check is a good first step, but being robust for YYYY-MM-DD is better
+                const storedDob = data.dateOfBirth;
+                
+                if (storedDob === retrieveDob) {
                     if (data.isEnrolled) {
                          setRetrievalError("This student is already enrolled. Please contact the office.");
                     } else {
@@ -255,6 +257,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         }
     };
 
+    const generateTempId = () => {
+        const randomNum = Math.floor(100000 + Math.random() * 900000); // 6 digit random
+        return `BMS26${randomNum}`;
+    };
+
     const handleSaveDraft = async () => {
         if (!formData.studentName || !formData.dateOfBirth) {
             alert("Please provide at least Name and Date of Birth to save a draft.");
@@ -263,24 +270,24 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
 
         setIsSubmitting(true);
         try {
+            let draftId = formData.id;
+            
+            // If no ID, generate one
+            if (!draftId) {
+                draftId = generateTempId();
+            }
+
             const draftData = {
                 ...formData,
+                id: draftId,
                 submissionDate: formData.submissionDate || new Date().toISOString(),
                 status: 'draft',
             };
 
-            let draftId = formData.id;
-
-            if (draftId) {
-                // Update existing
-                await db.collection('online_admissions').doc(draftId).update(draftData);
-            } else {
-                // Create new
-                const docRef = await db.collection('online_admissions').add(draftData);
-                draftId = docRef.id;
-                setFormData(prev => ({ ...prev, id: draftId })); // Update local state
-            }
-
+            await db.collection('online_admissions').doc(draftId).set(draftData, { merge: true });
+            
+            setFormData(prev => ({ ...prev, id: draftId })); // Update local state
+            
             alert(`Application Saved as Draft! \n\nYour Temporary ID is: ${draftId} \n\nPlease save this ID to resume your application later.`);
         } catch (error) {
             console.error("Error saving draft:", error);
@@ -311,21 +318,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             const initialStatus = requiresReview ? 'pending' : 'approved';
             
             let submissionId = formData.id;
+            if (!submissionId) {
+                submissionId = generateTempId();
+            }
             
             const submissionData = {
                 ...formData,
+                id: submissionId,
                 submissionDate: formData.submissionDate || new Date().toISOString(),
                 status: initialStatus
             };
 
-            if (submissionId) {
-                 // Update existing draft/record
-                await db.collection('online_admissions').doc(submissionId).update(submissionData);
-            } else {
-                // Create new record
-                const docRef = await db.collection('online_admissions').add(submissionData);
-                submissionId = docRef.id;
-            }
+            // Use .set with merge to update existing draft or create new with specific ID
+            await db.collection('online_admissions').doc(submissionId).set(submissionData, { merge: true });
 
             if (requiresReview) {
                 // Go to status page for review
@@ -338,8 +343,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                         grade: formData.admissionGrade, 
                         studentName: formData.studentName, 
                         fatherName: formData.fatherName, 
-                        contact: formData.contactNumber,
-                        studentType: formData.studentType 
+                        contact: formData.contactNumber, 
+                        studentType: formData.studentType
                     } 
                 });
                 alert(`Application Submitted & Approved! Redirecting to payment...`);
@@ -424,7 +429,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 <div>
                                     <input 
                                         type="text" 
-                                        placeholder="Application ID (Temp ID)" 
+                                        placeholder="Application ID (e.g. BMS26...)" 
                                         value={retrieveAppId}
                                         onChange={e => setRetrieveAppId(e.target.value)}
                                         className="form-input w-full text-center mb-2"
@@ -467,7 +472,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${formData.studentType === 'Existing' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800'}`}>
                                 {formData.studentType} Application
                             </span>
-                            {formData.id && <div className="text-xs text-emerald-600 mt-1 font-semibold">Draft ID: {formData.id}</div>}
+                            {formData.id && <div className="text-xs text-emerald-600 mt-1 font-semibold">ID: {formData.id}</div>}
                         </div>
                     </div>
 

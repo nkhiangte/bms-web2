@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { OnlineAdmission } from '../types';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon } from '../components/Icons';

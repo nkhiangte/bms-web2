@@ -2,12 +2,18 @@
 import React, { useState, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { db } from '../../firebaseConfig';
-import { OnlineAdmission } from '../../types';
+import { OnlineAdmission, User } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon } from '../../components/Icons';
+import { formatDateForDisplay } from '../../utils';
+import EditableContent from '../../components/EditableContent';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
-const AdmissionStatusPage: React.FC = () => {
+interface AdmissionStatusPageProps {
+    user: User | null;
+}
+
+const AdmissionStatusPage: React.FC<AdmissionStatusPageProps> = ({ user }) => {
     const [admissionId, setAdmissionId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -67,8 +73,12 @@ const AdmissionStatusPage: React.FC = () => {
         <div className="bg-slate-50 py-16 min-h-screen">
             <div className="container mx-auto px-4">
                 <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-lg shadow-lg text-center">
-                    <h1 className="text-3xl font-extrabold text-slate-800">Check Admission Status</h1>
-                    <p className="mt-2 text-lg text-slate-600">Enter your Application Reference ID to see the current status of your application.</p>
+                    <h1 className="text-3xl font-extrabold text-slate-800">
+                         <EditableContent id="adm_status_title" defaultContent="Check Admission Status" type="text" user={user} />
+                    </h1>
+                    <div className="mt-2 text-lg text-slate-600">
+                         <EditableContent id="adm_status_subtitle" defaultContent="Enter your Application Reference ID to see the current status of your application." type="text" user={user} />
+                    </div>
                     
                     <form onSubmit={handleCheckStatus} className="mt-8">
                         <label htmlFor="admission-id" className="sr-only">Application Reference ID</label>

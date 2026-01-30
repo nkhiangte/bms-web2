@@ -475,14 +475,14 @@ const App: React.FC = () => {
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
-          <Route path="admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async (data) => {
+          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
                // Initial submission logic for non-drafts is handled inside OnlineAdmissionPage
                // but we can provide a fallback here if needed, or update OnlineAdmissionPage to use this
                const doc = await db.collection('online_admissions').add({ ...data, submissionDate: new Date().toISOString(), status: 'pending' });
                return doc.id;
           }} />} />
-          <Route path="admissions/status" element={<AdmissionStatusPage />} />
-          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage onUpdateAdmissionPayment={async (id, updates) => {
+          <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
+          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, updates) => {
                await db.collection('online_admissions').doc(id).update({ ...updates, paymentStatus: 'paid' });
                return true;
           }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />

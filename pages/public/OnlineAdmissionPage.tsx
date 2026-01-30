@@ -1,22 +1,22 @@
 
-
-
 import React, { useState, FormEvent, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student } from '../../types';
+import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student, User } from '../../types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../../constants';
 import { UploadIcon, SpinnerIcon, CheckIcon, UserIcon, SearchIcon, ArrowRightIcon, BackIcon, SaveIcon, DocumentReportIcon } from '../../components/Icons';
-import { uploadToImgBB, resizeImage, getNextGrade, formatDateForDisplay, formatDateForStorage } from '../../utils';
+import { uploadToImgBB, resizeImage, getNextGrade } from '../../utils';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import { db } from '../../firebaseConfig';
+import EditableContent from '../../components/EditableContent';
 
 const { useNavigate } = ReactRouterDOM as any;
 
 interface OnlineAdmissionPageProps {
     onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id'>) => Promise<string>;
+    user: User | null;
 }
 
-const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit }) => {
+const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit, user }) => {
     const navigate = useNavigate();
     const [step, setStep] = useState<1 | 2>(1); // 1: Selection, 2: Form
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,7 +88,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             if (doc.exists) {
                 const data = doc.data() as OnlineAdmission;
                 // Normalize dates for comparison (assuming storage is YYYY-MM-DD or ISO)
-                // A simple string check is a good first step, but being robust for YYYY-MM-DD is better
                 const storedDob = data.dateOfBirth;
                 
                 if (storedDob === retrieveDob) {
@@ -362,8 +361,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-12">
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Online Admission 2026-27</h1>
-                        <p className="text-slate-600 mt-2 text-lg">Please select your admission type to proceed.</p>
+                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">
+                             <EditableContent id="online_adm_title" defaultContent="Online Admission 2026-27" type="text" user={user} />
+                        </h1>
+                        <div className="text-slate-600 mt-2 text-lg">
+                             <EditableContent id="online_adm_subtitle" defaultContent="Please select your admission type to proceed." type="text" user={user} />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -375,8 +378,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             <div className="bg-sky-100 p-4 rounded-full mb-6 group-hover:bg-sky-200 transition-colors">
                                 <UserIcon className="w-12 h-12 text-sky-600" />
                             </div>
-                            <h2 className="text-2xl font-bold text-slate-800 mb-2">New Admission</h2>
-                            <p className="text-slate-600 mb-6">For students applying to Bethel Mission School for the first time.</p>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                                <EditableContent id="online_adm_new_title" defaultContent="New Admission" type="text" user={user} />
+                            </h2>
+                            <div className="text-slate-600 mb-6">
+                                <EditableContent id="online_adm_new_desc" defaultContent="For students applying to Bethel Mission School for the first time." type="textarea" user={user} />
+                            </div>
                             <button className="btn btn-primary mt-auto w-full group-hover:-translate-y-1 transition-transform">
                                 Apply as Newcomer
                             </button>
@@ -388,8 +395,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 <div className="bg-indigo-100 p-4 rounded-full mb-6">
                                     <SearchIcon className="w-12 h-12 text-indigo-600" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h2>
-                                <p className="text-slate-600">Re-admission for current students promoting to the next class.</p>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                                    <EditableContent id="online_adm_exist_title" defaultContent="Existing Student" type="text" user={user} />
+                                </h2>
+                                <div className="text-slate-600">
+                                    <EditableContent id="online_adm_exist_desc" defaultContent="Re-admission for current students promoting to the next class." type="textarea" user={user} />
+                                </div>
                             </div>
                             
                             <form onSubmit={handleFetchStudent} className="mt-auto space-y-4">
@@ -421,8 +432,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                                 <div className="bg-emerald-100 p-4 rounded-full mb-6">
                                     <DocumentReportIcon className="w-12 h-12 text-emerald-600" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Resume Application</h2>
-                                <p className="text-slate-600">Continue an existing or saved application.</p>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                                     <EditableContent id="online_adm_resume_title" defaultContent="Resume Application" type="text" user={user} />
+                                </h2>
+                                <div className="text-slate-600">
+                                     <EditableContent id="online_adm_resume_desc" defaultContent="Continue an existing or saved application." type="textarea" user={user} />
+                                </div>
                             </div>
                             
                             <form onSubmit={handleRetrieveApplication} className="mt-auto space-y-4">
@@ -477,7 +492,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                     </div>
 
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-extrabold text-slate-800">Online Admission Form</h1>
+                        <h1 className="text-3xl font-extrabold text-slate-800">
+                             <EditableContent id="online_adm_form_title" defaultContent="Online Admission Form" type="text" user={user} />
+                        </h1>
                         <p className="text-slate-600 mt-2">Academic Session 2026-2027</p>
                     </div>
 

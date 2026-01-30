@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, AdmissionItem, NotificationType, AdmissionSettings } from '../../types';
+import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES, ADMISSION_FEE_STRUCTURE } from '../../constants';
+import EditableContent from '../../components/EditableContent';
 
 const { useParams, useLocation, Link } = ReactRouterDOM as any;
 
@@ -13,14 +14,16 @@ interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
     addNotification: (message: string, type: NotificationType, title?: string) => void;
     schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
-    admissionConfig?: AdmissionSettings; // Made optional to prevent breaking change, defaults inside
+    admissionConfig?: AdmissionSettings; 
+    user: User | null;
 }
 
 const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ 
     onUpdateAdmissionPayment, 
     addNotification, 
     schoolConfig,
-    admissionConfig = DEFAULT_ADMISSION_SETTINGS 
+    admissionConfig = DEFAULT_ADMISSION_SETTINGS,
+    user
 }) => {
     // FIX: Removed the generic type argument from useParams as the ReactRouterDOM proxy object 
     // doesn't support generic calls directly in this setup.
@@ -369,7 +372,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             <div className="container mx-auto px-4">
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-6xl mx-auto">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
+                         <h1 className="text-3xl font-extrabold text-slate-800">
+                             <EditableContent id="adm_pay_title" defaultContent="Admission Payment" type="text" user={user} />
+                        </h1>
                         <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{studentName}</span> ({studentType})</p>
                     </div>
                     
@@ -486,8 +491,12 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                 </div>
                                 
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Instructions</h3>
-                                    <p className="text-sm text-slate-600 mb-4">Pay the total amount using the details below, then upload the screenshot to finalize.</p>
+                                     <h3 className="text-xl font-bold text-slate-800 mb-2">
+                                        <EditableContent id="adm_pay_instr_title" defaultContent="Payment Instructions" type="text" user={user} />
+                                    </h3>
+                                    <div className="text-sm text-slate-600 mb-4">
+                                         <EditableContent id="adm_pay_instr_desc" defaultContent="Pay the total amount using the details below, then upload the screenshot to finalize." type="textarea" user={user} />
+                                    </div>
                                      <div className="flex justify-center">
                                         <img src={qrCodeUrl} alt="UPI QR Code" className="w-48 h-48 border p-1 bg-white shadow-sm"/>
                                      </div>
@@ -514,6 +523,13 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                     {isProcessing ? <SpinnerIcon className="w-6 h-6"/> : null}
                                     {isProcessing ? 'Submitting...' : 'Submit Payment & Finalize'}
                                 </button>
+                                
+                                 <div className="mt-4 pt-4 border-t border-slate-200">
+                                    <h4 className="text-sm font-bold text-slate-700 mb-2">Store Instructions</h4>
+                                    <div className="text-xs text-slate-600 space-y-1">
+                                         <EditableContent id="adm_pay_store_instr" defaultContent="- Verify Bill ID & Transaction ID before handing over merchandise.\n- Uniform sizes can be exchanged within 3 days if unused." type="textarea" user={user} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

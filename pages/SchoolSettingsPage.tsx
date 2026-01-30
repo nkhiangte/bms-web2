@@ -1,7 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, UploadIcon, SaveIcon, SpinnerIcon } from '../components/Icons';
 import { resizeImage, uploadToImgBB } from '../utils';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface SchoolSettingsPageProps {
     config: { paymentQRCodeUrl?: string; upiId?: string };

@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { User, Grade, SubjectAssignment, Homework } from '../types';
 import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon, BookOpenIcon, SpinnerIcon } from '../components/Icons';
 import { GRADES_LIST } from '../constants';
 import { formatDateForDisplay, formatDateForStorage } from '../utils';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface HomeworkFormModalProps {
     isOpen: boolean;

@@ -1,13 +1,13 @@
 
-
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType, AdmissionSettings } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES, ADMISSION_FEE_STRUCTURE } from '../../constants';
+
+const { useParams, useLocation, Link } = ReactRouterDOM as any;
 
 interface AdmissionPaymentPageProps {
     onUpdateAdmissionPayment: (admissionId: string, updates: { paymentAmount: number, purchasedItems: AdmissionItem[], paymentScreenshotUrl: string, paymentTransactionId: string, billId: string }) => Promise<boolean>;
@@ -22,7 +22,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     schoolConfig,
     admissionConfig = DEFAULT_ADMISSION_SETTINGS 
 }) => {
-    const { admissionId } = useParams<{ admissionId: string }>();
+    // FIX: Removed the generic type argument from useParams as the ReactRouterDOM proxy object 
+    // doesn't support generic calls directly in this setup.
+    const { admissionId } = useParams();
     const location = useLocation();
     
     // studentType is now expected from location state (default to Newcomer if missing)

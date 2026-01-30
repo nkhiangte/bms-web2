@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { NewsItem, User } from '../types';
 import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon, DocumentReportIcon, SpinnerIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
 import NewsFormModal from '../components/NewsFormModal';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface ManageNewsPageProps {
     news: NewsItem[];

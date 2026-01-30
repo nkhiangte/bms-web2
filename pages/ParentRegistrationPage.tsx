@@ -1,11 +1,14 @@
+
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { auth, db } from '../firebaseConfig';
 import { 
     UserIcon, MailIcon, PhoneIcon, HomeIcon, LockClosedIcon, 
     CheckCircleIcon, BackIcon, SpinnerIcon, PlusIcon, TrashIcon
 } from '../components/Icons';
 import { StudentClaim } from '../types';
+
+const { useNavigate, Link } = ReactRouterDOM as any;
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Legal Guardian', 'Grandparent', 'Other'];
 const LANGUAGES = ['English', 'Mizo', 'Hindi', 'Other'];

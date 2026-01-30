@@ -1,9 +1,11 @@
+
 import React, { useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '../../components/Icons';
-import { NewsItem } from '../../types';
+import { NewsItem, User } from '../../types';
 import { formatDateForNews } from '../../utils';
+import EditableContent from '../../components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -20,24 +22,43 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description:
 
 interface PublicHomePageProps {
     news: NewsItem[];
+    user: User | null;
 }
 
 
-const PublicHomePage: React.FC<PublicHomePageProps> = ({ news }) => {
+const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
     const latestNews = useMemo(() => {
         return [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
     }, [news]);
 
     return (
         <>
-            <section className="relative bg-cover bg-center text-white py-40 px-4" style={{ backgroundImage: "url('https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg')" }}>
-                <div className="absolute inset-0 bg-black opacity-60"></div>
-                <div className="relative container mx-auto text-center">
-                    <h1 className="text-5xl md:text-6xl font-extrabold leading-tight animate-fade-in" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
-                        Welcome to Bethel Mission School
+             <section className="relative h-[600px] w-full">
+                <EditableContent
+                    id="home_hero_bg"
+                    defaultContent="https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg"
+                    type="image"
+                    user={user}
+                    className="absolute inset-0 w-full h-full"
+                    imgAlt="School Hero Background"
+                />
+                <div className="absolute inset-0 bg-black opacity-60 pointer-events-none"></div>
+                <div className="relative container mx-auto text-center h-full flex flex-col justify-center items-center px-4">
+                    <h1 className="text-5xl md:text-6xl font-extrabold leading-tight animate-fade-in text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
+                        <EditableContent
+                            id="home_hero_title"
+                            defaultContent="Welcome to Bethel Mission School"
+                            type="text"
+                            user={user}
+                        />
                     </h1>
-                    <p className="mt-4 text-xl md:text-2xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                        Service to God & Men
+                    <p className="mt-4 text-xl md:text-2xl animate-fade-in text-white" style={{ animationDelay: '0.3s' }}>
+                        <EditableContent
+                            id="home_hero_subtitle"
+                            defaultContent="Service to God & Men"
+                            type="text"
+                            user={user}
+                        />
                     </p>
                 </div>
             </section>
@@ -84,10 +105,22 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news }) => {
 
             <section className="py-20 bg-white">
                 <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-bold text-slate-800">Why Choose Us?</h2>
-                    <p className="mt-4 max-w-3xl mx-auto text-slate-600">
-                        At Bethel Mission School, we are dedicated to providing a nurturing yet challenging educational environment that fosters academic excellence, strong moral character, and a lifelong passion for learning.
-                    </p>
+                    <h2 className="text-3xl font-bold text-slate-800">
+                        <EditableContent
+                            id="home_choose_title"
+                            defaultContent="Why Choose Us?"
+                            type="text"
+                            user={user}
+                        />
+                    </h2>
+                    <div className="mt-4 max-w-3xl mx-auto text-slate-600">
+                         <EditableContent
+                            id="home_choose_desc"
+                            defaultContent="At Bethel Mission School, we are dedicated to providing a nurturing yet challenging educational environment that fosters academic excellence, strong moral character, and a lifelong passion for learning."
+                            type="textarea"
+                            user={user}
+                        />
+                    </div>
                     <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                         <FeatureCard 
                             icon={<AcademicCapIcon className="w-12 h-12" />}

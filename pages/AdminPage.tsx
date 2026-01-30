@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { 
     BackIcon, 
     HomeIcon, 
@@ -11,6 +11,8 @@ import {
     CogIcon,
     CurrencyDollarIcon
 } from '../components/Icons';
+
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 const AdminCard: React.FC<{
   title: string;

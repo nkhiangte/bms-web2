@@ -64,6 +64,14 @@ service cloud.firestore {
     }
 
     // ---------------------------
+    // Public Website Content (CMS)
+    // ---------------------------
+    match /website_content/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------
     // Online Admissions
     // ---------------------------
     match /online_admissions/{admissionId} {

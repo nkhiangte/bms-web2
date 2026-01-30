@@ -1,8 +1,11 @@
+
 import React, { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { db } from '../../firebaseConfig';
 import { OnlineAdmission } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon } from '../../components/Icons';
+
+const { useNavigate, Link } = ReactRouterDOM as any;
 
 const AdmissionStatusPage: React.FC = () => {
     const [admissionId, setAdmissionId] = useState('');

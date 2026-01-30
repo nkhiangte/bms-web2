@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { AdmissionSettings, AdmissionItemConfig, Grade } from '../types';
 import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
 import { GRADES_LIST, UNIFORM_SIZES } from '../constants';
+
+const { useNavigate, Link } = ReactRouterDOM as any;
 
 interface AdmissionSettingsPageProps {
     admissionConfig: AdmissionSettings;

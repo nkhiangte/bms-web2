@@ -1,9 +1,12 @@
+
 import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
 import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon } from '../components/Icons';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import { resizeImage, uploadToImgBB } from '../utils';
+
+const { Link } = ReactRouterDOM as any;
 
 interface UserProfilePageProps {
   currentUser: User;

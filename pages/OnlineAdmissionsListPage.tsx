@@ -1,11 +1,11 @@
 
 
-
 import React, { useState } from 'react';
 import { OnlineAdmission } from '../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon } from '../components/Icons';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { useNavigate } from 'react-router-dom';
 
 // Simple Lightbox component for this page
 const Lightbox: React.FC<{ src: string; alt: string; onClose: () => void }> = ({ src, alt, onClose }) => {
@@ -40,7 +40,9 @@ const AdmissionDetailsModal: React.FC<{
     onUpdateStatus: (id: string, status: OnlineAdmission['status']) => Promise<void>;
     updatingStatus: boolean;
     onImageClick: (src: string, alt: string) => void;
-}> = ({ admission, onClose, onUpdateStatus, updatingStatus, onImageClick }) => {
+    onNavigateToEdit: (admission: OnlineAdmission) => void;
+    onNavigateToPayment: (admission: OnlineAdmission) => void;
+}> = ({ admission, onClose, onUpdateStatus, updatingStatus, onImageClick, onNavigateToEdit, onNavigateToPayment }) => {
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
@@ -132,7 +134,7 @@ const AdmissionDetailsModal: React.FC<{
 
                     {/* Actions Section */}
                     <div className="bg-slate-50 p-4 border rounded-lg">
-                        <h4 className="font-bold text-slate-700 mb-3">Actions</h4>
+                        <h4 className="font-bold text-slate-700 mb-3">Admin Actions</h4>
                          {admission.status === 'approved' && admission.isEnrolled && (
                             <div className="mb-4 p-3 bg-emerald-50 border-l-4 border-emerald-400 rounded-r-lg">
                                 <h4 className="font-bold text-emerald-800 flex items-center gap-2">
@@ -146,9 +148,9 @@ const AdmissionDetailsModal: React.FC<{
                             </div>
                         )}
                          
-                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <label className="font-bold text-slate-800 text-sm">Update Application Status:</label>
-                            <div className="flex items-center gap-2">
+                         <div className="flex flex-col gap-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <label className="font-bold text-slate-800 text-sm">Update Status:</label>
                                 {updatingStatus ? <SpinnerIcon className="w-5 h-5 text-sky-600"/> : (
                                     <select 
                                         value={admission.status} 
@@ -163,6 +165,21 @@ const AdmissionDetailsModal: React.FC<{
                                         <option value="rejected">Rejected</option>
                                     </select>
                                 )}
+                            </div>
+
+                            <div className="flex gap-2 border-t pt-4">
+                                <button 
+                                    onClick={() => onNavigateToEdit(admission)}
+                                    className="btn btn-secondary text-sm flex items-center gap-2"
+                                >
+                                    <EditIcon className="w-4 h-4" /> Edit Application
+                                </button>
+                                <button 
+                                    onClick={() => onNavigateToPayment(admission)}
+                                    className="btn btn-secondary text-sm flex items-center gap-2"
+                                >
+                                    <CurrencyDollarIcon className="w-4 h-4" /> Go to Payment
+                                </button>
                             </div>
                             <p className="text-xs text-slate-500 italic">
                                 {admission.isEnrolled ? "Student is already enrolled." : "Approving will automatically enroll the student into the class."}
@@ -179,6 +196,8 @@ const AdmissionDetailsModal: React.FC<{
 }
 
 const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ admissions, onUpdateStatus, onDelete }) => {
+    const navigate = useNavigate();
+
     const [filterStatus, setFilterStatus] = useState<'all' | OnlineAdmission['status']>('all');
     const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
     const [lightboxImage, setLightboxImage] = useState<{ src: string, alt: string } | null>(null);
@@ -214,6 +233,22 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
             setIsDeleting(false);
             setDeletingId(null);
         }
+    };
+
+    const navigateToEdit = (admission: OnlineAdmission) => {
+        navigate('/admissions/online', { state: { editingAdmission: admission } });
+    };
+
+    const navigateToPayment = (admission: OnlineAdmission) => {
+        navigate(`/admissions/payment/${admission.id}`, { 
+            state: { 
+                grade: admission.admissionGrade, 
+                studentName: admission.studentName, 
+                fatherName: admission.fatherName, 
+                contact: admission.contactNumber, 
+                studentType: admission.studentType 
+            } 
+        });
     };
 
     return (
@@ -318,6 +353,8 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                     onUpdateStatus={handleStatusChange}
                     updatingStatus={!!updatingStatus[selectedAdmission.id]}
                     onImageClick={(src, alt) => setLightboxImage({ src, alt })}
+                    onNavigateToEdit={navigateToEdit}
+                    onNavigateToPayment={navigateToPayment}
                 />
             )}
 

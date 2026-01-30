@@ -1,5 +1,5 @@
 
-import React, { useState, FormEvent, useRef } from 'react';
+import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, OnlineAdmission, Gender, Category, BloodGroup, Student, User } from '../../types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../../constants';
@@ -9,7 +9,7 @@ import CustomDatePicker from '../../components/CustomDatePicker';
 import { db } from '../../firebaseConfig';
 import EditableContent from '../../components/EditableContent';
 
-const { useNavigate } = ReactRouterDOM as any;
+const { useNavigate, useLocation } = ReactRouterDOM as any;
 
 interface OnlineAdmissionPageProps {
     onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id'>) => Promise<string>;
@@ -18,6 +18,7 @@ interface OnlineAdmissionPageProps {
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmissionSubmit, user }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [step, setStep] = useState<1 | 2>(1); // 1: Selection, 2: Form
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isFetching, setIsFetching] = useState(false);
@@ -65,6 +66,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         reportCardUrl: '',
         paymentScreenshotUrl: '', 
     });
+
+    useEffect(() => {
+        // Check if we are editing an existing admission passed via state (Admin action)
+        if (location.state && location.state.editingAdmission) {
+            const admission = location.state.editingAdmission as OnlineAdmission;
+            setFormData(admission);
+            setStep(2);
+        }
+    }, [location.state]);
 
     const handleNewcomerSelect = () => {
         setFormData(prev => ({ ...prev, studentType: 'Newcomer', lastSchoolAttended: '' }));

@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User } from '../../types';
+import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES, ADMISSION_FEE_STRUCTURE } from '../../constants';
 import EditableContent from '../../components/EditableContent';
+import { db } from '../../firebaseConfig';
 
 const { useParams, useLocation, Link } = ReactRouterDOM as any;
 
@@ -30,8 +31,16 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const { admissionId } = useParams();
     const location = useLocation();
     
-    // studentType is now expected from location state (default to Newcomer if missing)
-    const { grade, studentName, fatherName, contact, studentType = 'Newcomer' } = location.state || {};
+    // State to hold admission details, possibly fetched from DB if not in location.state
+    const [admissionDetails, setAdmissionDetails] = useState<{
+        grade: string;
+        studentName: string;
+        fatherName: string;
+        contact: string;
+        studentType: 'Newcomer' | 'Existing';
+    } | null>(null);
+
+    const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
@@ -44,6 +53,56 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     // Use dynamic config or provided screenshot defaults. Fallback to a placeholder if missing.
     const upiId = schoolConfig.upiId || 'nkhiangte@oksbi';
     const qrCodeUrl = schoolConfig.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set';
+
+    useEffect(() => {
+        const fetchDetails = async () => {
+            if (location.state) {
+                // Data exists in navigation state
+                setAdmissionDetails({
+                    grade: location.state.grade,
+                    studentName: location.state.studentName,
+                    fatherName: location.state.fatherName,
+                    contact: location.state.contact,
+                    studentType: location.state.studentType || 'Newcomer'
+                });
+                setIsLoadingDetails(false);
+            } else if (admissionId) {
+                // Fetch from Firestore
+                try {
+                    const docRef = db.collection('online_admissions').doc(admissionId);
+                    const doc = await docRef.get();
+                    if (doc.exists) {
+                        const data = doc.data() as OnlineAdmission;
+                        setAdmissionDetails({
+                            grade: data.admissionGrade,
+                            studentName: data.studentName,
+                            fatherName: data.fatherName,
+                            contact: data.contactNumber,
+                            studentType: data.studentType || 'Newcomer'
+                        });
+                        
+                        // If already paid, set status to success immediately to show receipt
+                        if (data.paymentStatus === 'paid') {
+                             setPaymentStatus('success');
+                        }
+                    } else {
+                        addNotification("Admission record not found.", 'error');
+                    }
+                } catch (error) {
+                    console.error("Error fetching admission details:", error);
+                    addNotification("Failed to load admission details.", 'error');
+                } finally {
+                    setIsLoadingDetails(false);
+                }
+            } else {
+                setIsLoadingDetails(false);
+            }
+        };
+
+        fetchDetails();
+    }, [admissionId, location.state]);
+
+    const { grade, studentName, fatherName, contact, studentType } = admissionDetails || { studentType: 'Newcomer' };
 
     // Get the correct fee structure based on student type
     const feeStructure = studentType === 'Existing' ? ADMISSION_FEE_STRUCTURE.existingStudent : ADMISSION_FEE_STRUCTURE.newStudent;
@@ -318,6 +377,14 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
         doc.save(`${studentName}_BMS_Receipt.pdf`);
     };
+
+    if (isLoadingDetails) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <SpinnerIcon className="w-10 h-10 text-sky-600" />
+            </div>
+        );
+    }
     
     if (paymentStatus === 'success') {
          return (

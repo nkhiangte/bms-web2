@@ -15,13 +15,16 @@ interface GridItem {
 interface DynamicImageGridProps {
     id: string; // Firestore doc ID (e.g. 'infrastructure_grid')
     user: User | null;
+    displayType?: 'card' | 'grid'; // 'card' has text below, 'grid' is just images
 }
 
-const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
+const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayType = 'card' }) => {
     const [items, setItems] = useState<GridItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
+    const [lightboxImage, setLightboxImage] = useState<GridItem | null>(null);
+    
     const isAdmin = user?.role === 'admin';
 
     // New Item State
@@ -37,9 +40,10 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
                 const data = doc.data();
                 if (data && data.items) {
                     setItems(data.items);
+                } else {
+                    setItems([]);
                 }
             } else {
-                 // Initialize default if needed, or keep empty
                  setItems([]);
             }
             setIsLoading(false);
@@ -53,8 +57,9 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newItemTitle || !newItemImage) {
-            alert("Title and Image are required.");
+        // In 'grid' mode, title might be optional or hidden, but we'll enforce it as 'alt' text at least
+        if (!newItemImage) {
+            alert("Image is required.");
             return;
         }
 
@@ -65,7 +70,7 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
             
             const newItem: GridItem = {
                 id: Date.now().toString(),
-                title: newItemTitle,
+                title: newItemTitle || 'Untitled',
                 caption: newItemCaption,
                 imageSrc: url
             };
@@ -112,19 +117,8 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
                         </button>
                     ) : (
                         <div className="bg-white p-6 rounded-lg shadow-lg border-2 border-sky-100 w-full max-w-lg mx-auto">
-                            <h3 className="font-bold text-lg mb-4 text-slate-800">Add New Infrastructure Item</h3>
+                            <h3 className="font-bold text-lg mb-4 text-slate-800">Add New Image</h3>
                             <form onSubmit={handleAddItem} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Title</label>
-                                    <input 
-                                        type="text" 
-                                        value={newItemTitle} 
-                                        onChange={e => setNewItemTitle(e.target.value)} 
-                                        className="form-input w-full mt-1" 
-                                        placeholder="e.g. Science Lab"
-                                        required
-                                    />
-                                </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700">Image</label>
                                     <input 
@@ -137,15 +131,27 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Caption/Description</label>
-                                    <textarea 
-                                        value={newItemCaption} 
-                                        onChange={e => setNewItemCaption(e.target.value)} 
-                                        className="form-textarea w-full mt-1" 
-                                        placeholder="Brief description..."
-                                        rows={2}
+                                    <label className="block text-sm font-bold text-slate-700">Title / Alt Text</label>
+                                    <input 
+                                        type="text" 
+                                        value={newItemTitle} 
+                                        onChange={e => setNewItemTitle(e.target.value)} 
+                                        className="form-input w-full mt-1" 
+                                        placeholder="e.g. Science Lab"
                                     />
                                 </div>
+                                {displayType === 'card' && (
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700">Caption/Description</label>
+                                        <textarea 
+                                            value={newItemCaption} 
+                                            onChange={e => setNewItemCaption(e.target.value)} 
+                                            className="form-textarea w-full mt-1" 
+                                            placeholder="Brief description..."
+                                            rows={2}
+                                        />
+                                    </div>
+                                )}
                                 <div className="flex justify-end gap-2 pt-2">
                                     <button 
                                         type="button" 
@@ -179,26 +185,39 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
                     <p className="text-slate-500">No items added yet.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className={`grid gap-6 ${displayType === 'card' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
                     {items.map(item => (
-                        <div key={item.id} className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full relative group">
-                            <h3 className="text-xl font-bold text-slate-800 p-4 bg-slate-100 border-b text-center">{item.title}</h3>
-                            <div className="flex-grow relative">
-                                <div className="h-64 bg-slate-200">
-                                    <img 
-                                        src={item.imageSrc} 
-                                        alt={item.title} 
-                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                    />
-                                </div>
-                                <div className="p-2 bg-black/60 text-white absolute bottom-0 w-full backdrop-blur-sm">
-                                    <p className="text-sm font-semibold text-center">{item.caption}</p>
-                                </div>
+                        <div 
+                            key={item.id} 
+                            className={`${displayType === 'card' ? 'bg-white rounded-lg shadow-lg flex flex-col' : 'rounded-lg shadow-md aspect-square'} overflow-hidden relative group cursor-pointer`}
+                            onClick={() => setLightboxImage(item)}
+                        >
+                            {displayType === 'card' && (
+                                <h3 className="text-xl font-bold text-slate-800 p-4 bg-slate-100 border-b text-center">{item.title}</h3>
+                            )}
+                            
+                            <div className={`relative ${displayType === 'card' ? 'h-64' : 'h-full w-full'}`}>
+                                <img 
+                                    src={item.imageSrc} 
+                                    alt={item.title} 
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                {displayType === 'card' && item.caption && (
+                                    <div className="p-2 bg-black/60 text-white absolute bottom-0 w-full backdrop-blur-sm">
+                                        <p className="text-sm font-semibold text-center">{item.caption}</p>
+                                    </div>
+                                )}
+                                {displayType === 'grid' && (
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                )}
                             </div>
                             
                             {isAdmin && (
                                 <button 
-                                    onClick={() => handleDeleteItem(item.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteItem(item.id);
+                                    }}
                                     className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 z-10"
                                     title="Delete Item"
                                 >
@@ -207,6 +226,35 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user }) => {
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+            
+            {/* Lightbox */}
+            {lightboxImage && (
+                <div 
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <button 
+                        className="absolute top-4 right-4 text-white text-4xl hover:text-slate-300"
+                        onClick={() => setLightboxImage(null)}
+                    >
+                        &times;
+                    </button>
+                    <div className="max-w-[90vw] max-h-[90vh]">
+                        <img 
+                            src={lightboxImage.imageSrc} 
+                            alt={lightboxImage.title} 
+                            className="max-w-full max-h-[85vh] rounded-lg shadow-2xl mx-auto"
+                            onClick={e => e.stopPropagation()}
+                        />
+                        {(lightboxImage.title || lightboxImage.caption) && (
+                            <div className="text-center text-white mt-4">
+                                <h3 className="text-xl font-bold">{lightboxImage.title}</h3>
+                                <p className="text-slate-300">{lightboxImage.caption}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

@@ -1,3 +1,9 @@
+
+
+
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -34,7 +40,7 @@ import GenerateTcPage from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
 import PrintTcPage from './pages/PrintTcPage';
 import InventoryPage from './pages/InventoryPage';
-import HostelDashboardPage from './pages/HostelDashboardPage';
+import HostelDashboardPage from './pages/HostelDashboardPage'; // Portal Hostel
 import HostelStudentListPage from './pages/HostelStudentListPage';
 import HostelRoomListPage from './pages/HostelRoomListPage';
 import HostelChoreRosterPage from './pages/HostelChoreRosterPage';
@@ -112,6 +118,7 @@ import StudentAttendancePage from './pages/StudentAttendancePage';
 import StudentAttendanceLogPage from './pages/StudentAttendanceLogPage';
 import SyllabusPage from './pages/public/SyllabusPage';
 import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
+import HostelPage from './pages/public/HostelPage'; // Public Hostel Page
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -484,10 +491,10 @@ const App: React.FC = () => {
           }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
           <Route path="fees" element={<FeesPage user={user} feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
           <Route path="supplies" element={<SuppliesPage />} />
-          <Route path="student-life" element={<StudentLifePage />} />
-          <Route path="ncc" element={<NccPage />} />
-          <Route path="arts-culture" element={<ArtsCulturePage />} />
-          <Route path="eco-club" element={<EcoClubPage />} />
+          <Route path="student-life" element={<StudentLifePage user={user} />} />
+          <Route path="ncc" element={<NccPage user={user} />} />
+          <Route path="arts-culture" element={<ArtsCulturePage user={user} />} />
+          <Route path="eco-club" element={<EcoClubPage user={user} />} />
           <Route path="achievements/science" element={<ScienceClubPage />} />
           <Route path="achievements/science/slsmee" element={<SlsmeePage />} />
           <Route path="achievements/science/inspire-award" element={<InspireAwardPage />} />
@@ -502,10 +509,10 @@ const App: React.FC = () => {
           <Route path="achievements/sports" element={<SportsPage />} />
           <Route path="facilities" element={<FacilitiesPage user={user} />} />
           <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
-          <Route path="hostel" element={<HostelDashboardPage disciplineLog={disciplineLog} />} /> 
-          <Route path="gallery" element={<GalleryPage />} />
+          <Route path="hostel" element={<HostelPage user={user} />} /> 
+          <Route path="gallery" element={<GalleryPage user={user} />} />
           <Route path="contact" element={<ContactPage />} />
-          <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} />} />
+          <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} />} />
           <Route path="news" element={<NewsPage news={news} />} />
           <Route path="sitemap" element={<SitemapPage />} />
         </Route>

@@ -1,7 +1,11 @@
+
 import React, { useState, FormEvent } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { ShieldCheckIcon, UsersIcon, BookOpenIcon, BuildingOfficeIcon, PhoneIcon, MailIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
+import DynamicImageGrid from '../../components/DynamicImageGrid';
+import { User } from '../../types';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -27,15 +31,23 @@ const InfoBadge: React.FC<{ icon: React.ReactNode, text: string }> = ({ icon, te
     </div>
 );
 
-const FacilityCard: React.FC<{ icon: string, title: string, description: string }> = ({ icon, title, description }) => (
+const FacilityCard: React.FC<{ icon: string, title: string, description: string, id: string, user: User | null }> = ({ icon, title, description, id, user }) => (
     <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
         <div className="text-4xl mb-4">{icon}</div>
-        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-        <p className="mt-2 text-slate-600">{description}</p>
+        <h3 className="text-xl font-bold text-slate-800">
+             <EditableContent id={`${id}_title`} defaultContent={title} type="text" user={user} />
+        </h3>
+        <div className="mt-2 text-slate-600">
+             <EditableContent id={`${id}_desc`} defaultContent={description} type="textarea" user={user} />
+        </div>
     </div>
 );
 
-const HostelPage: React.FC = () => {
+interface HostelPageProps {
+    user: User | null;
+}
+
+const HostelPage: React.FC<HostelPageProps> = ({ user }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
@@ -53,15 +65,24 @@ const HostelPage: React.FC = () => {
     return (
         <div className="bg-slate-50">
             {/* 1. Hero Section */}
-            <section id="home" className="relative bg-cover bg-center text-white py-32 px-4" style={{ backgroundImage: "url('https://i.ibb.co/BHqzjc7B/476817001-1037388215087221-6787739082745578123-n.jpg')" }}>
-                <div className="absolute inset-0 bg-black/50"></div>
-                <div className="relative container mx-auto text-center">
-                    <h1 className="text-4xl md:text-6xl font-extrabold" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
-                        Bethel Mission School Hostel
+            <section id="home" className="relative h-[500px] w-full">
+                <div className="absolute inset-0">
+                    <EditableContent
+                        id="hostel_hero_bg"
+                        defaultContent="https://i.ibb.co/BHqzjc7B/476817001-1037388215087221-6787739082745578123-n.jpg"
+                        type="image"
+                        user={user}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
+                </div>
+                <div className="relative container mx-auto text-center h-full flex flex-col justify-center items-center px-4">
+                    <h1 className="text-4xl md:text-6xl font-extrabold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
+                        <EditableContent id="hostel_hero_title" defaultContent="Bethel Mission School Hostel" type="text" user={user} />
                     </h1>
-                    <p className="mt-4 text-lg md:text-xl font-light" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}>
-                        A safe, supportive, and disciplined home for our students.
-                    </p>
+                    <div className="mt-4 text-lg md:text-xl font-light text-white" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}>
+                         <EditableContent id="hostel_hero_subtitle" defaultContent="A safe, supportive, and disciplined home for our students." type="text" user={user} />
+                    </div>
                     <div className="mt-8 flex flex-wrap justify-center gap-4">
                         <a href="#admissions" className="btn btn-primary !px-8 !py-3 !text-lg">Apply Now</a>
                         <a href="#fees" className="btn btn-secondary !px-8 !py-3 !text-lg !bg-white/90">View Fees</a>
@@ -79,10 +100,17 @@ const HostelPage: React.FC = () => {
             <section id="about" className="py-20 bg-white">
                 <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div>
-                        <h2 className="text-3xl font-bold text-slate-800">A Nurturing Environment for Growth</h2>
-                        <p className="mt-4 text-slate-600 leading-relaxed">
-                            Our hostel is an integral part of the Bethel Mission School experience, providing a disciplined and caring environment that supports academic focus and personal development. We aim to cultivate responsibility, respect, and a strong moral character in all our residents.
-                        </p>
+                        <h2 className="text-3xl font-bold text-slate-800">
+                             <EditableContent id="hostel_about_title" defaultContent="A Nurturing Environment for Growth" type="text" user={user} />
+                        </h2>
+                        <div className="mt-4 text-slate-600 leading-relaxed">
+                             <EditableContent 
+                                id="hostel_about_desc" 
+                                defaultContent="Our hostel is an integral part of the Bethel Mission School experience, providing a disciplined and caring environment that supports academic focus and personal development. We aim to cultivate responsibility, respect, and a strong moral character in all our residents." 
+                                type="textarea" 
+                                user={user} 
+                            />
+                        </div>
                     </div>
                     <div className="bg-slate-50 p-6 rounded-lg border">
                         <h3 className="text-xl font-bold text-slate-700 mb-4">Key Facts</h3>
@@ -103,12 +131,12 @@ const HostelPage: React.FC = () => {
                         <p className="mt-2 text-slate-600">Everything students need for a comfortable and productive stay.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <FacilityCard icon="🍽️" title="Dining Hall" description="Serving fresh, nutritious, and hygienic meals three times a day."/>
-                        <FacilityCard icon="📚" title="Supervised Study" description="Dedicated, mandatory study hours every evening under the supervision of wardens."/>
-                        <FacilityCard icon="💧" title="Clean Drinking Water" description="Purified and safe drinking water available 24/7 for all residents."/>
-                        <FacilityCard icon="🏠" title="Separate Buildings" description="Well-maintained and secure separate buildings for boys and girls to ensure privacy and safety."/>
-                        <FacilityCard icon="🛡️" title="Safety & Security" description="Experienced wardens and staff ensure the safety and well-being of all students."/>
-                        <FacilityCard icon="⚽" title="Prime Location" description="Conveniently located near the school campus and playgrounds for easy access."/>
+                        <FacilityCard id="hostel_fac_1" user={user} icon="🍽️" title="Dining Hall" description="Serving fresh, nutritious, and hygienic meals three times a day."/>
+                        <FacilityCard id="hostel_fac_2" user={user} icon="📚" title="Supervised Study" description="Dedicated, mandatory study hours every evening under the supervision of wardens."/>
+                        <FacilityCard id="hostel_fac_3" user={user} icon="💧" title="Clean Drinking Water" description="Purified and safe drinking water available 24/7 for all residents."/>
+                        <FacilityCard id="hostel_fac_4" user={user} icon="🏠" title="Separate Buildings" description="Well-maintained and secure separate buildings for boys and girls to ensure privacy and safety."/>
+                        <FacilityCard id="hostel_fac_5" user={user} icon="🛡️" title="Safety & Security" description="Experienced wardens and staff ensure the safety and well-being of all students."/>
+                        <FacilityCard id="hostel_fac_6" user={user} icon="⚽" title="Prime Location" description="Conveniently located near the school campus and playgrounds for easy access."/>
                     </div>
                 </div>
             </section>
@@ -122,7 +150,14 @@ const HostelPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
                         <div>
                              <h3 className="text-2xl font-bold text-slate-700 mb-4">Room Amenities</h3>
-                             <p className="text-slate-600 mb-4">Our hostel provides dormitory-style accommodation with separate buildings for boys and girls. Rooms are shared, typically accommodating 4-6 students, and are designed for comfort and focus.</p>
+                             <div className="text-slate-600 mb-4">
+                                <EditableContent 
+                                    id="hostel_amenities_desc" 
+                                    defaultContent="Our hostel provides dormitory-style accommodation with separate buildings for boys and girls. Rooms are shared, typically accommodating 4-6 students, and are designed for comfort and focus." 
+                                    type="textarea" 
+                                    user={user} 
+                                />
+                             </div>
                              <ul className="list-disc list-inside space-y-2 text-slate-700">
                                 <li>Dormitory-style shared rooms (4-6 beds)</li>
                                 <li>Personal locker for belongings</li>
@@ -184,7 +219,14 @@ const HostelPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                         <div>
                              <h3 className="text-2xl font-bold text-slate-700 mb-4">A Day in the Life</h3>
-                             <p className="text-slate-600 mb-4">Our daily routine is structured to balance academics, recreation, and personal growth, ensuring students thrive in a disciplined yet supportive setting.</p>
+                             <div className="text-slate-600 mb-4">
+                                <EditableContent 
+                                    id="hostel_routine_desc" 
+                                    defaultContent="Our daily routine is structured to balance academics, recreation, and personal growth, ensuring students thrive in a disciplined yet supportive setting." 
+                                    type="textarea" 
+                                    user={user} 
+                                />
+                             </div>
                              <ul className="space-y-2">
                                 <li className="flex gap-4"><strong className="w-28 text-sky-700">5:30 AM</strong><span>Wake Up & Morning Chores</span></li>
                                 <li className="flex gap-4"><strong className="w-28 text-sky-700">7:00 AM</strong><span>Breakfast</span></li>
@@ -195,11 +237,8 @@ const HostelPage: React.FC = () => {
                                 <li className="flex gap-4"><strong className="w-28 text-sky-700">10:00 PM</strong><span>Lights Out</span></li>
                              </ul>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <img src="https://i.ibb.co/yc3mzG5V/IMG-4859.jpg" alt="Hostel life 1" className="rounded-lg shadow-md aspect-square object-cover"/>
-                            <img src="https://i.ibb.co/qY7bFZS/students-hands-up.jpg" alt="Hostel life 2" className="rounded-lg shadow-md aspect-square object-cover"/>
-                            <img src="https://i.ibb.co/L5r89w8/classroom.jpg" alt="Hostel life 3" className="rounded-lg shadow-md aspect-square object-cover"/>
-                            <img src="https://i.ibb.co/G4nP4YwB/photo-collage-png-1.png" alt="Hostel life 4" className="rounded-lg shadow-md aspect-square object-cover"/>
+                        <div>
+                            <DynamicImageGrid id="hostel_life_gallery" user={user} displayType="grid" />
                         </div>
                     </div>
                 </div>

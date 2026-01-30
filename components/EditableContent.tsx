@@ -135,7 +135,10 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 {isAdmin && (
                     <div className="absolute top-4 right-4 z-20">
                         <button 
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                fileInputRef.current?.click();
+                            }}
                             className="bg-white text-sky-700 p-2 rounded-full shadow-lg border border-sky-100 hover:bg-sky-50 transition-transform hover:scale-110 flex items-center justify-center"
                             title="Change Image (Admin)"
                         >
@@ -147,6 +150,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                             onChange={handleImageUpload} 
                             accept="image/*" 
                             className="hidden" 
+                            onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                 )}

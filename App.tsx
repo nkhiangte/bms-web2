@@ -506,7 +506,7 @@ const App: React.FC = () => {
           <Route path="achievements/academic" element={<AcademicAchievementsPage />} />
           <Route path="achievements/academic/distinction-holders/:year" element={<DistinctionHoldersPage />} />
           <Route path="achievements/sports" element={<SportsPage />} />
-          <Route path="facilities" element={<FacilitiesPage />} />
+          <Route path="facilities" element={<FacilitiesPage user={user} />} />
           <Route path="infrastructure" element={<InfrastructurePage />} />
           <Route path="hostel" element={<HostelDashboardPage disciplineLog={disciplineLog} />} /> 
           <Route path="gallery" element={<GalleryPage />} />

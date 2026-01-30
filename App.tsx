@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -507,7 +501,7 @@ const App: React.FC = () => {
           <Route path="achievements/academic/distinction-holders/:year" element={<DistinctionHoldersPage />} />
           <Route path="achievements/sports" element={<SportsPage />} />
           <Route path="facilities" element={<FacilitiesPage user={user} />} />
-          <Route path="infrastructure" element={<InfrastructurePage />} />
+          <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
           <Route path="hostel" element={<HostelDashboardPage disciplineLog={disciplineLog} />} /> 
           <Route path="gallery" element={<GalleryPage />} />
           <Route path="contact" element={<ContactPage />} />

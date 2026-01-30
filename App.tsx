@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -119,6 +114,8 @@ import StudentAttendanceLogPage from './pages/StudentAttendanceLogPage';
 import SyllabusPage from './pages/public/SyllabusPage';
 import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage'; // Public Hostel Page
+import AcademicsPage from './pages/public/AcademicsPage';
+import CurriculumPage from './pages/public/CurriculumPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -473,11 +470,11 @@ const App: React.FC = () => {
         <Route path="/" element={<PublicLayout user={user} />}>
           <Route index element={<PublicHomePage news={news} user={user} />} />
           <Route path="about" element={<AboutPage user={user} />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="faculty" element={<FacultyPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
+          <Route path="history" element={<HistoryPage user={user} />} />
+          <Route path="faculty" element={<FacultyPage staff={staff} gradeDefinitions={gradeDefinitions} user={user} />} />
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
-          <Route path="rules" element={<RulesPage />} />
-          <Route path="admissions" element={<AdmissionsPage />} />
+          <Route path="rules" element={<RulesPage user={user} />} />
+          <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage onOnlineAdmissionSubmit={async (data) => {
                // Initial submission logic for non-drafts is handled inside OnlineAdmissionPage
                // but we can provide a fallback here if needed, or update OnlineAdmissionPage to use this
@@ -490,11 +487,13 @@ const App: React.FC = () => {
                return true;
           }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
           <Route path="fees" element={<FeesPage user={user} feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
-          <Route path="supplies" element={<SuppliesPage />} />
+          <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />
           <Route path="arts-culture" element={<ArtsCulturePage user={user} />} />
           <Route path="eco-club" element={<EcoClubPage user={user} />} />
+          <Route path="academics" element={<AcademicsPage user={user} />} />
+          <Route path="academics/curriculum" element={<CurriculumPage gradeDefinitions={gradeDefinitions} />} />
           <Route path="achievements/science" element={<ScienceClubPage />} />
           <Route path="achievements/science/slsmee" element={<SlsmeePage />} />
           <Route path="achievements/science/inspire-award" element={<InspireAwardPage />} />
@@ -511,9 +510,9 @@ const App: React.FC = () => {
           <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
           <Route path="hostel" element={<HostelPage user={user} />} /> 
           <Route path="gallery" element={<GalleryPage user={user} />} />
-          <Route path="contact" element={<ContactPage />} />
+          <Route path="contact" element={<ContactPage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} />} />
-          <Route path="news" element={<NewsPage news={news} />} />
+          <Route path="news" element={<NewsPage news={news} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
         </Route>
 

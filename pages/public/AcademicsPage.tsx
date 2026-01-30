@@ -2,8 +2,14 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { AcademicCapIcon, BookOpenIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
+import { User } from '../../types';
 
 const { Link } = ReactRouterDOM as any;
+
+interface AcademicsPageProps {
+    user: User | null;
+}
 
 const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string; }> = ({ icon, title, description, link }) => (
     <Link to={link} className="group block bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2">
@@ -17,13 +23,17 @@ const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description:
 );
 
 
-const AcademicsPage: React.FC = () => {
+const AcademicsPage: React.FC<AcademicsPageProps> = ({ user }) => {
     return (
         <div className="relative py-16 overflow-hidden bg-slate-50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h1 className="text-4xl font-extrabold text-slate-800">Academics</h1>
-                    <p className="mt-4 text-lg text-slate-600">Explore our academic achievements and detailed curriculum.</p>
+                    <h1 className="text-4xl font-extrabold text-slate-800">
+                        <EditableContent id="academics_title" defaultContent="Academics" type="text" user={user} />
+                    </h1>
+                    <div className="mt-4 text-lg text-slate-600">
+                        <EditableContent id="academics_subtitle" defaultContent="Explore our academic achievements and detailed curriculum." type="text" user={user} />
+                    </div>
                 </div>
 
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">

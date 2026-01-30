@@ -1,12 +1,11 @@
 
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
 // FIX: Added 'AcademicCapIcon' and 'CalendarDaysIcon' to the import list to resolve a 'Cannot find name' error.
 import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon, UserIcon } from './Icons';
 
-const { NavLink } = ReactRouterDOM as any;
+const { NavLink, Link } = ReactRouterDOM as any;
 
 interface SidebarProps {
     isOpen: boolean;
@@ -109,11 +108,11 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
                     })}
             </nav>
             <nav className="mt-6 flex-1 px-2 space-y-1">
-                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Website Info</h3>
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Website Content (Edit)</h3>
                 {publicNavLinks.map(item => (
-                    <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:bg-slate-200 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-semibold rounded-md">
+                    <Link key={item.name} to={item.path} onClick={onLinkClick} className="text-slate-600 hover:bg-slate-200 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-semibold rounded-md">
                         <span className="truncate">{item.name}</span>
-                    </a>
+                    </Link>
                 ))}
             </nav>
         </div>

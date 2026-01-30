@@ -5,7 +5,7 @@ import { User } from '../types';
 import { PlusIcon, TrashIcon, UploadIcon, SpinnerIcon, EditIcon, CheckIcon, XIcon } from './Icons';
 import { uploadToImgBB, resizeImage } from '../utils';
 
-interface GridItem {
+export interface GridItem {
     id: string;
     title: string;
     caption: string;
@@ -16,9 +16,10 @@ interface DynamicImageGridProps {
     id: string; // Firestore doc ID (e.g. 'infrastructure_grid')
     user: User | null;
     displayType?: 'card' | 'grid'; // 'card' has text below, 'grid' is just images
+    defaultItems?: GridItem[];
 }
 
-const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayType = 'card' }) => {
+const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayType = 'card', defaultItems = [] }) => {
     const [items, setItems] = useState<GridItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -44,7 +45,8 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
                     setItems([]);
                 }
             } else {
-                 setItems([]);
+                 // If doc doesn't exist, use default items provided by parent
+                 setItems(defaultItems);
             }
             setIsLoading(false);
         }, (error) => {
@@ -53,7 +55,7 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
         });
 
         return () => unsubscribe();
-    }, [id]);
+    }, [id, defaultItems]); // Added defaultItems dependency
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,6 +98,7 @@ const DynamicImageGrid: React.FC<DynamicImageGridProps> = ({ id, user, displayTy
         setIsSaving(true);
         try {
             const updatedItems = items.filter(i => i.id !== itemId);
+            // This will create the document if it doesn't exist (e.g. deleting a default item)
             await db.collection('website_content').doc(id).set({ items: updatedItems }, { merge: true });
         } catch (error) {
             console.error("Failed to delete item:", error);

@@ -2,11 +2,50 @@
 import React from 'react';
 import { User } from '../../types';
 import EditableContent from '../../components/EditableContent';
-import DynamicImageGrid from '../../components/DynamicImageGrid';
+import DynamicImageGrid, { GridItem } from '../../components/DynamicImageGrid';
 
 interface InfrastructurePageProps {
     user: User | null;
 }
+
+const defaultInfraItems: GridItem[] = [
+    {
+        id: 'infra_1',
+        title: 'Classrooms',
+        caption: 'Well-ventilated and spacious classrooms designed for an optimal learning environment.',
+        imageSrc: 'https://i.ibb.co/L5r89w8/classroom.jpg'
+    },
+    {
+        id: 'infra_2',
+        title: 'Science Laboratories',
+        caption: 'Fully equipped labs for Physics, Chemistry, and Biology to foster practical learning.',
+        imageSrc: 'https://i.ibb.co/wJgWfX6/science-lab.jpg'
+    },
+    {
+        id: 'infra_3',
+        title: 'Library',
+        caption: 'A well-stocked library with a vast collection of books and digital resources.',
+        imageSrc: 'https://i.ibb.co/3sZq1bM/library.jpg'
+    },
+    {
+        id: 'infra_4',
+        title: 'Playground',
+        caption: 'Basketball and volleyball courts, and ample space for morning assembly and sports.',
+        imageSrc: 'https://i.ibb.co/r2ZjJ6CD/IMG-20250908-WA0040.jpg'
+    },
+    {
+        id: 'infra_5',
+        title: 'School Campus',
+        caption: 'A serene and safe environment located away from the city noise.',
+        imageSrc: 'https://i.ibb.co/BHqzjc7B/476817001-1037388215087221-6787739082745578123-n.jpg'
+    },
+    {
+        id: 'infra_6',
+        title: 'Activities & Events',
+        caption: 'Dedicated spaces for art, culture, and various co-curricular activities.',
+        imageSrc: 'https://i.ibb.co/qY7bFZS/students-hands-up.jpg'
+    }
+];
 
 const InfrastructurePage: React.FC<InfrastructurePageProps> = ({ user }) => {
     return (
@@ -57,7 +96,7 @@ const InfrastructurePage: React.FC<InfrastructurePageProps> = ({ user }) => {
                     </div>
                     
                     {/* Dynamic Grid for Infrastructure Items */}
-                    <DynamicImageGrid id="infrastructure_grid" user={user} />
+                    <DynamicImageGrid id="infrastructure_grid" user={user} defaultItems={defaultInfraItems} />
                 </div>
             </div>
         </>

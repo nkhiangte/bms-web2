@@ -1,7 +1,14 @@
+
 import React, { useState, FormEvent } from 'react';
 import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
+import { User } from '../../types';
 
-const ContactPage: React.FC = () => {
+interface ContactPageProps {
+    user: User | null;
+}
+
+const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
@@ -24,8 +31,12 @@ const ContactPage: React.FC = () => {
         <div className="bg-white py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Contact Us</h1>
-                    <p className="mt-4 text-lg text-slate-600">We would love to hear from you. Please get in touch with us.</p>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">
+                         <EditableContent id="contact_title" defaultContent="Contact Us" type="text" user={user} />
+                    </h1>
+                    <div className="mt-4 text-lg text-slate-600">
+                         <EditableContent id="contact_subtitle" defaultContent="We would love to hear from you. Please get in touch with us." type="text" user={user} />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
@@ -34,22 +45,29 @@ const ContactPage: React.FC = () => {
                         <div>
                             <h3 className="text-xl font-bold text-slate-800">School Address</h3>
                             <address className="not-italic mt-2 text-slate-600">
-                                Bethel Mission School<br/>
-                                Champhai, Mizoram - 796321<br/>
-                                India
+                                 <EditableContent 
+                                    id="contact_address" 
+                                    defaultContent={`Bethel Mission School\nChamphai, Mizoram - 796321\nIndia`} 
+                                    type="textarea" 
+                                    user={user} 
+                                />
                             </address>
                         </div>
                          <div>
                             <h3 className="text-xl font-bold text-slate-800">Get in Touch</h3>
                              <div className="mt-4 space-y-4 text-slate-600">
-                                <a href="tel:+919862148342" className="flex items-center gap-4 hover:text-sky-600 group">
+                                <div className="flex items-center gap-4 group">
                                     <PhoneIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
-                                    <span className="font-semibold">+91 9862148342</span>
-                                </a>
-                                <a href="mailto:bmschamphai@gmail.com" className="flex items-center gap-4 hover:text-sky-600 group">
+                                    <span className="font-semibold">
+                                         <EditableContent id="contact_phone" defaultContent="+91 9862148342" type="text" user={user} />
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4 group">
                                     <MailIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
-                                    <span className="font-semibold">bmschamphai@gmail.com</span>
-                                </a>
+                                    <span className="font-semibold">
+                                         <EditableContent id="contact_email" defaultContent="bmschamphai@gmail.com" type="text" user={user} />
+                                    </span>
+                                </div>
                                 <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 hover:text-rose-600 group">
                                     <InstagramIcon className="w-7 h-7 text-slate-400 group-hover:text-rose-600 transition-colors"/>
                                     <span className="font-semibold">@bms_champhai</span>
@@ -62,10 +80,14 @@ const ContactPage: React.FC = () => {
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-slate-800">Office Hours</h3>
-                            <p className="mt-2 text-slate-600">
-                                Monday - Friday: 9:00 AM - 3:00 PM<br/>
-                                Saturday & Sunday: Closed
-                            </p>
+                            <div className="mt-2 text-slate-600">
+                                 <EditableContent 
+                                    id="contact_hours" 
+                                    defaultContent={`Monday - Friday: 9:00 AM - 3:00 PM\nSaturday & Sunday: Closed`} 
+                                    type="textarea" 
+                                    user={user} 
+                                />
+                            </div>
                         </div>
                     </div>
 

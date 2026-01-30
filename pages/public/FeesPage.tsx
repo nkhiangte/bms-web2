@@ -5,6 +5,7 @@ import { FeeStructure, Student, FeePayments, NotificationType, User } from '../.
 import { FEE_SET_GRADES, academicMonths } from '../../constants';
 import { getDuesSummary, formatStudentId } from '../../utils';
 import { SpinnerIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -164,8 +165,12 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12 relative">
-                    <h1 className="text-4xl font-extrabold text-slate-800">Fee Structure & Online Payment</h1>
-                    <p className="mt-4 text-lg text-slate-600">Review the fee structure and pay outstanding dues online.</p>
+                    <h1 className="text-4xl font-extrabold text-slate-800">
+                         <EditableContent id="fees_title" defaultContent="Fee Structure & Online Payment" type="text" user={user} />
+                    </h1>
+                    <div className="mt-4 text-lg text-slate-600">
+                         <EditableContent id="fees_subtitle" defaultContent="Review the fee structure and pay outstanding dues online." type="text" user={user} />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">

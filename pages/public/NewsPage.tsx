@@ -1,13 +1,15 @@
 
 import React, { useMemo } from 'react';
-import { NewsItem } from '../../types';
+import { NewsItem, User } from '../../types';
 import { formatDateForNews } from '../../utils';
+import EditableContent from '../../components/EditableContent';
 
 interface NewsPageProps {
     news: NewsItem[];
+    user: User | null;
 }
 
-const NewsPage: React.FC<NewsPageProps> = ({ news }) => {
+const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
     const sortedNews = useMemo(() => {
         return [...news].sort((a, b) => b.date.localeCompare(a.date));
     }, [news]);
@@ -56,8 +58,12 @@ const NewsPage: React.FC<NewsPageProps> = ({ news }) => {
         <div className="bg-white py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl font-extrabold text-slate-800">Latest News & Announcements</h1>
-                    <p className="mt-4 text-lg text-slate-600">Stay updated with the latest happenings at Bethel Mission School.</p>
+                    <h1 className="text-4xl font-extrabold text-slate-800">
+                         <EditableContent id="news_page_title" defaultContent="Latest News & Announcements" type="text" user={user} />
+                    </h1>
+                    <div className="mt-4 text-lg text-slate-600">
+                         <EditableContent id="news_page_subtitle" defaultContent="Stay updated with the latest happenings at Bethel Mission School." type="text" user={user} />
+                    </div>
                 </div>
                 <div className="max-w-3xl mx-auto space-y-8">
                     {sortedNews.length > 0 ? (

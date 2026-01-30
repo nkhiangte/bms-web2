@@ -1,14 +1,16 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, EmploymentStatus, Grade, GradeDefinition } from '../../types';
+import { Staff, EmploymentStatus, Grade, GradeDefinition, User } from '../../types';
 import { UserIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 
 interface FacultyPageProps {
     staff: Staff[];
     gradeDefinitions: Record<Grade, GradeDefinition>;
+    user: User | null;
 }
 
 // A self-contained, robust component for displaying a photo with a fallback.
@@ -55,7 +57,7 @@ const FacultyCard: React.FC<{ member: Staff; assignedClass: Grade | null }> = ({
 );
 
 
-const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions }) => {
+const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions, user }) => {
     
     const activeTeachingStaff = useMemo(() => {
         return (staff || [])
@@ -84,8 +86,12 @@ const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions }) =>
         <div className="py-16 bg-slate-50 min-h-[70vh]">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Our Esteemed Faculty</h1>
-                    <p className="mt-4 text-lg text-slate-600">Meet the dedicated educators shaping the future.</p>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">
+                        <EditableContent id="faculty_title" defaultContent="Our Esteemed Faculty" type="text" user={user} />
+                    </h1>
+                    <div className="mt-4 text-lg text-slate-600">
+                         <EditableContent id="faculty_subtitle" defaultContent="Meet the dedicated educators shaping the future." type="text" user={user} />
+                    </div>
                 </div>
 
                 {activeTeachingStaff.length > 0 ? (

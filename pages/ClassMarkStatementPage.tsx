@@ -448,7 +448,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{(Number(result?.examMarks ?? 0) || 0) + (Number(result?.activityMarks ?? 0) || 0)}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )
                                 ) : ( // IX & X

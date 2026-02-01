@@ -205,7 +205,7 @@ const calculateTermSummary = (
         else remark = "Passed. Needs to work harder to improve scores.";
     }
 
-    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark, rank };
+    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
 };
 
 const MultiTermReportCard: React.FC<{

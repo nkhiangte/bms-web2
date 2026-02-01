@@ -30,9 +30,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
     const [retrieveDob, setRetrieveDob] = useState('');
     const [retrievalError, setRetrievalError] = useState('');
 
-    // Success State
-    const [submittedApplication, setSubmittedApplication] = useState<{ id: string, contact: string, grade: string } | null>(null);
-
     const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
 
     // Added 'id' field to track if we are editing an existing draft
@@ -274,17 +271,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         return `BMS26${randomNum}`;
     };
 
-    // Placeholder for SMS integration
-    const sendAdmissionConfirmationSMS = async (phoneNumber: string, refId: string, studentName: string) => {
-        // In a real application, you would call your backend API here (e.g., Firebase Cloud Function).
-        // Example: await fetch('/api/send-sms', { method: 'POST', body: JSON.stringify({ to: phoneNumber, ... }) });
-        
-        console.log(`[SMS SIMULATION] Sending to ${phoneNumber}: "Dear ${studentName}, your admission application for BMS has been received. Your Reference ID is ${refId}. Please save this for future tracking."`);
-        
-        // Return true to simulate success
-        return true;
-    };
-
     const handleSaveDraft = async () => {
         if (!formData.studentName || !formData.dateOfBirth) {
             alert("Please provide at least Name and Date of Birth to save a draft.");
@@ -324,7 +310,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
         e.preventDefault();
         
         // Basic validation
-        if (!formData.studentName || !formData.admissionGrade || !formData.dateOfBirth || !formData.fatherName || !formData.contactNumber) {
+        if (!formData.studentName || !formData.admissionGrade || !formData.dateOfBirth || !formData.fatherName || !formData.contactNumber || !formData.lastSchoolAttended || !formData.lastDivision) {
             alert("Please fill in all mandatory fields marked with *.");
             return;
         }
@@ -356,15 +342,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             await db.collection('online_admissions').doc(submissionId).set(submissionData, { merge: true });
 
             if (requiresReview) {
-                // Send SMS for review-required classes (e.g. Class IX)
-                await sendAdmissionConfirmationSMS(formData.contactNumber, submissionId, formData.studentName || 'Applicant');
-
-                // Instead of navigating, show success state on this page so they can note the ID
-                setSubmittedApplication({
-                    id: submissionId,
-                    contact: formData.contactNumber,
-                    grade: formData.admissionGrade || 'Class IX'
-                });
+                // Go to status page for review
+                navigate('/admissions/status', { state: { submissionId, studentType: formData.studentType } });
+                alert(`Application Submitted Successfully! Your Reference ID is: ${submissionId}`);
             } else {
                 // Direct to payment for auto-approved grades
                 navigate(`/admissions/payment/${submissionId}`, { 
@@ -385,56 +365,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
             setIsSubmitting(false);
         }
     };
-
-    if (submittedApplication) {
-        return (
-            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
-                <div className="container mx-auto px-4 max-w-2xl">
-                    <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl text-center border-t-8 border-emerald-500">
-                        <div className="mx-auto flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 mb-6">
-                            <CheckCircleIcon className="w-12 h-12 text-emerald-600" />
-                        </div>
-                        <h1 className="text-3xl font-extrabold text-slate-800 mb-2">Application Submitted!</h1>
-                        <p className="text-slate-600 text-lg">Thank you for applying to Bethel Mission School.</p>
-                        
-                        <div className="my-8 p-6 bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg">
-                            <p className="text-sm uppercase font-bold text-slate-500 mb-2">Your Temporary Reference ID</p>
-                            <div className="text-4xl font-mono font-bold text-sky-700 tracking-wider select-all">
-                                {submittedApplication.id}
-                            </div>
-                            <p className="text-sm text-red-600 font-semibold mt-4 bg-red-50 p-2 rounded inline-block">
-                                ⚠️ Please write this ID down immediately!
-                            </p>
-                        </div>
-
-                        <div className="text-left bg-sky-50 p-4 rounded-md border border-sky-100 mb-8 text-sm text-sky-800">
-                            <p className="font-semibold mb-2">What happens next?</p>
-                            <ul className="list-disc list-inside space-y-1">
-                                <li>An SMS has been sent to <strong>{submittedApplication.contact}</strong> with this ID.</li>
-                                <li>Your application for <strong>{submittedApplication.grade}</strong> is now under review.</li>
-                                <li>You can use this ID to check your status or pay fees later.</li>
-                            </ul>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button 
-                                onClick={() => window.print()}
-                                className="btn btn-secondary flex items-center justify-center gap-2"
-                            >
-                                Print Page
-                            </button>
-                            <Link to="/admissions/status" className="btn btn-primary bg-sky-600 hover:bg-sky-700">
-                                Check Status / Login
-                            </Link>
-                            <Link to="/" className="btn btn-secondary flex items-center justify-center gap-2">
-                                <HomeIcon className="w-5 h-5"/> Return Home
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     if (step === 1) {
         return (
@@ -698,12 +628,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ onOnlineAdmis
                             <legend className="text-xl font-bold text-slate-800 px-2">Previous Academic Record</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Last School Attended</label>
-                                    <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended} onChange={handleChange} className="form-input w-full mt-1" />
+                                    <label className="block text-sm font-bold text-slate-700">Last School Attended <span className="text-red-600">*</span></label>
+                                    <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Result/Division</label>
-                                    <input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" />
+                                    <label className="block text-sm font-bold text-slate-700">Result/Division <span className="text-red-600">*</span></label>
+                                    <input type="text" name="lastDivision" value={formData.lastDivision} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                             </div>
                         </fieldset>

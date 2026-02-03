@@ -39,27 +39,30 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                     defaultContent="https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg"
                     type="image"
                     user={user}
-                    className="absolute inset-0 w-full h-full"
+                    className="absolute inset-0 w-full h-full object-cover"
                     imgAlt="School Hero Background"
                 />
-                <div className="absolute inset-0 bg-black opacity-60 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-black opacity-40 pointer-events-none"></div>
                 <div className="relative container mx-auto text-center h-full flex flex-col justify-center items-center px-4">
-                    <h1 className="text-5xl md:text-6xl font-extrabold leading-tight animate-fade-in text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
-                        <EditableContent
-                            id="home_hero_title"
-                            defaultContent="Welcome to Bethel Mission School"
-                            type="text"
-                            user={user}
-                        />
-                    </h1>
-                    <p className="mt-4 text-xl md:text-2xl animate-fade-in text-white" style={{ animationDelay: '0.3s' }}>
-                        <EditableContent
-                            id="home_hero_subtitle"
-                            defaultContent="Service to God & Men"
-                            type="text"
-                            user={user}
-                        />
-                    </p>
+                    <div className="bg-black/30 backdrop-blur-sm border border-white/20 p-8 md:p-12 rounded-2xl shadow-2xl max-w-4xl animate-fade-in transform hover:scale-[1.01] transition-transform duration-500">
+                        <h1 className="text-5xl md:text-7xl font-extrabold leading-tight text-white tracking-tight" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}>
+                            <EditableContent
+                                id="home_hero_title"
+                                defaultContent="Welcome to Bethel Mission School"
+                                type="text"
+                                user={user}
+                            />
+                        </h1>
+                        <div className="w-24 h-1 bg-sky-500 mx-auto my-6 rounded-full"></div>
+                        <p className="text-xl md:text-3xl text-sky-50 font-medium tracking-wide" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}>
+                            <EditableContent
+                                id="home_hero_subtitle"
+                                defaultContent="Service to God & Men"
+                                type="text"
+                                user={user}
+                            />
+                        </p>
+                    </div>
                 </div>
             </section>
 

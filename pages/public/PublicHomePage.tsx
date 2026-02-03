@@ -68,12 +68,34 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
 
             <section className="py-20 bg-slate-50">
                 <div className="container mx-auto px-4">
-                    <div className="text-center mb-12">
+                    <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-slate-800">Latest News & Announcements</h2>
                         <p className="mt-4 max-w-2xl mx-auto text-slate-600">
                             Stay updated with the latest happenings at Bethel Mission School.
                         </p>
                     </div>
+
+                    {/* Requested Banner */}
+                    <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl mb-12 group max-w-5xl mx-auto">
+                        <div className="absolute inset-0">
+                            <img 
+                                src="https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg" 
+                                alt="School Building" 
+                                className="w-full h-full object-cover blur-[2px] scale-105 group-hover:scale-110 transition-transform duration-700"
+                            />
+                            <div className="absolute inset-0 bg-slate-900/40"></div>
+                        </div>
+                        <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+                            <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-xl" style={{ textShadow: '0 4px 6px rgba(0,0,0,0.5)' }}>
+                                Welcome to Bethel <br className="hidden md:block" /> Mission School
+                            </h2>
+                            <div className="w-20 h-1.5 bg-sky-500 rounded-full my-4 shadow-lg"></div>
+                            <p className="text-xl md:text-2xl text-slate-100 font-medium tracking-wide drop-shadow-md">
+                                Service to God & Men
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         {latestNews.length > 0 ? (
                             latestNews.map(item => (

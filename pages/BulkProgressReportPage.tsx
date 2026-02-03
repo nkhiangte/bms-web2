@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -347,9 +348,8 @@ const MultiTermReportCard: React.FC<{
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
-                <div className="flex justify-between mt-4 print:mt-1">
+                <div className="flex justify-between mt-4 text-xs text-slate-500">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
-                    <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>
             </div>
         </div>

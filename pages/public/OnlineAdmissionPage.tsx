@@ -4,7 +4,7 @@ import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../t
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
 import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
-import { resizeImage, uploadToImgBB } from '../../utils';
+import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
 
@@ -89,10 +89,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
              const studentData = snapshot.docs[0].data() as Student;
              
+             // Calculate the next grade
+             const nextGrade = getNextGrade(studentData.grade);
+
              setFormData(prev => ({
                  ...prev,
                  studentType: 'Existing',
                  previousStudentId: studentData.studentId,
+                 // Set admission grade to the next grade if available, otherwise current grade (e.g. for retention or Class X)
+                 admissionGrade: nextGrade || studentData.grade, 
                  studentName: studentData.name || '',
                  dateOfBirth: studentData.dateOfBirth || '',
                  gender: studentData.gender || 'Male',
@@ -138,8 +143,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                     grade: formData.admissionGrade, 
                     studentName: formData.studentName, 
                     fatherName: formData.fatherName, 
-                    contact: formData.contactNumber,
-                    studentType: formData.studentType
+                    contact: formData.contactNumber, 
+                    studentType: formData.studentType 
                 } 
             });
         } catch (error) {

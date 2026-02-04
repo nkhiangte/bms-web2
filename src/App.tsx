@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission } from './types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead } from './types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
 // Removed sampleData imports to use Firestore
 import { db, auth, firebase } from './firebaseConfig';
@@ -119,12 +118,15 @@ import CurriculumPage from './pages/public/CurriculumPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
+// FIX: Point to the root components folder for Icons if src one is incomplete or inaccessible.
+import { SpinnerIcon } from '../components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
 const App: React.FC = () => {
   // --- State Declarations ---
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -210,6 +212,7 @@ const App: React.FC = () => {
         } else {
             setUser(null);
         }
+        setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -240,32 +243,33 @@ const App: React.FC = () => {
         
         const feeDoc = await db.collection('config').doc('feeStructure').get();
         if (feeDoc.exists) {
-            const data = feeDoc.data();
-            // --- Migration Logic for Fee Structure ---
-            // If the database has old format (no 'heads' array), convert it on the fly
-            if (data && data.set1 && !Array.isArray(data.set1.heads)) {
-                 const migrateSet = (oldSet: any) => ({
+            const data = feeDoc.data() || {};
+            // Robust migration/check: Ensure all three sets exist and have 'heads' array
+            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
+                if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
+                return {
                     heads: [
                         { id: 'adm', name: 'Admission Fee', amount: Number(oldSet?.admissionFee) || 0, type: 'one-time' as const },
                         { id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet?.tuitionFee) || 0, type: 'monthly' as const },
                         { id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet?.examFee) || 0, type: 'term' as const }
                     ]
-                });
-                const migratedStructure = {
-                    set1: migrateSet(data.set1),
-                    set2: migrateSet(data.set2),
-                    set3: migrateSet(data.set3),
                 };
-                setFeeStructure(migratedStructure as FeeStructure);
-            } else {
-                setFeeStructure(data as FeeStructure);
-            }
+            };
+            
+            const sanitizedStructure = {
+                set1: migrateSet(data.set1),
+                set2: migrateSet(data.set2),
+                set3: migrateSet(data.set3),
+            };
+            setFeeStructure(sanitizedStructure as FeeStructure);
+        } else {
+            setFeeStructure(DEFAULT_FEE_STRUCTURE);
         }
 
         const admDoc = await db.collection('config').doc('admissionSettings').get();
         if (admDoc.exists) {
              const data = admDoc.data();
-             // Merge with default settings to ensure new fields (like feeStructure nested object) exist
+             // Merge with default settings to ensure new fields exist
              setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...data } as AdmissionSettings);
         }
 
@@ -564,7 +568,11 @@ const App: React.FC = () => {
         <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async () => ({ success: true })} />} />
 
         {/* Protected Portal Routes */}
-        <Route path="/portal" element={user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" />}>
+        <Route path="/portal" element={
+            authLoading 
+            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin"/></div>
+            : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
+        }>
            <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={async () => {}} />} />
            
            <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (claim) => {

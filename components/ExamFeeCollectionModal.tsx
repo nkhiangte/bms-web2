@@ -1,11 +1,6 @@
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Student, Grade, FeePayments, FeeStructure } from '../types';
 import { getFeeDetails } from '../utils';
-// FIX: Added 'TERMINAL_EXAMS' to the import list to resolve a 'Cannot find name' error.
 import { TERMINAL_EXAMS, academicMonths } from '../constants';
 import { SpinnerIcon, CheckIcon, XIcon, CurrencyDollarIcon } from './Icons';
 
@@ -22,6 +17,11 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
     const [paymentData, setPaymentData] = useState<Record<string, FeePayments>>({});
     const [isSaving, setIsSaving] = useState(false);
     const feeDetails = getFeeDetails(grade, feeStructure);
+
+    // Calculate total exam fee from heads instead of non-existent property
+    const totalExamFee = (feeDetails.heads || [])
+        .filter(h => h.type === 'term')
+        .reduce((sum, h) => sum + h.amount, 0);
 
     useEffect(() => {
         if (isOpen) {
@@ -85,7 +85,8 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
                         <div className="flex items-center gap-2 text-md text-slate-700 mt-1">
                             <CurrencyDollarIcon className="w-5 h-5 text-emerald-600"/>
                             <span>Exam Fee per Term:</span>
-                            <span className="font-bold">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeDetails.examFee)}</span>
+                            {/* Use calculated totalExamFee variable */}
+                            <span className="font-bold">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalExamFee)}</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-600 hover:bg-slate-100 rounded-full"><XIcon className="w-5 h-5"/></button>

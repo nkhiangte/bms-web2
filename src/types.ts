@@ -40,6 +40,40 @@ export enum BloodGroup {
     O_NEGATIVE = 'O-'
 }
 
+// --- Admission Configuration Types ---
+export interface AdmissionItemConfig {
+    id: string;
+    name: string;
+    price: number;
+    priceBySize?: Record<string, number>; // Optional map for size-specific prices
+    mandatory: boolean;
+    type: 'general' | 'uniform'; // 'general' items don't have sizes, 'uniform' items do
+}
+
+export interface FeeHead {
+    id: string;
+    name: string;
+    amount: number;
+    type?: 'one-time' | 'monthly' | 'term'; // Frequency type for calculation
+}
+
+export interface AdmissionFeeStructure {
+    oneTime: FeeHead[];
+    annual: FeeHead[];
+}
+
+export interface AdmissionSettings {
+    academicYearLabel: string; // e.g. "2026-27"
+    admissionFee: number; 
+    notebookPrices: Record<string, number>; // Key is Grade string
+    items: AdmissionItemConfig[];
+    feeStructure: {
+        newStudent: AdmissionFeeStructure;
+        existingStudent: AdmissionFeeStructure;
+    };
+}
+// -------------------------------------
+
 export interface AdmissionItem {
     name: string;
     price: number;
@@ -49,6 +83,8 @@ export interface AdmissionItem {
 
 export interface OnlineAdmission {
     id: string;
+    studentType?: 'Newcomer' | 'Existing';
+    previousStudentId?: string;
     admissionGrade: string;
     studentName: string;
     dateOfBirth: string;
@@ -67,7 +103,10 @@ export interface OnlineAdmission {
     email?: string;
     penNumber?: string;
     motherTongue?: string;
-    isCWSN?: string;
+    cwsn?: string; 
+    religion?: string; 
+    category?: string; 
+    isCWSN?: string; // Kept for backward compatibility
     bloodGroup?: string;
     lastSchoolAttended?: string;
     lastDivision?: string;
@@ -80,7 +119,7 @@ export interface OnlineAdmission {
     reportCardUrl?: string;
     paymentScreenshotUrl?: string;
     submissionDate: string;
-    status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+    status: 'draft' | 'pending' | 'reviewed' | 'approved' | 'rejected';
     paymentStatus?: 'pending' | 'paid';
     paymentAmount?: number;
     paymentTransactionId?: string;
@@ -224,6 +263,7 @@ export interface Student {
     photographUrl: string;
     feePayments: FeePayments;
     academicPerformance?: Exam[];
+    academicYear?: string;
 }
 
 export interface User {
@@ -530,9 +570,7 @@ export interface DistinctionHolder {
 }
 
 export interface FeeSet {
-    admissionFee: number;
-    tuitionFee: number;
-    examFee: number;
+    heads: FeeHead[];
 }
 
 export interface FeeStructure {

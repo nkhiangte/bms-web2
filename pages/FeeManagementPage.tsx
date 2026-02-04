@@ -55,7 +55,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   useEffect(() => {
     // Sync editable structure when props change (e.g. initial load)
     // Only if not currently editing to avoid overwriting user input
-    if (!isEditingStructure) {
+    if (!isEditingStructure && feeStructure && feeStructure.set1) {
         setEditableStructure(feeStructure);
     }
   }, [feeStructure, isEditingStructure]);
@@ -80,30 +80,35 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
 
   const handleHeadChange = (setKey: 'set1' | 'set2' | 'set3', index: number, field: keyof FeeHead, value: any) => {
     setEditableStructure(prev => {
-        const newSet = [...prev[setKey].heads];
-        newSet[index] = { ...newSet[index], [field]: value };
+        const set = prev[setKey] || { heads: [] };
+        const newHeads = [...(set.heads || [])];
+        newHeads[index] = { ...newHeads[index], [field]: value };
         return {
             ...prev,
-            [setKey]: { heads: newSet }
+            [setKey]: { heads: newHeads }
         };
     });
   };
 
   const handleAddHead = (setKey: 'set1' | 'set2' | 'set3') => {
-      setEditableStructure(prev => ({
-          ...prev,
-          [setKey]: {
-              heads: [...prev[setKey].heads, { id: `fee-${Date.now()}`, name: 'New Fee', amount: 0, type: 'one-time' }]
-          }
-      }));
+      setEditableStructure(prev => {
+          const set = prev[setKey] || { heads: [] };
+          return {
+            ...prev,
+            [setKey]: {
+                heads: [...(set.heads || []), { id: `fee-${Date.now()}`, name: 'New Fee', amount: 0, type: 'one-time' }]
+            }
+          };
+      });
   };
 
   const handleRemoveHead = (setKey: 'set1' | 'set2' | 'set3', index: number) => {
     setEditableStructure(prev => {
-        const newSet = prev[setKey].heads.filter((_, i) => i !== index);
+        const set = prev[setKey] || { heads: [] };
+        const newHeads = (set.heads || []).filter((_, i) => i !== index);
         return {
             ...prev,
-            [setKey]: { heads: newSet }
+            [setKey]: { heads: newHeads }
         };
     });
   };
@@ -305,7 +310,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {(Object.keys(feeStructure) as Array<keyof FeeStructure>).map(setKey => (
+                {(Object.keys(feeStructure || {}) as Array<keyof FeeStructure>).map(setKey => (
                     <div key={setKey} className={`p-4 rounded-lg border flex flex-col h-full ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex justify-between items-start mb-4">
                             <div>
@@ -322,7 +327,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                         </div>
                         
                         <div className="space-y-3 flex-grow">
-                            {editableStructure[setKey].heads.map((head, index) => (
+                            {(editableStructure[setKey]?.heads || []).map((head, index) => (
                                 <div key={head.id} className={`p-2 rounded ${isEditingStructure ? 'bg-white border' : ''}`}>
                                     {isEditingStructure ? (
                                         <div className="space-y-2">
@@ -368,7 +373,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                     )}
                                 </div>
                             ))}
-                            {editableStructure[setKey].heads.length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
+                            {(editableStructure[setKey]?.heads || []).length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
                         </div>
                     </div>
                 ))}
@@ -433,7 +438,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-bold text-slate-800 px-2 flex items-center gap-2"><CurrencyDollarIcon className="w-5 h-5" /> Fee Structure Details</legend>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        {feeSet.heads.map(head => (
+                        {(feeSet.heads || []).map(head => (
                             <FeeDetailItem key={head.id} label={head.name} amount={head.amount} />
                         ))}
                     </div>

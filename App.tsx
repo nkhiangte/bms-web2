@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission } from './types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead } from './types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
 // Removed sampleData imports to use Firestore
 import { db, auth, firebase } from './firebaseConfig';
@@ -239,10 +239,36 @@ const App: React.FC = () => {
         if (doc.exists) setSchoolConfig(doc.data() as any);
         
         const feeDoc = await db.collection('config').doc('feeStructure').get();
-        if (feeDoc.exists) setFeeStructure(feeDoc.data() as FeeStructure);
+        if (feeDoc.exists) {
+            const data = feeDoc.data() || {};
+            // Robust migration/check: Ensure all three sets exist and have 'heads' array
+            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
+                if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
+                return {
+                    heads: [
+                        { id: 'adm', name: 'Admission Fee', amount: Number(oldSet?.admissionFee) || 0, type: 'one-time' as const },
+                        { id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet?.tuitionFee) || 0, type: 'monthly' as const },
+                        { id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet?.examFee) || 0, type: 'term' as const }
+                    ]
+                };
+            };
+            
+            const sanitizedStructure = {
+                set1: migrateSet(data.set1),
+                set2: migrateSet(data.set2),
+                set3: migrateSet(data.set3),
+            };
+            setFeeStructure(sanitizedStructure as FeeStructure);
+        } else {
+            setFeeStructure(DEFAULT_FEE_STRUCTURE);
+        }
 
         const admDoc = await db.collection('config').doc('admissionSettings').get();
-        if (admDoc.exists) setAdmissionSettings(admDoc.data() as AdmissionSettings);
+        if (admDoc.exists) {
+             const data = admDoc.data();
+             // Merge with default settings to ensure new fields exist
+             setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...data } as AdmissionSettings);
+        }
 
         const gradesDoc = await db.collection('config').doc('gradeDefinitions').get();
         if (gradesDoc.exists) setGradeDefinitions(gradesDoc.data() as any);

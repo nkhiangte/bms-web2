@@ -23,7 +23,7 @@ const FeeTable: React.FC<{ title: string; grades: string[]; fees: FeeSet }> = ({
         <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
         <p className="text-sky-700 font-semibold mb-4 text-sm">{grades.join(', ')}</p>
         <div className="space-y-3 flex-grow">
-            {fees.heads.map(head => (
+            {(fees?.heads || []).map(head => (
                  <div key={head.id} className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
                     <div>
                         <span className="text-slate-600 font-medium">{head.name}</span>
@@ -32,7 +32,7 @@ const FeeTable: React.FC<{ title: string; grades: string[]; fees: FeeSet }> = ({
                     <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(head.amount)}</span>
                 </div>
             ))}
-            {fees.heads.length === 0 && <p className="text-slate-500 italic text-sm">No fee structure defined.</p>}
+            {(!fees?.heads || fees.heads.length === 0) && <p className="text-slate-500 italic text-sm">No fee structure defined.</p>}
         </div>
     </div>
 );
@@ -57,7 +57,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
             return;
         }
 
-        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
+        const student = (students || []).find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
         
         if (student) {
             setFoundStudent(student);
@@ -178,9 +178,9 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-                    <FeeTable title="Set 1" grades={FEE_SET_GRADES.set1} fees={feeStructure.set1} />
-                    <FeeTable title="Set 2" grades={FEE_SET_GRADES.set2} fees={feeStructure.set2} />
-                    <FeeTable title="Set 3" grades={FEE_SET_GRADES.set3} fees={feeStructure.set3} />
+                    <FeeTable title="Set 1" grades={FEE_SET_GRADES.set1} fees={feeStructure?.set1} />
+                    <FeeTable title="Set 2" grades={FEE_SET_GRADES.set2} fees={feeStructure?.set2} />
+                    <FeeTable title="Set 3" grades={FEE_SET_GRADES.set3} fees={feeStructure?.set3} />
                 </div>
 
                 <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl border">

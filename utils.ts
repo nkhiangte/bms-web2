@@ -1,5 +1,5 @@
 
-import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent } from './types';
+import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
 
@@ -83,17 +83,18 @@ export const formatStudentId = (student: Student, academicYear: string): string 
     return `BMS${yearSuffix}${gradeCode}${paddedRollNo}`;
 };
 
-export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure) => {
+export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure): FeeSet => {
+    let set: FeeSet | undefined;
     if (FEE_SET_GRADES.set1.includes(grade)) {
-        return feeStructure.set1;
+        set = feeStructure.set1;
+    } else if (FEE_SET_GRADES.set2.includes(grade)) {
+        set = feeStructure.set2;
+    } else if (FEE_SET_GRADES.set3.includes(grade)) {
+        set = feeStructure.set3;
     }
-    if (FEE_SET_GRADES.set2.includes(grade)) {
-        return feeStructure.set2;
-    }
-    if (FEE_SET_GRADES.set3.includes(grade)) {
-        return feeStructure.set3;
-    }
-    return feeStructure.set1;
+    
+    // Safety fallback to prevent crashes if structure is missing or malformed
+    return set || { heads: [] };
 };
 
 export const calculateDues = (student: Student, feeStructure: FeeStructure): string[] => {
@@ -108,9 +109,9 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
     const duesMessages: string[] = [];
 
     // Separate fee heads by type
-    const oneTimeFees = feeSet.heads.filter(h => h.type === 'one-time');
-    const monthlyFees = feeSet.heads.filter(h => h.type === 'monthly');
-    const termFees = feeSet.heads.filter(h => h.type === 'term');
+    const oneTimeFees = (feeSet.heads || []).filter(h => h.type === 'one-time');
+    const monthlyFees = (feeSet.heads || []).filter(h => h.type === 'monthly');
+    const termFees = (feeSet.heads || []).filter(h => h.type === 'term');
 
     // 1. One-time Fees (linked to admissionFeePaid flag)
     if (!feePayments.admissionFeePaid && oneTimeFees.length > 0) {
@@ -166,9 +167,9 @@ export const getDuesSummary = (student: Student, feeStructure: FeeStructure): Du
     const feeSet = getFeeDetails(student.grade, feeStructure);
 
     // Separate fee heads by type
-    const oneTimeFees = feeSet.heads.filter(h => h.type === 'one-time');
-    const monthlyFees = feeSet.heads.filter(h => h.type === 'monthly');
-    const termFees = feeSet.heads.filter(h => h.type === 'term');
+    const oneTimeFees = (feeSet.heads || []).filter(h => h.type === 'one-time');
+    const monthlyFees = (feeSet.heads || []).filter(h => h.type === 'monthly');
+    const termFees = (feeSet.heads || []).filter(h => h.type === 'term');
 
     // 1. One-time Fees
     if (!feePayments.admissionFeePaid) {

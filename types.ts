@@ -54,6 +54,7 @@ export interface FeeHead {
     id: string;
     name: string;
     amount: number;
+    type?: 'one-time' | 'monthly' | 'term'; // Frequency type for calculation
 }
 
 export interface AdmissionFeeStructure {
@@ -570,9 +571,7 @@ export interface DistinctionHolder {
 }
 
 export interface FeeSet {
-    admissionFee: number;
-    tuitionFee: number;
-    examFee: number;
+    heads: FeeHead[];
 }
 
 export interface FeeStructure {

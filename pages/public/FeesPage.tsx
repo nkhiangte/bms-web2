@@ -1,7 +1,7 @@
 
 import React, { useState, FormEvent, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { FeeStructure, Student, FeePayments, NotificationType, User } from '../../types';
+import { FeeStructure, Student, FeePayments, NotificationType, User, FeeSet } from '../../types';
 import { FEE_SET_GRADES, academicMonths } from '../../constants';
 import { getDuesSummary, formatStudentId } from '../../utils';
 import { SpinnerIcon } from '../../components/Icons';
@@ -18,23 +18,21 @@ interface FeesPageProps {
     addNotification: (message: string, type: NotificationType, title?: string) => void;
 }
 
-const FeeTable: React.FC<{ title: string; grades: string[]; fees: { admissionFee: number; tuitionFee: number; examFee: number; } }> = ({ title, grades, fees }) => (
+const FeeTable: React.FC<{ title: string; grades: string[]; fees: FeeSet }> = ({ title, grades, fees }) => (
     <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col border border-slate-100">
         <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
         <p className="text-sky-700 font-semibold mb-4 text-sm">{grades.join(', ')}</p>
         <div className="space-y-3 flex-grow">
-            <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600 font-medium">Admission Fee</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.admissionFee)}</span>
-            </div>
-            <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600 font-medium">Tuition Fee (Monthly)</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.tuitionFee)}</span>
-            </div>
-            <div className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
-                <span className="text-slate-600 font-medium">Exam Fee (Per Term)</span>
-                <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(fees.examFee)}</span>
-            </div>
+            {fees.heads.map(head => (
+                 <div key={head.id} className="flex justify-between items-baseline p-3 bg-slate-50 rounded-md">
+                    <div>
+                        <span className="text-slate-600 font-medium">{head.name}</span>
+                        <span className="block text-[10px] text-slate-400 uppercase tracking-wide">{head.type}</span>
+                    </div>
+                    <span className="font-bold text-lg text-slate-800">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(head.amount)}</span>
+                </div>
+            ))}
+            {fees.heads.length === 0 && <p className="text-slate-500 italic text-sm">No fee structure defined.</p>}
         </div>
     </div>
 );
@@ -88,7 +86,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
 
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'),
+            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), // Fallback assumption
             tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
             examFees: {
                 terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
@@ -110,6 +108,12 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, students, acade
                 if (duesToPay.admissionFee) {
                     newPayments.admissionFeePaid = true;
                 }
+                
+                // If any one-time fee was in the bill, mark the legacy admission flag
+                if (duesSummary.items.some(i => !i.description.includes('months') && !i.description.includes('Term'))) {
+                    newPayments.admissionFeePaid = true;
+                }
+
                 duesToPay.tuitionMonths.forEach(month => {
                     if(newPayments.tuitionFeesPaid) newPayments.tuitionFeesPaid[month] = true;
                 });

@@ -1,10 +1,8 @@
 
-
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon } from '../components/Icons';
-import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType } from '../types';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon } from '../components/Icons';
+import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '../types';
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
 import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
 
@@ -55,8 +53,12 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   }, [foundStudent, feeStructure]);
 
   useEffect(() => {
-    setEditableStructure(feeStructure);
-  }, [feeStructure]);
+    // Sync editable structure when props change (e.g. initial load)
+    // Only if not currently editing to avoid overwriting user input
+    if (!isEditingStructure) {
+        setEditableStructure(feeStructure);
+    }
+  }, [feeStructure, isEditingStructure]);
 
   const getDefaultPayments = (): FeePayments => ({
     admissionFeePaid: false,
@@ -76,15 +78,34 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
       }
   }, [location.state, students]);
 
-  const handleStructureChange = (setKey: 'set1' | 'set2' | 'set3', feeKey: keyof FeeSet, value: string) => {
-    const numericValue = parseInt(value, 10) || 0;
-    setEditableStructure(prev => ({
-        ...prev,
-        [setKey]: {
-            ...prev[setKey],
-            [feeKey]: numericValue,
-        }
-    }));
+  const handleHeadChange = (setKey: 'set1' | 'set2' | 'set3', index: number, field: keyof FeeHead, value: any) => {
+    setEditableStructure(prev => {
+        const newSet = [...prev[setKey].heads];
+        newSet[index] = { ...newSet[index], [field]: value };
+        return {
+            ...prev,
+            [setKey]: { heads: newSet }
+        };
+    });
+  };
+
+  const handleAddHead = (setKey: 'set1' | 'set2' | 'set3') => {
+      setEditableStructure(prev => ({
+          ...prev,
+          [setKey]: {
+              heads: [...prev[setKey].heads, { id: `fee-${Date.now()}`, name: 'New Fee', amount: 0, type: 'one-time' }]
+          }
+      }));
+  };
+
+  const handleRemoveHead = (setKey: 'set1' | 'set2' | 'set3', index: number) => {
+    setEditableStructure(prev => {
+        const newSet = prev[setKey].heads.filter((_, i) => i !== index);
+        return {
+            ...prev,
+            [setKey]: { heads: newSet }
+        };
+    });
   };
 
   const handleSaveStructure = () => {
@@ -120,7 +141,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     }
   };
   
-  // Handler specifically for parents selecting their child from dropdown
   const handleParentChildSelect = (childId: string) => {
       setSearchError('');
       setIsSaved(false);
@@ -179,10 +199,9 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             return;
         }
 
-        // Capture the state of dues at the moment of payment initiation
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'),
+            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), // Simple fallback
             tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
             examFees: {
                 terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
@@ -201,21 +220,20 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             handler: async (response: any) => {
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
 
-                if (duesToPay.admissionFee) {
+                // If any one-time fee was due, mark admissionFeePaid as true (legacy flag)
+                // In future, consider moving to granular payments in student record
+                if (duesSummary.items.some(i => !i.description.includes('Tuition') && !i.description.includes('Term') && !i.description.includes('Exam'))) {
                     newPayments.admissionFeePaid = true;
                 }
+
                 duesToPay.tuitionMonths.forEach(month => {
                     if(newPayments.tuitionFeesPaid) newPayments.tuitionFeesPaid[month] = true;
                 });
-                if (duesToPay.examFees.terminal1) {
-                    newPayments.examFeesPaid.terminal1 = true;
-                }
-                if (duesToPay.examFees.terminal2) {
-                    newPayments.examFeesPaid.terminal2 = true;
-                }
-                if (duesToPay.examFees.terminal3) {
-                    newPayments.examFeesPaid.terminal3 = true;
-                }
+                
+                // If Term fees are paid, mark exams as paid
+                if (duesToPay.examFees.terminal1) newPayments.examFeesPaid.terminal1 = true;
+                if (duesToPay.examFees.terminal2) newPayments.examFeesPaid.terminal2 = true;
+                if (duesToPay.examFees.terminal3) newPayments.examFeesPaid.terminal3 = true;
                 
                 try {
                     await onUpdateFeePayments(foundStudent.id, newPayments);
@@ -255,7 +273,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     };
 
 
-  const feeDetails = foundStudent ? getFeeDetails(foundStudent.grade, feeStructure) : null;
+  const feeSet = foundStudent ? getFeeDetails(foundStudent.grade, feeStructure) : null;
   const allTuitionPaid = paymentData ? academicMonths.every(m => paymentData.tuitionFeesPaid[m]) : false;
 
   const tempStudentForDues: Student | null = foundStudent && paymentData ? { ...foundStudent, feePayments: paymentData } : null;
@@ -271,7 +289,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800">Fee Structure Management</h2>
-                    <p className="text-slate-600">Update the fee amounts visible on the public website and used for calculations.</p>
+                    <p className="text-slate-600">Update fee names, amounts, and types used for calculations.</p>
                 </div>
                 {!isEditingStructure ? (
                     <button onClick={() => setIsEditingStructure(true)} className="btn btn-secondary flex items-center gap-2">
@@ -286,80 +304,78 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     </div>
                 )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {(Object.keys(feeStructure) as Array<keyof FeeStructure>).map(setKey => (
-                    <div key={setKey} className={`p-4 rounded-lg border ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
-                        <h3 className="font-bold text-lg text-slate-800 capitalize mb-1">{setKey.replace('set', 'Set ')}</h3>
-                        <p className="text-xs text-slate-600 mb-4 h-8">
-                            Applies to: {FEE_SET_GRADES[setKey as keyof typeof FEE_SET_GRADES].join(', ')}
-                        </p>
-                        <div className="space-y-4">
+                    <div key={setKey} className={`p-4 rounded-lg border flex flex-col h-full ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex justify-between items-start mb-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Admission Fee</label>
-                                {isEditingStructure ? (
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                          <span className="text-gray-500 sm:text-sm">₹</span>
-                                        </div>
-                                        <input
-                                            type="number"
-                                            value={editableStructure[setKey].admissionFee}
-                                            onChange={e => handleStructureChange(setKey, 'admissionFee', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className="font-semibold text-slate-800 text-lg">
-                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].admissionFee)}
-                                    </p>
-                                )}
+                                <h3 className="font-bold text-lg text-slate-800 capitalize mb-1">{setKey.replace('set', 'Set ')}</h3>
+                                <p className="text-xs text-slate-600">
+                                    Applies to: {FEE_SET_GRADES[setKey as keyof typeof FEE_SET_GRADES].join(', ')}
+                                </p>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Tuition Fee (Monthly)</label>
-                                {isEditingStructure ? (
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                          <span className="text-gray-500 sm:text-sm">₹</span>
+                            {isEditingStructure && (
+                                <button onClick={() => handleAddHead(setKey)} className="text-xs btn btn-secondary px-2 py-1 flex items-center gap-1">
+                                    <PlusIcon className="w-3 h-3"/> Add Fee
+                                </button>
+                            )}
+                        </div>
+                        
+                        <div className="space-y-3 flex-grow">
+                            {editableStructure[setKey].heads.map((head, index) => (
+                                <div key={head.id} className={`p-2 rounded ${isEditingStructure ? 'bg-white border' : ''}`}>
+                                    {isEditingStructure ? (
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                value={head.name}
+                                                onChange={e => handleHeadChange(setKey, index, 'name', e.target.value)}
+                                                className="w-full text-sm font-bold border-slate-300 rounded focus:ring-sky-500"
+                                                placeholder="Fee Name"
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={head.amount}
+                                                    onChange={e => handleHeadChange(setKey, index, 'amount', parseInt(e.target.value) || 0)}
+                                                    className="w-1/2 text-sm border-slate-300 rounded focus:ring-sky-500"
+                                                    placeholder="Amount"
+                                                />
+                                                <select
+                                                    value={head.type}
+                                                    onChange={e => handleHeadChange(setKey, index, 'type', e.target.value)}
+                                                    className="w-1/2 text-xs border-slate-300 rounded focus:ring-sky-500"
+                                                >
+                                                    <option value="one-time">One-time</option>
+                                                    <option value="monthly">Monthly</option>
+                                                    <option value="term">Term</option>
+                                                </select>
+                                                <button onClick={() => handleRemoveHead(setKey, index)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                                                    <TrashIcon className="w-4 h-4"/>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <input
-                                            type="number"
-                                            value={editableStructure[setKey].tuitionFee}
-                                            onChange={e => handleStructureChange(setKey, 'tuitionFee', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className="font-semibold text-slate-800 text-lg">
-                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].tuitionFee)}
-                                    </p>
-                                )}
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Exam Fee (Per Term)</label>
-                                {isEditingStructure ? (
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                          <span className="text-gray-500 sm:text-sm">₹</span>
+                                    ) : (
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="block text-xs font-bold text-slate-700">{head.name}</span>
+                                                <span className="text-[10px] text-slate-500 uppercase tracking-wide">{head.type}</span>
+                                            </div>
+                                            <span className="font-semibold text-slate-800 text-lg">
+                                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(head.amount)}
+                                            </span>
                                         </div>
-                                        <input
-                                            type="number"
-                                            value={editableStructure[setKey].examFee}
-                                            onChange={e => handleStructureChange(setKey, 'examFee', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 pl-7 focus:border-sky-500 focus:ring-sky-500 sm:text-sm py-2"
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className="font-semibold text-slate-800 text-lg">
-                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeStructure[setKey].examFee)}
-                                    </p>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            ))}
+                            {editableStructure[setKey].heads.length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
                         </div>
                     </div>
                 ))}
             </div>
         </div>
       )}
+      
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center">
             <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
@@ -403,7 +419,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             </div>
         )}
         
-        {foundStudent && feeDetails && paymentData && (
+        {foundStudent && feeSet && paymentData && (
             <form onSubmit={handleSave} className="mt-8 space-y-6 animate-fade-in">
                 <fieldset className="border p-4 rounded-lg bg-slate-50">
                     <legend className="text-lg font-bold text-slate-800 px-2 flex items-center gap-2"><UserIcon className="w-5 h-5" /> Student Details</legend>
@@ -417,9 +433,9 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-bold text-slate-800 px-2 flex items-center gap-2"><CurrencyDollarIcon className="w-5 h-5" /> Fee Structure Details</legend>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        <FeeDetailItem label="Admission Fee" amount={feeDetails.admissionFee} />
-                        <FeeDetailItem label="Monthly Tuition Fee" amount={feeDetails.tuitionFee} />
-                        <FeeDetailItem label="Annual Exam Fee (per term)" amount={feeDetails.examFee} />
+                        {feeSet.heads.map(head => (
+                            <FeeDetailItem key={head.id} label={head.name} amount={head.amount} />
+                        ))}
                     </div>
                 </fieldset>
 
@@ -455,7 +471,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                 <h4 className="font-bold text-slate-800 border-b pb-2">One-Time & Term Fees</h4>
                                 <label className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">
                                 <input type="checkbox" checked={paymentData.admissionFeePaid} onChange={e => handlePaymentChange('admission', 'admissionFeePaid', e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500" disabled={isReadOnly} />
-                                <span className="text-slate-800 font-semibold">Admission Fee Paid</span>
+                                <span className="text-slate-800 font-semibold">One-Time Fees / Admission</span>
                                 </label>
                                 {TERMINAL_EXAMS.map((exam, i) => (
                                     <label key={exam.id} className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">

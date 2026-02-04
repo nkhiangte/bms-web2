@@ -103,27 +103,44 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
         examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
     };
     const feePayments = student.feePayments || defaultPayments;
-    const feeDetails = getFeeDetails(student.grade, feeStructure);
+    const feeSet = getFeeDetails(student.grade, feeStructure);
 
     const duesMessages: string[] = [];
 
-    if (!feePayments.admissionFeePaid) {
-        duesMessages.push(`Admission Fee: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(feeDetails.admissionFee)}`);
+    // Separate fee heads by type
+    const oneTimeFees = feeSet.heads.filter(h => h.type === 'one-time');
+    const monthlyFees = feeSet.heads.filter(h => h.type === 'monthly');
+    const termFees = feeSet.heads.filter(h => h.type === 'term');
+
+    // 1. One-time Fees (linked to admissionFeePaid flag)
+    if (!feePayments.admissionFeePaid && oneTimeFees.length > 0) {
+        const totalOneTime = oneTimeFees.reduce((sum, h) => sum + h.amount, 0);
+        const names = oneTimeFees.map(h => h.name).join(', ');
+        duesMessages.push(`${names}: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalOneTime)}`);
     }
 
+    // 2. Monthly Fees (linked to tuitionFeesPaid months)
     const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
-    if (unpaidTuitionMonths.length > 0) {
-        const totalTuitionDue = unpaidTuitionMonths.length * feeDetails.tuitionFee;
-        duesMessages.push(`Tuition Fee: ${unpaidTuitionMonths.length} month(s) pending (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalTuitionDue)})`);
+    if (unpaidTuitionMonths.length > 0 && monthlyFees.length > 0) {
+        const monthlyTotal = monthlyFees.reduce((sum, h) => sum + h.amount, 0);
+        const totalDue = unpaidTuitionMonths.length * monthlyTotal;
+        const names = monthlyFees.map(h => h.name).join(' + ');
+        duesMessages.push(`${names}: ${unpaidTuitionMonths.length} month(s) pending (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalDue)})`);
     }
 
-    const unpaidExams: string[] = [];
-    if (!feePayments.examFeesPaid?.terminal1) unpaidExams.push('Term 1');
-    if (!feePayments.examFeesPaid?.terminal2) unpaidExams.push('Term 2');
-    if (!feePayments.examFeesPaid?.terminal3) unpaidExams.push('Term 3');
-    if (unpaidExams.length > 0) {
-        const totalExamDue = unpaidExams.length * feeDetails.examFee;
-        duesMessages.push(`Exam Fee: ${unpaidExams.join(', ')} (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalExamDue)})`);
+    // 3. Term Fees (linked to examFeesPaid flags)
+    if (termFees.length > 0) {
+        const termTotal = termFees.reduce((sum, h) => sum + h.amount, 0);
+        const unpaidExams: string[] = [];
+        if (!feePayments.examFeesPaid?.terminal1) unpaidExams.push('Term 1');
+        if (!feePayments.examFeesPaid?.terminal2) unpaidExams.push('Term 2');
+        if (!feePayments.examFeesPaid?.terminal3) unpaidExams.push('Term 3');
+        
+        if (unpaidExams.length > 0) {
+            const totalTermDue = unpaidExams.length * termTotal;
+            const names = termFees.map(h => h.name).join(' + ');
+            duesMessages.push(`${names}: ${unpaidExams.join(', ')} (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalTermDue)})`);
+        }
     }
 
     return duesMessages;
@@ -146,25 +163,40 @@ export const getDuesSummary = (student: Student, feeStructure: FeeStructure): Du
         examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
     };
     const feePayments = student.feePayments || defaultPayments;
-    const feeDetails = getFeeDetails(student.grade, feeStructure);
+    const feeSet = getFeeDetails(student.grade, feeStructure);
 
+    // Separate fee heads by type
+    const oneTimeFees = feeSet.heads.filter(h => h.type === 'one-time');
+    const monthlyFees = feeSet.heads.filter(h => h.type === 'monthly');
+    const termFees = feeSet.heads.filter(h => h.type === 'term');
+
+    // 1. One-time Fees
     if (!feePayments.admissionFeePaid) {
-        items.push({ description: 'Admission Fee', amount: feeDetails.admissionFee });
+        oneTimeFees.forEach(head => {
+            items.push({ description: head.name, amount: head.amount });
+        });
     }
 
+    // 2. Monthly Fees
     const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0) {
-        const totalTuitionDue = unpaidTuitionMonths.length * feeDetails.tuitionFee;
-        items.push({ description: `${unpaidTuitionMonths.length} month(s) Tuition Fee`, amount: totalTuitionDue });
+        monthlyFees.forEach(head => {
+            const totalForHead = unpaidTuitionMonths.length * head.amount;
+            items.push({ description: `${head.name} (${unpaidTuitionMonths.length} months)`, amount: totalForHead });
+        });
     }
 
+    // 3. Term Fees
     const unpaidExams: string[] = [];
     if (!feePayments.examFeesPaid?.terminal1) unpaidExams.push('Term 1');
     if (!feePayments.examFeesPaid?.terminal2) unpaidExams.push('Term 2');
     if (!feePayments.examFeesPaid?.terminal3) unpaidExams.push('Term 3');
+    
     if (unpaidExams.length > 0) {
-        const totalExamDue = unpaidExams.length * feeDetails.examFee;
-        items.push({ description: `Exam Fee: ${unpaidExams.join(', ')}`, amount: totalExamDue });
+        termFees.forEach(head => {
+             const totalForHead = unpaidExams.length * head.amount;
+             items.push({ description: `${head.name} (${unpaidExams.join(', ')})`, amount: totalForHead });
+        });
     }
 
     const total = items.reduce((sum, item) => sum + item.amount, 0);

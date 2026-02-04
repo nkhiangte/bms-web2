@@ -182,9 +182,27 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
 export const academicMonths = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
 
 export const DEFAULT_FEE_STRUCTURE = {
-  set1: { admissionFee: 5000, tuitionFee: 1500, examFee: 500 },
-  set2: { admissionFee: 6000, tuitionFee: 2000, examFee: 600 },
-  set3: { admissionFee: 7000, tuitionFee: 2500, examFee: 700 },
+  set1: {
+      heads: [
+          { id: 'adm', name: 'Admission Fee', amount: 5000, type: 'one-time' },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' },
+          { id: 'exam', name: 'Exam Fee (Per Term)', amount: 500, type: 'term' }
+      ]
+  },
+  set2: {
+      heads: [
+          { id: 'adm', name: 'Admission Fee', amount: 6000, type: 'one-time' },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2000, type: 'monthly' },
+          { id: 'exam', name: 'Exam Fee (Per Term)', amount: 600, type: 'term' }
+      ]
+  },
+  set3: {
+      heads: [
+          { id: 'adm', name: 'Admission Fee', amount: 7000, type: 'one-time' },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2500, type: 'monthly' },
+          { id: 'exam', name: 'Exam Fee (Per Term)', amount: 700, type: 'term' }
+      ]
+  },
 };
 
 export const FEE_SET_GRADES: Record<string, Grade[]> = {
@@ -197,36 +215,36 @@ export const FEE_SET_GRADES: Record<string, Grade[]> = {
 export const ADMISSION_FEE_STRUCTURE = {
     newStudent: {
         oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100 },
-            { id: 'adm', name: 'Admission Fee', amount: 3000 },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000 },
+            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' },
+            { id: 'adm', name: 'Admission Fee', amount: 3000, type: 'one-time' },
+            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' },
         ],
         annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100 },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000 },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000 },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100 },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100 },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100 },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150 },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100 },
+            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' },
+            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' },
+            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' },
+            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' },
+            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' },
+            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' },
+            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' },
+            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' },
         ]
     },
     existingStudent: {
         oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100 },
-            { id: 'adm', name: 'Admission Fee', amount: 2000 },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000 },
+            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' },
+            { id: 'adm', name: 'Admission Fee', amount: 2000, type: 'one-time' },
+            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' },
         ],
         annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100 },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000 },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000 },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100 },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100 },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100 },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150 },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100 },
+            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' },
+            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' },
+            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' },
+            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' },
+            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' },
+            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' },
+            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' },
+            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' },
         ]
     }
 };

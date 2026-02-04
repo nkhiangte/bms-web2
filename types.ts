@@ -1,4 +1,5 @@
 
+
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -87,7 +88,10 @@ export interface OnlineAdmission {
     email?: string;
     penNumber?: string;
     motherTongue?: string;
-    isCWSN?: string;
+    cwsn?: string; // Correctly mapped to form field name
+    religion?: string; // Added missing property
+    category?: string; // Added missing property
+    isCWSN?: string; // Kept for backward compatibility if needed, though 'cwsn' is preferred
     bloodGroup?: string;
     lastSchoolAttended?: string;
     lastDivision?: string;

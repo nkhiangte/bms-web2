@@ -2,7 +2,7 @@
 import React, { useState, FormEvent, useRef } from 'react';
 import { User, OnlineAdmission, Grade, Gender, Category } from '../../types';
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon, XIcon } from '../../components/Icons';
+import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+    const [hasSelectedType, setHasSelectedType] = useState(false);
 
     const [formData, setFormData] = useState<Partial<OnlineAdmission>>({
         admissionGrade: GRADES_LIST[0],
@@ -35,6 +36,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         bloodGroup: '',
         motherTongue: '',
         studentType: 'Newcomer',
+        lastSchoolAttended: '',
         status: 'pending'
     });
 
@@ -89,6 +91,59 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             setIsSubmitting(false);
         }
     };
+
+    if (!hasSelectedType) {
+        return (
+            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                <div className="container mx-auto px-4 max-w-4xl">
+                    <div className="text-center mb-10">
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
+                            <EditableContent id="oa_welcome_title" defaultContent="Online Admission Portal" type="text" user={user} />
+                        </h1>
+                        <p className="text-lg text-slate-600">Please select the category that best describes the student.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* New Student Card */}
+                        <button 
+                            onClick={() => {
+                                setFormData(prev => ({ ...prev, studentType: 'Newcomer' }));
+                                setHasSelectedType(true);
+                            }}
+                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-2xl transition-all duration-300 group text-left"
+                        >
+                            <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <PlusIcon className="w-8 h-8 text-sky-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
+                            <p className="text-slate-600">For children seeking admission to Bethel Mission School for the first time.</p>
+                        </button>
+
+                        {/* Existing Student Card */}
+                        <button 
+                            onClick={() => {
+                                setFormData(prev => ({ ...prev, studentType: 'Existing' }));
+                                setHasSelectedType(true);
+                            }}
+                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-2xl transition-all duration-300 group text-left"
+                        >
+                            <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <UserIcon className="w-8 h-8 text-emerald-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
+                            <p className="text-slate-600">For current students of the school applying for re-admission or promotion to the next class.</p>
+                        </button>
+                    </div>
+                    
+                    <div className="mt-12 text-center">
+                        <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-slate-800 font-semibold flex items-center justify-center gap-2 mx-auto">
+                            &larr; Go Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50 py-12">
@@ -179,8 +234,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     </select>
                                 </div>
                                  <div>
-                                    <label className="block text-sm font-bold text-slate-700">Last School Attended</label>
-                                    <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    <label className="block text-sm font-bold text-slate-700">
+                                        Last School Attended 
+                                        {formData.studentType === 'Newcomer' && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        name="lastSchoolAttended" 
+                                        value={formData.lastSchoolAttended || ''} 
+                                        onChange={handleChange} 
+                                        className="form-input w-full mt-1" 
+                                        required={formData.studentType === 'Newcomer'} 
+                                        placeholder={formData.admissionGrade === 'Nursery' ? "Write 'None' if first school" : ""} 
+                                    />
                                 </div>
                             </div>
                         </section>

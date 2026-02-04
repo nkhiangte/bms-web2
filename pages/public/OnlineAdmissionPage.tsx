@@ -101,6 +101,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         <p className="text-slate-600 mt-2">
                             Academic Session 2026-27
                         </p>
+                        <p className="text-sm text-red-500 mt-2 font-medium">* Indicates mandatory fields</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
@@ -109,13 +110,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Admission Details</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Class Applying For</label>
+                                    <label className="block text-sm font-bold text-slate-700">Class Applying For <span className="text-red-500">*</span></label>
                                     <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>
                                         {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Student Type</label>
+                                    <label className="block text-sm font-bold text-slate-700">Student Type <span className="text-red-500">*</span></label>
                                     <select name="studentType" value={formData.studentType} onChange={handleChange} className="form-select w-full mt-1" required>
                                         <option value="Newcomer">New Student</option>
                                         <option value="Existing">Existing Student (Transfer/Promotion)</option>
@@ -129,29 +130,29 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Student Information</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Full Name</label>
+                                    <label className="block text-sm font-bold text-slate-700">Full Name <span className="text-red-500">*</span></label>
                                     <input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Date of Birth</label>
+                                    <label className="block text-sm font-bold text-slate-700">Date of Birth <span className="text-red-500">*</span></label>
                                     <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Gender</label>
+                                    <label className="block text-sm font-bold text-slate-700">Gender <span className="text-red-500">*</span></label>
                                     <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>
                                         {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Aadhaar Number</label>
+                                    <label className="block text-sm font-bold text-slate-700">Aadhaar Number <span className="text-red-500">*</span></label>
                                     <input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Mother Tongue</label>
+                                    <label className="block text-sm font-bold text-slate-700">Mother Tongue <span className="text-red-500">*</span></label>
                                     <input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Religion</label>
+                                    <label className="block text-sm font-bold text-slate-700">Religion <span className="text-red-500">*</span></label>
                                     <select name="religion" value={(formData as any).religion || ''} onChange={handleChange} className="form-select w-full mt-1" required>
                                         <option value="">-- Select --</option>
                                         <option value="Christian">Christian</option>
@@ -161,7 +162,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Category</label>
+                                    <label className="block text-sm font-bold text-slate-700">Category <span className="text-red-500">*</span></label>
                                     <select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>
                                         {CATEGORY_LIST.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
@@ -171,7 +172,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="form-input w-full mt-1" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">CWSN (Children with Special Needs)</label>
+                                    <label className="block text-sm font-bold text-slate-700">CWSN (Children with Special Needs) <span className="text-red-500">*</span></label>
                                     <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1" required>
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
@@ -189,7 +190,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Parent/Guardian Information</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Father's Name</label>
+                                    <label className="block text-sm font-bold text-slate-700">Father's Name <span className="text-red-500">*</span></label>
                                     <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
@@ -197,7 +198,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Mother's Name</label>
+                                    <label className="block text-sm font-bold text-slate-700">Mother's Name <span className="text-red-500">*</span></label>
                                     <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
@@ -205,7 +206,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">Contact Number</label>
+                                    <label className="block text-sm font-bold text-slate-700">Contact Number <span className="text-red-500">*</span></label>
                                     <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required />
                                 </div>
                                 <div>
@@ -213,11 +214,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700">Permanent Address</label>
+                                    <label className="block text-sm font-bold text-slate-700">Permanent Address <span className="text-red-500">*</span></label>
                                     <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700">Present Address</label>
+                                    <label className="block text-sm font-bold text-slate-700">Present Address <span className="text-red-500">*</span></label>
                                     <textarea name="presentAddress" value={formData.presentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
                                 </div>
                             </div>

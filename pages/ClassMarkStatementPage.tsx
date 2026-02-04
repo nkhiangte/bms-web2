@@ -170,7 +170,7 @@ const calculateTermSummary = (
         if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
     });
 
-    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
+    const percentage = fullMarksTotal > 0 ? (Number(grandTotal) / Number(fullMarksTotal)) * 100 : 0;
     
     let resultStatus = 'PASS';
     if (gradedSubjectsPassed < gradedSubjects.length) resultStatus = 'FAIL';
@@ -702,7 +702,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
       });
       
-      const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
+      const percentage = fullMarksTotal > 0 ? (Number(grandTotal) / Number(fullMarksTotal)) * 100 : 0;
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 

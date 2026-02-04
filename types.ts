@@ -1,5 +1,4 @@
 
-
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -51,11 +50,27 @@ export interface AdmissionItemConfig {
     type: 'general' | 'uniform'; // 'general' items don't have sizes, 'uniform' items do
 }
 
+export interface FeeHead {
+    id: string;
+    name: string;
+    amount: number;
+}
+
+export interface AdmissionFeeStructure {
+    oneTime: FeeHead[];
+    annual: FeeHead[];
+}
+
 export interface AdmissionSettings {
     academicYearLabel: string; // e.g. "2026-27"
-    admissionFee: number;
+    // admissionFee is kept for legacy compatibility but the detailed structure below is preferred
+    admissionFee: number; 
     notebookPrices: Record<string, number>; // Key is Grade string
     items: AdmissionItemConfig[];
+    feeStructure: {
+        newStudent: AdmissionFeeStructure;
+        existingStudent: AdmissionFeeStructure;
+    };
 }
 // -------------------------------------
 
@@ -88,10 +103,10 @@ export interface OnlineAdmission {
     email?: string;
     penNumber?: string;
     motherTongue?: string;
-    cwsn?: string; // Correctly mapped to form field name
-    religion?: string; // Added missing property
-    category?: string; // Added missing property
-    isCWSN?: string; // Kept for backward compatibility if needed, though 'cwsn' is preferred
+    cwsn?: string; 
+    religion?: string; 
+    category?: string; 
+    isCWSN?: string; // Kept for backward compatibility
     bloodGroup?: string;
     lastSchoolAttended?: string;
     lastDivision?: string;

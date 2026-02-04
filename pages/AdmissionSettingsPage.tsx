@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { AdmissionSettings, AdmissionItemConfig, Grade } from '../types';
+import { AdmissionSettings, AdmissionItemConfig, FeeHead } from '../types';
 import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
 import { GRADES_LIST, UNIFORM_SIZES } from '../constants';
 
@@ -34,6 +34,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
         alert('Settings saved successfully!');
     };
 
+    // --- Merchandise Item Handlers ---
     const handleItemChange = (id: string, field: keyof AdmissionItemConfig, value: any) => {
         setConfig(prev => ({
             ...prev,
@@ -93,6 +94,111 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
         }));
     };
 
+    // --- Fee Structure Handlers ---
+    const handleFeeHeadChange = (studentType: 'newStudent' | 'existingStudent', frequency: 'oneTime' | 'annual', index: number, field: keyof FeeHead, value: string | number) => {
+        setConfig(prev => {
+            const newConfig = { ...prev };
+            // Ensure structure exists
+            if (!newConfig.feeStructure) {
+                newConfig.feeStructure = {
+                    newStudent: { oneTime: [], annual: [] },
+                    existingStudent: { oneTime: [], annual: [] }
+                };
+            }
+            
+            const updatedList = [...newConfig.feeStructure[studentType][frequency]];
+            updatedList[index] = { ...updatedList[index], [field]: value };
+            
+            newConfig.feeStructure[studentType][frequency] = updatedList;
+            return newConfig;
+        });
+    };
+
+    const handleAddFeeHead = (studentType: 'newStudent' | 'existingStudent', frequency: 'oneTime' | 'annual') => {
+        setConfig(prev => {
+            const newConfig = { ...prev };
+             if (!newConfig.feeStructure) {
+                 // Initialize if missing (e.g. legacy data)
+                newConfig.feeStructure = {
+                    newStudent: { oneTime: [], annual: [] },
+                    existingStudent: { oneTime: [], annual: [] }
+                };
+            }
+            const newHead: FeeHead = { id: `fee-${Date.now()}`, name: 'New Fee', amount: 0 };
+            newConfig.feeStructure[studentType][frequency] = [...newConfig.feeStructure[studentType][frequency], newHead];
+            return newConfig;
+        });
+    };
+
+    const handleRemoveFeeHead = (studentType: 'newStudent' | 'existingStudent', frequency: 'oneTime' | 'annual', index: number) => {
+        setConfig(prev => {
+            const newConfig = { ...prev };
+            if (!newConfig.feeStructure) return prev;
+            const updatedList = newConfig.feeStructure[studentType][frequency].filter((_, i) => i !== index);
+            newConfig.feeStructure[studentType][frequency] = updatedList;
+            return newConfig;
+        });
+    };
+
+
+    const renderFeeTable = (studentType: 'newStudent' | 'existingStudent', frequency: 'oneTime' | 'annual', title: string) => {
+        const fees = config.feeStructure?.[studentType]?.[frequency] || [];
+
+        return (
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-slate-700 text-sm uppercase">{title}</h3>
+                    <button onClick={() => handleAddFeeHead(studentType, frequency)} className="text-xs btn btn-secondary py-1 px-2">
+                        <PlusIcon className="w-3 h-3"/> Add Fee
+                    </button>
+                </div>
+                <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-100">
+                            <tr>
+                                <th className="p-2 text-left w-2/3">Description</th>
+                                <th className="p-2 text-left">Amount (₹)</th>
+                                <th className="p-2 w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {fees.map((fee, index) => (
+                                <tr key={fee.id || index} className="bg-white">
+                                    <td className="p-2">
+                                        <input 
+                                            type="text" 
+                                            value={fee.name} 
+                                            onChange={(e) => handleFeeHeadChange(studentType, frequency, index, 'name', e.target.value)}
+                                            className="form-input w-full py-1"
+                                        />
+                                    </td>
+                                    <td className="p-2">
+                                        <input 
+                                            type="number" 
+                                            value={fee.amount} 
+                                            onChange={(e) => handleFeeHeadChange(studentType, frequency, index, 'amount', parseInt(e.target.value) || 0)}
+                                            className="form-input w-full py-1"
+                                        />
+                                    </td>
+                                    <td className="p-2 text-center">
+                                        <button onClick={() => handleRemoveFeeHead(studentType, frequency, index)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                                            <TrashIcon className="w-4 h-4"/>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {fees.length === 0 && (
+                                <tr>
+                                    <td colSpan={3} className="p-2 text-center text-slate-500 italic">No fees added in this section.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-6 max-w-5xl mx-auto">
              <div className="mb-6 flex justify-between items-center">
@@ -131,15 +237,22 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                             />
                             <p className="text-xs text-slate-500 mt-1">This text appears on the admission form header.</p>
                         </div>
+                    </div>
+                </section>
+
+                {/* Detailed Fee Structure */}
+                <section className="bg-slate-50 p-6 rounded-lg border">
+                    <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Admission Fees Structure</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700">Base Admission Fee</label>
-                            <input 
-                                type="number" 
-                                value={config.admissionFee} 
-                                onChange={e => setConfig({ ...config, admissionFee: parseInt(e.target.value) || 0 })}
-                                className="form-input w-full mt-1"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">Mandatory fee for all new admissions.</p>
+                            <h3 className="text-lg font-bold text-sky-700 mb-4 bg-sky-50 p-2 rounded">New Student Fees</h3>
+                            {renderFeeTable('newStudent', 'oneTime', 'One-Time Charges')}
+                            {renderFeeTable('newStudent', 'annual', 'Annual / Periodic Charges')}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-emerald-700 mb-4 bg-emerald-50 p-2 rounded">Existing Student Fees</h3>
+                            {renderFeeTable('existingStudent', 'oneTime', 'One-Time Charges')}
+                            {renderFeeTable('existingStudent', 'annual', 'Annual / Periodic Charges')}
                         </div>
                     </div>
                 </section>

@@ -5,7 +5,7 @@ import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, Online
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, PrinterIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
-import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES, ADMISSION_FEE_STRUCTURE } from '../../constants';
+import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
 import EditableContent from '../../components/EditableContent';
 import { db } from '../../firebaseConfig';
 
@@ -104,13 +104,17 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
     const { grade, studentName, fatherName, contact, studentType } = admissionDetails || { studentType: 'Newcomer' };
 
-    // Get the correct fee structure based on student type
-    const feeStructure = studentType === 'Existing' ? ADMISSION_FEE_STRUCTURE.existingStudent : ADMISSION_FEE_STRUCTURE.newStudent;
+    // Get the correct fee structure based on student type from dynamic config
+    const feeStructure = useMemo(() => {
+        const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
+        return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
+    }, [admissionConfig, studentType]);
     
     // Calculate Base Fee Total from the structured data
     const baseFeeTotal = useMemo(() => {
-        const oneTimeTotal = feeStructure.oneTime.reduce((sum, item) => sum + item.amount, 0);
-        const annualTotal = feeStructure.annual.reduce((sum, item) => sum + item.amount, 0);
+        if (!feeStructure) return 0;
+        const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
+        const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
         return oneTimeTotal + annualTotal;
     }, [feeStructure]);
 
@@ -234,10 +238,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             });
             
             // Add the base fee breakdown as purchased items for record keeping
-            // Note: This is simplified. In a real DB, you might want to store structure separately.
-            // Here we aggregate them into a single "Admission & Annual Charges" item or list them.
-            // Let's list them all to be explicit in the DB record.
-            [...feeStructure.oneTime, ...feeStructure.annual].forEach(fee => {
+            [...(feeStructure.oneTime || []), ...(feeStructure.annual || [])].forEach(fee => {
                 purchasedItems.push({
                     name: fee.name,
                     price: fee.amount,
@@ -307,7 +308,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.text("A. ONE-TIME CHARGES", 15, yPos);
         yPos += 6;
         doc.setFont("helvetica", "normal");
-        feeStructure.oneTime.forEach(item => {
+        (feeStructure.oneTime || []).forEach(item => {
             doc.text(item.name, 20, yPos);
             doc.text(`${item.amount}`, 180, yPos);
             yPos += 6;
@@ -318,7 +319,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.text("B. ANNUAL / PERIODIC CHARGES", 15, yPos);
         yPos += 6;
         doc.setFont("helvetica", "normal");
-        feeStructure.annual.forEach(item => {
+        (feeStructure.annual || []).forEach(item => {
             doc.text(item.name, 20, yPos);
             doc.text(`${item.amount}`, 180, yPos);
             yPos += 6;
@@ -468,26 +469,32 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                                 <td className="py-2 px-4">A</td>
                                                 <td className="py-2 px-4" colSpan={2}>ONE-TIME CHARGES ({studentType === 'Newcomer' ? 'New Admissions Only' : 'Existing Student'})</td>
                                             </tr>
-                                            {feeStructure.oneTime.map((fee, idx) => (
+                                            {(feeStructure.oneTime || []).map((fee, idx) => (
                                                 <tr key={fee.id} className="border-b">
                                                     <td className="py-2 px-4">{idx + 1}</td>
                                                     <td className="py-2 px-4">{fee.name}</td>
                                                     <td className="py-2 px-4 text-right">{fee.amount}</td>
                                                 </tr>
                                             ))}
+                                            {(feeStructure.oneTime || []).length === 0 && (
+                                                <tr><td colSpan={3} className="py-2 px-4 text-center italic text-slate-500">No one-time charges configured.</td></tr>
+                                            )}
 
                                             {/* ANNUAL CHARGES */}
                                             <tr className="bg-slate-50/50 font-bold border-b">
                                                 <td className="py-2 px-4">B</td>
                                                 <td className="py-2 px-4" colSpan={2}>ANNUAL / PERIODIC CHARGES</td>
                                             </tr>
-                                            {feeStructure.annual.map((fee, idx) => (
+                                            {(feeStructure.annual || []).map((fee, idx) => (
                                                 <tr key={fee.id} className="border-b">
                                                     <td className="py-2 px-4">{idx + 1}</td>
                                                     <td className="py-2 px-4">{fee.name}</td>
                                                     <td className="py-2 px-4 text-right">{fee.amount}</td>
                                                 </tr>
                                             ))}
+                                            {(feeStructure.annual || []).length === 0 && (
+                                                <tr><td colSpan={3} className="py-2 px-4 text-center italic text-slate-500">No annual charges configured.</td></tr>
+                                            )}
                                             
                                             {/* TOTAL */}
                                             <tr className="bg-slate-200 font-bold">

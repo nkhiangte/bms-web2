@@ -193,7 +193,7 @@ export const FEE_SET_GRADES: Record<string, Grade[]> = {
     set3: [Grade.VII, Grade.VIII, Grade.IX, Grade.X],
 };
 
-// --- NEW: Admission Fee Detailed Structure (For Payment Page) ---
+// --- Admission Fee Detailed Structure (Default) ---
 export const ADMISSION_FEE_STRUCTURE = {
     newStudent: {
         oneTime: [
@@ -295,7 +295,8 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
                 type: 'uniform' as const
             };
         })
-    ]
+    ],
+    feeStructure: ADMISSION_FEE_STRUCTURE
 };
 
 // --- NEW: Hostel Discipline ---

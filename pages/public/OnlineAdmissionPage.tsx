@@ -1,11 +1,12 @@
 
 import React, { useState, FormEvent, useRef } from 'react';
-import { User, OnlineAdmission, Grade, Gender, Category } from '../../types';
+import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../types';
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon } from '../../components/Icons';
+import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../../firebaseConfig';
 
 interface OnlineAdmissionPageProps {
     user: User | null;
@@ -16,7 +17,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+    
+    // Selection State
     const [hasSelectedType, setHasSelectedType] = useState(false);
+    const [showIdInput, setShowIdInput] = useState(false);
+    const [existingId, setExistingId] = useState('');
+    const [isFetching, setIsFetching] = useState(false);
+    const [fetchError, setFetchError] = useState('');
 
     const [formData, setFormData] = useState<Partial<OnlineAdmission>>({
         admissionGrade: GRADES_LIST[0],
@@ -62,6 +69,57 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         }
     };
 
+    const handleFetchStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!existingId) return;
+        
+        setIsFetching(true);
+        setFetchError('');
+        try {
+             const snapshot = await db.collection('students')
+                .where('studentId', '==', existingId.trim().toUpperCase())
+                .limit(1)
+                .get();
+
+             if (snapshot.empty) {
+                 setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
+                 setIsFetching(false);
+                 return;
+             }
+
+             const studentData = snapshot.docs[0].data() as Student;
+             
+             setFormData(prev => ({
+                 ...prev,
+                 studentType: 'Existing',
+                 previousStudentId: studentData.studentId,
+                 studentName: studentData.name || '',
+                 dateOfBirth: studentData.dateOfBirth || '',
+                 gender: studentData.gender || 'Male',
+                 studentAadhaar: studentData.aadhaarNumber || '',
+                 fatherName: studentData.fatherName || '',
+                 motherName: studentData.motherName || '',
+                 fatherOccupation: studentData.fatherOccupation || '',
+                 motherOccupation: studentData.motherOccupation || '',
+                 permanentAddress: studentData.address || '',
+                 presentAddress: studentData.address || '', 
+                 contactNumber: studentData.contact || '',
+                 religion: studentData.religion || '',
+                 category: (studentData.category as string) || 'General',
+                 cwsn: studentData.cwsn || 'No',
+                 bloodGroup: studentData.bloodGroup || '',
+                 motherTongue: '', // Usually not in Student record, kept empty
+                 lastSchoolAttended: 'Bethel Mission School',
+             }));
+             setHasSelectedType(true);
+        } catch (error) {
+            console.error("Error fetching student:", error);
+            setFetchError('An error occurred while fetching details. Please check your connection.');
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -93,6 +151,70 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     };
 
     if (!hasSelectedType) {
+        if (showIdInput) {
+            return (
+                <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                    <div className="container mx-auto px-4 max-w-lg">
+                         <div className="bg-white p-8 rounded-2xl shadow-xl">
+                            <div className="text-center mb-6">
+                                <h2 className="text-2xl font-bold text-slate-800">Existing Student</h2>
+                                <p className="text-slate-600 mt-2">Enter your Student ID to auto-fill the form.</p>
+                            </div>
+
+                            <form onSubmit={handleFetchStudent}>
+                                <div className="mb-4">
+                                    <label htmlFor="studentId" className="block text-sm font-bold text-slate-700 mb-2">Student ID</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <SearchIcon className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            id="studentId"
+                                            value={existingId}
+                                            onChange={(e) => setExistingId(e.target.value.toUpperCase())}
+                                            className="pl-10 form-input w-full uppercase" 
+                                            placeholder="e.g. BMS240101"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    {fetchError && <p className="text-red-500 text-sm mt-2 font-medium">{fetchError}</p>}
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={isFetching || !existingId}
+                                    className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4"
+                                >
+                                    {isFetching ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
+                                    {isFetching ? 'Fetching Details...' : 'Fetch Details & Continue'}
+                                </button>
+                            </form>
+
+                            <div className="flex items-center gap-4 my-4">
+                                <hr className="flex-grow border-slate-200" />
+                                <span className="text-slate-400 text-sm">OR</span>
+                                <hr className="flex-grow border-slate-200" />
+                            </div>
+
+                            <button 
+                                onClick={() => {
+                                    setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' }));
+                                    setHasSelectedType(true);
+                                }}
+                                className="w-full btn btn-secondary"
+                            >
+                                Skip & Fill Manually
+                            </button>
+                             <button onClick={() => setShowIdInput(false)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">
+                                &larr; Back to Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
                 <div className="container mx-auto px-4 max-w-4xl">
@@ -107,7 +229,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         {/* New Student Card */}
                         <button 
                             onClick={() => {
-                                setFormData(prev => ({ ...prev, studentType: 'Newcomer' }));
+                                setFormData(prev => ({ ...prev, studentType: 'Newcomer', lastSchoolAttended: '' }));
                                 setHasSelectedType(true);
                             }}
                             className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-2xl transition-all duration-300 group text-left"
@@ -122,8 +244,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         {/* Existing Student Card */}
                         <button 
                             onClick={() => {
-                                setFormData(prev => ({ ...prev, studentType: 'Existing' }));
-                                setHasSelectedType(true);
+                                setShowIdInput(true);
                             }}
                             className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-2xl transition-all duration-300 group text-left"
                         >
@@ -157,6 +278,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             Academic Session 2026-27
                         </p>
                         <p className="text-sm text-red-500 mt-2 font-medium">* Indicates mandatory fields</p>
+                        {formData.previousStudentId && (
+                            <div className="mt-4 inline-block bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold border border-emerald-200">
+                                Auto-filled from Student ID: {formData.previousStudentId}
+                            </div>
+                        )}
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">

@@ -71,52 +71,95 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     const handleFetchStudent = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!existingId) return;
+        const idInput = existingId.trim().toUpperCase();
+        if(!idInput) return;
         
         setIsFetching(true);
         setFetchError('');
+
+        const fillFormWithStudent = (data: Student) => {
+             const nextGrade = getNextGrade(data.grade);
+             setFormData(prev => ({
+                 ...prev,
+                 studentType: 'Existing',
+                 previousStudentId: data.studentId || idInput,
+                 admissionGrade: nextGrade || data.grade, 
+                 studentName: data.name || '',
+                 dateOfBirth: data.dateOfBirth || '',
+                 gender: data.gender || 'Male',
+                 studentAadhaar: data.aadhaarNumber || '',
+                 fatherName: data.fatherName || '',
+                 motherName: data.motherName || '',
+                 fatherOccupation: data.fatherOccupation || '',
+                 motherOccupation: data.motherOccupation || '',
+                 permanentAddress: data.address || '',
+                 presentAddress: data.address || '', 
+                 contactNumber: data.contact || '',
+                 religion: data.religion || '',
+                 category: (data.category as string) || 'General',
+                 cwsn: data.cwsn || 'No',
+                 bloodGroup: data.bloodGroup || '',
+                 motherTongue: '',
+                 lastSchoolAttended: 'Bethel Mission School',
+             }));
+             setHasSelectedType(true);
+        };
+
         try {
-             const snapshot = await db.collection('students')
-                .where('studentId', '==', existingId.trim().toUpperCase())
+             // Attempt 1: Direct ID Match
+             let snapshot = await db.collection('students')
+                .where('studentId', '==', idInput)
                 .limit(1)
                 .get();
 
-             if (snapshot.empty) {
-                 setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
+             if (!snapshot.empty) {
+                 fillFormWithStudent(snapshot.docs[0].data() as Student);
                  setIsFetching(false);
                  return;
              }
 
-             const studentData = snapshot.docs[0].data() as Student;
-             
-             // Calculate the next grade
-             const nextGrade = getNextGrade(studentData.grade);
+             // Attempt 2: Fallback by parsing ID (Format: BMSyyccrr e.g. BMS250801)
+             // yy = Year (25 -> 2025), cc = Class Code (08 -> Class VIII), rr = Roll No (01)
+             const idPattern = /^BMS(\d{2})([A-Z0-9]{2})(\d+)$/;
+             const match = idInput.match(idPattern);
 
-             setFormData(prev => ({
-                 ...prev,
-                 studentType: 'Existing',
-                 previousStudentId: studentData.studentId,
-                 // Set admission grade to the next grade if available, otherwise current grade (e.g. for retention or Class X)
-                 admissionGrade: nextGrade || studentData.grade, 
-                 studentName: studentData.name || '',
-                 dateOfBirth: studentData.dateOfBirth || '',
-                 gender: studentData.gender || 'Male',
-                 studentAadhaar: studentData.aadhaarNumber || '',
-                 fatherName: studentData.fatherName || '',
-                 motherName: studentData.motherName || '',
-                 fatherOccupation: studentData.fatherOccupation || '',
-                 motherOccupation: studentData.motherOccupation || '',
-                 permanentAddress: studentData.address || '',
-                 presentAddress: studentData.address || '', 
-                 contactNumber: studentData.contact || '',
-                 religion: studentData.religion || '',
-                 category: (studentData.category as string) || 'General',
-                 cwsn: studentData.cwsn || 'No',
-                 bloodGroup: studentData.bloodGroup || '',
-                 motherTongue: '', // Usually not in Student record, kept empty
-                 lastSchoolAttended: 'Bethel Mission School',
-             }));
-             setHasSelectedType(true);
+             if (match) {
+                 const [_, yearShort, gradeCode, rollStr] = match;
+                 const rollNo = parseInt(rollStr, 10);
+                 const targetYearStart = `20${yearShort}`;
+
+                 // Map code back to Grade string
+                 const gradeMap: Record<string, string> = {
+                     'NU': 'Nursery', 'KG': 'Kindergarten',
+                     '01': 'Class I', '02': 'Class II', '03': 'Class III', '04': 'Class IV',
+                     '05': 'Class V', '06': 'Class VI', '07': 'Class VII', '08': 'Class VIII',
+                     '09': 'Class IX', '10': 'Class X'
+                 };
+                 const grade = gradeMap[gradeCode];
+
+                 if (grade) {
+                     // Query by Grade and Roll No
+                     const fallbackSnapshot = await db.collection('students')
+                         .where('grade', '==', grade)
+                         .where('rollNo', '==', rollNo)
+                         .get();
+                    
+                     // Filter in memory for correct academic year start
+                     const foundDoc = fallbackSnapshot.docs.find(doc => {
+                         const s = doc.data() as Student;
+                         return s.academicYear && s.academicYear.startsWith(targetYearStart);
+                     });
+
+                     if (foundDoc) {
+                         fillFormWithStudent(foundDoc.data() as Student);
+                         setIsFetching(false);
+                         return;
+                     }
+                 }
+             }
+
+             setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
+             
         } catch (error) {
             console.error("Error fetching student:", error);
             setFetchError('An error occurred while fetching details. Please check your connection.');

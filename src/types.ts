@@ -577,6 +577,7 @@ export interface FeeStructure {
     set1: FeeSet;
     set2: FeeSet;
     set3: FeeSet;
+    gradeMap?: Record<string, Grade[]>;
 }
 
 export enum ConductEntryType {

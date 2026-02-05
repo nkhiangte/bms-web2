@@ -1,9 +1,11 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead } from './types';
-import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS } from './constants';
+import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from './constants';
 // Removed sampleData imports to use Firestore
 import { db, auth, firebase } from './firebaseConfig';
 
@@ -259,10 +261,11 @@ const App: React.FC = () => {
                 set1: migrateSet(data.set1),
                 set2: migrateSet(data.set2),
                 set3: migrateSet(data.set3),
+                gradeMap: data.gradeMap || FEE_SET_GRADES
             };
             setFeeStructure(sanitizedStructure as FeeStructure);
         } else {
-            setFeeStructure(DEFAULT_FEE_STRUCTURE);
+            setFeeStructure({ ...DEFAULT_FEE_STRUCTURE, gradeMap: FEE_SET_GRADES });
         }
 
         const admDoc = await db.collection('config').doc('admissionSettings').get();

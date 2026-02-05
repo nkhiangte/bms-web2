@@ -25,7 +25,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    this.setState({ errorInfo: errorInfo });
+    // FIX: Explicitly cast 'this' to 'any' to resolve 'Property setState does not exist' error.
+    (this as any).setState({ errorInfo: errorInfo });
   }
 
   handleClearCacheAndReload = () => {
@@ -108,6 +109,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    return this.props.children || null;
+    // FIX: Explicitly cast 'this' to 'any' to resolve 'Property props does not exist' error.
+    return (this as any).props.children || null;
   }
 }

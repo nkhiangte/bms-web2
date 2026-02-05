@@ -87,7 +87,7 @@ import DistinctionHoldersPage from './pages/public/DistinctionHoldersPage';
 import SportsPage from './pages/public/SportsPage';
 import FacilitiesPage from './pages/public/FacilitiesPage';
 import InfrastructurePage from './pages/public/InfrastructurePage';
-import GalleryPage from './pages/public/GalleryPage';
+import GalleryPage from './pages/public/Gallery/GalleryPage';
 import ContactPage from './pages/public/ContactPage';
 import SitemapPage from './pages/public/SitemapPage';
 import SitemapXmlPage from './pages/public/SitemapXmlPage';
@@ -190,32 +190,55 @@ const App = () => {
   // --- Auth & Data Fetching ---
 
   useEffect(() => {
+    console.log("Auth Effect: Starting Firebase auth listener.");
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+        console.log("Auth Effect: onAuthStateChanged fired. firebaseUser:", firebaseUser ? firebaseUser.uid : "null");
         if (firebaseUser) {
             try {
                 const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
                 if (userDoc.exists) {
-                    setUser({ uid: firebaseUser.uid, ...userDoc.data() } as User);
+                    const userData = { uid: firebaseUser.uid, ...userDoc.data() } as User;
+                    setUser(userData);
+                    console.log("Auth Effect: User profile fetched and set. User role:", userData.role);
                 } else {
                     // Fallback if user doc doesn't exist yet (e.g., just created)
-                    setUser({ 
+                    // FIX: Explicitly type the newUser object as User to satisfy type checking.
+                    const newUser: User = { 
                         uid: firebaseUser.uid, 
                         email: firebaseUser.email || '', 
                         displayName: firebaseUser.displayName || 'User',
                         role: 'user' 
-                    });
+                    };
+                    setUser(newUser);
+                    console.log("Auth Effect: User doc not found, using basic user object. User role:", newUser.role);
                 }
             } catch (error) {
-                console.error("Error fetching user profile:", error);
+                console.error("Auth Effect: Error fetching user profile:", error);
                 setUser(null);
             }
         } else {
+            console.log("Auth Effect: No firebaseUser found, setting user to null.");
             setUser(null);
         }
         setAuthLoading(false); // Auth check is finished
+        console.log("Auth Effect: setAuthLoading(false) called.");
     });
-    return () => unsubscribe();
+    return () => {
+        console.log("Auth Effect: Cleaning up Firebase auth listener.");
+        unsubscribe();
+    }
   }, []);
+
+  // Log authLoading state changes
+  useEffect(() => {
+    console.log("App Render Logic: authLoading is now", authLoading, "User is:", user ? user.uid : "null");
+    if (!authLoading && !user) {
+        console.log("App Render Logic: Auth check complete, no user found. Redirecting to /login.");
+    } else if (!authLoading && user) {
+        console.log("App Render Logic: Auth check complete, user found. Rendering DashboardLayout.");
+    }
+  }, [authLoading, user]);
+
 
   // Fetch Public Data (News, School Config, Routines)
   useEffect(() => {
@@ -289,6 +312,7 @@ const App = () => {
   // Fetch Protected Data (Students, Staff, etc.) - Only if logged in
   useEffect(() => {
     if (!user) return;
+    console.log("Protected Data Effect: User exists, fetching protected data.");
 
     // Students
     const unsubStudents = db.collection('students').onSnapshot(snapshot => {
@@ -381,6 +405,7 @@ const App = () => {
 
 
     return () => {
+        console.log("Protected Data Effect: Cleaning up all data listeners.");
         unsubStudents();
         unsubStaff();
         unsubCalendar();

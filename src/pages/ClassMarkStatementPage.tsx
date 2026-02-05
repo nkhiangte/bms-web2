@@ -105,7 +105,7 @@ const calculateTermSummary = (
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // FIX: Ensure arithmetic operation uses number type explicitly.
+            // FIX: Explicitly cast both sides to 'any' or use Number() to satisfy compiler during arithmetic addition.
             grandTotal = (grandTotal as number) + (totalSubjectMark as number);
         });
 
@@ -368,9 +368,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }
-        // FIX: Ensure arithmetic operation uses number type explicitly.
-        grandTotal = (grandTotal as number) + (totalSubjectMark as number); 
-        fullMarksTotal = (fullMarksTotal as number) + (subjectFullMarks as number);
+        // FIX: Ensure arithmetic operation uses Number type explicitly to resolve TS errors on lines where operands are added.
+        grandTotal = Number(grandTotal) + Number(totalSubjectMark); 
+        fullMarksTotal = Number(fullMarksTotal) + Number(subjectFullMarks);
       });
 
       gradedSubjects.forEach(sd => {

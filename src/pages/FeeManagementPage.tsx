@@ -1,5 +1,4 @@
 
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
@@ -15,7 +14,7 @@ interface FeeManagementPageProps {
   onUpdateFeePayments: (studentId: string, payments: FeePayments) => void;
   user: User;
   feeStructure: FeeStructure;
-  onUpdateFeeStructure: (newStructure: FeeStructure) => void;
+  onUpdateFeeStructure: (newStructure: FeeStructure) => Promise<boolean>;
   addNotification: (message: string, type: NotificationType, title?: string) => void;
 }
 
@@ -47,9 +46,10 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const [isEditingStructure, setIsEditingStructure] = useState(false);
   const [editableStructure, setEditableStructure] = useState<FeeStructure>(feeStructure);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isSavingStructure, setIsSavingStructure] = useState(false);
 
   // State for adding grades
-  const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); // 'set1', 'set2', 'set3' or null
+  const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); 
 
   const duesSummary = useMemo(() => {
     if (!foundStudent) return null;
@@ -57,8 +57,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   }, [foundStudent, feeStructure]);
 
   useEffect(() => {
-    // Sync editable structure when props change (e.g. initial load)
-    // Only if not currently editing to avoid overwriting user input
     if (!isEditingStructure && feeStructure && feeStructure.set1) {
         setEditableStructure(feeStructure);
     }
@@ -70,7 +68,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
   });
 
-  // Effect to handle navigation from dashboard (passing studentId)
   useEffect(() => {
       const stateStudentId = location.state?.studentId;
       if (stateStudentId && students.length > 0) {
@@ -113,16 +110,14 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         const newHeads = (set.heads || []).filter((_, i) => i !== index);
         return {
             ...prev,
-            [setKey]: { ...set, heads: newHeads }
+            [setKey]: { heads: newHeads }
         };
     });
   };
   
-  // Grade Grouping Handlers
   const handleRemoveGrade = (gradeToRemove: Grade) => {
       setEditableStructure(prev => {
           const map = { ...(prev.gradeMap || FEE_SET_GRADES) };
-          // Remove the grade from any set it belongs to
           Object.keys(map).forEach(key => {
               map[key] = (map[key] || []).filter(g => g !== gradeToRemove);
           });
@@ -133,28 +128,28 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const handleAddGradeToSet = (setKey: string, gradeToAdd: Grade) => {
       setEditableStructure(prev => {
           const map = { ...(prev.gradeMap || FEE_SET_GRADES) };
-          
-          // First remove from all sets to ensure exclusivity
           Object.keys(map).forEach(key => {
               map[key] = (map[key] || []).filter(g => g !== gradeToAdd);
           });
-
-          // Add to target set
           if (!map[setKey]) map[setKey] = [];
           map[setKey].push(gradeToAdd);
-          
-          // Sort for display consistency (optional but nice)
           map[setKey].sort((a, b) => GRADES_LIST.indexOf(a) - GRADES_LIST.indexOf(b));
-
           return { ...prev, gradeMap: map };
       });
       setAddingGradeToSet(null);
   };
 
-  const handleSaveStructure = () => {
-    onUpdateFeeStructure(editableStructure);
-    setIsEditingStructure(false);
-    addNotification('Fee structure updated successfully!', 'success');
+  const handleSaveStructure = async () => {
+    setIsSavingStructure(true);
+    try {
+        await onUpdateFeeStructure(editableStructure);
+        setIsEditingStructure(false);
+        addNotification('Fee structure updated successfully!', 'success');
+    } catch (e) {
+        addNotification('Failed to save fee structure. Please try again.', 'error');
+    } finally {
+        setIsSavingStructure(false);
+    }
   };
 
   const handleCancelEditStructure = () => {
@@ -199,7 +194,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     setIsSaved(false);
     
     setPaymentData(prev => {
-        const newData = JSON.parse(JSON.stringify(prev!)); // Deep copy
+        const newData = JSON.parse(JSON.stringify(prev!)); 
         if (type === 'admission') {
             newData.admissionFeePaid = value;
         } else if (type === 'tuition') {
@@ -244,7 +239,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
 
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), // Simple fallback
+            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), 
             tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
             examFees: {
                 terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
@@ -263,8 +258,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             handler: async (response: any) => {
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
 
-                // If any one-time fee was due, mark admissionFeePaid as true (legacy flag)
-                // In future, consider moving to granular payments in student record
                 if (duesSummary.items.some(i => !i.description.includes('Tuition') && !i.description.includes('Term') && !i.description.includes('Exam'))) {
                     newPayments.admissionFeePaid = true;
                 }
@@ -273,7 +266,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     if(newPayments.tuitionFeesPaid) newPayments.tuitionFeesPaid[month] = true;
                 });
                 
-                // If Term fees are paid, mark exams as paid
                 if (duesToPay.examFees.terminal1) newPayments.examFeesPaid.terminal1 = true;
                 if (duesToPay.examFees.terminal2) newPayments.examFeesPaid.terminal2 = true;
                 if (duesToPay.examFees.terminal3) newPayments.examFeesPaid.terminal3 = true;
@@ -340,9 +332,10 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     </button>
                 ) : (
                     <div className="flex gap-2">
-                        <button onClick={handleCancelEditStructure} className="btn btn-secondary">Cancel</button>
-                        <button onClick={handleSaveStructure} className="btn btn-primary flex items-center gap-2">
-                            <SaveIcon className="w-5 h-5"/> Save Changes
+                        <button onClick={handleCancelEditStructure} disabled={isSavingStructure} className="btn btn-secondary">Cancel</button>
+                        <button onClick={handleSaveStructure} disabled={isSavingStructure} className="btn btn-primary flex items-center gap-2">
+                            {isSavingStructure ? <SpinnerIcon className="w-5 h-5" /> : <SaveIcon className="w-5 h-5"/>}
+                            {isSavingStructure ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 )}
@@ -350,10 +343,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {(Object.keys(feeStructure || {}) as Array<keyof FeeStructure>).filter(k => k.startsWith('set')).map(setKey => {
                     const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
-                    
-                    // Available grades to add: those not in ANY set currently (or logic to steal)
-                    // For simplicity: Show all grades, if a grade is selected, it will be moved.
-                    // Just filter out grades already in *this* set to avoid redundancy in dropdown.
                     const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));
 
                     return (

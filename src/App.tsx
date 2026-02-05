@@ -123,7 +123,7 @@ import { SpinnerIcon } from './components/Icons'; // Import SpinnerIcon
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
-const App = () => {
+const App: React.FC = () => {
   // --- State Declarations ---
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true); // Track if initial auth check is complete
@@ -172,7 +172,6 @@ const App = () => {
     if (!user) return null;
     const staffMember = staff.find(s => s.emailAddress === user.email);
     if (!staffMember) return null;
-    // Fix: Explicitly type the entry to avoid 'unknown' error
     const entry = Object.entries(gradeDefinitions).find(([, def]: [string, GradeDefinition]) => def.classTeacherId === staffMember.id);
     return entry ? (entry[0] as Grade) : null;
   }, [user, staff, gradeDefinitions]);
@@ -190,19 +189,14 @@ const App = () => {
   // --- Auth & Data Fetching ---
 
   useEffect(() => {
-    console.log("Auth Effect: Starting Firebase auth listener.");
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-        console.log("Auth Effect: onAuthStateChanged fired. firebaseUser:", firebaseUser ? firebaseUser.uid : "null");
         if (firebaseUser) {
             try {
                 const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
                 if (userDoc.exists) {
                     const userData = { uid: firebaseUser.uid, ...userDoc.data() } as User;
                     setUser(userData);
-                    console.log("Auth Effect: User profile fetched and set. User role:", userData.role);
                 } else {
-                    // Fallback if user doc doesn't exist yet (e.g., just created)
-                    // FIX: Explicitly type the newUser object as User to satisfy type checking.
                     const newUser: User = { 
                         uid: firebaseUser.uid, 
                         email: firebaseUser.email || '', 
@@ -210,35 +204,18 @@ const App = () => {
                         role: 'user' 
                     };
                     setUser(newUser);
-                    console.log("Auth Effect: User doc not found, using basic user object. User role:", newUser.role);
                 }
             } catch (error) {
                 console.error("Auth Effect: Error fetching user profile:", error);
                 setUser(null);
             }
         } else {
-            console.log("Auth Effect: No firebaseUser found, setting user to null.");
             setUser(null);
         }
-        setAuthLoading(false); // Auth check is finished
-        console.log("Auth Effect: setAuthLoading(false) called.");
+        setAuthLoading(false); 
     });
-    return () => {
-        console.log("Auth Effect: Cleaning up Firebase auth listener.");
-        unsubscribe();
-    }
+    return () => unsubscribe();
   }, []);
-
-  // Log authLoading state changes
-  useEffect(() => {
-    console.log("App Render Logic: authLoading is now", authLoading, "User is:", user ? user.uid : "null");
-    if (!authLoading && !user) {
-        console.log("App Render Logic: Auth check complete, no user found. Redirecting to /login.");
-    } else if (!authLoading && user) {
-        console.log("App Render Logic: Auth check complete, user found. Rendering DashboardLayout.");
-    }
-  }, [authLoading, user]);
-
 
   // Fetch Public Data (News, School Config, Routines)
   useEffect(() => {
@@ -246,12 +223,10 @@ const App = () => {
         setNews(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem)));
     });
 
-    // Routines (Publicly accessible)
     const unsubExamRoutines = db.collection('examRoutines').onSnapshot(snapshot => {
         setExamRoutines(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine)));
     });
     
-    // Class Routines (Publicly accessible)
     const unsubClassRoutines = db.collection('classRoutines').onSnapshot(snapshot => {
          const routines: Record<string, DailyRoutine> = {};
          snapshot.docs.forEach(doc => {
@@ -261,44 +236,46 @@ const App = () => {
     });
 
     const fetchConfig = async () => {
-        const doc = await db.collection('config').doc('schoolSettings').get();
-        if (doc.exists) setSchoolConfig(doc.data() as any);
-        
-        const feeDoc = await db.collection('config').doc('feeStructure').get();
-        if (feeDoc.exists) {
-            const data = feeDoc.data() || {};
-            // Robust migration/check: Ensure all three sets exist and have 'heads' array
-            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
-                if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
-                return {
-                    heads: [
-                        { id: 'adm', name: 'Admission Fee', amount: Number(oldSet?.admissionFee) || 0, type: 'one-time' as const },
-                        { id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet?.tuitionFee) || 0, type: 'monthly' as const },
-                        { id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet?.examFee) || 0, type: 'term' as const }
-                    ]
-                };
-            };
+        try {
+            const doc = await db.collection('config').doc('schoolSettings').get();
+            if (doc.exists) setSchoolConfig(doc.data() as any);
             
-            const sanitizedStructure = {
-                set1: migrateSet(data.set1),
-                set2: migrateSet(data.set2),
-                set3: migrateSet(data.set3),
-                gradeMap: data.gradeMap || FEE_SET_GRADES
-            };
-            setFeeStructure(sanitizedStructure as FeeStructure);
-        } else {
-            setFeeStructure({ ...DEFAULT_FEE_STRUCTURE, gradeMap: FEE_SET_GRADES });
-        }
+            const feeDoc = await db.collection('config').doc('feeStructure').get();
+            if (feeDoc.exists) {
+                const data = feeDoc.data() || {};
+                const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
+                    if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
+                    return {
+                        heads: [
+                            { id: 'adm', name: 'Admission Fee', amount: Number(oldSet?.admissionFee) || 0, type: 'one-time' as const },
+                            { id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet?.tuitionFee) || 0, type: 'monthly' as const },
+                            { id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet?.examFee) || 0, type: 'term' as const }
+                        ]
+                    };
+                };
+                
+                const sanitizedStructure = {
+                    set1: migrateSet(data.set1),
+                    set2: migrateSet(data.set2),
+                    set3: migrateSet(data.set3),
+                    gradeMap: data.gradeMap || FEE_SET_GRADES
+                };
+                setFeeStructure(sanitizedStructure as FeeStructure);
+            } else {
+                setFeeStructure({ ...DEFAULT_FEE_STRUCTURE, gradeMap: FEE_SET_GRADES });
+            }
 
-        const admDoc = await db.collection('config').doc('admissionSettings').get();
-        if (admDoc.exists) {
-             const data = admDoc.data();
-             // Merge with default settings to ensure new fields exist
-             setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...data } as AdmissionSettings);
-        }
+            const admDoc = await db.collection('config').doc('admissionSettings').get();
+            if (admDoc.exists) {
+                 const data = admDoc.data();
+                 setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...data } as AdmissionSettings);
+            }
 
-        const gradesDoc = await db.collection('config').doc('gradeDefinitions').get();
-        if (gradesDoc.exists) setGradeDefinitions(gradesDoc.data() as any);
+            const gradesDoc = await db.collection('config').doc('gradeDefinitions').get();
+            if (gradesDoc.exists) setGradeDefinitions(gradesDoc.data() as any);
+        } catch (e) {
+            console.error("fetchConfig error:", e);
+        }
     };
     fetchConfig();
 
@@ -309,42 +286,34 @@ const App = () => {
     };
   }, []);
 
-  // Fetch Protected Data (Students, Staff, etc.) - Only if logged in
+  // Fetch Protected Data
   useEffect(() => {
     if (!user) return;
-    console.log("Protected Data Effect: User exists, fetching protected data.");
 
-    // Students
     const unsubStudents = db.collection('students').onSnapshot(snapshot => {
         setStudents(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Student)));
     });
 
-    // Staff
     const unsubStaff = db.collection('staff').onSnapshot(snapshot => {
         setStaff(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Staff)));
     });
 
-    // Calendar
     const unsubCalendar = db.collection('calendarEvents').onSnapshot(snapshot => {
         setCalendarEvents(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent)));
     });
 
-    // Notices
     const unsubNotices = db.collection('notices').onSnapshot(snapshot => {
         setNotices(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notice)));
     });
 
-    // Homework
     const unsubHomework = db.collection('homework').onSnapshot(snapshot => {
         setHomework(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Homework)));
     });
 
-    // Syllabus
     const unsubSyllabus = db.collection('syllabus').onSnapshot(snapshot => {
         setSyllabus(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)));
     });
 
-    // Admin/Staff specific data
     let unsubAdmissions = () => {};
     let unsubUsers = () => {};
     let unsubInventory = () => {};
@@ -369,7 +338,6 @@ const App = () => {
         });
     }
 
-    // Hostel Data
     let unsubHostelResidents = () => {};
     let unsubHostelStaff = () => {};
     let unsubHostelInventory = () => {};
@@ -398,14 +366,12 @@ const App = () => {
         });
     }
 
-    // Conduct Log (Shared)
     const unsubConduct = db.collection('conductLog').onSnapshot(snapshot => {
         setConductLog(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)));
     });
 
 
     return () => {
-        console.log("Protected Data Effect: Cleaning up all data listeners.");
         unsubStudents();
         unsubStaff();
         unsubCalendar();
@@ -425,7 +391,7 @@ const App = () => {
         unsubChore();
         unsubConduct();
     };
-  }, [user]); // Re-run if user changes (login/logout)
+  }, [user]); 
 
 
   const addNotification = (message: string, type: NotificationType, title?: string) => {
@@ -462,7 +428,6 @@ const App = () => {
     setUser(null);
   };
   
-  // --- Handlers (using Firestore) ---
   const handleUpdateFeePayments = async (studentId: string, payments: FeePayments) => {
       await db.collection('students').doc(studentId).update({ feePayments: payments });
   };
@@ -477,8 +442,16 @@ const App = () => {
   };
   
   const onUpdateFeeStructure = async (newStructure: FeeStructure) => {
-      await db.collection('config').doc('feeStructure').set(newStructure);
-      setFeeStructure(newStructure);
+      try {
+          // Sanitize to ensure no non-plain objects or undefined values are sent to Firestore
+          const sanitized = JSON.parse(JSON.stringify(newStructure));
+          await db.collection('config').doc('feeStructure').set(sanitized);
+          setFeeStructure(newStructure);
+          return true;
+      } catch (error) {
+          console.error("Firestore update failed for feeStructure:", error);
+          throw error;
+      }
   };
 
   const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {
@@ -492,10 +465,6 @@ const App = () => {
   };
 
   const handlePromoteStudents = async () => {
-      // Complex logic usually done via Cloud Function, but simulating local batch here
-      // This is a placeholder for the logic in the original file
-      console.log("Promotion logic needs robust implementation via backend/batch.");
-      // Reload page to reflect changes if done
       window.location.reload();
   };
   
@@ -507,9 +476,6 @@ const App = () => {
       await db.collection('online_admissions').doc(id).delete();
   };
   
-  // ... (Other handlers like onAddStaff, onDeleteStaff would be implemented similarly in their respective components) ...
-
-  // Sitemap content (simplified)
   const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://bmscpi.netlify.app/</loc></url>
@@ -531,8 +497,6 @@ const App = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
-               // Initial submission logic for non-drafts is handled inside OnlineAdmissionPage
-               // but we can provide a fallback here if needed, or update OnlineAdmissionPage to use this
                const doc = await db.collection('online_admissions').add({ ...data, submissionDate: new Date().toISOString(), status: 'pending' });
                return doc.id;
           }} />} />

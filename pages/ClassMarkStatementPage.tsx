@@ -148,20 +148,20 @@ const calculateTermSummary = (
         if (hasActivities) {
             const examMark = Number(result?.examMarks ?? 0);
             const activityMark = Number(result?.activityMarks ?? 0);
-            examTotal = Number(examTotal) + Number(examMark);
-            activityTotal = Number(activityTotal) + Number(activityMark);
-            totalSubjectMark = Number(examMark) + Number(activityMark);
+            examTotal += examMark;
+            activityTotal += activityMark;
+            totalSubjectMark = examMark + activityMark;
             subjectFullMarks = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
-            examTotal = Number(examTotal) + Number(totalSubjectMark);
+            examTotal += totalSubjectMark;
             subjectFullMarks = Number(sd.examFullMarks);
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }
-        grandTotal = Number(grandTotal) + Number(totalSubjectMark);
-        fullMarksTotal = Number(fullMarksTotal) + Number(subjectFullMarks);
+        grandTotal += totalSubjectMark;
+        fullMarksTotal += subjectFullMarks;
     });
 
     gradedSubjects.forEach(sd => {
@@ -368,9 +368,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }
-        // FIX: Ensure arithmetic operation uses number type explicitly and simplify.
-        grandTotal = grandTotal + totalSubjectMark; 
-        fullMarksTotal = fullMarksTotal + subjectFullMarks;
+        // FIX: Ensure arithmetic operation uses Number type explicitly to resolve TS errors on lines where operands are added.
+        grandTotal = Number(grandTotal) + Number(totalSubjectMark); 
+        fullMarksTotal = Number(fullMarksTotal) + Number(subjectFullMarks);
       });
 
       gradedSubjects.forEach(sd => {

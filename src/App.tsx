@@ -118,8 +118,7 @@ import CurriculumPage from './pages/public/CurriculumPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
-// FIX: Point to the root components folder for Icons if src one is incomplete or inaccessible.
-import { SpinnerIcon } from '../components/Icons';
+import { SpinnerIcon } from './components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 

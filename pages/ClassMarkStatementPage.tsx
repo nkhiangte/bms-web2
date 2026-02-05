@@ -77,6 +77,9 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
+    const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
+    const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
+
     const studentData = allStudents.map(s => {
         const studentExam = s.academicPerformance?.find(e => {
             const examTemplate = TERMINAL_EXAMS.find(t => t.id === examId);
@@ -203,9 +206,6 @@ const calculateTermSummary = (
 
     return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark, rank };
 };
-
-const numericSubjects = subjectDefinitions.filter(sd => sd.gradingSystem !== 'OABC');
-const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
 // --- MAIN PAGE COMPONENT ---
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
@@ -353,9 +353,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            examTotal = Number(examTotal) + Number(examMark);
-            activityTotal = Number(activityTotal) + Number(activityMark);
-            totalSubjectMark = Number(examMark) + Number(activityMark);
+            examTotal = examTotal + examMark;
+            activityTotal = activityTotal + activityMark;
+            totalSubjectMark = examMark + activityMark;
             const eFM = Number(sd.examFullMarks || 0);
             const aFM = Number(sd.activityFullMarks || 0);
             subjectFullMarks = eFM + aFM;
@@ -363,12 +363,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         } else {
             totalSubjectMark = Number(studentMarks[sd.name]) || 0;
-            examTotal = Number(examTotal) + Number(totalSubjectMark);
+            examTotal = examTotal + totalSubjectMark;
             subjectFullMarks = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
         }
-        // FIX: Explicitly treat addition sides as numbers to resolve arithmetic type error.
+        // Ensure arithmetic operation uses number type explicitly and simplify.
         grandTotal = (grandTotal as number) + (totalSubjectMark as number); 
         fullMarksTotal = (fullMarksTotal as number) + (subjectFullMarks as number);
       });

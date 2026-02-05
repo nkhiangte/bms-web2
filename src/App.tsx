@@ -125,7 +125,7 @@ const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as 
 const App: React.FC = () => {
   // --- State Declarations ---
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true); // Track if initial auth check is complete
   const [students, setStudents] = useState<Student[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -211,7 +211,7 @@ const App: React.FC = () => {
         } else {
             setUser(null);
         }
-        setAuthLoading(false);
+        setAuthLoading(false); // Auth check is finished
     });
     return () => unsubscribe();
   }, []);

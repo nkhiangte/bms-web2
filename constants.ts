@@ -1,5 +1,4 @@
 
-
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -207,9 +206,9 @@ export const DEFAULT_FEE_STRUCTURE = {
 };
 
 export const FEE_SET_GRADES: Record<string, Grade[]> = {
-    set1: [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II],
-    set2: [Grade.III, Grade.IV, Grade.V, Grade.VI],
-    set3: [Grade.VII, Grade.VIII, Grade.IX, Grade.X],
+    set1: [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II, Grade.III, Grade.IV],
+    set2: [Grade.V, Grade.VI, Grade.VII, Grade.VIII],
+    set3: [Grade.IX, Grade.X],
 };
 
 // --- Admission Fee Detailed Structure (Default) ---
@@ -384,7 +383,7 @@ export const examRoutines: Routine[] = [
         ]
     },
     {
-        title: "II SEM EXAM ROUTINE For CL III TO V",
+        title: "II SEM EXAM ROUTINE For CL CL III TO V",
         exams: [
             { date: "06/11/2025", day: "Thursday", morning: "Mathematics" },
             { date: "07/11/2025", day: "Friday", morning: "English I", afternoon: "English II" },

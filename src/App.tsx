@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -120,12 +119,14 @@ import CurriculumPage from './pages/public/CurriculumPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
+import { SpinnerIcon } from './components/Icons'; // Import SpinnerIcon
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
 const App = () => {
   // --- State Declarations ---
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true); // Track if initial auth check is complete
   const [students, setStudents] = useState<Student[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -211,6 +212,7 @@ const App = () => {
         } else {
             setUser(null);
         }
+        setAuthLoading(false); // Auth check is finished
     });
     return () => unsubscribe();
   }, []);
@@ -567,7 +569,11 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async () => ({ success: true })} />} />
 
         {/* Protected Portal Routes */}
-        <Route path="/portal" element={user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" />}>
+        <Route path="/portal" element={
+            authLoading 
+            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin"/></div>
+            : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
+        }>
            <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={async () => {}} />} />
            
            <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (claim) => {

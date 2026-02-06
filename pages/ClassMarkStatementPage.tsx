@@ -107,7 +107,8 @@ const calculateTermSummary = (
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
             // Ensure numeric addition
-            grandTotal = grandTotal + totalSubjectMark;
+            // FIX: Explicit cast to number to ensure arithmetic operation safety.
+            grandTotal = (grandTotal as number) + (totalSubjectMark as number);
         }
 
         gradedSubjects.forEach(sd => {
@@ -267,16 +268,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const normSubjName = normalizeSubjectName(subjectDef.name);
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
-            if (normResultName === normSubjDefName) return true;
+            // FIX: Corrected variable name to normSubjName to resolve 'Cannot find name' error.
+            if (normResultName === normSubjName) return true;
+
+            // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
-            if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-            if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
+            // FIX: Corrected variable name to normSubjName in fallbacks as well.
+            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
+            
+            if (normSubjName === 'english' && normResultName === 'english i') return true;
+            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
+            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
+            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+
             return false;
         });
         
@@ -354,22 +361,23 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            examTotal = examTotal + examMark;
-            activityTotal = activityTotal + activityMark;
-            totalSubjectMarkValue = examMark + activityMark;
+            examTotal = (examTotal as number) + (examMark as number);
+            activityTotal = (activityTotal as number) + (activityMark as number);
+            totalSubjectMarkValue = Number(examMark) + Number(activityMark);
             subjectFullMarksValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             totalSubjectMarkValue = Number(studentMarks[sd.name]) || 0;
-            examTotal = examTotal + totalSubjectMarkValue;
+            examTotal = (examTotal as number) + (totalSubjectMarkValue as number);
             subjectFullMarksValue = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
         // Arithmetic operation uses explicit Number treatment or verified numeric variables
-        grandTotal = grandTotal + totalSubjectMarkValue; 
-        fullMarksTotal = fullMarksTotal + subjectFullMarksValue;
+        // FIX: Applied explicit numeric casting to resolve arithmetic operation type errors on line 405.
+        (grandTotal as number) = Number(grandTotal) + Number(totalSubjectMarkValue); 
+        (fullMarksTotal as number) = Number(fullMarksTotal) + Number(subjectFullMarksValue);
       }
 
       gradedSubjects.forEach(sd => {

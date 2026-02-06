@@ -107,8 +107,8 @@ const calculateTermSummary = (
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
             // Ensure numeric addition
-            // FIX: Explicit cast to number to ensure arithmetic operation safety.
-            grandTotal = (grandTotal as number) + (totalSubjectMark as number);
+            // FIX: Simplified addition to avoid explicit casts on LHS which can cause TS errors in some versions.
+            grandTotal += totalSubjectMark;
         }
 
         gradedSubjects.forEach(sd => {
@@ -268,12 +268,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const normSubjName = normalizeSubjectName(subjectDef.name);
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
-            // FIX: Corrected variable name to normSubjName to resolve 'Cannot find name' error.
             if (normResultName === normSubjName) return true;
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            // FIX: Corrected variable name to normSubjName in fallbacks as well.
             if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;
@@ -346,10 +344,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      let grandTotal: number = 0;
-      let examTotal: number = 0;
-      let activityTotal: number = 0;
-      let fullMarksTotal: number = 0;
+      let grandTotal = 0;
+      let examTotal = 0;
+      let activityTotal = 0;
+      let fullMarksTotal = 0;
       let failedSubjectsCount = 0;
       let gradedSubjectsPassed = 0;
       const studentMarks = marksData[student.id] || {};
@@ -361,25 +359,25 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            examTotal = (examTotal as number) + (examMark as number);
-            activityTotal = (activityTotal as number) + (activityMark as number);
-            totalSubjectMarkValue = Number(examMark) + Number(activityMark);
+            examTotal += examMark;
+            activityTotal += activityMark;
+            totalSubjectMarkValue = examMark + activityMark;
             subjectFullMarksValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             totalSubjectMarkValue = Number(studentMarks[sd.name]) || 0;
-            examTotal = (examTotal as number) + (totalSubjectMarkValue as number);
+            examTotal += totalSubjectMarkValue;
             subjectFullMarksValue = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // Arithmetic operation uses explicit Number treatment or verified numeric variables
-        // FIX: Applied explicit numeric casting to resolve arithmetic operation type errors on line 405.
-        (grandTotal as number) = Number(grandTotal) + Number(totalSubjectMarkValue); 
-        (fullMarksTotal as number) = Number(fullMarksTotal) + Number(subjectFullMarksValue);
+        // FIX: Simplified addition to avoid explicit casts on LHS which can cause TS errors in some versions.
+        grandTotal += totalSubjectMarkValue; 
+        fullMarksTotal += subjectFullMarksValue;
       }
 
+      // ... rest of the map callback ...
       gradedSubjects.forEach(sd => {
         const gradeValue = studentMarks[sd.name];
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;

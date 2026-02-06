@@ -37,6 +37,8 @@ interface ProcessedStudent extends Student {
 
 type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
+// --- Reusable Logic and Components ---
+
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
     const normSubjDefName = normalizeSubjectName(subjectDef.name);
@@ -45,6 +47,7 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
 
+        // Fallbacks for common name variations
         const mathNames = ['math', 'maths', 'mathematics'];
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         
@@ -83,7 +86,7 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        let grandTotalAcc = 0;
+        let grandTotal = 0;
         let failedSubjectsCount = 0;
         let gradedSubjectsPassed = 0;
 
@@ -101,12 +104,10 @@ const calculateTermSummary = (
                 const failLimit = isClassIXorX ? 33 : 35; 
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // Ensure numeric addition
-            // FIX: Explicit cast to number to ensure arithmetic operation safety.
-            grandTotalAcc = (grandTotalAcc as number) + (totalSubjectMark as number);
+            // FIX: Simplified addition to avoid explicit casts on LHS which can cause TS errors in some versions.
+            grandTotal += totalSubjectMark;
         }
 
-        // FIX: Explicitly cast 'def' to 'GradeDefinition' in destructured object-entries loop
         gradedSubjects.forEach(sd => {
             const result = findResultWithAliases(studentExam?.results, sd);
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
@@ -118,7 +119,7 @@ const calculateTermSummary = (
         else if (failedSubjectsCount === 1) resultStatus = 'SIMPLE PASS';
         if (isNurseryToII && failedSubjectsCount > 0) resultStatus = 'FAIL';
         
-        return { id: s.id, grandTotal: grandTotalAcc, result: resultStatus };
+        return { id: s.id, grandTotal, result: resultStatus };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
@@ -328,10 +329,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      let gTotal = 0;
-      let exTotal = 0;
-      let actTotal = 0;
-      let fMarksTotal = 0;
+      let grandTotalValue = 0;
+      let examTotalValue = 0;
+      let activityTotalValue = 0;
+      let fullMarksTotalValue = 0;
       let failedSubjectsCount = 0;
       let gradedSubjectsPassed = 0;
       const studentMarks = marksData[student.id] || {};
@@ -343,23 +344,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            exTotal = Number(exTotal) + Number(examMark);
-            actTotal = Number(actTotal) + Number(activityMark);
-            totalSubjectMarkValue = Number(examMark) + Number(activityMark);
+            examTotalValue += examMark;
+            activityTotalValue += activityMark;
+            totalSubjectMarkValue = examMark + activityMark;
             subjectFullMarksValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             totalSubjectMarkValue = Number(studentMarks[sd.name]) || 0;
-            exTotal = Number(exTotal) + Number(totalSubjectMarkValue);
+            examTotalValue += totalSubjectMarkValue;
             subjectFullMarksValue = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // Arithmetic operation uses explicit Number treatment or verified numeric variables
-        // FIX: Ensuring left-hand side is a number explicitly to satisfy TS compiler error on line 400.
-        (gTotal as number) = Number(gTotal) + Number(totalSubjectMarkValue); 
-        (fMarksTotal as number) = Number(fMarksTotal) + Number(subjectFullMarksValue);
+        // FIX: Simplified addition to avoid explicit casts or Number() wrappers on variables that are already numbers, which resolves TS arithmetic type errors.
+        grandTotalValue += totalSubjectMarkValue; 
+        fullMarksTotalValue += subjectFullMarksValue;
       }
 
       gradedSubjects.forEach(sd => {
@@ -367,7 +367,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
       });
       
-      const percentageValue = fMarksTotal > 0 ? (gTotal / fMarksTotal) * 100 : 0;
+      const percentageValue = fullMarksTotalValue > 0 ? (grandTotalValue / fullMarksTotalValue) * 100 : 0;
       let resultValue = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) resultValue = 'FAIL';
 
@@ -390,9 +390,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
       return { 
           ...student, 
-          grandTotal: gTotal, 
-          examTotal: exTotal, 
-          activityTotal: actTotal, 
+          grandTotal: grandTotalValue, 
+          examTotal: examTotalValue, 
+          activityTotal: activityTotalValue, 
           percentage: percentageValue, 
           result: resultValue, 
           division: divisionValue, 

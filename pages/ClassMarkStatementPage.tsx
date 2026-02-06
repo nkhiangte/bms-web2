@@ -91,7 +91,8 @@ const calculateTermSummary = (
         let failedSubjectsCount = 0;
         let gradedSubjectsPassed = 0;
 
-        numericSubjects.forEach(sd => {
+        // Using for...of loop for better type narrowing and arithmetic safety
+        for (const sd of numericSubjects) {
             const result = findResultWithAliases(studentExam?.results, sd);
             let totalSubjectMark = 0;
 
@@ -105,9 +106,9 @@ const calculateTermSummary = (
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // FIX: Explicitly cast both sides to 'any' or use Number() to satisfy compiler during arithmetic addition.
-            grandTotal = Number(grandTotal) + Number(totalSubjectMark);
-        });
+            // Ensure numeric addition
+            grandTotal = grandTotal + totalSubjectMark;
+        }
 
         gradedSubjects.forEach(sd => {
             const result = findResultWithAliases(studentExam?.results, sd);
@@ -141,7 +142,7 @@ const calculateTermSummary = (
 
     const studentExam = exam;
 
-    numericSubjects.forEach(sd => {
+    for (const sd of numericSubjects) {
         const result = findResultWithAliases(studentExam?.results, sd);
         let totalSubjectMark = 0, subjectFullMarks = 0;
 
@@ -162,14 +163,14 @@ const calculateTermSummary = (
         }
         grandTotal += totalSubjectMark;
         fullMarksTotal += subjectFullMarks;
-    });
+    }
 
     gradedSubjects.forEach(sd => {
         const result = findResultWithAliases(studentExam?.results, sd);
         if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
     });
 
-    const percentage = fullMarksTotal > 0 ? (Number(grandTotal) / Number(fullMarksTotal)) * 100 : 0;
+    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
     
     let resultStatus = 'PASS';
     if (gradedSubjectsPassed < gradedSubjects.length) resultStatus = 'FAIL';
@@ -266,16 +267,16 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const normSubjName = normalizeSubjectName(subjectDef.name);
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
-            if (normResultName === normSubjName) return true;
+            if (normResultName === normSubjDefName) return true;
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
-            if (normSubjName === 'english' && normResultName === 'english i') return true;
-            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+            if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+            if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+            if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
             return false;
         });
         
@@ -345,40 +346,38 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       let failedSubjectsCount = 0;
       let gradedSubjectsPassed = 0;
       const studentMarks = marksData[student.id] || {};
-      const failedSubjects: string[] = [];
+      const failedSubjectsList: string[] = [];
 
-      numericSubjects.forEach(sd => {
-        let totalSubjectMark: number = 0;
-        let subjectFullMarks: number = 0;
+      for (const sd of numericSubjects) {
+        let totalSubjectMarkValue = 0;
+        let subjectFullMarksValue = 0;
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
             examTotal = examTotal + examMark;
             activityTotal = activityTotal + activityMark;
-            totalSubjectMark = examMark + activityMark;
-            const eFM = Number(sd.examFullMarks || 0);
-            const aFM = Number(sd.activityFullMarks || 0);
-            subjectFullMarks = eFM + aFM;
+            totalSubjectMarkValue = examMark + activityMark;
+            subjectFullMarksValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
-            if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
+            if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            totalSubjectMark = Number(studentMarks[sd.name]) || 0;
-            examTotal = examTotal + totalSubjectMark;
-            subjectFullMarks = Number(sd.examFullMarks) || 0;
+            totalSubjectMarkValue = Number(studentMarks[sd.name]) || 0;
+            examTotal = examTotal + totalSubjectMarkValue;
+            subjectFullMarksValue = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-            if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
+            if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // FIX: Ensure arithmetic operation uses Number type explicitly to resolve TS errors on lines where operands are added.
-        grandTotal = Number(grandTotal) + Number(totalSubjectMark); 
-        fullMarksTotal = Number(fullMarksTotal) + Number(subjectFullMarks);
-      });
+        // Arithmetic operation uses explicit Number treatment or verified numeric variables
+        grandTotal = grandTotal + totalSubjectMarkValue; 
+        fullMarksTotal = fullMarksTotal + subjectFullMarksValue;
+      }
 
       gradedSubjects.forEach(sd => {
         const gradeValue = studentMarks[sd.name];
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
       });
       
-      const percentage = fullMarksTotal > 0 ? (Number(grandTotal) / Number(fullMarksTotal)) * 100 : 0;
+      const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 
@@ -388,9 +387,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       
       let remark = '';
       if (result === 'FAIL') {
-          remark = `Needs improvement in ${failedSubjects.join(', ')}`;
+          remark = `Needs improvement in ${failedSubjectsList.join(', ')}`;
       } else if (result === 'SIMPLE PASS') {
-          remark = `Focus on ${failedSubjects.join(', ')}`;
+          remark = `Focus on ${failedSubjectsList.join(', ')}`;
       } else {
           if (percentage >= 90) remark = "Outstanding performance!";
           else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
@@ -496,8 +495,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     <>
     <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center print-hidden">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800"><BackIcon className="w-5 h-5"/> Back</button>
-            <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
+            <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
         </div>
         <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
@@ -626,24 +625,24 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
 
         <div className="mt-6 flex justify-end gap-4 print-hidden">
-            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary">
+            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary transition-colors">
                 <CogIcon className="w-5 h-5" /> Manage Subjects
             </button>
             <Link
                 to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
                 target="_blank"
-                className="btn btn-secondary"
+                className="btn btn-secondary transition-colors"
             >
                 <PrinterIcon className="w-5 h-5" />
                 Bulk Print Reports
             </Link>
-            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">
+            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary transition-colors">
                 <InboxArrowDownIcon className="w-5 h-5" /> Import Marks
             </button>
             <button
                 onClick={() => setIsConfirmSaveModalOpen(true)}
                 disabled={isSaving || changedStudents.size === 0}
-                className="btn btn-primary"
+                className="btn btn-primary transition-colors disabled:opacity-50"
             >
                 {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
                 <span>Save Changes ({changedStudents.size})</span>

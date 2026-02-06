@@ -57,10 +57,11 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   }, [foundStudent, feeStructure]);
 
   useEffect(() => {
-    if (!isEditingStructure && feeStructure && feeStructure.set1) {
+    // Only sync editable structure when we are not currently editing or saving
+    if (!isEditingStructure && !isSavingStructure && feeStructure && feeStructure.set1) {
         setEditableStructure(feeStructure);
     }
-  }, [feeStructure, isEditingStructure]);
+  }, [feeStructure, isEditingStructure, isSavingStructure]);
 
   const getDefaultPayments = (): FeePayments => ({
     admissionFeePaid: false,
@@ -110,7 +111,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         const newHeads = (set.heads || []).filter((_, i) => i !== index);
         return {
             ...prev,
-            [setKey]: { heads: newHeads }
+            [setKey]: { ...set, heads: newHeads }
         };
     });
   };
@@ -142,10 +143,13 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const handleSaveStructure = async () => {
     setIsSavingStructure(true);
     try {
-        await onUpdateFeeStructure(editableStructure);
-        setIsEditingStructure(false);
-        addNotification('Fee structure updated successfully!', 'success');
+        const success = await onUpdateFeeStructure(editableStructure);
+        if (success) {
+            setIsEditingStructure(false);
+            addNotification('Fee structure updated successfully!', 'success');
+        }
     } catch (e) {
+        console.error("handleSaveStructure failed:", e);
         addNotification('Failed to save fee structure. Please try again.', 'error');
     } finally {
         setIsSavingStructure(false);
@@ -341,7 +345,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {(Object.keys(feeStructure || {}) as Array<keyof FeeStructure>).filter(k => k.startsWith('set')).map(setKey => {
+                {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => {
                     const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
                     const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));
 
@@ -390,21 +394,21 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                 )}
                             </div>
                             {isEditingStructure && (
-                                <button onClick={() => handleAddHead(setKey as any)} className="text-xs btn btn-secondary px-2 py-1 flex items-center gap-1 ml-2">
+                                <button onClick={() => handleAddHead(setKey)} className="text-xs btn btn-secondary px-2 py-1 flex items-center gap-1 ml-2">
                                     <PlusIcon className="w-3 h-3"/> Add Fee
                                 </button>
                             )}
                         </div>
                         
                         <div className="space-y-3 flex-grow border-t pt-3">
-                            {(editableStructure[setKey as keyof FeeStructure]?.heads || []).map((head, index) => (
+                            {(editableStructure[setKey]?.heads || []).map((head, index) => (
                                 <div key={head.id} className={`p-2 rounded ${isEditingStructure ? 'bg-white border' : ''}`}>
                                     {isEditingStructure ? (
                                         <div className="space-y-2">
                                             <input
                                                 type="text"
                                                 value={head.name}
-                                                onChange={e => handleHeadChange(setKey as any, index, 'name', e.target.value)}
+                                                onChange={e => handleHeadChange(setKey, index, 'name', e.target.value)}
                                                 className="w-full text-sm font-bold border-slate-300 rounded focus:ring-sky-500"
                                                 placeholder="Fee Name"
                                             />
@@ -412,20 +416,20 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                                 <input
                                                     type="number"
                                                     value={head.amount}
-                                                    onChange={e => handleHeadChange(setKey as any, index, 'amount', parseInt(e.target.value) || 0)}
+                                                    onChange={e => handleHeadChange(setKey, index, 'amount', parseInt(e.target.value) || 0)}
                                                     className="w-1/2 text-sm border-slate-300 rounded focus:ring-sky-500"
                                                     placeholder="Amount"
                                                 />
                                                 <select
                                                     value={head.type}
-                                                    onChange={e => handleHeadChange(setKey as any, index, 'type', e.target.value)}
+                                                    onChange={e => handleHeadChange(setKey, index, 'type', e.target.value)}
                                                     className="w-1/2 text-xs border-slate-300 rounded focus:ring-sky-500"
                                                 >
                                                     <option value="one-time">One-time</option>
                                                     <option value="monthly">Monthly</option>
                                                     <option value="term">Term</option>
                                                 </select>
-                                                <button onClick={() => handleRemoveHead(setKey as any, index)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                                                <button onClick={() => handleRemoveHead(setKey, index)} className="text-red-500 hover:bg-red-50 p-1 rounded">
                                                     <TrashIcon className="w-4 h-4"/>
                                                 </button>
                                             </div>
@@ -443,7 +447,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                     )}
                                 </div>
                             ))}
-                            {(editableStructure[setKey as keyof FeeStructure]?.heads || []).length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
+                            {(editableStructure[setKey]?.heads || []).length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
                         </div>
                     </div>
                 )})}

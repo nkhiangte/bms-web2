@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
@@ -243,7 +244,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
 
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), 
+            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => !item.description.includes('Tuition') && !item.description.includes('Term')), 
             tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
             examFees: {
                 terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
@@ -550,7 +551,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                 <h4 className="font-bold text-slate-800 border-b pb-2">One-Time & Term Fees</h4>
                                 <label className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">
                                 <input type="checkbox" checked={paymentData.admissionFeePaid} onChange={e => handlePaymentChange('admission', 'admissionFeePaid', e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500" disabled={isReadOnly} />
-                                <span className="text-slate-800 font-semibold">One-Time Fees / Admission</span>
+                                <span className="text-slate-800 font-semibold">One-Time Fees</span>
                                 </label>
                                 {TERMINAL_EXAMS.map((exam, i) => (
                                     <label key={exam.id} className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">

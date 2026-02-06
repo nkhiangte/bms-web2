@@ -1,5 +1,4 @@
 
-
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -185,21 +184,18 @@ export const academicMonths = ["April", "May", "June", "July", "August", "Septem
 export const DEFAULT_FEE_STRUCTURE = {
   set1: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 5000, type: 'one-time' as const },
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 500, type: 'term' as const }
       ]
   },
   set2: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 6000, type: 'one-time' as const },
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2000, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 600, type: 'term' as const }
       ]
   },
   set3: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 7000, type: 'one-time' as const },
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 700, type: 'term' as const }
       ]
@@ -384,7 +380,7 @@ export const examRoutines: Routine[] = [
         ]
     },
     {
-        title: "II SEM EXAM ROUTINE For CL III TO V",
+        title: "II SEM EXAM ROUTINE For CL CL III TO V",
         exams: [
             { date: "06/11/2025", day: "Thursday", morning: "Mathematics" },
             { date: "07/11/2025", day: "Friday", morning: "English I", afternoon: "English II" },

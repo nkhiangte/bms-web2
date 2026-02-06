@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -297,13 +298,14 @@ const App: React.FC = () => {
             const data = doc.data() || {};
             const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
                 if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
-                return {
-                    heads: [
-                        { id: 'adm', name: 'Admission Fee', amount: Number(oldSet?.admissionFee) || 0, type: 'one-time' as const },
-                        { id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet?.tuitionFee) || 0, type: 'monthly' as const },
-                        { id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet?.examFee) || 0, type: 'term' as const }
-                    ]
-                };
+                
+                const heads: FeeHead[] = [];
+                // Old format migration: remove 'Admission Fee' by omitting 'adm' id
+                if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
+                if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
+                
+                // If it's a completely fresh document or unrecognizable, use empty array instead of forcing admission fee
+                return { heads };
             };
             const updated = {
                 set1: migrateSet(data.set1),
@@ -429,11 +431,11 @@ const App: React.FC = () => {
         {/* Protected Portal Routes */}
         <Route path="/portal" element={
             authLoading 
-            ? <div className="min-h-screen flex items-center justify-center"><SpinnerIcon className="w-10 h-10 text-sky-600"/></div>
+            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin"/></div>
             : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
         }>
            <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={async () => {}} />} />
-           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); }} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={async (m) => { await db.collection('parentMessages').add(m); return true; }} fetchStudentAttendanceForMonth={async () => ({})} feeStructure={feeStructure} />} />
+           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); }} currentAttendance={null} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={async (m) => { await db.collection('parentMessages').add(m); return true; }} fetchStudentAttendanceForMonth={async () => ({})} feeStructure={feeStructure} />} />
            <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />
            <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={async (u) => { await db.collection('users').doc(user!.uid).update(u); return { success: true }; }} />} />
            <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />

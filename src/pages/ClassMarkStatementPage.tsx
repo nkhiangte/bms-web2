@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -329,18 +330,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      let grandTotalValue = 0;
-      let examTotalValue = 0;
-      let activityTotalValue = 0;
-      let fullMarksTotalValue = 0;
-      let failedSubjectsCount = 0;
-      let gradedSubjectsPassed = 0;
+      // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
+      let grandTotalValue: number = 0;
+      let examTotalValue: number = 0;
+      let activityTotalValue: number = 0;
+      let fullMarksTotalValue: number = 0;
+      let failedSubjectsCount: number = 0;
+      let gradedSubjectsPassed: number = 0;
       const studentMarks = marksData[student.id] || {};
       const failedSubjectsList: string[] = [];
 
       for (const sd of numericSubjects) {
-        let totalSubjectMarkValue = 0;
-        let subjectFullMarksValue = 0;
+        // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
+        let totalSubjectMarkValue: number = 0;
+        let subjectFullMarksValue: number = 0;
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
@@ -357,8 +360,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // FIX: Simplified addition to avoid explicit casts or Number() wrappers on variables that are already numbers, which resolves TS arithmetic type errors.
-        grandTotalValue += totalSubjectMarkValue; 
+        grandTotalValue += totalSubjectMarkValue;
         fullMarksTotalValue += subjectFullMarksValue;
       }
 

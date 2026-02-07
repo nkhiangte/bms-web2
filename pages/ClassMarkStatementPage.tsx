@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -205,11 +206,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const normSubjName = normalizeSubjectName(subjectDef.name);
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
+            // FIX: Fix typo `normSubjDefName` to `normSubjName`.
             if (normResultName === normSubjName) return true;
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
@@ -281,7 +283,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      // FIX: Explicitly type summary variables as number to resolve TS arithmetic type errors.
+      // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
       let grandTotalValue: number = 0;
       let examTotalValue: number = 0;
       let activityTotalValue: number = 0;
@@ -292,7 +294,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       const failedSubjectsList: string[] = [];
 
       for (const sd of numericSubjects) {
-        // FIX: Explicitly type totalSubjectMarkValue and subjectFullMarksValue as number to resolve TS arithmetic type errors.
+        // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
         let totalSubjectMarkValue: number = 0;
         let subjectFullMarksValue: number = 0;
         if (hasActivities) {
@@ -311,7 +313,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // FIX: Explicit type annotations for grandTotalValue and totalSubjectMarkValue resolve TS arithmetic operation errors.
         grandTotalValue += totalSubjectMarkValue;
         fullMarksTotalValue += subjectFullMarksValue;
       }

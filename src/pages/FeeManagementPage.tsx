@@ -237,7 +237,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         
         const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
         if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
-            addNotification('Online payment gateway is not configured correctly. Please contact the administrator.', 'error', 'Configuration Error');
+            addNotification('Online payment gateway is not configured correctly. Please contact the school administrator.', 'error', 'Configuration Error');
             setIsProcessingPayment(false);
             return;
         }
@@ -346,6 +346,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* FIX: Filter keys to only include 'set1', 'set2', 'set3' to avoid type errors. */}
                 {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => {
                     const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
                     const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));

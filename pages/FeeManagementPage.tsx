@@ -310,7 +310,8 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {(Object.keys(feeStructure || {}) as Array<keyof FeeStructure>).map(setKey => (
+                {/* FIX: Filter keys to only include 'set1', 'set2', 'set3' to avoid type errors. */}
+                {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => (
                     <div key={setKey} className={`p-4 rounded-lg border flex flex-col h-full ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex justify-between items-start mb-4">
                             <div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -297,15 +296,17 @@ const App: React.FC = () => {
         if (doc.exists) {
             const data = doc.data() || {};
             const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
-                if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
+                let heads: FeeHead[] = [];
+                if (oldSet && Array.isArray(oldSet.heads)) {
+                    heads = oldSet.heads;
+                } else {
+                    // Old format migration
+                    if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
+                    if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
+                }
                 
-                const heads: FeeHead[] = [];
-                // Old format migration: remove 'Admission Fee' by omitting 'adm' id
-                if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
-                if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
-                
-                // If it's a completely fresh document or unrecognizable, use empty array instead of forcing admission fee
-                return { heads };
+                // Actively filter out Admission Fee as requested across the board
+                return { heads: heads.filter(h => h.id !== 'adm' && h.name !== 'Admission Fee') };
             };
             const updated = {
                 set1: migrateSet(data.set1),

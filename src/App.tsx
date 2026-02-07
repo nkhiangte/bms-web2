@@ -306,8 +306,8 @@ const App: React.FC = () => {
                     if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
                 }
                 
-                // Actively filter out Admission Fee as requested across the board
-                return { heads: heads.filter(h => h.id !== 'adm' && h.name !== 'Admission Fee') };
+                // Actively filter out "Admission Fee", case-insensitively.
+                return { heads: heads.filter(h => h.name && !h.name.toLowerCase().includes('admission')) };
             };
             const updated = {
                 set1: migrateSet(data.set1),

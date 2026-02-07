@@ -1,3 +1,4 @@
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -212,7 +213,6 @@ export const ADMISSION_FEE_STRUCTURE = {
     newStudent: {
         oneTime: [
             { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'adm', name: 'Admission Fee', amount: 3000, type: 'one-time' as const },
             { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
         ],
         annual: [
@@ -229,7 +229,6 @@ export const ADMISSION_FEE_STRUCTURE = {
     existingStudent: {
         oneTime: [
             { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'adm', name: 'Admission Fee', amount: 2000, type: 'one-time' as const },
             { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
         ],
         annual: [

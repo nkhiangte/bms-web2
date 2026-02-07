@@ -1,4 +1,5 @@
 
+
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
@@ -84,12 +85,15 @@ export const formatStudentId = (student: Student, academicYear: string): string 
 };
 
 export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure): FeeSet => {
+    // FIX: Prioritize dynamic grade map from feeStructure, fall back to constant.
+    const map = feeStructure.gradeMap || FEE_SET_GRADES;
+
     let set: FeeSet | undefined;
-    if (FEE_SET_GRADES.set1.includes(grade)) {
+    if (map.set1?.includes(grade)) {
         set = feeStructure.set1;
-    } else if (FEE_SET_GRADES.set2.includes(grade)) {
+    } else if (map.set2?.includes(grade)) {
         set = feeStructure.set2;
-    } else if (FEE_SET_GRADES.set3.includes(grade)) {
+    } else if (map.set3?.includes(grade)) {
         set = feeStructure.set3;
     }
     

@@ -18,7 +18,7 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
     const [isSaving, setIsSaving] = useState(false);
     const feeDetails = getFeeDetails(grade, feeStructure);
 
-    // Calculate total exam fee from heads instead of non-existent property
+    // FIX: Calculate total exam fee from fee heads instead of non-existent property.
     const totalExamFee = (feeDetails.heads || [])
         .filter(h => h.type === 'term')
         .reduce((sum, h) => sum + h.amount, 0);
@@ -85,7 +85,7 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
                         <div className="flex items-center gap-2 text-md text-slate-700 mt-1">
                             <CurrencyDollarIcon className="w-5 h-5 text-emerald-600"/>
                             <span>Exam Fee per Term:</span>
-                            {/* Use calculated totalExamFee variable */}
+                            {/* FIX: Use calculated totalExamFee variable. */}
                             <span className="font-bold">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalExamFee)}</span>
                         </div>
                     </div>

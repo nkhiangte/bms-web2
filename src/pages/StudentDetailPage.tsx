@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry } from '../types';
@@ -19,7 +18,6 @@ interface StudentDetailPageProps {
   feeStructure: FeeStructure;
   conductLog: ConductEntry[];
   hostelDisciplineLog: HostelDisciplineEntry[];
-  // FIX: Changed prop type from Promise<void> to Promise<boolean> to align with the return type of handleSave.
   onAddConductEntry: (entry: Omit<ConductEntry, 'id'>) => Promise<boolean>;
   onDeleteConductEntry: (entryId: string) => Promise<void>;
 }
@@ -142,7 +140,6 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   }
   
   const formattedStudentId = formatStudentId(student, academicYear);
-  const dues = calculateDues(student, feeStructure);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -250,7 +247,6 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                             {student.contact && (
                                 <div className="flex items-center gap-2">
                                     <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
-                                        {/* FIX: Corrected component name to WhatsappIcon (from whatsappIcon) to fix JSX build error */}
                                         <WhatsappIcon className="w-5 h-5"/>
                                     </a>
                                     <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
@@ -279,37 +275,6 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                     <DetailItem label="Guardian's Name" value={student.guardianName} />
                     <DetailItem label="Relationship with Guardian" value={student.guardianRelationship} />
                 </dl>
-            </DetailSection>
-
-            <DetailSection title="Fee & Payment Status">
-                {dues.length === 0 ? (
-                    <div className="bg-emerald-50 text-emerald-800 p-4 rounded-lg flex items-center gap-3 border-l-4 border-emerald-500 shadow-sm">
-                        <CheckCircleIcon className="w-6 h-6" />
-                        <span className="font-semibold text-lg">All dues cleared.</span>
-                    </div>
-                ) : (
-                    <div className="bg-amber-50 text-amber-800 p-4 rounded-lg border-l-4 border-amber-500 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <XCircleIcon className="w-6 h-6 text-amber-600" />
-                            <span className="font-semibold text-lg">Pending Dues Found</span>
-                        </div>
-                        <ul className="list-disc pl-10 mt-2 text-md">
-                            {dues.map((due, index) => <li key={index}>{due}</li>)}
-                        </ul>
-                    </div>
-                )}
-                {(user.role === 'admin' || isOwner) && (
-                    <div className="mt-4">
-                        <Link 
-                            to="/portal/fees" 
-                            state={{ studentId: student.id }} 
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-700 transition hover:-translate-y-0.5"
-                        >
-                            <CurrencyDollarIcon className="w-5 h-5" />
-                            {user.role === 'admin' ? 'Go to Fee Management' : 'View Fees & Pay Online'}
-                        </Link>
-                    </div>
-                )}
             </DetailSection>
             
             <DetailSection title="School Conduct Log">

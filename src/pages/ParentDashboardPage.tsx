@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '../types';
@@ -114,6 +115,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                         </div>
                         <div>
                             <h3 className="text-2xl font-bold text-slate-900">{student.name}</h3>
+                            {/* Fixed typo: roll No -> rollNo to match Student interface property */}
                             <p className="text-slate-700 font-semibold">{student.grade} - Roll No: {student.rollNo}</p>
                         </div>
                     </div>

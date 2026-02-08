@@ -1,4 +1,3 @@
-
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -208,42 +207,6 @@ export const FEE_SET_GRADES: Record<string, Grade[]> = {
     set3: [Grade.IX, Grade.X],
 };
 
-// --- Admission Fee Detailed Structure (Default) ---
-export const ADMISSION_FEE_STRUCTURE = {
-    newStudent: {
-        oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
-        ],
-        annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' as const },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' as const },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' as const },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' as const },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' as const },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' as const },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' as const },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' as const },
-        ]
-    },
-    existingStudent: {
-        oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
-        ],
-        annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' as const },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' as const },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' as const },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' as const },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' as const },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' as const },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' as const },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' as const },
-        ]
-    }
-};
-
 export const INVENTORY_CATEGORY_LIST: InventoryCategory[] = Object.values(InventoryCategory);
 export const INVENTORY_STATUS_LIST: InventoryStatus[] = Object.values(InventoryStatus);
 export const HOSTEL_DORMITORY_LIST: HostelDormitory[] = Object.values(HostelDormitory);
@@ -251,8 +214,6 @@ export const HOSTEL_STAFF_ROLE_LIST: HostelStaffRole[] = Object.values(HostelSta
 export const HOSTEL_INVENTORY_CATEGORY_LIST: HostelInventoryCategory[] = Object.values(HostelInventoryCategory);
 export const CALENDAR_EVENT_TYPE_LIST: CalendarEventType[] = Object.values(CalendarEventType);
 
-// --- NEW: Admission Payment Items ---
-export const ADMISSION_FEE_AMOUNT = 1000;
 export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
     [Grade.NURSERY]: 500,
     [Grade.KINDERGARTEN]: 600,
@@ -286,30 +247,32 @@ export const UNIFORM_ITEMS = [
 
 export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
     academicYearLabel: '2026-27',
-    admissionFee: 1000,
+    admissionFee: 0,
     notebookPrices: NOTEBOOK_SET_PRICES,
     items: [
         { id: 'diary', name: 'Diary', price: 100, mandatory: true, type: 'general' },
         { id: 'songbook', name: 'Song Book', price: 200, mandatory: true, type: 'general' },
         { id: 'idcard', name: 'ID Card', price: 150, mandatory: false, type: 'general' },
         ...UNIFORM_ITEMS.map((item, index) => {
-            // Helper to generate default size prices for initialization
             const priceBySize: Record<string, number> = {};
             UNIFORM_SIZES.forEach(size => {
-                priceBySize[size] = item.price; // Start with base price for all sizes
+                priceBySize[size] = item.price;
             });
 
             return {
                 id: `uniform-${index}`,
                 name: item.name,
                 price: item.price,
-                priceBySize: priceBySize, // Initialize with default map
+                priceBySize: priceBySize,
                 mandatory: false,
                 type: 'uniform' as const
             };
         })
     ],
-    feeStructure: ADMISSION_FEE_STRUCTURE
+    feeStructure: {
+        newStudent: { oneTime: [], annual: [] },
+        existingStudent: { oneTime: [], annual: [] }
+    }
 };
 
 // --- NEW: Hostel Discipline ---

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -288,9 +287,7 @@ const App: React.FC = () => {
                 let heads: FeeHead[] = [];
                 if (oldSet && Array.isArray(oldSet.heads)) {
                     heads = oldSet.heads;
-                } else if (oldSet) { // Check if oldSet is not null/undefined
-                    // Old format migration: add properties to be filtered later
-                    if (oldSet.admissionFee) heads.push({ id: 'adm', name: 'Admission Fee', amount: Number(oldSet.admissionFee), type: 'one-time' }); 
+                } else if (oldSet) {
                     if (oldSet.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
                     if (oldSet.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
                 }

@@ -1,10 +1,9 @@
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
 import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '../types';
 import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
-import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES } from '../constants';
+import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '../constants';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 
@@ -14,7 +13,7 @@ interface FeeManagementPageProps {
   onUpdateFeePayments: (studentId: string, payments: FeePayments) => void;
   user: User;
   feeStructure: FeeStructure;
-  onUpdateFeeStructure: (newStructure: FeeStructure) => void;
+  onUpdateFeeStructure: (newStructure: FeeStructure) => Promise<boolean>;
   addNotification: (message: string, type: NotificationType, title?: string) => void;
 }
 
@@ -46,6 +45,10 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const [isEditingStructure, setIsEditingStructure] = useState(false);
   const [editableStructure, setEditableStructure] = useState<FeeStructure>(feeStructure);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isSavingStructure, setIsSavingStructure] = useState(false);
+
+  // State for adding grades
+  const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); 
 
   const duesSummary = useMemo(() => {
     if (!foundStudent) return null;
@@ -53,12 +56,11 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   }, [foundStudent, feeStructure]);
 
   useEffect(() => {
-    // Sync editable structure when props change (e.g. initial load)
-    // Only if not currently editing to avoid overwriting user input
-    if (!isEditingStructure && feeStructure && feeStructure.set1) {
+    // Only sync editable structure when we are not currently editing or saving
+    if (!isEditingStructure && !isSavingStructure && feeStructure && feeStructure.set1) {
         setEditableStructure(feeStructure);
     }
-  }, [feeStructure, isEditingStructure]);
+  }, [feeStructure, isEditingStructure, isSavingStructure]);
 
   const getDefaultPayments = (): FeePayments => ({
     admissionFeePaid: false,
@@ -66,7 +68,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
   });
 
-  // Effect to handle navigation from dashboard (passing studentId)
   useEffect(() => {
       const stateStudentId = location.state?.studentId;
       if (stateStudentId && students.length > 0) {
@@ -85,7 +86,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         newHeads[index] = { ...newHeads[index], [field]: value };
         return {
             ...prev,
-            [setKey]: { heads: newHeads }
+            [setKey]: { ...set, heads: newHeads }
         };
     });
   };
@@ -96,6 +97,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
           return {
             ...prev,
             [setKey]: {
+                ...set,
                 heads: [...(set.heads || []), { id: `fee-${Date.now()}`, name: 'New Fee', amount: 0, type: 'one-time' }]
             }
           };
@@ -108,15 +110,49 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         const newHeads = (set.heads || []).filter((_, i) => i !== index);
         return {
             ...prev,
-            [setKey]: { heads: newHeads }
+            [setKey]: { ...set, heads: newHeads }
         };
     });
   };
+  
+  const handleRemoveGrade = (gradeToRemove: Grade) => {
+      setEditableStructure(prev => {
+          const map = { ...(prev.gradeMap || FEE_SET_GRADES) };
+          Object.keys(map).forEach(key => {
+              map[key] = (map[key] || []).filter(g => g !== gradeToRemove);
+          });
+          return { ...prev, gradeMap: map };
+      });
+  };
 
-  const handleSaveStructure = () => {
-    onUpdateFeeStructure(editableStructure);
-    setIsEditingStructure(false);
-    addNotification('Fee structure updated successfully!', 'success');
+  const handleAddGradeToSet = (setKey: string, gradeToAdd: Grade) => {
+      setEditableStructure(prev => {
+          const map = { ...(prev.gradeMap || FEE_SET_GRADES) };
+          Object.keys(map).forEach(key => {
+              map[key] = (map[key] || []).filter(g => g !== gradeToAdd);
+          });
+          if (!map[setKey]) map[setKey] = [];
+          map[setKey].push(gradeToAdd);
+          map[setKey].sort((a, b) => GRADES_LIST.indexOf(a) - GRADES_LIST.indexOf(b));
+          return { ...prev, gradeMap: map };
+      });
+      setAddingGradeToSet(null);
+  };
+
+  const handleSaveStructure = async () => {
+    setIsSavingStructure(true);
+    try {
+        const success = await onUpdateFeeStructure(editableStructure);
+        if (success) {
+            setIsEditingStructure(false);
+            addNotification('Fee structure updated successfully!', 'success');
+        }
+    } catch (e) {
+        console.error("handleSaveStructure failed:", e);
+        addNotification('Failed to save fee structure. Please try again.', 'error');
+    } finally {
+        setIsSavingStructure(false);
+    }
   };
 
   const handleCancelEditStructure = () => {
@@ -161,7 +197,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     setIsSaved(false);
     
     setPaymentData(prev => {
-        const newData = JSON.parse(JSON.stringify(prev!)); // Deep copy
+        const newData = JSON.parse(JSON.stringify(prev!)); 
         if (type === 'admission') {
             newData.admissionFeePaid = value;
         } else if (type === 'tuition') {
@@ -199,14 +235,14 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         
         const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
         if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
-            addNotification('Online payment gateway is not configured correctly. Please contact the administrator.', 'error', 'Configuration Error');
+            addNotification('Online payment gateway is not configured correctly. Please contact the school administrator.', 'error', 'Configuration Error');
             setIsProcessingPayment(false);
             return;
         }
 
         const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
         const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => item.description === 'Admission Fee'), // Simple fallback
+            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => !item.description.includes('Tuition') && !item.description.includes('Term')), 
             tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
             examFees: {
                 terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
@@ -225,8 +261,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             handler: async (response: any) => {
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
 
-                // If any one-time fee was due, mark admissionFeePaid as true (legacy flag)
-                // In future, consider moving to granular payments in student record
                 if (duesSummary.items.some(i => !i.description.includes('Tuition') && !i.description.includes('Term') && !i.description.includes('Exam'))) {
                     newPayments.admissionFeePaid = true;
                 }
@@ -235,7 +269,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     if(newPayments.tuitionFeesPaid) newPayments.tuitionFeesPaid[month] = true;
                 });
                 
-                // If Term fees are paid, mark exams as paid
                 if (duesToPay.examFees.terminal1) newPayments.examFeesPaid.terminal1 = true;
                 if (duesToPay.examFees.terminal2) newPayments.examFeesPaid.terminal2 = true;
                 if (duesToPay.examFees.terminal3) newPayments.examFeesPaid.terminal3 = true;
@@ -302,32 +335,71 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                     </button>
                 ) : (
                     <div className="flex gap-2">
-                        <button onClick={handleCancelEditStructure} className="btn btn-secondary">Cancel</button>
-                        <button onClick={handleSaveStructure} className="btn btn-primary flex items-center gap-2">
-                            <SaveIcon className="w-5 h-5"/> Save Changes
+                        <button onClick={handleCancelEditStructure} disabled={isSavingStructure} className="btn btn-secondary">Cancel</button>
+                        <button onClick={handleSaveStructure} disabled={isSavingStructure} className="btn btn-primary flex items-center gap-2">
+                            {isSavingStructure ? <SpinnerIcon className="w-5 h-5" /> : <SaveIcon className="w-5 h-5"/>}
+                            {isSavingStructure ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* FIX: Filter keys to only include 'set1', 'set2', 'set3' to avoid type errors. */}
-                {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => (
+                {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => {
+                    const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
+                    const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));
+
+                    return (
                     <div key={setKey} className={`p-4 rounded-lg border flex flex-col h-full ${isEditingStructure ? 'bg-sky-50 border-sky-300 shadow-md' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="font-bold text-lg text-slate-800 capitalize mb-1">{setKey.replace('set', 'Set ')}</h3>
-                                <p className="text-xs text-slate-600">
-                                    Applies to: {FEE_SET_GRADES[setKey as keyof typeof FEE_SET_GRADES].join(', ')}
-                                </p>
+                                <div className="text-xs text-slate-600 mb-2">
+                                    <span className="font-semibold">Applies to:</span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {currentGrades.map(g => (
+                                            <span key={g} className="bg-white border border-slate-300 rounded px-1.5 py-0.5 flex items-center gap-1">
+                                                {g}
+                                                {isEditingStructure && (
+                                                    <button onClick={() => handleRemoveGrade(g)} className="text-red-500 hover:text-red-700">
+                                                        <XIcon className="w-3 h-3"/>
+                                                    </button>
+                                                )}
+                                            </span>
+                                        ))}
+                                        {currentGrades.length === 0 && <span className="italic text-slate-400">No grades assigned</span>}
+                                    </div>
+                                </div>
+                                {isEditingStructure && (
+                                    <div className="mt-2 relative">
+                                        {!addingGradeToSet ? (
+                                            <button onClick={() => setAddingGradeToSet(setKey)} className="text-xs text-sky-600 hover:underline flex items-center gap-1">
+                                                <PlusIcon className="w-3 h-3"/> Add Grade
+                                            </button>
+                                        ) : addingGradeToSet === setKey ? (
+                                            <select 
+                                                className="form-select text-xs w-full" 
+                                                autoFocus 
+                                                onChange={(e) => {
+                                                    if(e.target.value) handleAddGradeToSet(setKey, e.target.value as Grade);
+                                                }}
+                                                onBlur={() => setAddingGradeToSet(null)}
+                                                value=""
+                                            >
+                                                <option value="">Select Grade...</option>
+                                                {gradesAvailableToAdd.map(g => <option key={g} value={g}>{g}</option>)}
+                                            </select>
+                                        ) : null}
+                                    </div>
+                                )}
                             </div>
                             {isEditingStructure && (
-                                <button onClick={() => handleAddHead(setKey)} className="text-xs btn btn-secondary px-2 py-1 flex items-center gap-1">
+                                <button onClick={() => handleAddHead(setKey)} className="text-xs btn btn-secondary px-2 py-1 flex items-center gap-1 ml-2">
                                     <PlusIcon className="w-3 h-3"/> Add Fee
                                 </button>
                             )}
                         </div>
                         
-                        <div className="space-y-3 flex-grow">
+                        <div className="space-y-3 flex-grow border-t pt-3">
                             {(editableStructure[setKey]?.heads || []).map((head, index) => (
                                 <div key={head.id} className={`p-2 rounded ${isEditingStructure ? 'bg-white border' : ''}`}>
                                     {isEditingStructure ? (
@@ -377,7 +449,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                             {(editableStructure[setKey]?.heads || []).length === 0 && <p className="text-sm italic text-slate-500">No fee heads defined.</p>}
                         </div>
                     </div>
-                ))}
+                )})}
             </div>
         </div>
       )}
@@ -477,7 +549,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                                 <h4 className="font-bold text-slate-800 border-b pb-2">One-Time & Term Fees</h4>
                                 <label className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">
                                 <input type="checkbox" checked={paymentData.admissionFeePaid} onChange={e => handlePaymentChange('admission', 'admissionFeePaid', e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500" disabled={isReadOnly} />
-                                <span className="text-slate-800 font-semibold">One-Time Fees / Admission</span>
+                                <span className="text-slate-800 font-semibold">One-Time Fees</span>
                                 </label>
                                 {TERMINAL_EXAMS.map((exam, i) => (
                                     <label key={exam.id} className="flex items-center space-x-3 cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100">

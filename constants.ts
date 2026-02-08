@@ -1,4 +1,3 @@
-
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -184,22 +183,19 @@ export const academicMonths = ["April", "May", "June", "July", "August", "Septem
 export const DEFAULT_FEE_STRUCTURE = {
   set1: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 5000, type: 'one-time' as const },
-          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' as const },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1000, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 500, type: 'term' as const }
       ]
   },
   set2: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 6000, type: 'one-time' as const },
-          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2000, type: 'monthly' as const },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1200, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 600, type: 'term' as const }
       ]
   },
   set3: {
       heads: [
-          { id: 'adm', name: 'Admission Fee', amount: 7000, type: 'one-time' as const },
-          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2500, type: 'monthly' as const },
+          { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 700, type: 'term' as const }
       ]
   },
@@ -211,44 +207,6 @@ export const FEE_SET_GRADES: Record<string, Grade[]> = {
     set3: [Grade.IX, Grade.X],
 };
 
-// --- Admission Fee Detailed Structure (Default) ---
-export const ADMISSION_FEE_STRUCTURE = {
-    newStudent: {
-        oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'adm', name: 'Admission Fee', amount: 3000, type: 'one-time' as const },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
-        ],
-        annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' as const },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' as const },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' as const },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' as const },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' as const },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' as const },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' as const },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' as const },
-        ]
-    },
-    existingStudent: {
-        oneTime: [
-            { id: 'reg', name: 'Registration', amount: 100, type: 'one-time' as const },
-            { id: 'adm', name: 'Admission Fee', amount: 2000, type: 'one-time' as const },
-            { id: 'sec', name: 'Refundable Security Deposit', amount: 1000, type: 'one-time' as const },
-        ],
-        annual: [
-            { id: 'dev', name: 'Annual Development Fund', amount: 100, type: 'one-time' as const },
-            { id: 'tui', name: 'Tuition Fee (for 1st month only)', amount: 1000, type: 'one-time' as const },
-            { id: 'exam', name: 'Term Examination Fee', amount: 1000, type: 'one-time' as const },
-            { id: 'lib', name: 'Library & Digital Resource Fee', amount: 100, type: 'one-time' as const },
-            { id: 'med', name: 'Medical & Infirmary Fee', amount: 100, type: 'one-time' as const },
-            { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 100, type: 'one-time' as const },
-            { id: 'app', name: 'School App & Smart-Class Fee', amount: 150, type: 'one-time' as const },
-            { id: 'act', name: 'Activity & Hobby Club Fee', amount: 100, type: 'one-time' as const },
-        ]
-    }
-};
-
 export const INVENTORY_CATEGORY_LIST: InventoryCategory[] = Object.values(InventoryCategory);
 export const INVENTORY_STATUS_LIST: InventoryStatus[] = Object.values(InventoryStatus);
 export const HOSTEL_DORMITORY_LIST: HostelDormitory[] = Object.values(HostelDormitory);
@@ -256,8 +214,6 @@ export const HOSTEL_STAFF_ROLE_LIST: HostelStaffRole[] = Object.values(HostelSta
 export const HOSTEL_INVENTORY_CATEGORY_LIST: HostelInventoryCategory[] = Object.values(HostelInventoryCategory);
 export const CALENDAR_EVENT_TYPE_LIST: CalendarEventType[] = Object.values(CalendarEventType);
 
-// --- NEW: Admission Payment Items ---
-export const ADMISSION_FEE_AMOUNT = 1000;
 export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
     [Grade.NURSERY]: 500,
     [Grade.KINDERGARTEN]: 600,
@@ -270,7 +226,7 @@ export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
     [Grade.VII]: 1000,
     [Grade.VIII]: 1050,
     [Grade.IX]: 1100,
-    [Grade.X]: 0, // No new admissions
+    [Grade.X]: 0, 
 };
 
 export const OTHER_ADMISSION_ITEMS = {
@@ -291,33 +247,34 @@ export const UNIFORM_ITEMS = [
 
 export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
     academicYearLabel: '2026-27',
-    admissionFee: 1000,
+    admissionFee: 0,
     notebookPrices: NOTEBOOK_SET_PRICES,
     items: [
         { id: 'diary', name: 'Diary', price: 100, mandatory: true, type: 'general' },
         { id: 'songbook', name: 'Song Book', price: 200, mandatory: true, type: 'general' },
         { id: 'idcard', name: 'ID Card', price: 150, mandatory: false, type: 'general' },
         ...UNIFORM_ITEMS.map((item, index) => {
-            // Helper to generate default size prices for initialization
             const priceBySize: Record<string, number> = {};
             UNIFORM_SIZES.forEach(size => {
-                priceBySize[size] = item.price; // Start with base price for all sizes
+                priceBySize[size] = item.price;
             });
 
             return {
                 id: `uniform-${index}`,
                 name: item.name,
                 price: item.price,
-                priceBySize: priceBySize, // Initialize with default map
+                priceBySize: priceBySize,
                 mandatory: false,
                 type: 'uniform' as const
             };
         })
     ],
-    feeStructure: ADMISSION_FEE_STRUCTURE
+    feeStructure: {
+        newStudent: { oneTime: [], annual: [] },
+        existingStudent: { oneTime: [], annual: [] }
+    }
 };
 
-// --- NEW: Hostel Discipline ---
 export const INCIDENT_SEVERITY_LIST: IncidentSeverity[] = Object.values(IncidentSeverity);
 export const INCIDENT_STATUS_LIST: IncidentStatus[] = Object.values(IncidentStatus);
 export const INCIDENT_CATEGORIES = [
@@ -330,11 +287,9 @@ export const INCIDENT_CATEGORIES = [
     "Other",
 ];
 
-// --- NEW: Hostel Chores ---
 export const CHORE_LIST: Chore[] = Object.values(Chore);
 export const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// --- NEW: Class Routine ---
 export const ROUTINE_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 export const PERIOD_LABELS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 export const PERIOD_TIMES = [
@@ -342,13 +297,11 @@ export const PERIOD_TIMES = [
     { start: { h: 10, m: 0 }, end: { h: 10, m: 40 }, label: '10:00 - 10:40 AM' },
     { start: { h: 10, m: 40 }, end: { h: 11, m: 20 }, label: '10:40 - 11:20 AM' },
     { start: { h: 11, m: 20 }, end: { h: 12, m: 0 }, label: '11:20 - 12:00 PM' },
-    // Lunch Break: 12:00 PM - 1:00 PM
     { start: { h: 13, m: 0 }, end: { h: 13, m: 40 }, label: '01:00 - 01:40 PM' },
     { start: { h: 13, m: 40 }, end: { h: 14, m: 20 }, label: '01:40 - 02:20 PM' },
     { start: { h: 14, m: 20 }, end: { h: 15, m: 0 }, label: '02:20 - 03:00 PM' },
 ];
 
-// --- NEW: Exam Routines ---
 interface Exam {
     date: string;
     day: string;
@@ -394,7 +347,6 @@ export const examRoutines: Routine[] = [
 ];
 
 
-// FIX: Added explicit type to prevent TS from widening the 'id' property to a generic string.
 export const TERMINAL_EXAMS: { id: 'terminal1' | 'terminal2' | 'terminal3'; name: string }[] = [
     { id: 'terminal1', name: 'First Terminal Examination' },
     { id: 'terminal2', name: 'Second Terminal Examination' },
@@ -414,7 +366,6 @@ export const GRADES_WITH_NO_ACTIVITIES: Grade[] = [
     Grade.X,
 ];
 
-// Data for top rankers and distinction holders
 export const DISTINCTION_HOLDERS_BY_YEAR: Record<string, DistinctionHolder[]> = {
     '2023': [ { name: 'Esther Tingbiakmuani', parentage: 'D/o Z.L. Thanga', imageUrl: 'https://i.ibb.co/v4zsJtrq/esther.jpg' } ],
     '2020': [ { name: 'Manngaihsangi', parentage: 'D/o K. Lalthlamuana', imageUrl: 'https://i.ibb.co/4wrY5r7B/manngaih.jpg' } ],

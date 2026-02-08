@@ -112,6 +112,7 @@ import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
+import FeeManagementPage from './pages/FeeManagementPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -239,6 +240,16 @@ const App: React.FC = () => {
       await db.collection('config').doc('gradeDefinitions').set(newDefs);
   };
 
+  const handleUpdateFeeStructure = async (newStructure: FeeStructure) => {
+      try {
+          await db.collection('config').doc('feeStructure').set(newStructure);
+          return true;
+      } catch (error) {
+          console.error("Error updating fee structure:", error);
+          return false;
+      }
+  };
+
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -281,26 +292,7 @@ const App: React.FC = () => {
     // Real-time Fee Structure
     const unsubFeeStructure = db.collection('config').doc('feeStructure').onSnapshot(doc => {
         if (doc.exists) {
-            const data = doc.data() || {};
-            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
-                let heads: FeeHead[] = [];
-                if (oldSet && Array.isArray(oldSet.heads)) {
-                    heads = oldSet.heads;
-                } else if (oldSet) {
-                    if (oldSet.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
-                    if (oldSet.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
-                }
-                
-                // Actively filter out "Admission Fee", case-insensitively.
-                return { heads: heads.filter(h => h.name && !h.name.toLowerCase().includes('admission')) };
-            };
-            const updated = {
-                set1: migrateSet(data.set1),
-                set2: migrateSet(data.set2),
-                set3: migrateSet(data.set3),
-                gradeMap: data.gradeMap || FEE_SET_GRADES
-            };
-            setFeeStructure(updated as FeeStructure);
+            setFeeStructure(doc.data() as FeeStructure);
         }
     });
 
@@ -375,7 +367,7 @@ const App: React.FC = () => {
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => (await db.collection('online_admissions').add(data)).id} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
-                    <Route path="supplies" element={<SuppliesPage user={user} />} />
+          <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />
           <Route path="arts-culture" element={<ArtsCulturePage user={user} />} />
@@ -483,6 +475,7 @@ const App: React.FC = () => {
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
+           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} />} />
         </Route>
       </Routes>
     </>

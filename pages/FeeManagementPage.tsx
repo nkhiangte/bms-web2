@@ -303,7 +303,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             }
         };
 
-        const paymentObject = new window.Razorpay(options);
+        const paymentObject = new (window as any).Razorpay(options);
         paymentObject.on('payment.failed', function (response: any){
             addNotification(response.error.description, 'error', 'Payment Failed');
             setIsProcessingPayment(false);

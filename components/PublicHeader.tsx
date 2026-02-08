@@ -28,6 +28,7 @@ const NavLinks: NavLinkItem[] = [
             { name: 'Admission Guidelines', path: '/admissions' },
             { name: 'Online Admission Form', path: '/admissions/online' },
             { name: 'Check Admission Status', path: '/admissions/status' },
+            { name: 'Online Fee Payment', path: '/fees' },
             { name: 'School Supplies', path: '/supplies' },
         ],
     },

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -89,29 +90,26 @@ const calculateTermSummary = (
         });
         
         // FIX: Explicitly type grandTotal, failedSubjectsCount, and gradedSubjectsPassed as number to resolve potential arithmetic operand errors.
-        let grandTotal: number = 0;
+        let grandTotalValue: number = 0;
         let failedSubjectsCount: number = 0;
         let gradedSubjectsPassed: number = 0;
 
-        // Using for...of loop for better type narrowing and arithmetic safety
         for (const sd of numericSubjects) {
             const result = findResultWithAliases(studentExam?.results, sd);
-            // FIX: Explicitly type totalSubjectMark as number.
             let totalSubjectMark: number = 0;
 
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                totalSubjectMark = examMark + activityMark;
+                totalSubjectMark = Number(examMark) + Number(activityMark);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
                 totalSubjectMark = Number(result?.marks ?? 0);
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // Ensure numeric addition
-            // FIX: Explicit typing ensures grandTotal and totalSubjectMark are recognized as numbers.
-            grandTotal += totalSubjectMark;
+            // FIX: Use explicit Number conversion for safe numeric addition.
+            grandTotalValue = Number(grandTotalValue) + Number(totalSubjectMark);
         }
 
         gradedSubjects.forEach(sd => {
@@ -125,7 +123,7 @@ const calculateTermSummary = (
         else if (failedSubjectsCount === 1) resultStatus = 'SIMPLE PASS';
         if (isNurseryToII && failedSubjectsCount > 0) resultStatus = 'FAIL';
         
-        return { id: s.id, grandTotal, result: resultStatus };
+        return { id: s.id, grandTotal: grandTotalValue, result: resultStatus };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
@@ -138,15 +136,83 @@ const calculateTermSummary = (
             finalRankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = uniqueScores.indexOf(s.grandTotal);
-            const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
+            const rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
             finalRankedData.set(s.id, { ...s, rank });
         }
     });
     
-    return finalRankedData.get(student.id) || null;
+    const rankEntry = finalRankedData.get(student.id);
+    if (!rankEntry) return null;
+
+    let grandTotal: number = 0;
+    let examTotal: number = 0;
+    let activityTotal: number = 0;
+    let fullMarksTotal: number = 0;
+    const failedSubjects: string[] = [];
+    let gradedSubjectsPassed: number = 0;
+
+    numericSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        let totalSubjMark = 0, subjectFM = 0;
+
+        if (hasActivities) {
+            const examMark = Number(result?.examMarks ?? 0);
+            const activityMark = Number(result?.activityMarks ?? 0);
+            examTotal = Number(examTotal) + Number(examMark);
+            activityTotal = Number(activityTotal) + Number(activityMark);
+            totalSubjMark = Number(examMark) + Number(activityMark);
+            subjectFM = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
+            if (examMark < 20) failedSubjects.push(sd.name);
+        } else {
+            totalSubjMark = Number(result?.marks ?? 0);
+            examTotal = Number(examTotal) + Number(totalSubjMark);
+            subjectFM = Number(sd.examFullMarks);
+            const failLimit = isClassIXorX ? 33 : 35;
+            if (totalSubjMark < failLimit) failedSubjects.push(sd.name);
+        }
+        grandTotal = Number(grandTotal) + Number(totalSubjMark);
+        fullMarksTotal = Number(fullMarksTotal) + Number(subjectFM);
+    });
+
+    gradedSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
+    });
+
+    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
+    
+    let resultStatus = rankEntry.result;
+
+    let division = '-';
+    if (isClassIXorX && resultStatus === 'PASS') {
+        if (percentage >= 75) division = 'Distinction';
+        else if (percentage >= 60) division = 'I Div';
+        else if (percentage >= 45) division = 'II Div';
+        else if (percentage >= 35) division = 'III Div';
+    }
+
+    let academicGrade = '-';
+    if (resultStatus === 'FAIL') academicGrade = 'E';
+    else {
+        if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+    }
+    
+    let remark = '';
+    if (resultStatus === 'FAIL') {
+        remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
+    } else if (resultStatus === 'SIMPLE PASS') {
+        remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
+    } else if (resultStatus === 'PASS') {
+        if (percentage >= 90) remark = "Outstanding performance!";
+        else if (percentage >= 75) remark = "Excellent performance.";
+        else if (percentage >= 60) remark = "Good performance.";
+        else if (percentage >= 45) remark = "Satisfactory performance.";
+        else remark = "Passed. Needs to work harder to improve scores.";
+    }
+
+    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark, rank: rankEntry.rank };
 };
 
-// --- MAIN PAGE COMPONENT ---
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
   const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
   const navigate = useNavigate();
@@ -205,7 +271,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const normSubjName = normalizeSubjectName(subjectDef.name);
         const result = studentExam?.results.find(r => {
             const normResultName = normalizeSubjectName(r.subject);
-            // FIX: Renamed variable here to correctly match outer scope variable name.
             if (normResultName === normSubjName) return true;
 
             // Fallbacks for common name variations
@@ -282,7 +347,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
+      // FIX: Explicitly type totals as number to resolve potential arithmetic operand type errors.
       let grandTotalValue: number = 0;
       let examTotalValue: number = 0;
       let activityTotalValue: number = 0;
@@ -293,27 +358,30 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       const failedSubjectsList: string[] = [];
 
       for (const sd of numericSubjects) {
-        // FIX: Added explicit 'number' type to resolve arithmetic operand type errors.
+        // FIX: Explicitly type values as number.
         let totalSubjectMarkValue: number = 0;
         let subjectFullMarksValue: number = 0;
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
             const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
-            examTotalValue += examMark;
-            activityTotalValue += activityMark;
-            totalSubjectMarkValue = examMark + activityMark;
+            // FIX: Use explicit Number conversion for safe numeric addition.
+            examTotalValue = Number(examTotalValue) + Number(examMark);
+            activityTotalValue = Number(activityTotalValue) + Number(activityMark);
+            totalSubjectMarkValue = Number(examMark) + Number(activityMark);
             subjectFullMarksValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             totalSubjectMarkValue = Number(studentMarks[sd.name]) || 0;
-            examTotalValue += totalSubjectMarkValue;
-            subjectFullMarksValue = Number(sd.examFullMarks);
+            // FIX: Use explicit Number conversion for safe numeric addition.
+            examTotalValue = Number(examTotalValue) + Number(totalSubjectMarkValue);
+            subjectFullMarksValue = Number(sd.examFullMarks) || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (totalSubjectMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        grandTotalValue += totalSubjectMarkValue;
-        fullMarksTotalValue += subjectFullMarksValue;
+        // FIX: Ensure LHS and RHS are numbers for arithmetic operations.
+        grandTotalValue = Number(grandTotalValue) + Number(totalSubjectMarkValue);
+        fullMarksTotalValue = Number(fullMarksTotalValue) + Number(subjectFullMarksValue);
       }
 
       gradedSubjects.forEach(sd => {
@@ -353,7 +421,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             return { ...s, rank: '-' as const };
         }
         const rankIndex = uniqueScores.indexOf(s.grandTotal);
-        return { ...s, rank: rankIndex !== -1 ? rankIndex + 1 : '-' as const };
+        return { ...s, rank: rankIndex !== -1 ? (rankIndex + 1) : '-' as const };
     });
     
     let sortedData = finalData;
@@ -374,7 +442,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         sortedData.sort((a, b) => a.rollNo - b.rollNo);
     }
     
-    return sortedData;
+    return sortedData as ProcessedStudent[];
   }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, sortCriteria]);
 
   const handleConfirmSave = async () => {

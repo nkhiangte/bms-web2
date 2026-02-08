@@ -113,6 +113,7 @@ import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
+import FeesPage from './pages/public/FeesPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -408,6 +409,7 @@ const App: React.FC = () => {
           <Route path="contact" element={<ContactPage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
+          <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
         </Route>
 

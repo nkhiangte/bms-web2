@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
+import * as ReactRouterDOM from 'react-router-dom';
 import { OnlineAdmission } from '../types';
 import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { useNavigate } from 'react-router-dom';
+
+const { useNavigate } = ReactRouterDOM as any;
 
 // Simple Lightbox component for this page
 const Lightbox: React.FC<{ src: string; alt: string; onClose: () => void }> = ({ src, alt, onClose }) => {
@@ -223,7 +224,7 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
             const updated = admissions.find(a => a.id === selectedAdmission.id);
             if(updated) setSelectedAdmission(updated);
         }
-    }, [admissions]);
+    }, [admissions, selectedAdmission]);
 
     const confirmDelete = async () => {
         if (deletingId && onDelete) {

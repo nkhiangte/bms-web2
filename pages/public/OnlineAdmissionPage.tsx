@@ -1,12 +1,14 @@
-
 import React, { useState, FormEvent, useRef } from 'react';
+// FIX: Use namespace import for react-router-dom to resolve member export issues
+import * as ReactRouterDOM from 'react-router-dom';
 import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../types';
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
 import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
-import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
+
+const { useNavigate } = ReactRouterDOM as any;
 
 interface OnlineAdmissionPageProps {
     user: User | null;

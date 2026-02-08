@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '../components/Icons';
@@ -223,6 +222,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                 color="sky"
                 action={<Link to="/portal/students">View Active Students</Link>}
             />
+            {isAdmin && (
+                 <DashboardCard
+                    title="Fee Management"
+                    description="Collect monthly tuition and exam fees."
+                    icon={<CurrencyDollarIcon className="w-7 h-7" />}
+                    color="emerald"
+                    action={<Link to="/portal/fees">Manage Fees</Link>}
+                />
+            )}
             {user.role === 'user' && assignedGrade && (
                  <DashboardCard
                     title="My Class"
@@ -306,8 +314,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                 color="teal"
                 action={<Link to="/portal/communication">{isAdmin ? 'Send Messages' : 'View Communication'}</Link>}
             />
-             
-
             <DashboardCard
                 title="Transfer Management"
                 description="Generate and manage Transfer Certificates."

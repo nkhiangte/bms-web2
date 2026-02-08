@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
@@ -21,6 +19,7 @@ const portalNavLinks = [
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Fee Management', path: '/portal/fees', icon: <CurrencyDollarIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'AI Insights', path: '/portal/insights', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Homework Scanner', path: '/portal/homework-scanner', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Activity Log', path: '/portal/activity-log', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -45,7 +44,6 @@ const publicNavLinks = [
     { name: 'About Us', path: '/about' },
     { name: 'Academics', path: '/academics' },
     { name: 'Admissions', path: '/admissions' },
-    { name: 'Fees', path: '/fees' },
     { name: 'Student Life', path: '/student-life' },
     { name: 'Facilities', path: '/facilities' },
     { name: 'Faculty', path: '/faculty' },

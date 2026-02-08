@@ -226,7 +226,7 @@ export const NOTEBOOK_SET_PRICES: Record<Grade, number> = {
     [Grade.VII]: 1000,
     [Grade.VIII]: 1050,
     [Grade.IX]: 1100,
-    [Grade.X]: 0, // No new admissions
+    [Grade.X]: 0, 
 };
 
 export const OTHER_ADMISSION_ITEMS = {
@@ -275,7 +275,6 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
     }
 };
 
-// --- NEW: Hostel Discipline ---
 export const INCIDENT_SEVERITY_LIST: IncidentSeverity[] = Object.values(IncidentSeverity);
 export const INCIDENT_STATUS_LIST: IncidentStatus[] = Object.values(IncidentStatus);
 export const INCIDENT_CATEGORIES = [
@@ -288,11 +287,9 @@ export const INCIDENT_CATEGORIES = [
     "Other",
 ];
 
-// --- NEW: Hostel Chores ---
 export const CHORE_LIST: Chore[] = Object.values(Chore);
 export const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// --- NEW: Class Routine ---
 export const ROUTINE_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 export const PERIOD_LABELS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 export const PERIOD_TIMES = [
@@ -300,13 +297,11 @@ export const PERIOD_TIMES = [
     { start: { h: 10, m: 0 }, end: { h: 10, m: 40 }, label: '10:00 - 10:40 AM' },
     { start: { h: 10, m: 40 }, end: { h: 11, m: 20 }, label: '10:40 - 11:20 AM' },
     { start: { h: 11, m: 20 }, end: { h: 12, m: 0 }, label: '11:20 - 12:00 PM' },
-    // Lunch Break: 12:00 PM - 1:00 PM
     { start: { h: 13, m: 0 }, end: { h: 13, m: 40 }, label: '01:00 - 01:40 PM' },
     { start: { h: 13, m: 40 }, end: { h: 14, m: 20 }, label: '01:40 - 02:20 PM' },
     { start: { h: 14, m: 20 }, end: { h: 15, m: 0 }, label: '02:20 - 03:00 PM' },
 ];
 
-// --- NEW: Exam Routines ---
 interface Exam {
     date: string;
     day: string;
@@ -352,7 +347,6 @@ export const examRoutines: Routine[] = [
 ];
 
 
-// FIX: Added explicit type to prevent TS from widening the 'id' property to a generic string.
 export const TERMINAL_EXAMS: { id: 'terminal1' | 'terminal2' | 'terminal3'; name: string }[] = [
     { id: 'terminal1', name: 'First Terminal Examination' },
     { id: 'terminal2', name: 'Second Terminal Examination' },
@@ -372,7 +366,6 @@ export const GRADES_WITH_NO_ACTIVITIES: Grade[] = [
     Grade.X,
 ];
 
-// Data for top rankers and distinction holders
 export const DISTINCTION_HOLDERS_BY_YEAR: Record<string, DistinctionHolder[]> = {
     '2023': [ { name: 'Esther Tingbiakmuani', parentage: 'D/o Z.L. Thanga', imageUrl: 'https://i.ibb.co/v4zsJtrq/esther.jpg' } ],
     '2020': [ { name: 'Manngaihsangi', parentage: 'D/o K. Lalthlamuana', imageUrl: 'https://i.ibb.co/4wrY5r7B/manngaih.jpg' } ],

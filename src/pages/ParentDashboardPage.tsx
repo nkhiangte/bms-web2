@@ -78,7 +78,6 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
             (student.academicPerformance || []).flatMap(e => e.results).forEach(res => {
                 const subjDef = gradeDefinitions[student.grade]?.subjects.find(s => s.name === res.subject);
                 if(subjDef) {
-                    // This is a simplified assumption. Real-world would need a direct teacher-subject link.
                 }
             });
 

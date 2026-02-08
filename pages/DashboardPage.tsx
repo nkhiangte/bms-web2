@@ -306,13 +306,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                 color="teal"
                 action={<Link to="/portal/communication">{isAdmin ? 'Send Messages' : 'View Communication'}</Link>}
             />
-             <DashboardCard
-                title="Fee Management"
-                description="Track payments and manage student fees."
-                icon={<CurrencyDollarIcon className="w-7 h-7" />}
-                color="violet"
-                action={<Link to="/portal/fees">{isAdmin ? 'Manage Fees' : 'View Fees'}</Link>}
-            />
+             
 
             <DashboardCard
                 title="Transfer Management"

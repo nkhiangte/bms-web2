@@ -135,9 +135,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                             <Link to={`/portal/classes/${encodeURIComponent(grade)}/attendance`} className="btn btn-secondary whitespace-nowrap">
                                 <CalendarDaysIcon className="w-5 h-5"/> Attendance
                             </Link>
-                            <button onClick={() => setIsFeeModalOpen(true)} className="btn btn-secondary whitespace-nowrap">
-                                <CurrencyDollarIcon className="w-5 h-5"/> Exam Fees
-                            </button>
+                            
                             <button onClick={() => onAddStudentToClass(grade)} className="btn btn-primary whitespace-nowrap">
                                 <PlusIcon className="w-5 h-5"/> Add Student
                             </button>
@@ -211,15 +209,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 </div>
             )}
 
-            <ExamFeeCollectionModal
-                isOpen={isFeeModalOpen}
-                onClose={() => setIsFeeModalOpen(false)}
-                students={classStudents}
-                grade={grade}
-                feeStructure={feeStructure}
-                onSave={onUpdateBulkFeePayments}
-            />
-        </div>
+           
     );
 };
 

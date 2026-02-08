@@ -30,7 +30,6 @@ const portalNavLinks = [
     { name: 'Attendance Log', path: '/portal/student/:studentId/attendance-log', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['parent'] },
     { name: 'Staff', path: '/portal/staff', icon: <BriefcaseIcon className="w-5 h-5" />, roles: ['user'] },
     { name: 'Teacher Attendance', path: '/portal/staff/attendance-logs', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['admin', 'user'] },
-    { name: 'Fees', path: '/portal/fees', icon: <CurrencyDollarIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
     { name: 'Transfers', path: '/portal/transfers', icon: <TransferIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Inventory', path: '/portal/inventory', icon: <ArchiveBoxIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Hostel', path: '/portal/hostel-dashboard', icon: <BuildingOfficeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'warden'] },

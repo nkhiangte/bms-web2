@@ -25,7 +25,6 @@ import StaffDetailPage from './pages/StaffDetailPage';
 import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
-import FeesPage from './pages/public/FeesPage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import GenerateTcPage from './pages/GenerateTcPage';
@@ -376,8 +375,7 @@ const App: React.FC = () => {
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => (await db.collection('online_admissions').add(data)).id} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
-          <Route path="fees" element={<FeesPage user={user} feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
-          <Route path="supplies" element={<SuppliesPage user={user} />} />
+                    <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />
           <Route path="arts-culture" element={<ArtsCulturePage user={user} />} />

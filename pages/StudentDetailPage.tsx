@@ -281,36 +281,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                 </dl>
             </DetailSection>
 
-            <DetailSection title="Fee & Payment Status">
-                {dues.length === 0 ? (
-                    <div className="bg-emerald-50 text-emerald-800 p-4 rounded-lg flex items-center gap-3 border-l-4 border-emerald-500 shadow-sm">
-                        <CheckCircleIcon className="w-6 h-6" />
-                        <span className="font-semibold text-lg">All dues cleared.</span>
-                    </div>
-                ) : (
-                    <div className="bg-amber-50 text-amber-800 p-4 rounded-lg border-l-4 border-amber-500 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <XCircleIcon className="w-6 h-6 text-amber-600" />
-                            <span className="font-semibold text-lg">Pending Dues Found</span>
-                        </div>
-                        <ul className="list-disc pl-10 mt-2 text-md">
-                            {dues.map((due, index) => <li key={index}>{due}</li>)}
-                        </ul>
-                    </div>
-                )}
-                {(user.role === 'admin' || isOwner) && (
-                    <div className="mt-4">
-                        <Link 
-                            to="/portal/fees" 
-                            state={{ studentId: student.id }} 
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-700 transition hover:-translate-y-0.5"
-                        >
-                            <CurrencyDollarIcon className="w-5 h-5" />
-                            {user.role === 'admin' ? 'Go to Fee Management' : 'View Fees & Pay Online'}
-                        </Link>
-                    </div>
-                )}
-            </DetailSection>
+            
             
             <DetailSection title="School Conduct Log">
                 {canEdit && (

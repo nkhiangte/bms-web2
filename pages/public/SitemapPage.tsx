@@ -40,7 +40,6 @@ const SitemapPage: React.FC = () => {
                             <SiteLink to="/faculty" sub>Faculty</SiteLink>
                             <SiteLink to="/rules" sub>Rules & Regulations</SiteLink>
                             <SiteLink to="/admissions">Admissions</SiteLink>
-                            <SiteLink to="/fees" sub>Fee Structure</SiteLink>
                             <SiteLink to="/supplies" sub>School Supplies</SiteLink>
                             <SiteLink to="/student-life">Student Life</SiteLink>
                             <SiteLink to="/ncc" sub>NCC</SiteLink>

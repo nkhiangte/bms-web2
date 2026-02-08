@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { ChevronDownIcon, UserIcon } from './Icons';
@@ -30,7 +28,6 @@ const NavLinks: NavLinkItem[] = [
             { name: 'Admission Guidelines', path: '/admissions' },
             { name: 'Online Admission Form', path: '/admissions/online' },
             { name: 'Check Admission Status', path: '/admissions/status' },
-            { name: 'Fee Structure', path: '/fees' },
             { name: 'School Supplies', path: '/supplies' },
         ],
     },

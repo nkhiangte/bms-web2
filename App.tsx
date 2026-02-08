@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -26,8 +25,6 @@ import StaffDetailPage from './pages/StaffDetailPage';
 import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
-import FeesPage from './pages/public/FeesPage';
-import PortalFeesPage from './pages/FeeManagementPage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import GenerateTcPage from './pages/GenerateTcPage';
@@ -219,7 +216,7 @@ const App: React.FC = () => {
     setUser(null);
   };
 
-  // --- Data Update Handlers (Placeholders for real implementation) ---
+  // --- Data Update Handlers ---
   const handleUpdateFeePayments = async (studentId: string, payments: FeePayments) => {
       await db.collection('students').doc(studentId).update({ feePayments: payments });
   };
@@ -232,11 +229,6 @@ const App: React.FC = () => {
       });
       await batch.commit();
   };
-  
-  const handleUpdateFeeStructure = async (newStructure: FeeStructure) => {
-      await db.collection('config').doc('feeStructure').set(newStructure);
-      setFeeStructure(newStructure);
-  };
 
   const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {
       await db.collection('students').doc(studentId).update({ academicPerformance: performance });
@@ -245,7 +237,6 @@ const App: React.FC = () => {
   const handleUpdateGradeDefinition = async (grade: Grade, newDefinition: GradeDefinition) => {
       const newDefs = { ...gradeDefinitions, [grade]: newDefinition };
       await db.collection('config').doc('gradeDefinitions').set(newDefs);
-      setGradeDefinitions(newDefs);
   };
 
   // Auth Listener
@@ -272,7 +263,7 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Fetch Public/Protected Data
+  // Fetch Public Data & Real-time Config Listeners
   useEffect(() => {
     const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
     const unsubExamRoutines = db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
@@ -282,6 +273,58 @@ const App: React.FC = () => {
          setClassRoutines(routines);
     });
 
+    // Real-time School Settings
+    const unsubSchoolSettings = db.collection('config').doc('schoolSettings').onSnapshot(doc => {
+        if (doc.exists) setSchoolConfig(doc.data() as any);
+    });
+
+    // Real-time Fee Structure
+    const unsubFeeStructure = db.collection('config').doc('feeStructure').onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data() || {};
+            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
+                let heads: FeeHead[] = [];
+                if (oldSet && Array.isArray(oldSet.heads)) {
+                    heads = oldSet.heads;
+                } else if (oldSet) {
+                    if (oldSet.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
+                    if (oldSet.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
+                }
+                return { heads: heads.filter(h => h.name && !h.name.toLowerCase().includes('admission')) };
+            };
+            const updated = {
+                set1: migrateSet(data.set1),
+                set2: migrateSet(data.set2),
+                set3: migrateSet(data.set3),
+                gradeMap: data.gradeMap || FEE_SET_GRADES
+            };
+            setFeeStructure(updated as FeeStructure);
+        }
+    });
+
+    // Real-time Admission Settings
+    const unsubAdmSettings = db.collection('config').doc('admissionSettings').onSnapshot(doc => {
+        if (doc.exists) setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...doc.data() } as AdmissionSettings);
+    });
+
+    // Real-time Grade Definitions
+    const unsubGradeDefs = db.collection('config').doc('gradeDefinitions').onSnapshot(doc => {
+        if (doc.exists) setGradeDefinitions(doc.data() as any);
+    });
+
+    return () => {
+        unsubNews();
+        unsubExamRoutines();
+        unsubClassRoutines();
+        unsubSchoolSettings();
+        unsubFeeStructure();
+        unsubAdmSettings();
+        unsubGradeDefs();
+    };
+  }, []);
+
+  // Fetch Protected Data
+  useEffect(() => {
     if (user) {
         db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student))));
         db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
@@ -308,12 +351,6 @@ const App: React.FC = () => {
             db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setChoreRoster(d.data() as ChoreRoster));
         }
     }
-
-    return () => {
-        unsubNews();
-        unsubExamRoutines();
-        unsubClassRoutines();
-    };
   }, [user]);
 
   const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bmscpi.netlify.app/</loc></url></urlset>`;
@@ -336,7 +373,6 @@ const App: React.FC = () => {
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => (await db.collection('online_admissions').add(data)).id} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
-          <Route path="fees" element={<FeesPage user={user} feeStructure={feeStructure} students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} addNotification={addNotification} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />
@@ -401,7 +437,6 @@ const App: React.FC = () => {
            <Route path="staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user!} />} />
            <Route path="staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={async (r) => { await db.collection('serviceCertificates').add(r); }} user={user!} />} />
            <Route path="staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />
-           <Route path="fees" element={<PortalFeesPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} />} />
            <Route path="transfers" element={<TransferManagementPage />} />
            <Route path="transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={async (tc) => { await db.collection('tcRecords').add(tc); return true; }} isSaving={false} />} />
            <Route path="transfers/generate/:studentId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={async (tc) => { await db.collection('tcRecords').add(tc); return true; }} isSaving={false} />} />

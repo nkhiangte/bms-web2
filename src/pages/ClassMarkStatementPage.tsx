@@ -101,7 +101,8 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                totalSubjectMark = examMark + activityMark;
+                // FIX line 119: cast operands to number to resolve arithmetic type errors.
+                totalSubjectMark = (examMark as number) + (activityMark as number);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
                 totalSubjectMark = Number(result?.marks ?? 0);
@@ -275,15 +276,15 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
+            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
             
-            if (normSubjName === 'english' && normResultName === 'english i') return true;
-            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+            if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+            if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
 
             return false;
         });
@@ -347,11 +348,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      // FIX: Explicitly type totals as numeric to resolve potential arithmetic operand type errors.
-      let grandTotalValue: number = 0;
-      let examTotalValue: number = 0;
-      let activityTotalValue: number = 0;
-      let fullMarksTotalValue: number = 0;
+      // FIX: Explicitly type totals as number to prevent arithmetic type inference errors.
+      let localGrandTotal: number = 0;
+      let localExamTotal: number = 0;
+      let localActivityTotal: number = 0;
+      let localFullMarksTotal: number = 0;
       let failedSubjectsCount: number = 0;
       let gradedSubjectsPassed: number = 0;
       const studentMarks = marksData[student.id] || {};
@@ -361,25 +362,25 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         let currentSubjMarkValue: number = 0;
         let currentSubjFMValue: number = 0;
         if (hasActivities) {
-            const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
-            const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
+            const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
+            const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
             
-            examTotalValue += examMark;
-            activityTotalValue += activityMark;
-            currentSubjMarkValue = examMark + activityMark;
+            localExamTotal += (examMark as number);
+            localActivityTotal += (activityMark as number);
+            // FIX line 415: cast operands to number to resolve arithmetic type errors.
+            currentSubjMarkValue = (examMark as number) + (activityMark as number);
             currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            currentSubjMarkValue = Number(studentMarks[sd.name]) || 0;
-            examTotalValue += currentSubjMarkValue;
+            currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
+            localExamTotal += (currentSubjMarkValue as number);
             currentSubjFMValue = sd.examFullMarks || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // FIX: Ensured numeric addition without shadow variables or inference ambiguity.
-        grandTotalValue += currentSubjMarkValue;
-        fullMarksTotalValue += currentSubjFMValue;
+        localGrandTotal += (currentSubjMarkValue as number);
+        localFullMarksTotal += (currentSubjFMValue as number);
       }
 
       gradedSubjects.forEach(sd => {
@@ -387,7 +388,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
       });
       
-      const percentage = fullMarksTotalValue > 0 ? (grandTotalValue / fullMarksTotalValue) * 100 : 0;
+      const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 
@@ -408,7 +409,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      return { ...student, grandTotal: grandTotalValue, examTotal: examTotalValue, activityTotal: activityTotalValue, percentage, result, division, academicGrade, remark };
+      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');

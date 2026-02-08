@@ -89,7 +89,7 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        // FIX: Explicitly typed numeric accumulators to avoid potential arithmetic operand type errors.
+        // FIX: Explicitly typed to number to prevent arithmetic type inference errors.
         let localGrandTotal: number = 0;
         let failedSubjectsCount: number = 0;
         let gradedSubjectsPassed: number = 0;
@@ -101,14 +101,14 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                totalSubjectMark = examMark + activityMark;
+                // FIX line 119: cast operands to number to resolve arithmetic type errors.
+                totalSubjectMark = (examMark as number) + (activityMark as number);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
                 totalSubjectMark = Number(result?.marks ?? 0);
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // FIX: Ensured numeric assignment using += on explicitly typed number.
             localGrandTotal += totalSubjectMark;
         }
 
@@ -275,15 +275,15 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
+            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
             
-            if (normSubjName === 'english' && normResultName === 'english i') return true;
-            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+            if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+            if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
 
             return false;
         });
@@ -347,40 +347,39 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      // FIX: Explicitly typed arithmetic accumulators to avoid potential operand type errors.
-      let grandTotalAccumulator: number = 0;
-      let examTotalAccumulator: number = 0;
-      let activityTotalAccumulator: number = 0;
-      let fullMarksTotalAccumulator: number = 0;
+      // FIX: Explicitly type totals as number to prevent arithmetic type inference errors.
+      let localGrandTotal: number = 0;
+      let localExamTotal: number = 0;
+      let localActivityTotal: number = 0;
+      let localFullMarksTotal: number = 0;
       let failedSubjectsCount: number = 0;
       let gradedSubjectsPassed: number = 0;
       const studentMarks = marksData[student.id] || {};
       const failedSubjectsList: string[] = [];
 
       for (const sd of numericSubjects) {
-        // FIX: Explicitly typed numeric variables.
-        let localSubjMark: number = 0;
-        let localSubjFM: number = 0;
+        let currentSubjMarkValue: number = 0;
+        let currentSubjFMValue: number = 0;
         if (hasActivities) {
-            const examMark = Number(studentMarks[sd.name + '_exam']) || 0;
-            const activityMark = Number(studentMarks[sd.name + '_activity']) || 0;
+            const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
+            const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
             
-            examTotalAccumulator += examMark;
-            activityTotalAccumulator += activityMark;
-            localSubjMark = examMark + activityMark;
-            localSubjFM = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            localExamTotal += (examMark as number);
+            localActivityTotal += (activityMark as number);
+            // FIX line 415: cast operands to number to resolve arithmetic type errors.
+            currentSubjMarkValue = (examMark as number) + (activityMark as number);
+            currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            localSubjMark = Number(studentMarks[sd.name]) || 0;
-            examTotalAccumulator += localSubjMark;
-            localSubjFM = sd.examFullMarks || 0;
+            currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
+            localExamTotal += (currentSubjMarkValue as number);
+            currentSubjFMValue = sd.examFullMarks || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-            if (localSubjMark < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+            if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        // FIX: Ensured numeric addition using += on explicitly typed variables.
-        grandTotalAccumulator += localSubjMark;
-        fullMarksTotalAccumulator += localSubjFM;
+        localGrandTotal += (currentSubjMarkValue as number);
+        localFullMarksTotal += (currentSubjFMValue as number);
       }
 
       gradedSubjects.forEach(sd => {
@@ -388,7 +387,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
       });
       
-      const percentage = fullMarksTotalAccumulator > 0 ? (grandTotalAccumulator / fullMarksTotalAccumulator) * 100 : 0;
+      const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 
@@ -409,7 +408,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      return { ...student, grandTotal: grandTotalAccumulator, examTotal: examTotalAccumulator, activityTotal: activityTotalAccumulator, percentage, result, division, academicGrade, remark };
+      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
@@ -420,4 +419,277 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             return { ...s, rank: '-' as const };
         }
         const rankIndex = uniqueScores.indexOf(s.grandTotal);
-        return { ...s
+        return { ...s, rank: rankIndex !== -1 ? (rankIndex + 1) : '-' as const };
+    });
+    
+    let sortedData = finalData;
+
+    if (sortCriteria === 'name') {
+        sortedData.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortCriteria === 'totalMarks') {
+        sortedData.sort((a, b) => {
+            const aIsFail = a.result === 'FAIL';
+            const bIsFail = b.result === 'FAIL';
+
+            if (aIsFail && !bIsFail) return 1;
+            if (!aIsFail && bIsFail) return -1;
+            
+            return b.grandTotal - a.grandTotal;
+        });
+    } else {
+        sortedData.sort((a, b) => a.rollNo - b.rollNo);
+    }
+    
+    return sortedData as ProcessedStudent[];
+  }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, sortCriteria]);
+
+  const handleConfirmSave = async () => {
+    if (!examDetails || changedStudents.size === 0) return;
+    setIsSaving(true);
+
+    const updatePromises = Array.from(changedStudents).map(studentId => {
+        const student = classStudents.find(s => s.id === studentId);
+        if (!student) return Promise.resolve();
+
+        const studentMarks = marksData[studentId] || {};
+        const originalExam = student.academicPerformance?.find(e => e.id === examId);
+
+        const newResults = subjectDefinitions.map(sd => {
+            const originalResult = originalExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const newResult: SubjectMark = { subject: sd.name, ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) };
+
+            if (sd.gradingSystem === 'OABC') {
+                if (studentMarks[sd.name]) newResult.grade = studentMarks[sd.name] as any;
+            } else if (hasActivities) {
+                if (studentMarks[sd.name + '_exam'] !== undefined) newResult.examMarks = studentMarks[sd.name + '_exam'] as number;
+                if (studentMarks[sd.name + '_activity'] !== undefined) newResult.activityMarks = studentMarks[sd.name + '_activity'] as number;
+            } else {
+                if (studentMarks[sd.name] !== undefined) newResult.marks = studentMarks[sd.name] as number;
+            }
+            return newResult;
+        }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.grade != null);
+
+        const newExamData: Exam = {
+            id: examId as any,
+            name: examDetails.name,
+            results: newResults,
+        };
+        
+        if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
+            newExamData.attendance = { 
+                totalWorkingDays: attendanceData[studentId].totalWorkingDays!, 
+                daysPresent: attendanceData[studentId].daysPresent! 
+            };
+        }
+
+        const newPerformance: Exam[] = [...(student.academicPerformance?.filter(e => e.id !== examId) || []), newExamData];
+        return onUpdateAcademic(studentId, newPerformance);
+    });
+
+    await Promise.all(updatePromises);
+    setChangedStudents(new Set());
+    setIsSaving(false);
+    setIsConfirmSaveModalOpen(false);
+  };
+
+  const handleSaveSubjects = async (newDef: GradeDefinition) => {
+        if(grade) {
+            await onUpdateGradeDefinition(grade, newDef);
+            setIsEditSubjectsModalOpen(false);
+        }
+  }
+
+  if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
+
+  return (
+    <>
+    <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 flex justify-between items-center print-hidden">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
+            <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
+        </div>
+        <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
+            <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
+        </div>
+
+        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
+            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
+            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
+                <button 
+                    onClick={() => setSortCriteria('rollNo')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Roll No
+                </button>
+                <button
+                    onClick={() => setSortCriteria('name')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Name
+                </button>
+                <button
+                    onClick={() => setSortCriteria('totalMarks')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Total Marks
+                </button>
+            </div>
+        </div>
+        
+        <div className="mt-2 overflow-x-auto border rounded-lg">
+            <table id="mark-statement-table" className="min-w-full text-sm">
+                 <thead className="bg-slate-100">
+                    <tr>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
+                        
+                        {subjectDefinitions.map(sd => {
+                            if (hasActivities && sd.gradingSystem !== 'OABC') {
+                                return <th key={sd.name} colSpan={2} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">{sd.name}</th>;
+                            } else {
+                                return <th key={sd.name} rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{sd.name}</th>;
+                            }
+                        })}
+                        
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Rank</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Result</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-l min-w-48 align-middle">Remark</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Working Days</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Days Present</th>
+                    </tr>
+                    {hasActivities && (
+                        <tr>
+                            {subjectDefinitions.flatMap(sd => 
+                                sd.gradingSystem !== 'OABC' ? [
+                                    <th key={`${sd.name}-exam`} className="px-2 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l">Exam</th>,
+                                    <th key={`${sd.name}-activity`} className="px-2 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l border-r">Activity</th>
+                                ] : []
+                            )}
+                        </tr>
+                    )}
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                    {processedData.map(student => (
+                        <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
+                            <td className="px-3 py-2 font-bold text-center border-r sticky left-0 bg-inherit">{student.rollNo}</td>
+                            <td className="px-3 py-2 font-medium border-r">{student.name}</td>
+                            
+                            {subjectDefinitions.map(sd => {
+                                const isOABC = sd.gradingSystem === 'OABC';
+
+                                if (isOABC) {
+                                    return (
+                                        <td key={sd.name} colSpan={1} className="px-1 py-1 border-l text-center">
+                                            <select
+                                                value={marksData[student.id]?.[sd.name] as string ?? ''}
+                                                onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
+                                                className="form-select w-20 text-center"
+                                            >
+                                                <option value="">-</option>
+                                                {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                                            </select>
+                                        </td>
+                                    );
+                                }
+
+                                if (hasActivities) {
+                                    return (
+                                        <React.Fragment key={sd.name}>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                        </React.Fragment>
+                                    );
+                                }
+                                
+                                return (
+                                    <td key={sd.name} className="px-1 py-1 border-l text-center">
+                                        <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} className="form-input w-20 text-center" placeholder="-" />
+                                    </td>
+                                );
+                            })}
+
+                            <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{student.grandTotal}</td>
+                            <td className="px-3 py-2 text-center border-l">{student.percentage.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-center font-bold border-l">{student.rank}</td>
+                            <td className="px-3 py-2 text-center border-l">{isClassIXorX ? student.division : '-'}</td>
+                            <td className={`px-3 py-2 text-center font-bold border-l ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
+                            <td className="px-3 py-2 text-sm border-l">{student.remark}</td>
+                            <td className="px-1 py-1 border-l">
+                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
+                            </td>
+                            <td className="px-1 py-1 border-l">
+                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-4 print-hidden">
+            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary transition-colors">
+                <CogIcon className="w-5 h-5" /> Manage Subjects
+            </button>
+            <Link
+                to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
+                target="_blank"
+                className="btn btn-secondary transition-colors"
+            >
+                <PrinterIcon className="w-5 h-5" />
+                Bulk Print Reports
+            </Link>
+            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary transition-colors">
+                <InboxArrowDownIcon className="w-5 h-5" /> Import Marks
+            </button>
+            <button
+                onClick={() => setIsConfirmSaveModalOpen(true)}
+                disabled={isSaving || changedStudents.size === 0}
+                className="btn btn-primary transition-colors disabled:opacity-50"
+            >
+                {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
+                <span>Save Changes ({changedStudents.size})</span>
+            </button>
+        </div>
+    </div>
+    
+    <ConfirmationModal
+        isOpen={isConfirmSaveModalOpen}
+        onClose={() => setIsConfirmSaveModalOpen(false)}
+        onConfirm={handleConfirmSave}
+        title="Save Changes"
+        confirmDisabled={isSaving}
+    >
+        <p>Save marks for {changedStudents.size} student(s)?</p>
+    </ConfirmationModal>
+
+    {examDetails && <ImportMarksModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyImport={handleApplyImport}
+        classStudents={classStudents}
+        subjectDefinitions={subjectDefinitions}
+        examName={examDetails.name}
+        hasActivities={hasActivities}
+        isSaving={isSaving}
+    />}
+    
+    {grade && gradeDefinitions[grade] && <EditSubjectsModal
+        isOpen={isEditSubjectsModalOpen}
+        onClose={() => setIsEditSubjectsModalOpen(false)}
+        onSave={handleSaveSubjects}
+        grade={grade}
+        initialGradeDefinition={gradeDefinitions[grade]}
+    />}
+    </>
+  );
+};
+
+export default ClassMarkStatementPage;

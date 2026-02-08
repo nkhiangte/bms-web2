@@ -383,7 +383,11 @@ const App: React.FC = () => {
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
               const ref = db.collection('online_admissions').doc();
               const customId = `BMS${ref.id}`;
-              await db.collection('online_admissions').doc(customId).set(data);
+              const admissionData = {
+                  ...data,
+                  temporaryStudentId: customId
+              };
+              await db.collection('online_admissions').doc(customId).set(admissionData);
               return customId;
           }} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />

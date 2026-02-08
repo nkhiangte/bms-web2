@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead } from './types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet } from './types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from './constants';
 import { db, auth, firebase } from './firebaseConfig';
 
@@ -112,6 +112,7 @@ import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
+import FeeManagementPage from './pages/FeeManagementPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -239,6 +240,16 @@ const App: React.FC = () => {
       await db.collection('config').doc('gradeDefinitions').set(newDefs);
   };
 
+  const handleUpdateFeeStructure = async (newStructure: FeeStructure) => {
+      try {
+          await db.collection('config').doc('feeStructure').set(newStructure);
+          return true;
+      } catch (error) {
+          console.error("Error updating fee structure:", error);
+          return false;
+      }
+  };
+
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -278,27 +289,25 @@ const App: React.FC = () => {
         if (doc.exists) setSchoolConfig(doc.data() as any);
     });
 
-    // Real-time Fee Structure
+    // Real-time Fee Structure with Safety Migration
     const unsubFeeStructure = db.collection('config').doc('feeStructure').onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data() || {};
-            const migrateSet = (oldSet: any): { heads: FeeHead[] } => {
-                let heads: FeeHead[] = [];
-                if (oldSet && Array.isArray(oldSet.heads)) {
-                    heads = oldSet.heads;
-                } else if (oldSet) {
-                    if (oldSet.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
-                    if (oldSet.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
-                }
-                return { heads: heads.filter(h => h.name && !h.name.toLowerCase().includes('admission')) };
+            const migrateSet = (oldSet: any): FeeSet => {
+                if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
+                // Basic migration for legacy flat data if any
+                const heads: FeeHead[] = [];
+                if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
+                if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
+                return { heads };
             };
-            const updated = {
+            const updated: FeeStructure = {
                 set1: migrateSet(data.set1),
                 set2: migrateSet(data.set2),
                 set3: migrateSet(data.set3),
                 gradeMap: data.gradeMap || FEE_SET_GRADES
             };
-            setFeeStructure(updated as FeeStructure);
+            setFeeStructure(updated);
         }
     });
 
@@ -481,6 +490,7 @@ const App: React.FC = () => {
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
+           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} />} />
         </Route>
       </Routes>
     </>

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '../types';
@@ -143,7 +142,8 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
                             <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
-                            
+                            {/* FIX: Re-added missing ActionCard opening tag for Fee Status */}
+                            <ActionCard title="Fee Status" link="/portal/fees" state={{ studentId: student.id }} icon={<CurrencyDollarIcon className="w-6 h-6 text-emerald-600"/>}>
                                 {dues.total > 0 ? <span className="font-bold text-red-700">₹{dues.total.toLocaleString()} Due</span> : <span className="font-bold text-emerald-700">All Fees Paid</span>}
                             </ActionCard>
                         </div>

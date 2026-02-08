@@ -1,10 +1,8 @@
-
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '../types';
 import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '../components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp } from '../utils';
-import ExamFeeCollectionModal from '../components/ExamFeeCollectionModal';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
@@ -43,7 +41,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const navigate = useNavigate();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
 
     const classStudents = useMemo(() => {
         if (!grade) return [];
@@ -135,7 +132,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                             <Link to={`/portal/classes/${encodeURIComponent(grade)}/attendance`} className="btn btn-secondary whitespace-nowrap">
                                 <CalendarDaysIcon className="w-5 h-5"/> Attendance
                             </Link>
-                            
                             <button onClick={() => onAddStudentToClass(grade)} className="btn btn-primary whitespace-nowrap">
                                 <PlusIcon className="w-5 h-5"/> Add Student
                             </button>
@@ -153,9 +149,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
             ) : (
                 <div className="space-y-3">
                     {filteredStudents.map(student => {
-                        const dues = calculateDues(student, feeStructure);
-                        const hasDues = dues.length > 0;
-                        
                         return (
                             <div key={student.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-white hover:shadow-md transition-all">
                                 <div className="flex items-center gap-3 sm:gap-4">
@@ -175,16 +168,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                 </div>
                                 
                                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                                     {hasDues ? (
-                                        <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200 whitespace-nowrap">
-                                            Dues Pending
-                                        </span>
-                                     ) : (
-                                         <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 whitespace-nowrap">
-                                            Fees Cleared
-                                        </span>
-                                     )}
-                                     
                                      <div className="flex items-center gap-2">
                                          {student.contact && (
                                              <>
@@ -208,8 +191,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                     })}
                 </div>
             )}
-
-           
+        </div>
     );
 };
 

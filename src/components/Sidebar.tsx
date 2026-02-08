@@ -43,7 +43,6 @@ const publicNavLinks = [
     { name: 'About Us', path: '/about' },
     { name: 'Academics', path: '/academics' },
     { name: 'Admissions', path: '/admissions' },
-    { name: 'Fees', path: '/fees' },
     { name: 'Student Life', path: '/student-life' },
     { name: 'Facilities', path: '/facilities' },
     { name: 'Faculty', path: '/faculty' },

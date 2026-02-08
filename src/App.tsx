@@ -27,7 +27,6 @@ import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import FeesPage from './pages/public/FeesPage';
-import PortalFeesPage from './pages/FeeManagementPage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import GenerateTcPage from './pages/GenerateTcPage';
@@ -231,17 +230,6 @@ const App: React.FC = () => {
           batch.update(ref, { feePayments: payments });
       });
       await batch.commit();
-  };
-  
-  const onUpdateFeeStructure = async (newStructure: FeeStructure) => {
-      try {
-          const sanitized = JSON.parse(JSON.stringify(newStructure));
-          await db.collection('config').doc('feeStructure').set(sanitized);
-          return true;
-      } catch (error) {
-          console.error("Firestore update failed for feeStructure:", error);
-          throw error;
-      }
   };
 
   const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {
@@ -456,7 +444,6 @@ const App: React.FC = () => {
            <Route path="staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user!} />} />
            <Route path="staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={async (r) => { await db.collection('serviceCertificates').add(r); }} user={user!} />} />
            <Route path="staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />
-           <Route path="fees" element={<PortalFeesPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={onUpdateFeeStructure} addNotification={addNotification} />} />
            <Route path="transfers" element={<TransferManagementPage />} />
            <Route path="transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={async (tc) => { await db.collection('tcRecords').add(tc); return true; }} isSaving={false} />} />
            <Route path="transfers/generate/:studentId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={async (tc) => { await db.collection('tcRecords').add(tc); return true; }} isSaving={false} />} />

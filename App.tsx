@@ -113,7 +113,6 @@ import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
-// FIX: Added missing import for FeesPage
 import FeesPage from './pages/public/FeesPage';
 
 import NotificationContainer from './components/NotificationContainer';
@@ -409,7 +408,22 @@ const App: React.FC = () => {
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
-          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => (await db.collection('online_admissions').add(data)).id} />} />
+          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
+              // Generate a doc reference to get a random Firestore-style ID string
+              const docRef = db.collection('online_admissions').doc();
+              // Prefix the random ID with 'BMS' as requested
+              const bmsId = `BMS${docRef.id}`;
+              
+              const admissionData = {
+                  ...data,
+                  id: bmsId,
+                  temporaryStudentId: bmsId
+              };
+              
+              // Save the document with the prefixed ID
+              await db.collection('online_admissions').doc(bmsId).set(admissionData);
+              return bmsId;
+          }} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />

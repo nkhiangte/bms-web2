@@ -100,8 +100,8 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                // FIX: ensure operands are treated as number primitives during addition.
-                totalSubjectMark = Number(examMark) + Number(activityMark);
+                // FIX: ensured operands are treated as number primitives during addition.
+                totalSubjectMark = examMark + activityMark;
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
                 totalSubjectMark = Number(result?.marks ?? 0);
@@ -157,20 +157,22 @@ const calculateTermSummary = (
         if (hasActivities) {
             const examMark = Number(result?.examMarks ?? 0);
             const activityMark = Number(result?.activityMarks ?? 0);
-            examTotal += Number(examMark);
-            activityTotal += Number(activityMark);
-            totalSubjMark = Number(examMark) + Number(activityMark);
-            subjectFM = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
+            examTotal += examMark;
+            activityTotal += activityMark;
+            // FIX: ensured operands are treated as number primitives during addition.
+            totalSubjMark = examMark + activityMark;
+            // FIX: ensured operands are treated as number primitives during addition.
+            subjectFM = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
             totalSubjMark = Number(result?.marks ?? 0);
-            examTotal += Number(totalSubjMark);
+            examTotal += totalSubjMark;
             subjectFM = Number(sd.examFullMarks);
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjMark < failLimit) failedSubjects.push(sd.name);
         }
-        grandTotal += Number(totalSubjMark);
-        fullMarksTotal += Number(subjectFM);
+        grandTotal += totalSubjMark;
+        fullMarksTotal += subjectFM;
     });
 
     gradedSubjects.forEach(sd => {
@@ -363,22 +365,23 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
             
-            localExamTotal += Number(examMark);
-            localActivityTotal += Number(activityMark);
-            // FIX: ensure operands are treated as number primitives during addition.
-            currentSubjMarkValue = Number(examMark) + Number(activityMark);
-            currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            localExamTotal += examMark;
+            localActivityTotal += activityMark;
+            // FIX: ensured operands are treated as number primitives during addition.
+            currentSubjMarkValue = examMark + activityMark;
+            // FIX: ensured operands are treated as number primitives during addition.
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
-            localExamTotal += Number(currentSubjMarkValue);
-            currentSubjFMValue = sd.examFullMarks || 0;
+            localExamTotal += currentSubjMarkValue;
+            currentSubjFMValue = Number(sd.examFullMarks || 0);
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        localGrandTotal += Number(currentSubjMarkValue);
-        localFullMarksTotal += Number(currentSubjFMValue);
+        localGrandTotal += currentSubjMarkValue;
+        localFullMarksTotal += currentSubjFMValue;
       }
 
       gradedSubjects.forEach(sd => {

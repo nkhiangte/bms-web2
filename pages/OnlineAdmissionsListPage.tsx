@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { OnlineAdmission } from '../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon } from '../components/Icons';
+import { OnlineAdmission, Student } from '../types';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon, UserIcon } from '../components/Icons';
 import { formatDateForDisplay } from '../utils';
 import ConfirmationModal from '../components/ConfirmationModal';
+import EnrollStudentModal from '../components/EnrollStudentModal';
 
 const { useNavigate } = ReactRouterDOM as any;
 
@@ -21,6 +22,8 @@ interface OnlineAdmissionsListPageProps {
     admissions: OnlineAdmission[];
     onUpdateStatus: (id: string, status: OnlineAdmission['status']) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
+    onEnrollStudent: (admissionId: string, studentData: Omit<Student, 'id'>) => Promise<void>;
+    academicYear: string;
 }
 
 const getStatusBadge = (status: OnlineAdmission['status']) => {
@@ -42,7 +45,8 @@ const AdmissionDetailsModal: React.FC<{
     onImageClick: (src: string, alt: string) => void;
     onNavigateToEdit: (admission: OnlineAdmission) => void;
     onNavigateToPayment: (admission: OnlineAdmission) => void;
-}> = ({ admission, onClose, onUpdateStatus, updatingStatus, onImageClick, onNavigateToEdit, onNavigateToPayment }) => {
+    onEnrollClick: (admission: OnlineAdmission) => void;
+}> = ({ admission, onClose, onUpdateStatus, updatingStatus, onImageClick, onNavigateToEdit, onNavigateToPayment, onEnrollClick }) => {
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
@@ -161,9 +165,17 @@ const AdmissionDetailsModal: React.FC<{
                                         <option value="draft">Draft</option>
                                         <option value="pending">Pending</option>
                                         <option value="reviewed">Reviewed</option>
-                                        <option value="approved">Approved (Enroll)</option>
+                                        <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
                                     </select>
+                                )}
+                                {!admission.isEnrolled && (admission.status === 'approved' || admission.status === 'reviewed') && (
+                                    <button 
+                                        onClick={() => onEnrollClick(admission)}
+                                        className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 text-xs py-2 h-auto"
+                                    >
+                                        Finalize Enrollment
+                                    </button>
                                 )}
                             </div>
 
@@ -181,9 +193,6 @@ const AdmissionDetailsModal: React.FC<{
                                     <CurrencyDollarIcon className="w-4 h-4" /> Go to Payment
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-500 italic">
-                                {admission.isEnrolled ? "Student is already enrolled." : "Approving will automatically enroll the student into the class."}
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -195,7 +204,7 @@ const AdmissionDetailsModal: React.FC<{
     );
 }
 
-const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ admissions, onUpdateStatus, onDelete }) => {
+const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ admissions, onUpdateStatus, onDelete, onEnrollStudent, academicYear }) => {
     const navigate = useNavigate();
 
     const [filterStatus, setFilterStatus] = useState<'all' | OnlineAdmission['status']>('all');
@@ -204,6 +213,10 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
     const [selectedAdmission, setSelectedAdmission] = useState<OnlineAdmission | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Enrollment state
+    const [enrollingAdmission, setEnrollingAdmission] = useState<OnlineAdmission | null>(null);
+    const [isProcessingEnrollment, setIsProcessingEnrollment] = useState(false);
 
     const filteredAdmissions = admissions.filter(a => filterStatus === 'all' || a.status === filterStatus)
         .sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime());
@@ -213,11 +226,24 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
         await onUpdateStatus(id, newStatus);
         setUpdatingStatus(prev => ({ ...prev, [id]: false }));
         if (selectedAdmission && selectedAdmission.id === id) {
-             const updated = admissions.find(a => a.id === id); 
              setSelectedAdmission(prev => prev ? ({ ...prev, status: newStatus }) : null);
         }
     };
     
+    const handleEnroll = async (studentData: Omit<Student, 'id'>) => {
+        if (!enrollingAdmission) return;
+        setIsProcessingEnrollment(true);
+        try {
+            await onEnrollStudent(enrollingAdmission.id, studentData);
+            setEnrollingAdmission(null);
+        } catch (error) {
+            console.error("Enrollment failed:", error);
+            alert("Enrollment failed. Please try again.");
+        } finally {
+            setIsProcessingEnrollment(false);
+        }
+    };
+
     // Sync selectedAdmission with props update
     React.useEffect(() => {
         if(selectedAdmission) {
@@ -309,7 +335,10 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            {getStatusBadge(app.status)}
+                                            <div className="flex flex-col items-center gap-1">
+                                                {getStatusBadge(app.status)}
+                                                {app.isEnrolled && <span className="text-[10px] font-bold text-emerald-600">ENROLLED</span>}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <div className="flex items-center justify-center gap-2">
@@ -320,6 +349,15 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                                                 >
                                                     <EyeIcon className="w-5 h-5" />
                                                 </button>
+                                                {!app.isEnrolled && (app.status === 'approved' || app.status === 'reviewed') && (
+                                                    <button 
+                                                        onClick={() => setEnrollingAdmission(app)}
+                                                        className="text-emerald-600 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 p-2 rounded-full transition-colors"
+                                                        title="Finalize Enrollment"
+                                                    >
+                                                        <UserIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                                 {onDelete && (
                                                     <button 
                                                         onClick={() => setDeletingId(app.id)}
@@ -355,6 +393,19 @@ const OnlineAdmissionsListPage: React.FC<OnlineAdmissionsListPageProps> = ({ adm
                     onImageClick={(src, alt) => setLightboxImage({ src, alt })}
                     onNavigateToEdit={navigateToEdit}
                     onNavigateToPayment={navigateToPayment}
+                    onEnrollClick={setEnrollingAdmission}
+                />
+            )}
+
+            {/* Enrollment Modal */}
+            {enrollingAdmission && (
+                <EnrollStudentModal 
+                    isOpen={!!enrollingAdmission}
+                    onClose={() => setEnrollingAdmission(null)}
+                    onEnroll={handleEnroll}
+                    admission={enrollingAdmission}
+                    academicYear={academicYear}
+                    isProcessing={isProcessingEnrollment}
                 />
             )}
 

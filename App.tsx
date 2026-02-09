@@ -251,6 +251,35 @@ const App: React.FC = () => {
       }
   };
 
+  const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
+      try {
+          const batch = db.batch();
+          
+          // 1. Create the student document
+          const studentRef = db.collection('students').doc();
+          batch.set(studentRef, { 
+              ...studentData, 
+              status: 'Active',
+              photographUrl: '' // Should handle if mapping from admission
+          });
+
+          // 2. Update the admission record
+          const admissionRef = db.collection('online_admissions').doc(admissionId);
+          batch.update(admissionRef, {
+              status: 'approved',
+              isEnrolled: true,
+              temporaryStudentId: studentData.studentId // Update with permanent ID for history
+          });
+
+          await batch.commit();
+          addNotification(`Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`, 'success', 'Enrollment Complete');
+      } catch (error) {
+          console.error("Enrollment failed:", error);
+          addNotification("Failed to enroll student. Please check database permissions.", 'error', 'Enrollment Failed');
+          throw error;
+      }
+  };
+
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -493,7 +522,7 @@ const App: React.FC = () => {
            <Route path="exams" element={<ExamSelectionPage />} />
            <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />
            <Route path="admission-settings" element={<AdmissionSettingsPage admissionConfig={admissionSettings} onUpdateConfig={async (c) => { await db.collection('config').doc('admissionSettings').set(c); return true; }} />} />
-           <Route path="admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={async (id, s) => { await db.collection('online_admissions').doc(id).update({ status: s }); }} onDelete={async (id) => { await db.collection('online_admissions').doc(id).delete(); }} />} />
+           <Route path="admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={async (id, s) => { await db.collection('online_admissions').doc(id).update({ status: s }); }} onDelete={async (id) => { await db.collection('online_admissions').doc(id).delete(); }} onEnrollStudent={handleEnrollStudent} academicYear={academicYear} />} />
            <Route path="homework-scanner" element={<HomeworkScannerPage />} />
            <Route path="activity-log" element={<ActivityLogPage students={students} user={user!} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={async () => {}} />} />
            <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async (hw) => { await db.collection('homework').add(hw); }} onDelete={async (id) => { await db.collection('homework').doc(id).delete(); }} allHomework={homework} />} />

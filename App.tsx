@@ -113,6 +113,7 @@ import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
+// FIX: Added missing import for FeesPage
 import FeesPage from './pages/public/FeesPage';
 
 import NotificationContainer from './components/NotificationContainer';
@@ -259,8 +260,7 @@ const App: React.FC = () => {
           const studentRef = db.collection('students').doc();
           batch.set(studentRef, { 
               ...studentData, 
-              status: 'Active',
-              photographUrl: '' // Should handle if mapping from admission
+              status: 'Active'
           });
 
           // 2. Update the admission record
@@ -268,7 +268,7 @@ const App: React.FC = () => {
           batch.update(admissionRef, {
               status: 'approved',
               isEnrolled: true,
-              temporaryStudentId: studentData.studentId // Update with permanent ID for history
+              temporaryStudentId: studentData.studentId // Store the permanent ID
           });
 
           await batch.commit();
@@ -409,16 +409,7 @@ const App: React.FC = () => {
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
-          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
-              const ref = db.collection('online_admissions').doc();
-              const customId = `BMS${ref.id}`;
-              const admissionData = {
-                  ...data,
-                  temporaryStudentId: customId
-              };
-              await db.collection('online_admissions').doc(customId).set(admissionData);
-              return customId;
-          }} />} />
+          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => (await db.collection('online_admissions').add(data)).id} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />

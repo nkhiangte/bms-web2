@@ -101,15 +101,14 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                // FIX line 119: cast operands to number to resolve arithmetic type errors.
-                totalSubjectMark = (examMark as number) + (activityMark as number);
+                // FIX: ensure operands are treated as number primitives during addition.
+                totalSubjectMark = Number(examMark) + Number(activityMark);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
                 totalSubjectMark = Number(result?.marks ?? 0);
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
                 if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
             }
-            // FIX: Use += for cleaner numeric addition and ensured type safety.
             localGrandTotal += totalSubjectMark;
         }
 
@@ -276,15 +275,16 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+            // FIX: Corrected variable name from normSubjDefName to normSubjName.
+            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
-            if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-            if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (normSubjName === 'english' && normResultName === 'english i') return true;
+            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
+            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
+            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
 
             return false;
         });
@@ -365,22 +365,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
             
-            localExamTotal += (examMark as number);
-            localActivityTotal += (activityMark as number);
-            // FIX line 415: cast operands to number to resolve arithmetic type errors.
-            currentSubjMarkValue = (examMark as number) + (activityMark as number);
+            localExamTotal += Number(examMark);
+            localActivityTotal += Number(activityMark);
+            // FIX: ensure operands are treated as number primitives during addition.
+            currentSubjMarkValue = Number(examMark) + Number(activityMark);
             currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
-            localExamTotal += (currentSubjMarkValue as number);
+            localExamTotal += Number(currentSubjMarkValue);
             currentSubjFMValue = sd.examFullMarks || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        localGrandTotal += (currentSubjMarkValue as number);
-        localFullMarksTotal += (currentSubjFMValue as number);
+        localGrandTotal += Number(currentSubjMarkValue);
+        localFullMarksTotal += Number(currentSubjFMValue);
       }
 
       gradedSubjects.forEach(sd => {

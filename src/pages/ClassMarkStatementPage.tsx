@@ -135,7 +135,7 @@ const calculateTermSummary = (
             finalRankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = uniqueScores.indexOf(s.grandTotal);
-            const rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
+            const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
             finalRankedData.set(s.id, { ...s, rank });
         }
     });
@@ -346,7 +346,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-      // FIX: Explicitly type totals as number to prevent arithmetic type inference errors.
+// FIX: Explicitly type and initialize arithmetic variables as numbers to avoid type errors.
       let localGrandTotal: number = 0;
       let localExamTotal: number = 0;
       let localActivityTotal: number = 0;
@@ -365,7 +365,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             
             localExamTotal = Number(localExamTotal) + Number(examMark);
             localActivityTotal = Number(localActivityTotal) + Number(activityMark);
-            // FIX: ensure operands are treated as number primitives during addition.
             currentSubjMarkValue = Number(examMark) + Number(activityMark);
             currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
             

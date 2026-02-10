@@ -137,7 +137,7 @@ const HomeworkScannerPage: React.FC = () => {
             const textPart = { text: getPromptForType(scanType) };
             
             const response = await ai.models.generateContent({
-                // FIX: Updated model to 'gemini-3-flash-preview' for multi-modal tasks, as per guidelines.
+// FIX: Updated model to 'gemini-3-flash-preview' for multi-modal tasks, as per guidelines.
                 model: 'gemini-3-flash-preview',
                 contents: { parts: [imagePart, textPart] },
             });

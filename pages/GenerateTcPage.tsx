@@ -124,6 +124,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
             const promptText = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
             
             const response = await ai.models.generateContent({
+// FIX: Updated model to 'gemini-3-flash-preview' for text-based tasks, replacing deprecated 'gemini-pro'.
                 model: 'gemini-3-flash-preview',
                 contents: promptText,
             });

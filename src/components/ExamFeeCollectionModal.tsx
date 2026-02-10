@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Student, Grade, FeePayments, FeeStructure } from '../types';
 import { getFeeDetails } from '../utils';
@@ -19,7 +18,7 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
     const [isSaving, setIsSaving] = useState(false);
     const feeDetails = getFeeDetails(grade, feeStructure);
     // FIX: Calculate total exam fee from fee heads instead of non-existent property.
-    const totalExamFee = feeDetails.heads
+    const totalExamFee = (feeDetails.heads || [])
         .filter(h => h.type === 'term')
         .reduce((sum, h) => sum + h.amount, 0);
 

@@ -135,7 +135,7 @@ const calculateTermSummary = (
             finalRankedData.set(s.id, { ...s, rank: '-' });
         } else {
             const rankIndex = uniqueScores.indexOf(s.grandTotal);
-            const rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
+            const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
             finalRankedData.set(s.id, { ...s, rank });
         }
     });
@@ -346,7 +346,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-        // FIX: Explicitly type arithmetic variables as numbers to avoid type narrowing errors.
+        // FIX: Initialize all local variables to 0 to prevent arithmetic operations on undefined.
         let localGrandTotal: number = 0;
         let localExamTotal: number = 0;
         let localActivityTotal: number = 0;
@@ -357,28 +357,28 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const failedSubjectsList: string[] = [];
 
         for (const sd of numericSubjects) {
+            // FIX: Initialize all local variables to 0 to prevent arithmetic operations on undefined.
             let currentSubjMarkValue: number = 0;
             let currentSubjFMValue: number = 0;
             if (hasActivities) {
                 const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
                 const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
                 
-                localExamTotal = Number(localExamTotal) + Number(examMark);
-                localActivityTotal = Number(localActivityTotal) + Number(activityMark);
-                // FIX: ensure operands are treated as number primitives during addition.
-                currentSubjMarkValue = Number(examMark) + Number(activityMark);
-                currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
+                localExamTotal = localExamTotal + examMark;
+                localActivityTotal = localActivityTotal + activityMark;
+                currentSubjMarkValue = examMark + activityMark;
+                currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
                 
                 if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
             } else {
                 currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
-                localExamTotal = Number(localExamTotal) + Number(currentSubjMarkValue);
-                currentSubjFMValue = Number(sd.examFullMarks || 0);
+                localExamTotal = localExamTotal + currentSubjMarkValue;
+                currentSubjFMValue = sd.examFullMarks || 0;
                 const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
                 if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
             }
-            localGrandTotal = Number(localGrandTotal) + Number(currentSubjMarkValue);
-            localFullMarksTotal = Number(localFullMarksTotal) + Number(currentSubjFMValue);
+            localGrandTotal = localGrandTotal + currentSubjMarkValue;
+            localFullMarksTotal = localFullMarksTotal + currentSubjFMValue;
         }
 
         gradedSubjects.forEach(sd => {

@@ -26,6 +26,7 @@ import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
+import PaymentStatusPage from './pages/public/PaymentStatusPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import GenerateTcPage from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
@@ -409,23 +410,15 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
-              // Generate a doc reference to get a random Firestore-style ID string
               const docRef = db.collection('online_admissions').doc();
-              // Prefix the random ID with 'BMS' as requested
               const bmsId = `BMS${docRef.id}`;
-              
-              const admissionData = {
-                  ...data,
-                  id: bmsId,
-                  temporaryStudentId: bmsId
-              };
-              
-              // Save the document with the prefixed ID
+              const admissionData = { ...data, id: bmsId, temporaryStudentId: bmsId };
               await db.collection('online_admissions').doc(bmsId).set(admissionData);
               return bmsId;
           }} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
-          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} onUpdateAdmissionPayment={async (id, u) => { await db.collection('online_admissions').doc(id).update(u); return true; }} addNotification={addNotification} schoolConfig={schoolConfig} admissionConfig={admissionSettings} />} />
+          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} />} />
+          <Route path="payment-status/:merchantTransactionId" element={<PaymentStatusPage addNotification={addNotification} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />

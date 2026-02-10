@@ -72,13 +72,18 @@ service cloud.firestore {
     }
 
     // ---------------------------
-    // Online Admissions
+    // Online Admissions & Payments
     // ---------------------------
     match /online_admissions/{admissionId} {
       allow create: if true; 
       allow get: if true;    
       allow list, delete: if isAdmin();
       allow update: if isAdmin() || (resource.data.status != 'rejected');
+    }
+    
+    match /transactions/{transactionId} {
+        allow create: if true; // Allow anyone to initiate a transaction record
+        allow read, update: if isAdmin(); // Only admins can verify and update status
     }
     
     // ---------------------------

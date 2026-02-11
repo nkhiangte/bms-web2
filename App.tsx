@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -100,7 +101,8 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-import InsightsPage from './pages/InsightsPage';
+// FIX: Corrected import casing to match file system and resolve build error.
+import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
@@ -411,12 +413,14 @@ const App: React.FC = () => {
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
               if (id) {
+                  // Saving an existing draft or submitting a completed draft
                   await db.collection('online_admissions').doc(id).set(data, { merge: true });
                   return id;
               } else {
+                  // Creating a new application
                   const docRef = db.collection('online_admissions').doc();
-                  const customId = `BMSAPP${docRef.id}`;
-                  const admissionData = { ...data, id: customId, temporaryStudentId: customId };
+                  const customId = `BMSAPP${docRef.id}`; // Using a distinct prefix for applications
+                  const admissionData = { ...data, id: customId, temporaryStudentId: customId, submissionDate: new Date().toISOString() };
                   await db.collection('online_admissions').doc(customId).set(admissionData);
                   return customId;
               }

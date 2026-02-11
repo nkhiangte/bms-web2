@@ -142,7 +142,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
                             <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
-                            <ActionCard title="Fee Status" link="/portal/fees" state={{ studentId: student.id }} icon={<CurrencyDollarIcon className="w-6 h-6 text-emerald-600"/>}>
+                            <ActionCard title="Fee Status" link="/fees" state={{ studentId: student.id }} icon={<CurrencyDollarIcon className="w-6 h-6 text-emerald-600"/>}>
                                 {dues.total > 0 ? <span className="font-bold text-red-700">₹{dues.total.toLocaleString()} Due</span> : <span className="font-bold text-emerald-700">All Fees Paid</span>}
                             </ActionCard>
                         </div>

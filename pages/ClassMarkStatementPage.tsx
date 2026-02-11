@@ -89,7 +89,6 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        // FIX: Explicitly type arithmetic variables as numbers to avoid type narrowing errors.
         let localGrandTotal: number = 0;
         let failedSubjectsCount: number = 0;
         let gradedSubjectsPassed: number = 0;
@@ -101,7 +100,6 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                // FIX: ensure operands are treated as number primitives during addition.
                 totalSubjectMark = Number(examMark) + Number(activityMark);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
@@ -275,6 +273,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
+            // FIX: Corrected typo from `normSubjDefName` to `normSubjName` to resolve a reference error.
             if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;

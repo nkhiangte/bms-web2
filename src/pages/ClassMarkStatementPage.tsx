@@ -89,7 +89,6 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        // FIX: Explicitly type arithmetic variables as numbers to avoid type narrowing errors.
         let localGrandTotal: number = 0;
         let failedSubjectsCount: number = 0;
         let gradedSubjectsPassed: number = 0;
@@ -101,7 +100,6 @@ const calculateTermSummary = (
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                // FIX: ensure operands are treated as number primitives during addition.
                 totalSubjectMark = Number(examMark) + Number(activityMark);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
@@ -275,12 +273,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
+            // FIX: Corrected typo from `normSubjDefName` to `normSubjName` to resolve a reference error.
             if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-// FIX: Corrected typo from normSubjDefName to normSubjName to resolve reference errors.
             if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
             if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
             if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
@@ -348,7 +346,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-// FIX: Explicitly type and initialize arithmetic variables as numbers to avoid type errors.
       let localGrandTotal: number = 0;
       let localExamTotal: number = 0;
       let localActivityTotal: number = 0;
@@ -361,7 +358,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       for (const sd of numericSubjects) {
         let currentSubjMarkValue: number = 0;
         let currentSubjFMValue: number = 0;
-// FIX: Refactored mark calculations to ensure type safety by explicitly converting to numbers, preventing potential arithmetic errors on null or string values.
+        // FIX: Ensured all mark values are treated as numbers before performing arithmetic operations to prevent type errors.
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);

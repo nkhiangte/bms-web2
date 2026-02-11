@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Corrected imports to use GoogleGenAI and Type from @google/genai.
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
@@ -21,6 +23,7 @@ interface AnalysisResult {
     weaknesses: string[];
 }
 
+// FIX: Replaced deprecated SchemaType with Type.
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -126,9 +129,9 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
+            // FIX: Updated Gemini API initialization and call to follow latest guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
-// FIX: Updated model to 'gemini-3-flash-preview' for text-based tasks, replacing deprecated 'gemini-1.5-flash-latest'.
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
                 config: {
@@ -137,6 +140,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 },
             });
             
+            // FIX: Correctly access the text from the response object.
             const resultJson = JSON.parse(response.text);
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {

@@ -345,6 +345,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* FIX: Filter keys to only include 'set1', 'set2', 'set3' to avoid type errors. */}
                 {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => {
                     const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
                     const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));
@@ -457,7 +458,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
       
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
+            <button onClick={() => window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
             <BackIcon className="w-5 h-5" /> Back
             </button>
             <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home/Dashboard">

@@ -1,9 +1,9 @@
-import React, { useState, FormEvent, useRef } from 'react';
-// FIX: Use namespace import for react-router-dom to resolve member export issues
+
+import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../types';
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon } from '../../components/Icons';
+import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon, SaveIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
 import { db } from '../../firebaseConfig';
@@ -12,41 +12,47 @@ const { useNavigate } = ReactRouterDOM as any;
 
 interface OnlineAdmissionPageProps {
     user: User | null;
-    onOnlineAdmissionSubmit: (data: Omit<OnlineAdmission, 'id'>) => Promise<string>;
+    onOnlineAdmissionSubmit: (data: Partial<OnlineAdmission>, id?: string) => Promise<string>;
 }
+
+const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => (
+    <div className="flex items-center mb-8">
+        {[1, 2, 3].map(step => (
+            <React.Fragment key={step}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
+                    currentStep >= step ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-500'
+                }`}>
+                    {currentStep > step ? <CheckIcon className="w-6 h-6"/> : step}
+                </div>
+                {step < 3 && <div className={`flex-grow h-1 transition-colors ${currentStep > step ? 'bg-sky-600' : 'bg-slate-200'}`}></div>}
+            </React.Fragment>
+        ))}
+    </div>
+);
+
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
+    const [step, setStep] = useState(0); // 0: initial selection, 1: Student, 2: Parent, 3: Docs
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
     
     // Selection State
-    const [hasSelectedType, setHasSelectedType] = useState(false);
-    const [showIdInput, setShowIdInput] = useState(false);
+    const [showIdInput, setShowIdInput] = useState<'existing' | 'continue' | null>(null);
     const [existingId, setExistingId] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [fetchError, setFetchError] = useState('');
+    const [savedApplicationId, setSavedApplicationId] = useState<string | null>(null);
+
 
     const [formData, setFormData] = useState<Partial<OnlineAdmission>>({
         admissionGrade: GRADES_LIST[0],
-        studentName: '',
-        dateOfBirth: '',
         gender: 'Male',
-        studentAadhaar: '',
-        fatherName: '',
-        motherName: '',
-        permanentAddress: '',
-        presentAddress: '',
-        contactNumber: '',
-        email: user?.email || '',
-        religion: '',
         category: 'General',
         cwsn: 'No',
-        bloodGroup: '',
-        motherTongue: '',
-        studentType: 'Newcomer',
-        lastSchoolAttended: '',
-        status: 'pending'
+        email: user?.email || '',
+        status: 'draft',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -70,7 +76,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             }
         }
     };
-
+    
     const handleFetchStudent = async (e: React.FormEvent) => {
         e.preventDefault();
         const idInput = existingId.trim().toUpperCase();
@@ -79,49 +85,57 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         setIsFetching(true);
         setFetchError('');
 
-        const fillFormWithStudent = (data: Student) => {
-             const nextGrade = getNextGrade(data.grade);
+        const fillFormWithStudent = (data: Student | OnlineAdmission, isAdmissionDraft = false) => {
+             const studentData = data as Student; // Assume student structure for properties
+             const admissionData = data as OnlineAdmission;
+             
+             const nextGrade = isAdmissionDraft ? admissionData.admissionGrade : getNextGrade(studentData.grade);
+             
              setFormData(prev => ({
-                 ...prev,
+                 ...(isAdmissionDraft ? admissionData : prev), // Load draft or keep defaults
                  studentType: 'Existing',
-                 previousStudentId: data.studentId || idInput,
-                 admissionGrade: nextGrade || data.grade, 
-                 studentName: data.name || '',
-                 dateOfBirth: data.dateOfBirth || '',
-                 gender: data.gender || 'Male',
-                 studentAadhaar: data.aadhaarNumber || '',
-                 fatherName: data.fatherName || '',
-                 motherName: data.motherName || '',
-                 fatherOccupation: data.fatherOccupation || '',
-                 motherOccupation: data.motherOccupation || '',
-                 permanentAddress: data.address || '',
-                 presentAddress: data.address || '', 
-                 contactNumber: data.contact || '',
-                 religion: data.religion || '',
-                 category: (data.category as string) || 'General',
-                 cwsn: data.cwsn || 'No',
-                 bloodGroup: data.bloodGroup || '',
-                 motherTongue: '',
-                 lastSchoolAttended: 'Bethel Mission School',
+                 previousStudentId: studentData.studentId || idInput,
+                 admissionGrade: nextGrade || studentData.grade, 
+                 studentName: studentData.name || admissionData.studentName,
+                 dateOfBirth: studentData.dateOfBirth || admissionData.dateOfBirth,
+                 gender: studentData.gender || admissionData.gender,
+                 studentAadhaar: studentData.aadhaarNumber || admissionData.studentAadhaar,
+                 fatherName: studentData.fatherName || admissionData.fatherName,
+                 motherName: studentData.motherName || admissionData.motherName,
+                 fatherOccupation: studentData.fatherOccupation || admissionData.fatherOccupation,
+                 motherOccupation: studentData.motherOccupation || admissionData.motherOccupation,
+                 permanentAddress: studentData.address || admissionData.permanentAddress,
+                 presentAddress: studentData.address || admissionData.presentAddress, 
+                 contactNumber: studentData.contact || admissionData.contactNumber,
+                 religion: studentData.religion || admissionData.religion,
+                 category: (studentData.category as string) || (admissionData.category as string),
+                 cwsn: studentData.cwsn || admissionData.cwsn,
+                 bloodGroup: studentData.bloodGroup || admissionData.bloodGroup,
+                 lastSchoolAttended: isAdmissionDraft ? admissionData.lastSchoolAttended : 'Bethel Mission School',
              }));
-             setHasSelectedType(true);
+             setStep(1);
         };
 
         try {
-             // Attempt 1: Direct ID Match
-             let snapshot = await db.collection('students')
-                .where('studentId', '==', idInput)
-                .limit(1)
-                .get();
+            if (showIdInput === 'continue') {
+                const docRef = db.collection('online_admissions').doc(idInput);
+                const doc = await docRef.get();
+                if (doc.exists && doc.data()?.status === 'draft') {
+                    fillFormWithStudent({ id: doc.id, ...doc.data() } as OnlineAdmission, true);
+                } else {
+                     setFetchError('Draft application not found or already submitted. Please check the ID.');
+                }
+                return;
+            }
+
+            // Existing student logic
+             let snapshot = await db.collection('students').where('studentId', '==', idInput).limit(1).get();
 
              if (!snapshot.empty) {
                  fillFormWithStudent(snapshot.docs[0].data() as Student);
-                 setIsFetching(false);
                  return;
              }
 
-             // Attempt 2: Fallback by parsing ID (Format: BMSyyccrr e.g. BMS250801)
-             // yy = Year (25 -> 2025), cc = Class Code (08 -> Class VIII), rr = Roll No (01)
              const idPattern = /^BMS(\d{2})([A-Z0-9]{2})(\d+)$/;
              const match = idInput.match(idPattern);
 
@@ -129,44 +143,45 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                  const [_, yearShort, gradeCode, rollStr] = match;
                  const rollNo = parseInt(rollStr, 10);
                  const targetYearStart = `20${yearShort}`;
-
-                 // Map code back to Grade string
-                 const gradeMap: Record<string, string> = {
-                     'NU': 'Nursery', 'KG': 'Kindergarten',
-                     '01': 'Class I', '02': 'Class II', '03': 'Class III', '04': 'Class IV',
-                     '05': 'Class V', '06': 'Class VI', '07': 'Class VII', '08': 'Class VIII',
-                     '09': 'Class IX', '10': 'Class X'
-                 };
+                 const gradeMap: Record<string, string> = { 'NU': 'Nursery', 'KG': 'Kindergarten', '01': 'Class I', '02': 'Class II', '03': 'Class III', '04': 'Class IV', '05': 'Class V', '06': 'Class VI', '07': 'Class VII', '08': 'Class VIII', '09': 'Class IX', '10': 'Class X' };
                  const grade = gradeMap[gradeCode];
-
                  if (grade) {
-                     // Query by Grade and Roll No
-                     const fallbackSnapshot = await db.collection('students')
-                         .where('grade', '==', grade)
-                         .where('rollNo', '==', rollNo)
-                         .get();
-                    
-                     // Filter in memory for correct academic year start
+                     const fallbackSnapshot = await db.collection('students').where('grade', '==', grade).where('rollNo', '==', rollNo).get();
                      const foundDoc = fallbackSnapshot.docs.find(doc => {
                          const s = doc.data() as Student;
                          return s.academicYear && s.academicYear.startsWith(targetYearStart);
                      });
-
                      if (foundDoc) {
                          fillFormWithStudent(foundDoc.data() as Student);
-                         setIsFetching(false);
                          return;
                      }
                  }
              }
-
              setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
-             
         } catch (error) {
-            console.error("Error fetching student:", error);
-            setFetchError('An error occurred while fetching details. Please check your connection.');
+            console.error("Error fetching student/application:", error);
+            setFetchError('An error occurred while fetching details.');
         } finally {
             setIsFetching(false);
+        }
+    };
+
+    const handleSaveForLater = async () => {
+        setIsSaving(true);
+        try {
+            const draftData = {
+                ...formData,
+                status: 'draft' as const,
+                submissionDate: formData.submissionDate || new Date().toISOString(),
+            };
+            const id = await onOnlineAdmissionSubmit(draftData, formData.id);
+            setFormData(prev => ({ ...prev, id }));
+            setSavedApplicationId(id);
+        } catch (error) {
+            console.error("Save for later failed:", error);
+            alert("Failed to save application draft.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -178,20 +193,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 ...formData,
                 submissionDate: new Date().toISOString(),
                 status: 'pending' as const
-            } as Omit<OnlineAdmission, 'id'>;
-
-            const id = await onOnlineAdmissionSubmit(admissionData);
-            
-            // Navigate to payment or status page
-            navigate(`/admissions/payment/${id}`, { 
-                state: { 
-                    grade: formData.admissionGrade, 
-                    studentName: formData.studentName, 
-                    fatherName: formData.fatherName, 
-                    contact: formData.contactNumber, 
-                    studentType: formData.studentType 
-                } 
-            });
+            };
+            const id = await onOnlineAdmissionSubmit(admissionData, formData.id);
+            navigate(`/admissions/payment/${id}`, { state: { grade: formData.admissionGrade, studentName: formData.studentName, fatherName: formData.fatherName, contact: formData.contactNumber, studentType: formData.studentType } });
         } catch (error) {
             console.error("Submission failed:", error);
             alert("Failed to submit application. Please try again.");
@@ -200,322 +204,155 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         }
     };
 
-    if (!hasSelectedType) {
-        if (showIdInput) {
-            return (
-                <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
-                    <div className="container mx-auto px-4 max-w-lg">
-                         <div className="bg-white p-8 rounded-2xl shadow-xl">
-                            <div className="text-center mb-6">
-                                <h2 className="text-2xl font-bold text-slate-800">Existing Student</h2>
-                                <p className="text-slate-600 mt-2">Enter your Student ID to auto-fill the form.</p>
+    if (step === 0) {
+        return (
+             <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                <div className="container mx-auto px-4 max-w-4xl">
+                    {!showIdInput ? (
+                        <>
+                            <div className="text-center mb-10">
+                                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
+                                    Online Admission Portal
+                                </h1>
+                                <p className="text-lg text-slate-600">Please select an option to begin.</p>
                             </div>
-
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                                <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
+                                    <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><PlusIcon className="w-8 h-8 text-sky-600" /></div>
+                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
+                                    <p className="text-slate-600">For children seeking admission for the first time.</p>
+                                </button>
+                                <button onClick={() => setShowIdInput('existing')} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-2xl transition-all group text-left">
+                                    <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><UserIcon className="w-8 h-8 text-emerald-600" /></div>
+                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
+                                    <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
+                                </button>
+                            </div>
+                             <div className="text-center mt-10">
+                                <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
+                                    Continue a Saved Application &rarr;
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg mx-auto">
+                            <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
+                                {showIdInput === 'existing' ? 'Existing Student' : 'Continue Application'}
+                            </h2>
+                            <p className="text-slate-600 text-center mb-6">
+                                {showIdInput === 'existing' ? 'Enter your Student ID to auto-fill the form.' : 'Enter your Application ID to resume.'}
+                            </p>
                             <form onSubmit={handleFetchStudent}>
                                 <div className="mb-4">
-                                    <label htmlFor="studentId" className="block text-sm font-bold text-slate-700 mb-2">Student ID</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <SearchIcon className="h-5 w-5 text-slate-400" />
-                                        </div>
-                                        <input 
-                                            type="text" 
-                                            id="studentId"
-                                            value={existingId}
-                                            onChange={(e) => setExistingId(e.target.value.toUpperCase())}
-                                            className="pl-10 form-input w-full uppercase" 
-                                            placeholder="e.g. BMS240101"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    {fetchError && <p className="text-red-500 text-sm mt-2 font-medium">{fetchError}</p>}
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        {showIdInput === 'existing' ? 'Student ID' : 'Application ID'}
+                                    </label>
+                                    <input type="text" value={existingId} onChange={(e) => setExistingId(e.target.value.toUpperCase())} className="form-input w-full uppercase" placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."} autoFocus/>
+                                    {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
                                 </div>
-                                
-                                <button 
-                                    type="submit" 
-                                    disabled={isFetching || !existingId}
-                                    className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4"
-                                >
+                                <button type="submit" disabled={isFetching || !existingId} className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4">
                                     {isFetching ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
-                                    {isFetching ? 'Fetching Details...' : 'Fetch Details & Continue'}
+                                    {isFetching ? 'Fetching...' : 'Continue'}
                                 </button>
                             </form>
-
-                            <div className="flex items-center gap-4 my-4">
-                                <hr className="flex-grow border-slate-200" />
-                                <span className="text-slate-400 text-sm">OR</span>
-                                <hr className="flex-grow border-slate-200" />
-                            </div>
-
-                            <button 
-                                onClick={() => {
-                                    setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' }));
-                                    setHasSelectedType(true);
-                                }}
-                                className="w-full btn btn-secondary"
-                            >
-                                Skip & Fill Manually
-                            </button>
-                             <button onClick={() => setShowIdInput(false)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">
-                                &larr; Back to Selection
-                            </button>
+                            {showIdInput === 'existing' && (
+                                <>
+                                    <hr className="my-4"/>
+                                    <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' })); setStep(1); }} className="w-full btn btn-secondary">
+                                        Skip & Fill Manually
+                                    </button>
+                                </>
+                            )}
+                            <button onClick={() => setShowIdInput(null)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">&larr; Back to Selection</button>
                         </div>
-                    </div>
-                </div>
-            )
-        }
-
-        return (
-            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
-                <div className="container mx-auto px-4 max-w-4xl">
-                    <div className="text-center mb-10">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
-                            <EditableContent id="oa_welcome_title" defaultContent="Online Admission Portal" type="text" user={user} />
-                        </h1>
-                        <p className="text-lg text-slate-600">Please select the category that best describes the student.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* New Student Card */}
-                        <button 
-                            onClick={() => {
-                                setFormData(prev => ({ ...prev, studentType: 'Newcomer', lastSchoolAttended: '' }));
-                                setHasSelectedType(true);
-                            }}
-                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-2xl transition-all duration-300 group text-left"
-                        >
-                            <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                <PlusIcon className="w-8 h-8 text-sky-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
-                            <p className="text-slate-600">For children seeking admission to Bethel Mission School for the first time.</p>
-                        </button>
-
-                        {/* Existing Student Card */}
-                        <button 
-                            onClick={() => {
-                                setShowIdInput(true);
-                            }}
-                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-2xl transition-all duration-300 group text-left"
-                        >
-                            <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                <UserIcon className="w-8 h-8 text-emerald-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
-                            <p className="text-slate-600">For current students of the school applying for re-admission or promotion to the next class.</p>
-                        </button>
-                    </div>
-                    
-                    <div className="mt-12 text-center">
-                        <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-slate-800 font-semibold flex items-center justify-center gap-2 mx-auto">
-                            &larr; Go Back
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
         );
     }
+    
 
     return (
         <div className="bg-slate-50 py-12">
             <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-slate-800">
-                             <EditableContent id="oa_page_title" defaultContent="Online Admission Form" type="text" user={user} />
-                        </h1>
-                        <p className="text-slate-600 mt-2">
-                            Academic Session 2026-27
-                        </p>
-                        <p className="text-sm text-red-500 mt-2 font-medium">* Indicates mandatory fields</p>
-                        {formData.previousStudentId && (
-                            <div className="mt-4 inline-block bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold border border-emerald-200">
-                                Auto-filled from Student ID: {formData.previousStudentId}
+                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 relative">
+                    {savedApplicationId && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-xl">
+                            <div className="bg-white p-8 rounded-lg shadow-xl text-center border animate-fade-in">
+                                <h3 className="text-2xl font-bold text-emerald-600">Application Saved!</h3>
+                                <p className="mt-2 text-slate-600">Please save this ID to continue your application later:</p>
+                                <div className="my-4 p-3 bg-slate-100 border-2 border-dashed rounded font-mono text-xl font-bold text-slate-800">
+                                    {savedApplicationId}
+                                </div>
+                                <button onClick={() => navigator.clipboard.writeText(savedApplicationId)} className="btn btn-secondary w-full">Copy ID</button>
+                                <button onClick={() => setSavedApplicationId(null)} className="mt-4 text-sm text-slate-500 hover:underline">Close and Continue Editing</button>
                             </div>
-                        )}
+                        </div>
+                    )}
+
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-slate-800">Online Admission Form</h1>
+                        <p className="text-slate-600 mt-2">Academic Session 2026-27</p>
                     </div>
+                    <ProgressBar currentStep={step} />
 
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* 1. Admission Details */}
-                        <section>
-                            <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Admission Details</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Class Applying For <span className="text-red-500">*</span></label>
-                                    <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
+                        {/* Step 1: Student Information */}
+                        {step === 1 && (
+                            <section className="animate-fade-in">
+                                <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">1. Student Information</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                     <div><label className="block text-sm font-bold">Class Applying For*</label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>{GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                     <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">Date of Birth*</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">Gender*</label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                     <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">Last School</label><input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Student Type <span className="text-red-500">*</span></label>
-                                    <select name="studentType" value={formData.studentType} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        <option value="Newcomer">New Student</option>
-                                        <option value="Existing">Existing Student (Transfer/Promotion)</option>
-                                    </select>
+                            </section>
+                        )}
+                        {/* Step 2: Parent/Guardian Information */}
+                        {step === 2 && (
+                             <section className="animate-fade-in">
+                                <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">2. Parent/Guardian Information</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div><label className="block text-sm font-bold">Father's Name*</label><input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Mother's Name*</label><input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Contact No.*</label><input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address*</label><textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
+                        )}
+                        {/* Step 3: Documents Upload */}
+                        {step === 3 && (
+                             <section className="animate-fade-in">
+                                <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents Upload</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div><label className="block text-sm font-bold">Birth Certificate</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.birthCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
+                                    <div><label className="block text-sm font-bold">Transfer Certificate</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.transferCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
+                                    <div><label className="block text-sm font-bold">Last Report Card</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.reportCardUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
+                                </div>
+                            </section>
+                        )}
 
-                        {/* 2. Student Information */}
-                        <section>
-                            <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Student Information</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Full Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Date of Birth <span className="text-red-500">*</span></label>
-                                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Gender <span className="text-red-500">*</span></label>
-                                    <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Aadhaar Number <span className="text-red-500">*</span></label>
-                                    <input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Mother Tongue <span className="text-red-500">*</span></label>
-                                    <input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Religion <span className="text-red-500">*</span></label>
-                                    <select name="religion" value={(formData as any).religion || ''} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        <option value="">-- Select --</option>
-                                        <option value="Christian">Christian</option>
-                                        <option value="Hindu">Hindu</option>
-                                        <option value="Muslim">Muslim</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Category <span className="text-red-500">*</span></label>
-                                    <select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        {CATEGORY_LIST.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Blood Group (Optional)</label>
-                                    <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">CWSN (Children with Special Needs) <span className="text-red-500">*</span></label>
-                                    <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1" required>
-                                        <option value="No">No</option>
-                                        <option value="Yes">Yes</option>
-                                    </select>
-                                </div>
-                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700">
-                                        Last School Attended 
-                                        {formData.studentType === 'Newcomer' && <span className="text-red-500">*</span>}
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        name="lastSchoolAttended" 
-                                        value={formData.lastSchoolAttended || ''} 
-                                        onChange={handleChange} 
-                                        className="form-input w-full mt-1" 
-                                        required={formData.studentType === 'Newcomer'} 
-                                        placeholder={formData.admissionGrade === 'Nursery' ? "Write 'None' if first school" : ""} 
-                                    />
-                                </div>
-                            </div>
-                        </section>
+                        <div className="flex justify-between items-center pt-6 border-t">
+                            {step > 1 ? (
+                                <button type="button" onClick={() => setStep(s => s - 1)} className="btn btn-secondary">Back</button>
+                            ) : <div></div>}
 
-                        {/* 3. Parent/Guardian Information */}
-                        <section>
-                            <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Parent/Guardian Information</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Father's Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Father's Occupation</label>
-                                    <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Mother's Name <span className="text-red-500">*</span></label>
-                                    <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Mother's Occupation</label>
-                                    <input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Contact Number <span className="text-red-500">*</span></label>
-                                    <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700">Email (Optional)</label>
-                                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700">Permanent Address <span className="text-red-500">*</span></label>
-                                    <textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700">Present Address <span className="text-red-500">*</span></label>
-                                    <textarea name="presentAddress" value={formData.presentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* 4. Documents Upload */}
-                        <section>
-                            <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">Documents Upload</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Birth Certificate</label>
-                                    <div className="flex items-center gap-2">
-                                        <label className="btn btn-secondary cursor-pointer">
-                                            {uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
-                                            <input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" />
-                                            Upload
-                                        </label>
-                                        {formData.birthCertificateUrl && <span className="text-emerald-600 flex items-center text-sm"><CheckIcon className="w-4 h-4 mr-1"/> Uploaded</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Transfer Certificate (if applicable)</label>
-                                    <div className="flex items-center gap-2">
-                                        <label className="btn btn-secondary cursor-pointer">
-                                            {uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
-                                            <input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" />
-                                            Upload
-                                        </label>
-                                        {formData.transferCertificateUrl && <span className="text-emerald-600 flex items-center text-sm"><CheckIcon className="w-4 h-4 mr-1"/> Uploaded</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Last Report Card</label>
-                                    <div className="flex items-center gap-2">
-                                        <label className="btn btn-secondary cursor-pointer">
-                                            {uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
-                                            <input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" />
-                                            Upload
-                                        </label>
-                                        {formData.reportCardUrl && <span className="text-emerald-600 flex items-center text-sm"><CheckIcon className="w-4 h-4 mr-1"/> Uploaded</span>}
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <div className="flex justify-end pt-6 border-t">
-                            <button type="submit" disabled={isSubmitting} className="btn btn-primary px-8 py-3 text-lg disabled:bg-slate-400">
-                                {isSubmitting ? (
-                                    <>
-                                        <SpinnerIcon className="w-6 h-6 mr-2" /> Submitting...
-                                    </>
+                            <div className="flex items-center gap-4">
+                               <button type="button" onClick={handleSaveForLater} disabled={isSubmitting || isSaving} className="btn btn-secondary">
+                                    {isSaving ? <><SpinnerIcon className="w-5 h-5"/> Saving...</> : <><SaveIcon className="w-5 h-5"/> Save for Later</>}
+                                </button>
+                                {step < 3 ? (
+                                    <button type="button" onClick={() => { handleSaveForLater(); setStep(s => s + 1); }} className="btn btn-primary">Next <ArrowRightIcon className="w-5 h-5"/></button>
                                 ) : (
-                                    'Submit Application'
+                                    <button type="submit" disabled={isSubmitting || isSaving} className="btn btn-primary px-8 py-3 text-lg">
+                                        {isSubmitting ? <><SpinnerIcon className="w-6 h-6"/> Submitting...</> : 'Submit Application'}
+                                    </button>
                                 )}
-                            </button>
+                            </div>
                         </div>
                     </form>
                 </div>

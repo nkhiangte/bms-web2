@@ -1,9 +1,11 @@
 
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus } from '../types';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '../components/Icons';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
+// FIX: Corrected import to use GoogleGenAI from @google/genai.
 import { GoogleGenAI } from "@google/genai";
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -120,16 +122,17 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         if (!foundStudent) return;
         setIsGeneratingWords(true);
         try {
+            // FIX: Updated Gemini API initialization and call to follow latest guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
             const promptText = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
             
             const response = await ai.models.generateContent({
-// FIX: Updated model to 'gemini-3-flash-preview' for text-based tasks, replacing deprecated 'gemini-pro'.
                 model: 'gemini-3-flash-preview',
                 contents: promptText,
             });
             
+            // FIX: Correctly access the text from the response object.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

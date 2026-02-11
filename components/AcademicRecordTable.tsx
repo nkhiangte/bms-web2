@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { SubjectMark, SubjectDefinition, Grade } from '../types';
 import { GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
@@ -113,7 +114,7 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                                                 <td className="px-4 py-2 text-center">
                                                     {isEditing ? (
                                                         <input type="tel" pattern="[0-9]*" value={result.examMarks ?? ''} onChange={e => handleMarkChange(subjectDef.name, 'examMarks', e.target.value)} className="form-input w-24 text-center" max={subjectDef.examFullMarks} />
-                                                    ) : result.examMarks}
+                                                    ) : examMarks}
                                                 </td>
                                                 <td className="px-4 py-2 text-center font-semibold text-slate-700">{subjectDef.activityFullMarks}</td>
                                                 <td className="px-4 py-2 text-center">

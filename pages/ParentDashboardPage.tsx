@@ -116,6 +116,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                         </div>
                         <div>
                             <h3 className="text-2xl font-bold text-slate-900">{student.name}</h3>
+                            {/* FIX: Corrected typo from `student.roll No` to `student.rollNo` to match the Student interface. */}
                             <p className="text-slate-700 font-semibold">{student.grade} - Roll No: {student.rollNo}</p>
                         </div>
                     </div>
@@ -139,12 +140,9 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                             ) : <p className="text-sm text-slate-600 italic">No recent homework posted.</p>}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
                             <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
-                            <ActionCard title="Fee Status" link="/fees" state={{ studentId: student.id }} icon={<CurrencyDollarIcon className="w-6 h-6 text-emerald-600"/>}>
-                                {dues.total > 0 ? <span className="font-bold text-red-700">₹{dues.total.toLocaleString()} Due</span> : <span className="font-bold text-emerald-700">All Fees Paid</span>}
-                            </ActionCard>
                         </div>
                         
                         <div>

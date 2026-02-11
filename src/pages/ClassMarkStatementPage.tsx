@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -273,7 +274,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            // FIX: Corrected typo from `normSubjDefName` to `normSubjName` to resolve a reference error.
             if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;

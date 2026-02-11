@@ -187,6 +187,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
+        // Validation for new students
+        const isNewStudent = formData.studentType === 'Newcomer';
+        if (isNewStudent && (!formData.birthCertificateUrl || !formData.reportCardUrl)) {
+            alert("For new students, both the Birth Certificate and Last Report Card are mandatory. Please upload them to proceed.");
+            return; // Stop submission
+        }
+
         setIsSubmitting(true);
         try {
             const admissionData = {
@@ -203,6 +211,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             setIsSubmitting(false);
         }
     };
+    
+    const isNewStudent = formData.studentType === 'Newcomer';
 
     if (step === 0) {
         return (
@@ -328,10 +338,33 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         {step === 3 && (
                              <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents Upload</h2>
+                                {isNewStudent && (
+                                    <p className="text-sm text-slate-600 mb-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                        <span className="font-bold">Important:</span> For new students, documents marked with a <span className="text-red-500 font-bold">*</span> are mandatory.
+                                    </p>
+                                )}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div><label className="block text-sm font-bold">Birth Certificate</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.birthCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
-                                    <div><label className="block text-sm font-bold">Transfer Certificate</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.transferCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
-                                    <div><label className="block text-sm font-bold">Last Report Card</label><div className="flex items-center gap-2"><label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" /> Upload</label>{formData.reportCardUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}</div></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Birth Certificate{isNewStudent && <span className="text-red-500">*</span>}</label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            {formData.birthCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Transfer Certificate (if applicable)</label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            {formData.transferCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Last Report Card{isNewStudent && <span className="text-red-500">*</span>}</label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            {formData.reportCardUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
                         )}
@@ -346,7 +379,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     {isSaving ? <><SpinnerIcon className="w-5 h-5"/> Saving...</> : <><SaveIcon className="w-5 h-5"/> Save for Later</>}
                                 </button>
                                 {step < 3 ? (
-                                    <button type="button" onClick={() => { handleSaveForLater(); setStep(s => s + 1); }} className="btn btn-primary">Next <ArrowRightIcon className="w-5 h-5"/></button>
+                                    <button type="button" onClick={() => setStep(s => s + 1)} className="btn btn-primary">Next <ArrowRightIcon className="w-5 h-5"/></button>
                                 ) : (
                                     <button type="submit" disabled={isSubmitting || isSaving} className="btn btn-primary px-8 py-3 text-lg">
                                         {isSubmitting ? <><SpinnerIcon className="w-6 h-6"/> Submitting...</> : 'Submit Application'}

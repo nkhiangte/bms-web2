@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
@@ -52,7 +51,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); 
 
   const duesSummary = useMemo(() => {
-    if (!foundStudent) return null;
+    if (!foundStudent || !feeStructure) return null;
     return getDuesSummary(foundStudent, feeStructure);
   }, [foundStudent, feeStructure]);
 
@@ -109,10 +108,9 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     setEditableStructure(prev => {
         const set = prev[setKey] || { heads: [] };
         const newHeads = (set.heads || []).filter((_, i) => i !== index);
-        // Explicitly set set[setKey] to an object that ONLY has heads to strip legacy fields
         return {
             ...prev,
-            [setKey]: { heads: newHeads }
+            [setKey]: { ...set, heads: newHeads }
         };
     });
   };
@@ -304,7 +302,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             }
         };
 
-        const paymentObject = new window.Razorpay(options);
+        const paymentObject = new (window as any).Razorpay(options);
         paymentObject.on('payment.failed', function (response: any){
             addNotification(response.error.description, 'error', 'Payment Failed');
             setIsProcessingPayment(false);

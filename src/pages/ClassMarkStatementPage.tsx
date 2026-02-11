@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -279,10 +280,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
 
             return false;
         });
@@ -366,7 +367,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal = Number(localExamTotal) + Number(examMark);
             localActivityTotal = Number(localActivityTotal) + Number(activityMark);
             currentSubjMarkValue = Number(examMark) + Number(activityMark);
-            currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {

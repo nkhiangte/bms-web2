@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SubjectMark, SubjectDefinition, Grade } from '../types';
 import { GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
@@ -89,8 +90,8 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                            
                             if (hasActivities) {
 // FIX: Default null/undefined marks to 0 before arithmetic operation to prevent TypeError.
-                                 const examMarks = result?.examMarks ?? 0;
-                                 const activityMarks = result?.activityMarks ?? 0;
+                                 const examMarks = Number(result?.examMarks ?? 0);
+                                 const activityMarks = Number(result?.activityMarks ?? 0);
                                  const totalMarks = examMarks + activityMarks;
                                  return (
                                     <tr key={subjectDef.name}>

@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -128,12 +127,12 @@ const calculateTermSummary = (
             examTotal += examMark;
             activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = Number(sd.examFullMarks ?? 0) + Number(sd.activityFullMarks ?? 0);
+            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;
-            subjectFullMarks = Number(sd.examFullMarks);
+            subjectFullMarks = sd.examFullMarks;
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }
@@ -335,11 +334,7 @@ const MultiTermReportCard: React.FC<{
                 <div className="flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (
-                                 <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
-                             ) : (
-                                 <div className="h-4"></div>
-                             )}
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
@@ -429,6 +424,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+{/* FIX: Ensure operands are numbers before addition to prevent type errors. */}
                                             <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )

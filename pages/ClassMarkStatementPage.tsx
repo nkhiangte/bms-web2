@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -279,10 +280,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
             if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
+            if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+            if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+            if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+            if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
 
             return false;
         });
@@ -346,68 +347,67 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classStudents.map(student => {
-        // FIX: Initialize all local variables to 0 to prevent arithmetic operations on undefined.
-        let localGrandTotal: number = 0;
-        let localExamTotal: number = 0;
-        let localActivityTotal: number = 0;
-        let localFullMarksTotal: number = 0;
-        let failedSubjectsCount: number = 0;
-        let gradedSubjectsPassed: number = 0;
-        const studentMarks = marksData[student.id] || {};
-        const failedSubjectsList: string[] = [];
+// FIX: Explicitly type and initialize arithmetic variables as numbers to avoid type errors.
+      let localGrandTotal: number = 0;
+      let localExamTotal: number = 0;
+      let localActivityTotal: number = 0;
+      let localFullMarksTotal: number = 0;
+      let failedSubjectsCount: number = 0;
+      let gradedSubjectsPassed: number = 0;
+      const studentMarks = marksData[student.id] || {};
+      const failedSubjectsList: string[] = [];
 
-        for (const sd of numericSubjects) {
-            // FIX: Initialize all local variables to 0 to prevent arithmetic operations on undefined.
-            let currentSubjMarkValue: number = 0;
-            let currentSubjFMValue: number = 0;
-            if (hasActivities) {
-                const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
-                const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
-                
-                localExamTotal = localExamTotal + examMark;
-                localActivityTotal = localActivityTotal + activityMark;
-                currentSubjMarkValue = examMark + activityMark;
-                currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
-                
-                if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-            } else {
-                currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
-                localExamTotal = localExamTotal + currentSubjMarkValue;
-                currentSubjFMValue = sd.examFullMarks || 0;
-                const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-                if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-            }
-            localGrandTotal = localGrandTotal + currentSubjMarkValue;
-            localFullMarksTotal = localFullMarksTotal + currentSubjFMValue;
-        }
-
-        gradedSubjects.forEach(sd => {
-            const gradeValue = studentMarks[sd.name];
-            if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
-        });
-        
-        const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
-        let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
-        if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
-
-
-        let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
-        let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
-        
-        let remark = '';
-        if (result === 'FAIL') {
-            remark = `Needs improvement in ${failedSubjectsList.join(', ')}`;
-        } else if (result === 'SIMPLE PASS') {
-            remark = `Focus on ${failedSubjectsList.join(', ')}`;
+      for (const sd of numericSubjects) {
+        let currentSubjMarkValue: number = 0;
+        let currentSubjFMValue: number = 0;
+        if (hasActivities) {
+            const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
+            const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
+            
+            localExamTotal = Number(localExamTotal) + Number(examMark);
+            localActivityTotal = Number(localActivityTotal) + Number(activityMark);
+            currentSubjMarkValue = Number(examMark) + Number(activityMark);
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
+            
+            if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            if (percentage >= 90) remark = "Outstanding performance!";
-            else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
-            else if (percentage >= 60) remark = "Good progress. Well done.";
-            else if (percentage >= 45) remark = "Satisfactory performance. Consistent effort will lead to better results.";
-            else remark = "Passed. Consistent effort is needed to improve scores.";
+            currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
+            localExamTotal = Number(localExamTotal) + Number(currentSubjMarkValue);
+            currentSubjFMValue = sd.examFullMarks || 0;
+            const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
+            if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
+        localGrandTotal = Number(localGrandTotal) + Number(currentSubjMarkValue);
+        localFullMarksTotal = Number(localFullMarksTotal) + Number(currentSubjFMValue);
+      }
 
-        return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
+      gradedSubjects.forEach(sd => {
+        const gradeValue = studentMarks[sd.name];
+        if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
+      });
+      
+      const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
+      let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
+      if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
+
+
+      let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
+      let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
+      
+      let remark = '';
+      if (result === 'FAIL') {
+          remark = `Needs improvement in ${failedSubjectsList.join(', ')}`;
+      } else if (result === 'SIMPLE PASS') {
+          remark = `Focus on ${failedSubjectsList.join(', ')}`;
+      } else {
+          if (percentage >= 90) remark = "Outstanding performance!";
+          else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
+          else if (percentage >= 60) remark = "Good progress. Well done.";
+          else if (percentage >= 45) remark = "Satisfactory performance. Consistent effort will lead to better results.";
+          else remark = "Passed. Consistent effort is needed to improve scores.";
+      }
+
+      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');

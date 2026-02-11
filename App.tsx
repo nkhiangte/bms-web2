@@ -409,12 +409,17 @@ const App: React.FC = () => {
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
-          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data) => {
-              const docRef = db.collection('online_admissions').doc();
-              const bmsId = `BMS${docRef.id}`;
-              const admissionData = { ...data, id: bmsId, temporaryStudentId: bmsId };
-              await db.collection('online_admissions').doc(bmsId).set(admissionData);
-              return bmsId;
+          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
+              if (id) {
+                  await db.collection('online_admissions').doc(id).set(data, { merge: true });
+                  return id;
+              } else {
+                  const docRef = db.collection('online_admissions').doc();
+                  const customId = `BMSAPP${docRef.id}`;
+                  const admissionData = { ...data, id: customId, temporaryStudentId: customId };
+                  await db.collection('online_admissions').doc(customId).set(admissionData);
+                  return customId;
+              }
           }} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} />} />

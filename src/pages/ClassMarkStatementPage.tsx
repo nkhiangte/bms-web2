@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -50,9 +54,10 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
     return results.find(r => {
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
-
+        
         // Fallbacks for common name variations
         const mathNames = ['math', 'maths', 'mathematics'];
+        // FIX: Corrected typo from `normSubjName` to `normSubjDefName` to resolve a reference error.
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         
         if (normSubjDefName === 'english' && normResultName === 'english i') return true;

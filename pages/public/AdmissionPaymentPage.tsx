@@ -102,7 +102,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }, [allItems]);
 
     const merchandiseTotal = useMemo(() => {
-        // FIX: Cast the result of Object.entries to explicitly type the 'details' object, resolving property access errors.
+// FIX: Cast the result of Object.entries to explicitly type the 'details' object, resolving property access errors.
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             if (!item) return total;

@@ -1,9 +1,5 @@
 
 
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -105,8 +101,8 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected casing for InsightsPage import to match file system.
-import InsightsPage from './pages/InsightsPage';
+// FIX: Corrected import casing to match file system (InsightsPage.tsx -> insightsPage.tsx)
+import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
@@ -416,15 +412,20 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
+              // Sanitize data for Firestore: convert undefined to null
+              const sanitizedData = Object.fromEntries(
+                Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
+              );
+
               if (id) {
                   // Saving an existing draft or submitting a completed draft
-                  await db.collection('online_admissions').doc(id).set(data, { merge: true });
+                  await db.collection('online_admissions').doc(id).set(sanitizedData, { merge: true });
                   return id;
               } else {
                   // Creating a new application
                   const docRef = db.collection('online_admissions').doc();
                   const customId = `BMSAPP${docRef.id}`; // Using a distinct prefix for applications
-                  const admissionData = { ...data, id: customId, temporaryStudentId: customId, submissionDate: new Date().toISOString() };
+                  const admissionData = { ...sanitizedData, id: customId, temporaryStudentId: customId, submissionDate: new Date().toISOString() };
                   await db.collection('online_admissions').doc(customId).set(admissionData);
                   return customId;
               }

@@ -4,6 +4,8 @@
 
 
 
+
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus } from '../types';
@@ -210,83 +212,4 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 <form onSubmit={handleStudentSearch} className="my-6 max-w-lg">
                     <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Find Student by ID</label>
                     <div className="flex gap-2 items-start">
-                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(e as any); }}} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
-                        <button type="submit" className="btn btn-primary h-[42px]"><SearchIcon className="w-5 h-5"/></button>
-                    </div>
-                </form>
-            )}
-
-            {foundStudent && (
-                <form onSubmit={handleSubmit}>
-                    <div className="mt-6 space-y-6">
-                        <fieldset className="border p-4 rounded-lg bg-slate-50">
-                            <legend className="text-lg font-bold text-slate-800 px-2">Student Details</legend>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                                <ReadonlyField label="Name" value={foundStudent.name} />
-                                <ReadonlyField label="Class" value={foundStudent.grade} />
-                                <ReadonlyField label="Roll No" value={foundStudent.rollNo} />
-                                <ReadonlyField label="Student ID" value={formatStudentId(foundStudent, academicYear)} />
-                                <ReadonlyField label="Father's Name" value={foundStudent.fatherName} />
-                                <ReadonlyField label="Mother's Name" value={foundStudent.motherName} />
-                                <ReadonlyField label="Date of Birth" value={formatDateForDisplay(foundStudent.dateOfBirth)} />
-                                <ReadonlyField label="Religion" value={foundStudent.religion} />
-                            </div>
-                        </fieldset>
-
-                        {searchError && (
-                            <div className={`mt-4 text-center font-semibold p-3 rounded-lg ${existingTc ? 'bg-sky-100 text-sky-800' : searchError.startsWith('Warning') ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
-                                <p>{searchError}</p>
-                                {existingTc && (
-                                    <Link to={`/portal/transfers/print/${existingTc.id}`} className="mt-2 inline-flex items-center gap-2 btn btn-secondary !bg-white">
-                                        <PrinterIcon className="w-5 h-5"/> View/Print Existing TC
-                                    </Link>
-                                )}
-                            </div>
-                        )}
-
-                        <fieldset>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-slate-800">Date of Birth (in words)</label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="text" name="dateOfBirthInWords" value={formData.dateOfBirthInWords} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required placeholder="e.g., Seventh May Two Thousand Seven" />
-                                        <button type="button" onClick={handleGenerateDateInWords} className="btn btn-secondary h-[42px] mt-1" disabled={isGeneratingWords}>
-                                            {isGeneratingWords ? <SpinnerIcon className="w-5 h-5"/> : <SparklesIcon className="w-5 h-5"/>}
-                                        </button>
-                                    </div>
-                                </div>
-                                <FormField label="Date of Application" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date"/>
-                                <FormField label="Date of Issue" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date"/>
-                                <FormField label="Last Date of Attendance" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" required={false} />
-                                <FormField label="Qualified for Promotion?" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
-                                <FormField label="General Conduct" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
-                                <FormField 
-                                    label="Reason for Leaving" 
-                                    name="reasonForLeaving" 
-                                    value={formData.reasonForLeaving} 
-                                    onChange={handleChange}
-                                    type="select"
-                                    options={REASON_FOR_LEAVING_OPTIONS.map(r => ({ value: r, label: r }))}
-                                />
-                                <FormField label="School Dues (if any)" name="schoolDuesIfAny" value={formData.schoolDuesIfAny} onChange={handleChange} />
-                                <FormField label="Any Other Remarks" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} />
-                            </div>
-                        </fieldset>
-                    </div>
-                    {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
-                    <div className="mt-8 flex justify-end">
-                        <button type="submit" disabled={isSaving || !!existingTc} className="btn btn-primary text-base px-6 py-3 disabled:bg-slate-400">
-                            {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <DocumentPlusIcon className="w-5 h-5" />}
-                            <span>{isSaving ? 'Generating...' : 'Generate Certificate'}</span>
-                        </button>
-                    </div>
-                </form>
-            )}
-            <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={handleConfirmGenerate} title="Confirm TC Generation">
-                <p>This will generate the TC and mark the student as 'Transferred'. This action cannot be easily undone. Are you sure?</p>
-            </ConfirmationModal>
-        </div>
-    );
-};
-
-export default GenerateTcPage;
+                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e

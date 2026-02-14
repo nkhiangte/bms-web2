@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '../types';
@@ -19,6 +21,7 @@ const portalNavLinks = [
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Fee Management', path: '/portal/fees', icon: <CurrencyDollarIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'AI Insights', path: '/portal/insights', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Homework Scanner', path: '/portal/homework-scanner', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Activity Log', path: '/portal/activity-log', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -132,18 +135,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, user }) => {
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-75" aria-hidden="true" onClick={() => setIsOpen(false)}></div>
                 
                 <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-slate-50 transition-transform ease-in-out duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                    <div className="absolute top-0 right-0 -mr-12 pt-2">
-                        <button type="button" className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" onClick={() => setIsOpen(false)}>
-                            <span className="sr-only">Close sidebar</span>
-                            <XIcon className="h-6 w-6 text-white" />
-                        </button>
-                    </div>
-                    <SidebarContent user={user} onLinkClick={() => setIsOpen(false)}/>
-                </div>
-                <div className="flex-shrink-0 w-14" aria-hidden="true"></div>
-            </div>
-        </>
-    );
-};
-
-export default Sidebar;
+                    <div className="absolute top-0 right-0 -mr-12 pt-2

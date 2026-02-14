@@ -6,6 +6,10 @@
 
 
 
+
+
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -365,6 +369,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       for (const sd of numericSubjects) {
         let currentSubjMarkValue: number = 0;
         let currentSubjFMValue: number = 0;
+        
 // FIX: Ensured all mark values are treated as numbers before performing arithmetic operations to prevent type errors.
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);

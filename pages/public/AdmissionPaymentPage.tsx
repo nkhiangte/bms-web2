@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission } from '../../types';
-import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon } from '../../components/Icons';
+import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
 import { jsPDF } from 'jspdf';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
@@ -165,10 +167,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const itemsToPurchase: AdmissionItem[] = Object.entries(selectedItems).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if(item.hasSize && details.size && item.priceBySize) {
-                    price = item.priceBySize[details.size] ?? item.price;
+                if(item.hasSize && (details as any).size && item.priceBySize) {
+                    price = item.priceBySize[(details as any).size] ?? item.price;
                 }
-                return { name: itemName, price, quantity: details.quantity, size: details.size };
+                return { name: itemName, price, quantity: (details as any).quantity, size: (details as any).size };
             });
 
             await db.collection('online_admissions').doc(admissionId).update({
@@ -198,6 +200,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4">
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-4xl mx-auto">
+                    <div className="mb-8">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                        >
+                            <BackIcon className="w-5 h-5" />
+                            Back
+                        </button>
+                    </div>
                     <div className="text-center mb-8">
                          <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
                          <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{admissionDetails.studentName}</span> ({studentType})</p>

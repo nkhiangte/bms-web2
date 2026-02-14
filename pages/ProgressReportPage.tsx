@@ -134,7 +134,7 @@ const calculateTermSummary = (
             else if (percentage >= 75) remark = "Excellent performance.";
             else if (percentage >= 60) remark = "Good performance.";
             else if (percentage >= 45) remark = "Satisfactory performance.";
-            else remark = "Passed. Needs to work harder to improve scores.";
+            else remark = "Passed. Needs to work harder.";
         }
 
         return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
@@ -142,7 +142,7 @@ const calculateTermSummary = (
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
-
+    
     const finalRankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
     
     studentData.forEach(s => {
@@ -158,8 +158,6 @@ const calculateTermSummary = (
     return finalRankedData.get(student.id) || null;
 };
 
-// --- MULTI-TERM FINAL REPORT COMPONENT ---
-
 const MultiTermReportCard: React.FC<{
     student: Student;
     gradeDef: GradeDefinition;
@@ -168,6 +166,7 @@ const MultiTermReportCard: React.FC<{
     staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
@@ -399,7 +398,8 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{(result?.examMarks ?? 0) + (result?.activityMarks ?? 0)}</td>
+                                            {/* FIX: Ensure operands are numbers before addition to prevent type errors. */}
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )
                                 ) : ( // IX & X

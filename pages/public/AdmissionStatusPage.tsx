@@ -3,7 +3,7 @@ import React, { useState, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { db } from '../../firebaseConfig';
 import { OnlineAdmission, User } from '../../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon } from '../../components/Icons';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon, BackIcon } from '../../components/Icons';
 import { formatDateForDisplay } from '../../utils';
 import EditableContent from '../../components/EditableContent';
 
@@ -72,12 +72,23 @@ const AdmissionStatusPage: React.FC<AdmissionStatusPageProps> = ({ user }) => {
     return (
         <div className="bg-slate-50 py-16 min-h-screen">
             <div className="container mx-auto px-4">
-                <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-lg shadow-lg text-center">
-                    <h1 className="text-3xl font-extrabold text-slate-800">
-                         <EditableContent id="adm_status_title" defaultContent="Check Admission Status" type="text" user={user} />
-                    </h1>
-                    <div className="mt-2 text-lg text-slate-600">
-                         <EditableContent id="adm_status_subtitle" defaultContent="Enter your Application Reference ID to see the current status of your application." type="text" user={user} />
+                <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-lg shadow-lg">
+                    <div className="mb-8">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                        >
+                            <BackIcon className="w-5 h-5" />
+                            Back to Admissions
+                        </button>
+                    </div>
+                    <div className="text-center mb-12">
+                        <h1 className="text-3xl font-extrabold text-slate-800">
+                             <EditableContent id="adm_status_title" defaultContent="Check Admission Status" type="text" user={user} />
+                        </h1>
+                        <div className="mt-2 text-lg text-slate-600">
+                             <EditableContent id="adm_status_subtitle" defaultContent="Enter your Application Reference ID to see the current status of your application." type="text" user={user} />
+                        </div>
                     </div>
                     
                     <form onSubmit={handleCheckStatus} className="mt-8">

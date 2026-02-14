@@ -3,7 +3,7 @@ import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../types';
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
-import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon, SaveIcon } from '../../components/Icons';
+import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon, SaveIcon, BackIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
 import { db } from '../../firebaseConfig';
@@ -225,64 +225,75 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         return (
              <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
                 <div className="container mx-auto px-4 max-w-4xl">
-                    {!showIdInput ? (
-                        <>
-                            <div className="text-center mb-10">
-                                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
-                                    Online Admission Portal
-                                </h1>
-                                <p className="text-lg text-slate-600">Please select an option to begin.</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                                <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
-                                    <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><PlusIcon className="w-8 h-8 text-sky-600" /></div>
-                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
-                                    <p className="text-slate-600">For children seeking admission for the first time.</p>
-                                </button>
-                                <button onClick={() => setShowIdInput('existing')} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 hover:shadow-2xl transition-all group text-left">
-                                    <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><UserIcon className="w-8 h-8 text-emerald-600" /></div>
-                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
-                                    <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
-                                </button>
-                            </div>
-                             <div className="text-center mt-10">
-                                <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
-                                    Continue a Saved Application &rarr;
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg mx-auto">
-                            <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
-                                {showIdInput === 'existing' ? 'Existing Student' : 'Continue Application'}
-                            </h2>
-                            <p className="text-slate-600 text-center mb-6">
-                                {showIdInput === 'existing' ? 'Enter your Student ID to auto-fill the form.' : 'Enter your Application ID to resume.'}
-                            </p>
-                            <form onSubmit={handleFetchStudent}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                                        {showIdInput === 'existing' ? 'Student ID' : 'Application ID'}
-                                    </label>
-                                    <input type="text" value={existingId} onChange={(e) => setExistingId(e.target.value.toUpperCase())} className="form-input w-full uppercase" placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."} autoFocus/>
-                                    {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
-                                </div>
-                                <button type="submit" disabled={isFetching || !existingId} className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4">
-                                    {isFetching ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
-                                    {isFetching ? 'Fetching...' : 'Continue'}
-                                </button>
-                            </form>
-                            {showIdInput === 'existing' && (
-                                <>
-                                    <hr className="my-4"/>
-                                    <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' })); setStep(1); }} className="w-full btn btn-secondary">
-                                        Skip & Fill Manually
-                                    </button>
-                                </>
-                            )}
-                            <button onClick={() => setShowIdInput(null)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">&larr; Back to Selection</button>
+                    <div className="bg-white p-8 rounded-2xl shadow-xl">
+                        <div className="mb-6">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                            >
+                                <BackIcon className="w-5 h-5" />
+                                Back to Admission Guidelines
+                            </button>
                         </div>
-                    )}
+                        {!showIdInput ? (
+                            <>
+                                <div className="text-center mb-10">
+                                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
+                                        Online Admission Portal
+                                    </h1>
+                                    <p className="text-lg text-slate-600">Please select an option to begin.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                                    <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
+                                        <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><PlusIcon className="w-8 h-8 text-sky-600" /></div>
+                                        <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
+                                        <p className="text-slate-600">For children seeking admission for the first time.</p>
+                                    </button>
+                                    <button onClick={() => setShowIdInput('existing')} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left">
+                                        <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><UserIcon className="w-8 h-8 text-emerald-600" /></div>
+                                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
+                                        <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
+                                    </button>
+                                </div>
+                                <div className="text-center mt-10">
+                                    <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
+                                        Continue a Saved Application &rarr;
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="max-w-lg mx-auto">
+                                <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
+                                    {showIdInput === 'existing' ? 'Existing Student' : 'Continue Application'}
+                                </h2>
+                                <p className="text-slate-600 text-center mb-6">
+                                    {showIdInput === 'existing' ? 'Enter your Student ID to auto-fill the form.' : 'Enter your Application ID to resume.'}
+                                </p>
+                                <form onSubmit={handleFetchStudent}>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            {showIdInput === 'existing' ? 'Student ID' : 'Application ID'}
+                                        </label>
+                                        <input type="text" value={existingId} onChange={(e) => setExistingId(e.target.value.toUpperCase())} className="form-input w-full uppercase" placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."} autoFocus/>
+                                        {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
+                                    </div>
+                                    <button type="submit" disabled={isFetching || !existingId} className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4">
+                                        {isFetching ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
+                                        {isFetching ? 'Fetching...' : 'Continue'}
+                                    </button>
+                                </form>
+                                {showIdInput === 'existing' && (
+                                    <>
+                                        <hr className="my-4"/>
+                                        <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' })); setStep(1); }} className="w-full btn btn-secondary">
+                                            Skip & Fill Manually
+                                        </button>
+                                    </>
+                                )}
+                                <button onClick={() => setShowIdInput(null)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">&larr; Back to Selection</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -306,6 +317,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             </div>
                         </div>
                     )}
+                    <div className="mb-6">
+                        <button
+                            onClick={() => step > 1 ? setStep(step - 1) : setStep(0)}
+                            className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                        >
+                            <BackIcon className="w-5 h-5" />
+                            Back
+                        </button>
+                    </div>
 
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-slate-800">Online Admission Form</h1>

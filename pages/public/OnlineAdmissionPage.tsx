@@ -190,9 +190,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
         // Validation for new students
         const isNewStudent = formData.studentType === 'Newcomer';
-        if (isNewStudent && (!formData.birthCertificateUrl || !formData.reportCardUrl)) {
-            alert("For new students, both the Birth Certificate and Last Report Card are mandatory. Please upload them to proceed.");
-            return; // Stop submission
+        const isNursery = formData.admissionGrade === Grade.NURSERY;
+
+        if (isNewStudent && !formData.birthCertificateUrl) {
+            alert("For new students, the Birth Certificate is mandatory. Please upload it to proceed.");
+            return;
+        }
+        if (isNewStudent && !isNursery && !formData.reportCardUrl) {
+            alert("For new students applying to classes other than Nursery, the Last Report Card is mandatory. Please upload it to proceed.");
+            return;
         }
 
         setIsSubmitting(true);
@@ -213,6 +219,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     };
     
     const isNewStudent = formData.studentType === 'Newcomer';
+    const isNursery = formData.admissionGrade === Grade.NURSERY;
 
     if (step === 0) {
         return (
@@ -340,7 +347,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents Upload</h2>
                                 {isNewStudent && (
                                     <p className="text-sm text-slate-600 mb-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                        <span className="font-bold">Important:</span> For new students, documents marked with a <span className="text-red-500 font-bold">*</span> are mandatory.
+                                        <span className="font-bold">Important:</span> For new students, the Birth Certificate is mandatory. 
+                                        {!isNursery && " The Last Report Card is also mandatory."}
                                     </p>
                                 )}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -359,7 +367,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold">Last Report Card{isNewStudent && <span className="text-red-500">*</span>}</label>
+                                        <label className="block text-sm font-bold">Last Report Card{isNewStudent && !isNursery && <span className="text-red-500">*</span>}</label>
                                         <div className="flex items-center gap-2 mt-1">
                                             <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" /> Upload</label>
                                             {formData.reportCardUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}

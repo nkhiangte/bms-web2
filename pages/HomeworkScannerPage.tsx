@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 // FIX: Corrected import to use GoogleGenAI from @google/genai.
@@ -146,7 +147,7 @@ const HomeworkScannerPage: React.FC = () => {
             });
 
             // FIX: Correctly access the text from the response object.
-            setAnalysisResult(response.text);
+            setAnalysisResult(response.text ?? 'No response from AI.');
         } catch (err) {
             console.error("Gemini API error:", err);
             setError("Failed to get analysis from AI. Please try again.");

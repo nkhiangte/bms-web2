@@ -3,6 +3,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -105,8 +106,8 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected import casing to match filename 'insightsPage.tsx'.
-import InsightsPage from './pages/insightsPage';
+// FIX: Corrected import casing to match filename 'InsightsPage.tsx'.
+import InsightsPage from './pages/InsightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';

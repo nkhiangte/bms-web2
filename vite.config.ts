@@ -6,10 +6,7 @@ export default defineConfig({
   define: {
     // This makes environment variables available in the client-side code.
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
-    'process.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(process.env.VITE_RAZORPAY_KEY_ID),
-    'process.env.VITE_PHONEPE_MERCHANT_ID': JSON.stringify(process.env.VITE_PHONEPE_MERCHANT_ID),
-    'process.env.VITE_PHONEPE_SALT_KEY': JSON.stringify(process.env.VITE_PHONEPE_SALT_KEY),
-    'process.env.VITE_PHONEPE_SALT_INDEX': JSON.stringify(process.env.VITE_PHONEPE_SALT_INDEX)
+    'process.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(process.env.VITE_RAZORPAY_KEY_ID)
   },
   plugins: [react()],
   build: {

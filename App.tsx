@@ -32,7 +32,6 @@ import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
-import PaymentStatusPage from './pages/public/PaymentStatusPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import GenerateTcPage from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
@@ -106,7 +105,7 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected import casing to match filename 'InsightsPage.tsx'.
+// FIX: Corrected casing for InsightsPage import to match file system.
 import InsightsPage from './pages/InsightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
@@ -431,8 +430,7 @@ const App: React.FC = () => {
               }
           }} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
-          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} />} />
-          <Route path="payment-status/:merchantTransactionId" element={<PaymentStatusPage addNotification={addNotification} />} />
+          <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} schoolConfig={schoolConfig} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />
           <Route path="ncc" element={<NccPage user={user} />} />
@@ -542,7 +540,7 @@ const App: React.FC = () => {
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
-           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} />} />
+           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>
       </Routes>
     </>

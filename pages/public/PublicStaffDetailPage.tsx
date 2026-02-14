@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, Grade, GradeDefinition } from '../../types';
+import { Staff, Grade, GradeDefinition, User } from '../../types';
 import { BackIcon, UserIcon, HomeIcon } from '../../components/Icons';
 import { formatDateForDisplay } from '../../utils';
 import PhotoWithFallback from '../../components/PhotoWithFallback';
@@ -48,7 +48,7 @@ const PublicStaffDetailPage: React.FC<PublicStaffDetailPageProps> = ({ staff, gr
 
   const assignedClass = useMemo(() => {
     if (!staffMember) return null;
-// FIX: Explicitly typed the destructured `def` variable to `GradeDefinition` to fix type inference issues where it was being treated as `unknown`.
+    // FIX: Explicitly typed the destructured `def` variable to `GradeDefinition` to fix type inference issues where it was being treated as `unknown`.
     const entry = Object.entries(gradeDefinitions).find(
       ([, def]: [string, GradeDefinition]) => normalize(def.classTeacherId) === normalize(staffMember.id)
     );

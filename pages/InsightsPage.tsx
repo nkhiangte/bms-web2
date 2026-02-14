@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 // FIX: Corrected imports to use GoogleGenAI and Type from @google/genai.
@@ -141,7 +142,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
             });
             
             // FIX: Correctly access the text from the response object.
-            const resultJson = JSON.parse(response.text);
+            const resultJson = JSON.parse(response.text as string);
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {
             console.error("Error generating analysis:", error);

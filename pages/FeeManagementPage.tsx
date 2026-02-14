@@ -15,6 +15,7 @@ interface FeeManagementPageProps {
   feeStructure: FeeStructure;
   onUpdateFeeStructure: (newStructure: FeeStructure) => Promise<boolean>;
   addNotification: (message: string, type: NotificationType, title?: string) => void;
+  schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
 }
 
 const ReadonlyField: React.FC<{ label: string; value?: string | number }> = ({ label, value }) => (
@@ -35,7 +36,27 @@ const FeeDetailItem: React.FC<{ label: string; amount: number }> = ({ label, amo
     </div>
 );
 
-const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academicYear, onUpdateFeePayments, user, feeStructure, onUpdateFeeStructure, addNotification }) => {
+const PaymentInfoModal: React.FC<{ isOpen: boolean, onClose: () => void, qrCodeUrl?: string, upiId?: string, amount: number }> = ({ isOpen, onClose, qrCodeUrl, upiId, amount }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                    <h3 className="text-xl font-bold text-slate-800">Pay Using UPI</h3>
+                    {qrCodeUrl && <img src={qrCodeUrl} alt="Payment QR Code" className="w-48 h-48 mx-auto mt-4 border p-1" />}
+                    <p className="font-semibold text-slate-700 mt-4">UPI ID: <span className="font-bold text-sky-700">{upiId || 'Not available'}</span></p>
+                    <p className="text-2xl font-extrabold text-emerald-700 mt-2">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount)}</p>
+                    <p className="text-xs text-slate-500 mt-4">After payment, please contact the office to confirm and update your records.</p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-b-xl flex justify-end">
+                    <button onClick={onClose} className="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academicYear, onUpdateFeePayments, user, feeStructure, onUpdateFeeStructure, addNotification, schoolConfig }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [studentIdInput, setStudentIdInput] = useState('');
@@ -45,8 +66,8 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const [isSaved, setIsSaved] = useState(false);
   const [isEditingStructure, setIsEditingStructure] = useState(false);
   const [editableStructure, setEditableStructure] = useState<FeeStructure>(feeStructure);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isSavingStructure, setIsSavingStructure] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // State for adding grades
   const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); 
@@ -229,89 +250,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
     }
   };
 
-   const displayRazorpay = () => {
-        if (!foundStudent || !duesSummary || duesSummary.total <= 0) return;
-
-        setIsProcessingPayment(true);
-        
-        const razorpayKey = process.env.VITE_RAZORPAY_KEY_ID;
-        if (!razorpayKey || razorpayKey === 'undefined' || !razorpayKey.startsWith('rzp_')) {
-            addNotification('Online payment gateway is not configured correctly. Please contact the school administrator.', 'error', 'Configuration Error');
-            setIsProcessingPayment(false);
-            return;
-        }
-
-        const paymentsBeforeTx = foundStudent.feePayments || getDefaultPayments();
-        const duesToPay = {
-            admissionFee: !paymentsBeforeTx.admissionFeePaid && duesSummary.items.some(item => !item.description.includes('Tuition') && !item.description.includes('Term')), 
-            tuitionMonths: academicMonths.filter(month => !paymentsBeforeTx.tuitionFeesPaid?.[month]),
-            examFees: {
-                terminal1: !paymentsBeforeTx.examFeesPaid?.terminal1 && duesSummary.items.some(item => item.description.includes('Term 1')),
-                terminal2: !paymentsBeforeTx.examFeesPaid?.terminal2 && duesSummary.items.some(item => item.description.includes('Term 2')),
-                terminal3: !paymentsBeforeTx.examFeesPaid?.terminal3 && duesSummary.items.some(item => item.description.includes('Term 3')),
-            }
-        };
-        
-        const options = {
-            key: razorpayKey,
-            amount: duesSummary.total * 100,
-            currency: "INR",
-            name: "Bethel Mission School",
-            description: `Fee Payment for ${foundStudent.name}`,
-            image: "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
-            handler: async (response: any) => {
-                const newPayments: FeePayments = JSON.parse(JSON.stringify(paymentsBeforeTx));
-
-                if (duesSummary.items.some(i => !i.description.includes('Tuition') && !i.description.includes('Term') && !i.description.includes('Exam'))) {
-                    newPayments.admissionFeePaid = true;
-                }
-
-                duesToPay.tuitionMonths.forEach(month => {
-                    if(newPayments.tuitionFeesPaid) newPayments.tuitionFeesPaid[month] = true;
-                });
-                
-                if (duesToPay.examFees.terminal1) newPayments.examFeesPaid.terminal1 = true;
-                if (duesToPay.examFees.terminal2) newPayments.examFeesPaid.terminal2 = true;
-                if (duesToPay.examFees.terminal3) newPayments.examFeesPaid.terminal3 = true;
-                
-                try {
-                    await onUpdateFeePayments(foundStudent.id, newPayments);
-                    setFoundStudent(null); 
-                    setStudentIdInput('');
-                    addNotification("Payment successful and records updated!", "success");
-                } catch (err) {
-                     addNotification('Payment was successful but failed to update records. Please contact support.', 'error', 'Update Failed');
-                } finally {
-                    setIsProcessingPayment(false);
-                }
-            },
-            prefill: {
-                name: foundStudent.fatherName,
-                contact: foundStudent.contact,
-            },
-            notes: {
-                student_name: foundStudent.name,
-                student_id: formatStudentId(foundStudent, academicYear),
-            },
-            theme: {
-                color: "#0ea5e9"
-            },
-            modal: {
-                ondismiss: () => {
-                    setIsProcessingPayment(false);
-                }
-            }
-        };
-
-        const paymentObject = new (window as any).Razorpay(options);
-        paymentObject.on('payment.failed', function (response: any){
-            addNotification(response.error.description, 'error', 'Payment Failed');
-            setIsProcessingPayment(false);
-        });
-        paymentObject.open();
-    };
-
-
   const feeSet = foundStudent ? getFeeDetails(foundStudent.grade, feeStructure) : null;
   const allTuitionPaid = paymentData ? academicMonths.every(m => paymentData.tuitionFeesPaid[m]) : false;
 
@@ -345,7 +283,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                 )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* FIX: Filter keys to only include 'set1', 'set2', 'set3' to avoid type errors. */}
                 {(Object.keys(editableStructure || {}).filter(k => k.startsWith('set')) as Array<'set1' | 'set2' | 'set3'>).map(setKey => {
                     const currentGrades = (editableStructure.gradeMap || FEE_SET_GRADES)[setKey as string] || [];
                     const gradesAvailableToAdd = GRADES_LIST.filter(g => !currentGrades.includes(g));
@@ -588,12 +525,11 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
                      {duesSummary && duesSummary.total > 0 && (
                         <button 
                             type="button" 
-                            onClick={displayRazorpay} 
-                            disabled={isProcessingPayment}
-                            className="btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-400"
+                            onClick={() => setIsQrModalOpen(true)} 
+                            className="btn bg-sky-600 text-white hover:bg-sky-700"
                         >
-                            {isProcessingPayment ? <SpinnerIcon className="w-5 h-5" /> : <CurrencyDollarIcon className="w-5 h-5" />}
-                            <span>{isProcessingPayment ? 'Processing...' : `Accept Online Payment (₹${duesSummary.total})`}</span>
+                            <CurrencyDollarIcon className="w-5 h-5" />
+                            <span>Show Payment Info</span>
                         </button>
                      )}
                     {!isReadOnly && (
@@ -606,6 +542,15 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
             </form>
         )}
       </div>
+      {duesSummary && (
+        <PaymentInfoModal
+            isOpen={isQrModalOpen}
+            onClose={() => setIsQrModalOpen(false)}
+            qrCodeUrl={schoolConfig.paymentQRCodeUrl}
+            upiId={schoolConfig.upiId}
+            amount={duesSummary.total}
+        />
+      )}
     </div>
   );
 };

@@ -90,7 +90,7 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                             const isOABC = subjectDef.gradingSystem === 'OABC';
                            
                             if (hasActivities) {
-// FIX: Default null/undefined marks to 0 before arithmetic operation to prevent TypeError.
+                                // FIX: Default null/undefined marks to 0 before arithmetic operation to prevent TypeError.
                                  const examMarks = Number(result?.examMarks ?? 0);
                                  const activityMarks = Number(result?.activityMarks ?? 0);
                                  const totalMarks = examMarks + activityMarks;

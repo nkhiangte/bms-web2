@@ -64,6 +64,7 @@ export interface AdmissionFeeStructure {
 
 export interface AdmissionSettings {
     academicYearLabel: string; // e.g. "2026-27"
+    // admissionFee is kept for legacy compatibility but the detailed structure below is preferred
     admissionFee: number; 
     notebookPrices: Record<string, number>; // Key is Grade string
     items: AdmissionItemConfig[];
@@ -577,6 +578,7 @@ export interface FeeStructure {
     set1: FeeSet;
     set2: FeeSet;
     set3: FeeSet;
+// FIX: Added optional gradeMap to allow for dynamic fee set assignments.
     gradeMap?: Record<string, Grade[]>;
 }
 

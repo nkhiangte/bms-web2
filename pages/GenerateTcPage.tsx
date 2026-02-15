@@ -1,10 +1,15 @@
 
 
+
+
+
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, TcRecord, Grade, Gender, Category, StudentStatus } from '../types';
+import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '../components/Icons';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
+// FIX: Updated to use the new @google/genai API.
 import { GoogleGenAI } from "@google/genai";
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -39,7 +44,7 @@ const FormField: React.FC<{
         ) : type === 'textarea' ? (
             <textarea id={name} name={name} value={value} onChange={onChange} required={required} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
         ) : (
-            <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+            <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-3" />
         )}
     </div>
 );
@@ -52,7 +57,7 @@ const REASON_FOR_LEAVING_OPTIONS = [
     "Minor reasons",
 ];
 
-const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, isSaving, error }) => {
+export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, isSaving, error }) => {
     const navigate = useNavigate();
     const { studentId: paramStudentId } = useParams() as { studentId: string };
 
@@ -84,36 +89,42 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         
         if (student) {
             setFoundStudent(student);
-            if (student.status === StudentStatus.TRANSFERRED) {
-                const tc = tcRecords.find(t => t.studentDbId === student.id);
-                if (tc) {
-                    setSearchError('This student has already been transferred. You can view or print the existing TC.');
-                    setExistingTc(tc);
-                } else {
-                    setSearchError('Warning: This student is marked as transferred, but no TC record was found. You can generate a new TC to resolve this inconsistency.');
-                }
+            
+            const tc = tcRecords.find(r => r.studentDbId === student.id);
+            if (tc) {
+                setExistingTc(tc);
             }
-            setFormData(prev => ({ ...prev, dateOfBirthInWords: '' }));
         } else {
-            setSearchError('Student with this database ID not found.');
+            setSearchError('Student not found.');
         }
     };
-    
+
     useEffect(() => {
         if (paramStudentId) {
             findStudentById(paramStudentId);
         }
     }, [paramStudentId, students, tcRecords]);
 
-    const handleStudentSearch = (e: FormEvent) => {
-        e.preventDefault();
+    const handleStudentSearch = () => {
         setFoundStudent(null);
         setSearchError('');
+        setExistingTc(null);
+
+        if (!studentIdInput) {
+            setSearchError('Please enter a Student ID.');
+            return;
+        }
+        
         const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
+
         if (student) {
-            navigate(`/portal/transfers/generate/${student.id}`);
+            setFoundStudent(student);
+            const tc = tcRecords.find(r => r.studentDbId === student.id);
+            if(tc) {
+                setExistingTc(tc);
+            }
         } else {
-            setSearchError('Active student with this ID not found.');
+            setSearchError('No active student found with this ID. Please check and try again.');
         }
     };
 
@@ -121,21 +132,22 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         if (!foundStudent) return;
         setIsGeneratingWords(true);
         try {
-            // FIX: Updated to use the new @google/genai API.
+            const prompt = `Convert the date ${formatDateForDisplay(foundStudent.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
+            
+            // FIX: Updated Gemini API usage to conform to new guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-            const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
-            const promptText = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
-            
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: promptText,
+                model: "gemini-3-flash-preview",
+                contents: prompt,
             });
-            
-            // FIX: Access response text via the .text property.
-            setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
-        } catch (err) {
-            console.error("Gemini API error:", err);
-            setSearchError("Could not generate date in words. Please enter manually.");
+            // FIX: Access response text via the .text property, not as a function.
+            const text = response.text;
+            if (text) {
+                setFormData(prev => ({ ...prev, dateOfBirthInWords: text.replace(/["*]/g, '').trim() }));
+            }
+        } catch (error) {
+            console.error("AI Generation failed:", error);
+            alert("Failed to generate date in words. Please enter it manually.");
         } finally {
             setIsGeneratingWords(false);
         }
@@ -148,34 +160,18 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (!foundStudent || !formData.dateOfBirthInWords) {
-            alert("Please find a student and generate/enter date of birth in words.");
+        if (!foundStudent) {
+            alert("Please find and select a student first.");
             return;
         }
         setIsConfirmModalOpen(true);
     };
-    
-    const handleConfirmGenerate = () => {
+
+    const handleConfirmSave = async () => {
         if (!foundStudent) return;
 
-        const issueYear = new Date(formData.dateOfIssueOfTc).getFullYear();
-
-        // Filter tcRecords for TCs issued in the same year.
-        const tcsInSameYear = tcRecords.filter(tc => 
-            new Date(tc.dateOfIssueOfTc).getFullYear() === issueYear
-        );
-
-        // The next number is the count of existing records for that year + 1.
-        const nextNumber = tcsInSameYear.length + 1;
-
-        // Pad the number to ensure it has at least 3 digits (e.g., 1 -> "001", 12 -> "012").
-        const paddedNumber = String(nextNumber).padStart(3, '0');
-
-        // Construct the new reference number in the format BMSTCYYYYNNN.
-        const newRefNo = `BMSTC${issueYear}${paddedNumber}`;
-
         const tcData: Omit<TcRecord, 'id'> = {
-            refNo: newRefNo,
+            refNo: `BMS/TC/${academicYear.split('-')[0]}/${foundStudent.rollNo}`,
             studentDbId: foundStudent.id,
             studentDisplayId: formatStudentId(foundStudent, academicYear),
             nameOfStudent: foundStudent.name,
@@ -189,98 +185,138 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
             religion: foundStudent.religion,
             ...formData,
         };
-        onGenerateTc(tcData);
-        setIsConfirmModalOpen(false);
+
+        const success = await onGenerateTc(tcData);
+        if (success) {
+            setIsConfirmModalOpen(false);
+        }
     };
-
+    
+    // FIX: Added the missing JSX return statement to make this a valid React component.
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6">
+    <>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex justify-between items-center">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600"><BackIcon className="w-5 h-5"/> Back</button>
-                <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600"><HomeIcon className="w-5 h-5"/> Home</Link>
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                >
+                    <BackIcon className="w-5 h-5" />
+                    Back
+                </button>
+                <Link
+                    to="/portal/dashboard"
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                    title="Go to Home/Dashboard"
+                >
+                    <HomeIcon className="w-5 h-5" />
+                    <span>Home</span>
+                </Link>
             </div>
-            <h1 className="text-3xl font-bold text-slate-800">Generate Transfer Certificate</h1>
-            
-            {!paramStudentId && (
-                <form onSubmit={handleStudentSearch} className="my-6 max-w-lg">
-                    <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Find Student by ID</label>
-                    <div className="flex gap-2 items-start">
-                        <div className="flex-grow"><input id="student-id-input" type="text" placeholder="e.g., BMS240101" value={studentIdInput} onChange={e => setStudentIdInput(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(e as any); }}} className="w-full form-input"/>{searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}</div>
-                        <button type="submit" className="btn btn-primary h-[42px]"><SearchIcon className="w-5 h-5"/></button>
-                    </div>
-                </form>
-            )}
 
-            {foundStudent && (
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Generate Transfer Certificate</h1>
+            <p className="text-slate-700 mb-8">Enter a student's ID to fetch their details and generate a TC.</p>
+            
+            <div className="mb-8 max-w-lg">
+                <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Enter Student ID</label>
+                <div className="flex gap-2 items-start">
+                    <div className="flex-grow">
+                        <input
+                            id="student-id-input"
+                            type="text"
+                            placeholder="e.g., BMS250501"
+                            value={studentIdInput}
+                            onChange={e => setStudentIdInput(e.target.value.toUpperCase())}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        />
+                        {searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleStudentSearch}
+                        className="px-6 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 h-[42px] flex items-center"
+                    >
+                       <SearchIcon className="w-5 h-5"/>
+                    </button>
+                </div>
+            </div>
+
+            {existingTc && (
+                 <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                    <h3 className="font-bold text-amber-800">TC Already Exists</h3>
+                    <p className="text-amber-900 text-sm mt-1">A Transfer Certificate with Ref No. <span className="font-mono">{existingTc.refNo}</span> has already been generated for this student.</p>
+                    <Link to={`/portal/transfers/print/${existingTc.id}`} className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:underline">
+                        <PrinterIcon className="w-4 h-4" /> Print Existing Certificate
+                    </Link>
+                </div>
+            )}
+            
+            {foundStudent && !existingTc && (
                 <form onSubmit={handleSubmit}>
-                    <div className="mt-6 space-y-6">
-                        <fieldset className="border p-4 rounded-lg bg-slate-50">
+                    <div className="space-y-6">
+                        <fieldset className="border p-4 rounded-lg">
                             <legend className="text-lg font-bold text-slate-800 px-2">Student Details</legend>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                                <ReadonlyField label="Name" value={foundStudent.name} />
-                                <ReadonlyField label="Class" value={foundStudent.grade} />
-                                <ReadonlyField label="Roll No" value={foundStudent.rollNo} />
-                                <ReadonlyField label="Student ID" value={formatStudentId(foundStudent, academicYear)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                                <ReadonlyField label="Student Name" value={foundStudent.name} />
                                 <ReadonlyField label="Father's Name" value={foundStudent.fatherName} />
                                 <ReadonlyField label="Mother's Name" value={foundStudent.motherName} />
+                                <ReadonlyField label="Current Class" value={foundStudent.grade} />
+                                <ReadonlyField label="Roll No" value={foundStudent.rollNo} />
                                 <ReadonlyField label="Date of Birth" value={formatDateForDisplay(foundStudent.dateOfBirth)} />
+                                <ReadonlyField label="Category" value={foundStudent.category} />
                                 <ReadonlyField label="Religion" value={foundStudent.religion} />
                             </div>
                         </fieldset>
-
-                        {searchError && (
-                            <div className={`mt-4 text-center font-semibold p-3 rounded-lg ${existingTc ? 'bg-sky-100 text-sky-800' : searchError.startsWith('Warning') ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
-                                <p>{searchError}</p>
-                                {existingTc && (
-                                    <Link to={`/portal/transfers/print/${existingTc.id}`} className="mt-2 inline-flex items-center gap-2 btn btn-secondary !bg-white">
-                                        <PrinterIcon className="w-5 h-5"/> View/Print Existing TC
-                                    </Link>
-                                )}
-                            </div>
-                        )}
-
-                        <fieldset>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2">
+                        
+                        <fieldset className="border p-4 rounded-lg">
+                            <legend className="text-lg font-bold text-slate-800 px-2">Certificate Information</legend>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                                <div className="lg:col-span-3">
                                     <label className="block text-sm font-bold text-slate-800">Date of Birth (in words)</label>
                                     <div className="flex items-center gap-2">
-                                        <input type="text" name="dateOfBirthInWords" value={formData.dateOfBirthInWords} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required placeholder="e.g., Seventh May Two Thousand Seven" />
-                                        <button type="button" onClick={handleGenerateDateInWords} className="btn btn-secondary h-[42px] mt-1" disabled={isGeneratingWords}>
-                                            {isGeneratingWords ? <SpinnerIcon className="w-5 h-5"/> : <SparklesIcon className="w-5 h-5"/>}
+                                        <input type="text" name="dateOfBirthInWords" value={formData.dateOfBirthInWords} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
+                                        <button type="button" onClick={handleGenerateDateInWords} disabled={isGeneratingWords} className="btn btn-secondary whitespace-nowrap">
+                                            {isGeneratingWords ? <SpinnerIcon className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5"/>}
+                                            {isGeneratingWords ? 'Generating...' : 'AI Generate'}
                                         </button>
                                     </div>
                                 </div>
-                                <FormField label="Date of Application" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date"/>
-                                <FormField label="Date of Issue" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date"/>
-                                <FormField label="Last Date of Attendance" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" required={false} />
-                                <FormField label="Qualified for Promotion?" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
-                                <FormField label="General Conduct" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
-                                <FormField 
-                                    label="Reason for Leaving" 
-                                    name="reasonForLeaving" 
-                                    value={formData.reasonForLeaving} 
-                                    onChange={handleChange}
-                                    type="select"
-                                    options={REASON_FOR_LEAVING_OPTIONS.map(r => ({ value: r, label: r }))}
-                                />
+
                                 <FormField label="School Dues (if any)" name="schoolDuesIfAny" value={formData.schoolDuesIfAny} onChange={handleChange} />
-                                <FormField label="Any Other Remarks" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} />
+                                <FormField label="Qualified for Promotion" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
+                                <FormField label="Date of Last Attendance" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" />
+                                <FormField label="Date of Application of TC" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Date of Issue of TC" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Reason for Leaving" name="reasonForLeaving" value={formData.reasonForLeaving} onChange={handleChange} type="select" options={REASON_FOR_LEAVING_OPTIONS.map(r => ({value: r, label: r}))} />
+                                <FormField label="General Conduct" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
+                                <div className="lg:col-span-2">
+                                    <FormField label="Any Other Remarks" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} type="textarea" required={false} />
+                                </div>
                             </div>
                         </fieldset>
                     </div>
-                    {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
+                    
                     <div className="mt-8 flex justify-end">
-                        <button type="submit" disabled={isSaving || !!existingTc} className="btn btn-primary text-base px-6 py-3 disabled:bg-slate-400">
-                            {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <DocumentPlusIcon className="w-5 h-5" />}
-                            <span>{isSaving ? 'Generating...' : 'Generate Certificate'}</span>
+                        <button type="submit" disabled={isSaving} className="btn btn-primary">
+                            {isSaving ? <SpinnerIcon className="w-5 h-5" /> : <DocumentPlusIcon className="w-5 h-5" />}
+                            <span>{isSaving ? 'Saving...' : 'Generate & Save TC'}</span>
                         </button>
                     </div>
                 </form>
             )}
-            <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={handleConfirmGenerate} title="Confirm TC Generation">
-                <p>This will generate the TC and mark the student as 'Transferred'. This action cannot be easily undone. Are you sure?</p>
+
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmSave}
+                title="Confirm TC Generation"
+                confirmDisabled={isSaving}
+            >
+                <p>Are you sure you want to generate a Transfer Certificate for <span className="font-bold">{foundStudent?.name}</span>? This will also update the student's status to 'Transferred'.</p>
             </ConfirmationModal>
         </div>
+    </>
     );
 };
 

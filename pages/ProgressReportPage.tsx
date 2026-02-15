@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -78,15 +80,15 @@ const calculateTermSummary = (
             let totalSubjectMark = 0, subjectFullMarks = 0;
 
             if (hasActivities) {
-                const examMark = result?.examMarks ?? 0;
-                const activityMark = result?.activityMarks ?? 0;
+                const examMark = Number(result?.examMarks ?? 0);
+                const activityMark = Number(result?.activityMarks ?? 0);
                 examTotal += examMark;
                 activityTotal += activityMark;
                 totalSubjectMark = examMark + activityMark;
                 subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
                 if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
             } else {
-                totalSubjectMark = result?.marks ?? 0;
+                totalSubjectMark = Number(result?.marks ?? 0);
                 examTotal += totalSubjectMark;
                 subjectFullMarks = sd.examFullMarks;
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35

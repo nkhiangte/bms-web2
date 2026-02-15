@@ -19,7 +19,8 @@ const ExamFeeCollectionModal: React.FC<ExamFeeCollectionModalProps> = ({ isOpen,
     const [paymentData, setPaymentData] = useState<Record<string, FeePayments>>({});
     const [isSaving, setIsSaving] = useState(false);
     const feeDetails = getFeeDetails(grade, feeStructure);
-    // FIX: Calculate total exam fee from fee heads instead of non-existent property.
+
+// FIX: Calculate total exam fee from fee heads instead of non-existent property.
     const totalExamFee = (feeDetails.heads || [])
         .filter(h => h.type === 'term')
         .reduce((sum, h) => sum + h.amount, 0);

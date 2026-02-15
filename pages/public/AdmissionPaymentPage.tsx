@@ -164,13 +164,13 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const resized = await resizeImage(screenshotFile, 800, 800, 0.8);
             const url = await uploadToImgBB(resized);
 
-            const itemsToPurchase: AdmissionItem[] = Object.entries(selectedItems).map(([itemName, details]) => {
+            const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if(item.hasSize && (details as any).size && item.priceBySize) {
-                    price = item.priceBySize[(details as any).size] ?? item.price;
+                if(item.hasSize && details.size && item.priceBySize) {
+                    price = item.priceBySize[details.size] ?? item.price;
                 }
-                return { name: itemName, price, quantity: (details as any).quantity, size: (details as any).size };
+                return { name: itemName, price, quantity: details.quantity, size: details.size };
             });
 
             await db.collection('online_admissions').doc(admissionId).update({

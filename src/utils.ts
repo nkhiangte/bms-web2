@@ -85,7 +85,6 @@ export const formatStudentId = (student: Student, academicYear: string): string 
 };
 
 export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure): FeeSet => {
-    // Prioritize dynamic grade map from feeStructure, fall back to constant
     const map = feeStructure.gradeMap || FEE_SET_GRADES;
 
     let set: FeeSet | undefined;
@@ -97,7 +96,6 @@ export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure): FeeSet 
         set = feeStructure.set3;
     }
     
-    // Safety fallback to prevent crashes if structure is missing or malformed
     return set || { heads: [] };
 };
 
@@ -112,19 +110,16 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
 
     const duesMessages: string[] = [];
 
-    // Separate fee heads by type
     const oneTimeFees = (feeSet.heads || []).filter(h => h.type === 'one-time');
     const monthlyFees = (feeSet.heads || []).filter(h => h.type === 'monthly');
     const termFees = (feeSet.heads || []).filter(h => h.type === 'term');
 
-    // 1. One-time Fees (linked to admissionFeePaid flag)
     if (!feePayments.admissionFeePaid && oneTimeFees.length > 0) {
         const totalOneTime = oneTimeFees.reduce((sum, h) => sum + h.amount, 0);
         const names = oneTimeFees.map(h => h.name).join(', ');
         duesMessages.push(`${names}: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalOneTime)}`);
     }
 
-    // 2. Monthly Fees (linked to tuitionFeesPaid months)
     const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0 && monthlyFees.length > 0) {
         const monthlyTotal = monthlyFees.reduce((sum, h) => sum + h.amount, 0);
@@ -133,7 +128,6 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
         duesMessages.push(`${names}: ${unpaidTuitionMonths.length} month(s) pending (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalDue)})`);
     }
 
-    // 3. Term Fees (linked to examFeesPaid flags)
     if (termFees.length > 0) {
         const termTotal = termFees.reduce((sum, h) => sum + h.amount, 0);
         const unpaidExams: string[] = [];
@@ -170,19 +164,16 @@ export const getDuesSummary = (student: Student, feeStructure: FeeStructure): Du
     const feePayments = student.feePayments || defaultPayments;
     const feeSet = getFeeDetails(student.grade, feeStructure);
 
-    // Separate fee heads by type
     const oneTimeFees = (feeSet.heads || []).filter(h => h.type === 'one-time');
     const monthlyFees = (feeSet.heads || []).filter(h => h.type === 'monthly');
     const termFees = (feeSet.heads || []).filter(h => h.type === 'term');
 
-    // 1. One-time Fees
     if (!feePayments.admissionFeePaid) {
         oneTimeFees.forEach(head => {
             items.push({ description: head.name, amount: head.amount });
         });
     }
 
-    // 2. Monthly Fees
     const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0) {
         monthlyFees.forEach(head => {
@@ -191,7 +182,6 @@ export const getDuesSummary = (student: Student, feeStructure: FeeStructure): Du
         });
     }
 
-    // 3. Term Fees
     const unpaidExams: string[] = [];
     if (!feePayments.examFeesPaid?.terminal1) unpaidExams.push('Term 1');
     if (!feePayments.examFeesPaid?.terminal2) unpaidExams.push('Term 2');
@@ -228,17 +218,20 @@ export const getNextAcademicYear = (currentYear: string): string => {
     return `${start + 1}-${end + 1}`;
 };
 
+// FIX: Moved normalizeSubjectName before its first usage to prevent "Cannot find name" errors.
+export const normalizeSubjectName = (name: string): string => {
+    if (!name) return '';
+    return name.trim().toLowerCase();
+};
+
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {
-    if (!gradeDef || !gradeDef.subjects) return 'PASS'; // Default safe
+    if (!gradeDef || !gradeDef.subjects) return 'PASS';
 
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     
-    // Pass/Fail relies primarily on Terminal 3 (Final) results in this context
     const studentExam = student.academicPerformance?.find(e => e.id === 'terminal3');
     
-    // If no final exam data, we assume they haven't failed *yet*, but for promotion logic
-    // we might need strict checking. For now, if no exam data, we can't fail them.
     if (!studentExam) return 'PASS';
 
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
@@ -250,12 +243,12 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
 
     numericSubjects.forEach(sd => {
         const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
-        if (hasActivities) { // III to VIII
+        if (hasActivities) { 
             const examMark = result?.examMarks ?? 0;
             if (examMark < 20) { 
                 failedSubjectsCount_III_to_VIII++;
             }
-        } else { // N, KG, I, II, IX, X
+        } else { 
             if (isClassIXorX) {
                 const totalSubjectMark = result?.marks ?? 0;
                 if (totalSubjectMark < 33) { 
@@ -528,11 +521,6 @@ export const parseSubjectAndTeacher = (subjectString: string): { subject: string
         return { subject: match[1].trim(), teacher: match[2].trim() };
     }
     return { subject: subjectString.trim(), teacher: null };
-};
-
-export const normalizeSubjectName = (name: string): string => {
-    if (!name) return '';
-    return name.trim().toLowerCase();
 };
 
 export const playNotificationSound = () => {

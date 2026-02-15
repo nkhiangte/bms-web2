@@ -183,18 +183,21 @@ export const academicMonths = ["April", "May", "June", "July", "August", "Septem
 export const DEFAULT_FEE_STRUCTURE = {
   set1: {
       heads: [
+// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 500, type: 'term' as const }
       ]
   },
   set2: {
       heads: [
+// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2000, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 600, type: 'term' as const }
       ]
   },
   set3: {
       heads: [
+// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 700, type: 'term' as const }
       ]

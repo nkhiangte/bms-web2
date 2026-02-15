@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect } from 'react';
 import { User, Student, StudentClaim } from '../types';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
@@ -53,7 +56,7 @@ const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, students, a
             .filter(r => r.status === 'match' && r.student)
             .map(r => r.student!.id);
         setVerifiedIds(new Set(matches));
-    }, []); // Run only once on mount
+    }, [verificationResults]); // Rerun if verification results change
 
     const handleApprove = () => {
         onApprove(Array.from(verifiedIds));

@@ -1,5 +1,9 @@
 
 
+
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -29,7 +33,8 @@ import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePa
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
-import GenerateTcPage from './pages/GenerateTcPage';
+// FIX: Changed import for GenerateTcPage to a named import as it has no default export.
+import { GenerateTcPage } from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
 import PrintTcPage from './pages/PrintTcPage';
 import InventoryPage from './pages/InventoryPage';
@@ -101,12 +106,13 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected casing of import to match filename 'insightsPage.tsx'.
+// FIX: Corrected casing for 'InsightsPage' import to resolve module resolution conflicts. The build process detected two files with the same name but different casing ('InsightsPage.tsx' and 'insightsPage.tsx'), causing an error. Using the lowercase version ensures consistency.
 import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
-import ParentsManagementPage from './pages/ParentsManagementPage';
+// FIX: Changed import for ParentsManagementPage to a named import as it has no default export.
+import { ParentsManagementPage } from './pages/ParentsManagementPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import StudentAttendanceLogPage from './pages/StudentAttendanceLogPage';

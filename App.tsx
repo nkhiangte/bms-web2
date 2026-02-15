@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet } from './types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup } from './types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from './constants';
 import { db, auth, firebase } from './firebaseConfig';
 
@@ -101,7 +101,7 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected import casing to match file system (InsightsPage.tsx -> insightsPage.tsx)
+// FIX: Corrected casing of import to match filename 'insightsPage.tsx'.
 import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';

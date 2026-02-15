@@ -1,8 +1,8 @@
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, OnlineAdmission, Grade, Gender, Category, Student } from '../../types';
-import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST } from '../../constants';
+import { User, OnlineAdmission, Grade, Gender, Category, Student, BloodGroup } from '../../types';
+import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST, BLOOD_GROUP_LIST } from '../../constants';
 import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon, SaveIcon, BackIcon } from '../../components/Icons';
 import EditableContent from '../../components/EditableContent';
 import { resizeImage, uploadToImgBB, getNextGrade } from '../../utils';
@@ -53,6 +53,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         cwsn: 'No',
         email: user?.email || '',
         status: 'draft',
+        generalBehaviour: 'Normal',
+        siblingsInSchool: 0,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -104,6 +106,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                  motherName: studentData.motherName || admissionData.motherName,
                  fatherOccupation: studentData.fatherOccupation || admissionData.fatherOccupation,
                  motherOccupation: studentData.motherOccupation || admissionData.motherOccupation,
+                 parentAadhaar: studentData.fatherAadhaar || admissionData.parentAadhaar,
+                 guardianName: studentData.guardianName || admissionData.guardianName,
+                 guardianRelationship: studentData.guardianRelationship || admissionData.guardianRelationship,
                  permanentAddress: studentData.address || admissionData.permanentAddress,
                  presentAddress: studentData.address || admissionData.presentAddress, 
                  contactNumber: studentData.contact || admissionData.contactNumber,
@@ -111,6 +116,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                  category: (studentData.category as string) || (admissionData.category as string),
                  cwsn: studentData.cwsn || admissionData.cwsn,
                  bloodGroup: studentData.bloodGroup || admissionData.bloodGroup,
+                 penNumber: studentData.pen || admissionData.penNumber,
+                 achievements: studentData.achievements || admissionData.achievements,
+                 healthIssues: studentData.healthConditions || admissionData.healthIssues,
                  lastSchoolAttended: isAdmissionDraft ? admissionData.lastSchoolAttended : 'Bethel Mission School',
              }));
              setStep(1);
@@ -340,11 +348,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">1. Student Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                      <div><label className="block text-sm font-bold">Class Applying For*</label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>{GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                     <div><label className="block text-sm font-bold">Date of Birth*</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">Date of Birth*</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
                                      <div><label className="block text-sm font-bold">Gender*</label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                     <div><label className="block text-sm font-bold">Last School</label><input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                     <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <div><label className="block text-sm font-bold">PEN No. (Optional)</label><input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                     <div><label className="block text-sm font-bold">Mother Tongue (Optional)</label><input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                     <div><label className="block text-sm font-bold">Blood Group (Optional)</label><select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1"><option value="">-- Select --</option>{BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                     <div><label className="block text-sm font-bold">CWSN*</label><select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                                     <div><label className="block text-sm font-bold">Category*</label><select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>{CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                     <div><label className="block text-sm font-bold">Religion*</label><input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
                                 </div>
                             </section>
                         )}
@@ -353,20 +366,52 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                              <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">2. Parent/Guardian Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Father's Name*</label><input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Mother's Name*</label><input type="text" name="motherName" value={formData.motherName} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Contact No.*</label><input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address*</label><textarea name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
+                                    <div><label className="block text-sm font-bold">Father's Name*</label><input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Mother's Name*</label><input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Father's Occupation</label><input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div><label className="block text-sm font-bold">Mother's Occupation</label><input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label><input type="text" name="parentAadhaar" value={formData.parentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div><label className="block text-sm font-bold">Guardian's Name (if any)</label><input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div><label className="block text-sm font-bold">Relationship with Guardian</label><input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div><label className="block text-sm font-bold">Contact No.*</label><input type="tel" name="contactNumber" value={formData.contactNumber || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address*</label><textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
                                 </div>
                             </section>
                         )}
                         {/* Step 3: Documents Upload */}
                         {step === 3 && (
                              <section className="animate-fade-in">
-                                <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents Upload</h2>
+                                <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents & Other Info</h2>
+                                
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div><label className="block text-sm font-bold">Last School Attended</label><input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div><label className="block text-sm font-bold">Division in which he/she passed</label><input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">General Behaviour</label>
+                                        <select name="generalBehaviour" value={formData.generalBehaviour || 'Normal'} onChange={handleChange} className="form-select w-full mt-1">
+                                            <option value="Mild">Mild</option>
+                                            <option value="Normal">Normal</option>
+                                            <option value="Hyperactive">Hyperactive</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Siblings in this school</label>
+                                        <input type="number" name="siblingsInSchool" value={formData.siblingsInSchool || 0} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label>
+                                        <textarea name="achievements" value={formData.achievements || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={3}></textarea>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold">Health Issues (if any)</label>
+                                        <textarea name="healthIssues" value={formData.healthIssues || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={3}></textarea>
+                                    </div>
+                                </div>
+
+                                <h3 className="text-lg font-semibold text-slate-700 border-t pt-4 mt-6">Documents Upload</h3>
                                 {isNewStudent && (
-                                    <p className="text-sm text-slate-600 mb-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                    <p className="text-sm text-slate-600 my-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
                                         <span className="font-bold">Important:</span> For new students, the Birth Certificate is mandatory. 
                                         {!isNursery && " The Last Report Card is also mandatory."}
                                     </p>

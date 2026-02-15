@@ -142,7 +142,7 @@ const HomeworkScannerPage: React.FC = () => {
             const textPart = { text: getPromptForType(scanType) };
             
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-3-flash-preview', // Assumes a vision-capable model
                 contents: { parts: [imagePart, textPart] },
             });
 

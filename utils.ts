@@ -592,31 +592,4 @@ export const resizeImage = (file: File, maxWidth: number, maxHeight: number, qua
                 if (!ctx) {
                     return reject(new Error('Could not get canvas context'));
                 }
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', quality));
-            };
-            img.onerror = (err) => reject(err);
-            img.src = e.target.result as string;
-        };
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-    });
-};
-
-export const uploadToImgBB = async (base64Image: string): Promise<string> => {
-    const formData = new FormData();
-    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    formData.append('image', cleanBase64);
-
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: 'POST',
-        body: formData,
-    });
-
-    const data = await response.json();
-    if (data.success) {
-        return data.data.url;
-    } else {
-        throw new Error(data.error?.message || 'Failed to upload image to ImgBB');
-    }
-};
+                ctx.drawImage(img

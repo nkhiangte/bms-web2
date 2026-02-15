@@ -10,6 +10,9 @@
 
 
 
+
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -217,7 +220,7 @@ const calculateTermSummary = (
         else if (percentage >= 75) remark = "Excellent performance.";
         else if (percentage >= 60) remark = "Good performance.";
         else if (percentage >= 45) remark = "Satisfactory performance.";
-        else remark = "Passed. Needs to work harder to improve scores.";
+        else remark = "Passed. Needs to work harder.";
     }
 
     return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark, rank: rankEntry.rank };
@@ -378,7 +381,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {

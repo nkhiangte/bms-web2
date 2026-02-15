@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus } from '../types';
@@ -120,6 +121,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
         if (!foundStudent) return;
         setIsGeneratingWords(true);
         try {
+            // FIX: Updated to use the new @google/genai API.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const displayDate = formatDateForDisplay(foundStudent.dateOfBirth);
             const promptText = `Convert the date ${displayDate} to words in "Day Month Year" format, where the day is an ordinal number. For example, 07/05/2007 becomes "Seventh May Two Thousand Seven".`;
@@ -129,6 +131,7 @@ const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, ac
                 contents: promptText,
             });
             
+            // FIX: Access response text via the .text property.
             setFormData(prev => ({...prev, dateOfBirthInWords: response.text ?? ''}));
         } catch (err) {
             console.error("Gemini API error:", err);

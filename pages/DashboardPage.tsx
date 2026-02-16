@@ -126,8 +126,14 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear }) => {
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
+  
+  useEffect(() => {
+    // If a parent user lands on this page, redirect them to their specific dashboard.
+    if (user.role === 'parent') {
+      navigate('/portal/parent-dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
-  // FIX: Hooks must be called before any early return to prevent "Rendered fewer hooks than expected" error
   const isAdmin = user.role === 'admin';
   const totalPending = pendingAdmissionsCount + pendingParentCount + pendingStaffCount;
   
@@ -141,10 +147,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
             const eventDate = new Date(event.date + 'T00:00:00');
             return eventDate >= today;
         })
-        .slice(0, 5); // Show up to 5 upcoming events
+        .slice(0, 5);
     }, [calendarEvents]);
 
-  // Handle pending user state early return - This is safe because useMemo is called above
   if (user.role === 'pending' || user.role === 'pending_parent') {
       return (
           <div className="text-center bg-white p-10 rounded-xl shadow-lg">
@@ -156,10 +161,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
           </div>
       );
   }
+  
+  // Render a loading state for parents while redirecting to avoid flashing the admin content.
+  if (user.role === 'parent') {
+    return (
+        <div className="flex items-center justify-center" style={{ height: '60vh' }}>
+            <SpinnerIcon className="w-10 h-10 text-sky-600" />
+        </div>
+    );
+  }
 
   return (
     <div>
-        {/* Academic Year Modal */}
         {(!academicYear || isChangingYear) && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative">
@@ -222,15 +235,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                 color="sky"
                 action={<Link to="/portal/students">View Active Students</Link>}
             />
-            {isAdmin && (
-                 <DashboardCard
-                    title="Fee Management"
-                    description="Collect monthly tuition and exam fees."
-                    icon={<CurrencyDollarIcon className="w-7 h-7" />}
-                    color="emerald"
-                    action={<Link to="/portal/fees">Manage Fees</Link>}
-                />
-            )}
             {user.role === 'user' && assignedGrade && (
                  <DashboardCard
                     title="My Class"

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../firebaseConfig';
-import { User } from '../types';
+import { db } from '/firebaseConfig';
+import { User } from '/types';
 import { PlusIcon, TrashIcon, UploadIcon, SpinnerIcon, EditIcon, CheckIcon, XIcon } from './Icons';
-import { uploadToImgBB, resizeImage } from '../utils';
+import { uploadToImgBB, resizeImage } from '/utils';
 
 export interface GridItem {
     id: string;

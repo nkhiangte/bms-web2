@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -87,6 +89,7 @@ import SportsPage from './pages/public/SportsPage';
 import FacilitiesPage from './pages/public/FacilitiesPage';
 import InfrastructurePage from './pages/public/InfrastructurePage';
 import GalleryPage from './pages/public/GalleryPage';
+// FIX: Changed import for ContactPage to a default import as it has a default export.
 import ContactPage from './pages/public/ContactPage';
 import SitemapPage from './pages/public/SitemapPage';
 import SitemapXmlPage from './pages/public/SitemapXmlPage';
@@ -102,8 +105,8 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected casing of import to match filename and avoid case-sensitivity issues on some systems.
-import InsightsPage from './pages/InsightsPage';
+// FIX: Corrected casing of import to match filename ('insightsPage.tsx') and avoid case-sensitivity issues on some systems.
+import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
@@ -117,8 +120,8 @@ import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
-// FIX: Changed FeeManagementPage to a named import.
-import { FeeManagementPage } from './pages/FeeManagementPage';
+// FIX: Changed FeeManagementPage to a default import as it has a default export.
+import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
 
 import NotificationContainer from './components/NotificationContainer';

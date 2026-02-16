@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { NewsItem } from '../types';
+import { NewsItem } from '/types';
 import { PlusIcon, XIcon, SpinnerIcon, LinkIcon } from './Icons';
-import { uploadToImgBB, resizeImage } from '../utils';
+import { uploadToImgBB, resizeImage } from '/utils';
 
 interface NewsFormModalProps {
     isOpen: boolean;
@@ -88,13 +88,13 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
         
         // If textarea ref is available, insert at cursor position
         if (contentRef.current) {
-            const startPos = contentRef.current.selectionStart;
-            const endPos = contentRef.current.selectionEnd;
+            const start = contentRef.current.selectionStart;
+            const end = contentRef.current.selectionEnd;
             
             const newContent = 
-                currentContent.substring(0, startPos) + 
+                currentContent.substring(0, start) + 
                 linkMarkdown + 
-                currentContent.substring(endPos);
+                currentContent.substring(end);
             
             setFormData(prev => ({ ...prev, content: newContent }));
         } else {

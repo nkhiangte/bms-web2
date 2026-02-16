@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord } from '../types';
-import Header from '../components/Header';
-import Sidebar from '../components/Sidebar';
-import Breadcrumbs from '../components/Breadcrumbs';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord } from '/types';
+import Header from '/components/Header';
+import Sidebar from '/components/Sidebar';
+import Breadcrumbs from '/components/Breadcrumbs';
 
 const { Outlet, useLocation } = ReactRouterDOM as any;
 

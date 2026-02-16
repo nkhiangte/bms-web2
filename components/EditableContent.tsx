@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../firebaseConfig';
-import { User } from '../types';
-import { EditIcon, SaveIcon, XIcon, SpinnerIcon, UploadIcon } from './Icons';
-import { uploadToImgBB, resizeImage } from '../utils';
+import { db } from '/firebaseConfig';
+import { User } from '/types';
+import { EditIcon, SaveIcon, XIcon, SpinnerIcon, UploadIcon, LinkIcon } from './Icons';
+import { uploadToImgBB, resizeImage } from '/utils';
 
 interface EditableContentProps {
     id: string; // Unique ID for Firestore document (e.g., 'home_hero_title')
@@ -29,7 +29,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
     const [content, setContent] = useState<string>(defaultContent);
     const [isEditing, setIsEditing] = useState(false);
     const [tempContent, setTempContent] = useState<string>(defaultContent);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
     // Refs

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Student, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '../types';
+import { Student, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '/types';
 import { XIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerIcon } from './Icons';
 
 interface AttendanceCalendarModalProps {

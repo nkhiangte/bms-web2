@@ -2,10 +2,10 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { Student, Grade, StudentStatus, Gender, Category, BloodGroup, SubjectDefinition } from '../types';
-import { createDefaultFeePayments } from '../utils';
+import { Student, Grade, StudentStatus, Gender, Category, BloodGroup, SubjectDefinition } from '/types';
+import { createDefaultFeePayments } from '/utils';
 import { ArrowUpOnSquareIcon, XIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, InboxArrowDownIcon } from './Icons';
-import { OABC_GRADES } from '../constants';
+import { OABC_GRADES } from '/constants';
 
 interface ImportMarksModalProps {
     isOpen: boolean;
@@ -38,6 +38,12 @@ export const ImportMarksModal: React.FC<ImportMarksModalProps> = ({ isOpen, onCl
         setParseError('');
         setIsProcessing(false);
     }, []);
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetState();
+        }
+    }, [isOpen, resetState]);
 
     const subjectHeaders = useMemo(() => {
         const headers: { key: string, label: string, subjectName: string, type: 'exam' | 'activity' | 'total' | 'grade' }[] = [];

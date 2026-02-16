@@ -1,8 +1,9 @@
 
+
 import React, { useState, FormEvent } from 'react';
-import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon } from '../../components/Icons';
-import EditableContent from '../../components/EditableContent';
-import { User } from '../../types';
+import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '/components/Icons';
+import EditableContent from '/components/EditableContent';
+import { User } from '/types';
 
 interface ContactPageProps {
     user: User | null;
@@ -66,86 +67,5 @@ const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
                                     <MailIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
                                     <span className="font-semibold">
                                          <EditableContent id="contact_email" defaultContent="bmschamphai@gmail.com" type="text" user={user} />
-                                    </span>
-                                </div>
-                                <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 hover:text-rose-600 group">
-                                    <InstagramIcon className="w-7 h-7 text-slate-400 group-hover:text-rose-600 transition-colors"/>
-                                    <span className="font-semibold">@bms_champhai</span>
-                                </a>
-                                <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 hover:text-red-600 group">
-                                    <YouTubeIcon className="w-7 h-7 text-slate-400 group-hover:text-red-600 transition-colors"/>
-                                    <span className="font-semibold">@BethelMissionSchoolChamphai</span>
-                                </a>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-slate-800">Office Hours</h3>
-                            <div className="mt-2 text-slate-600">
-                                 <EditableContent 
-                                    id="contact_hours" 
-                                    defaultContent={`Monday - Friday: 9:00 AM - 3:00 PM\nSaturday & Sunday: Closed`} 
-                                    type="textarea" 
-                                    user={user} 
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Feedback Form */}
-                    <div className="bg-slate-50 p-8 rounded-lg shadow-lg border">
-                        <h2 className="text-2xl font-bold text-slate-800 mb-6">Send us a Message</h2>
-                        {isSubmitted ? (
-                             <div className="text-center p-6 bg-emerald-100 text-emerald-800 rounded-lg">
-                                <h3 className="font-bold text-lg">Thank you!</h3>
-                                <p>Your email client should open shortly. If it doesn't, please send your message directly to <a href="mailto:bmschamphai@gmail.com" className="font-semibold underline">bmschamphai@gmail.com</a>.</p>
-                             </div>
-                        ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-bold text-slate-700">Your Name</label>
-                                <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
-                            </div>
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-bold text-slate-700">Your Email</label>
-                                <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
-                            </div>
-                            <div>
-                                <label htmlFor="subject" className="block text-sm font-bold text-slate-700">Subject</label>
-                                <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required />
-                            </div>
-                            <div>
-                                <label htmlFor="message" className="block text-sm font-bold text-slate-700">Message</label>
-                                <textarea id="message" value={message} onChange={e => setMessage(e.target.value)} rows={5} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required></textarea>
-                            </div>
-                            <div>
-                                <button type="submit" className="w-full btn btn-primary mt-2">
-                                    Send Message
-                                </button>
-                            </div>
-                        </form>
-                        )}
-                    </div>
-                </div>
-
-                 {/* Google Map Section */}
-                <div className="mt-16">
-                    <h2 className="text-3xl font-bold text-slate-800 text-center mb-8">Our Location</h2>
-                    <div className="rounded-lg overflow-hidden shadow-lg border">
-                        <iframe
-                            src="https://maps.google.com/maps?q=23.4844106,93.3258673&z=17&amp;output=embed"
-                            width="100%"
-                            height="450"
-                            style={{ border: 0 }}
-                            allowFullScreen={true}
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Bethel Mission School Location"
-                        ></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
+// FIX: Added default export statement.
 export default ContactPage;

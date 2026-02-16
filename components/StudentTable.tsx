@@ -1,9 +1,9 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade } from '../types';
+import { Student, User, Grade } from '/types';
 import { EditIcon, UserIcon } from './Icons';
-import { formatStudentId } from '../utils';
+import { formatStudentId } from '/utils';
 
 const { Link } = ReactRouterDOM as any;
 

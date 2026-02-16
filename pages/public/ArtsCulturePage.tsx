@@ -2,9 +2,9 @@
 import React from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import EditableContent from '../../components/EditableContent';
-import DynamicImageGrid from '../../components/DynamicImageGrid';
-import { User } from '../../types';
+import EditableContent from '/components/EditableContent';
+import DynamicImageGrid from '/components/DynamicImageGrid';
+import { User } from '/types';
 
 const { Link } = ReactRouterDOM as any;
 

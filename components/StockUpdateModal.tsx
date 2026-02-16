@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
-import { HostelInventoryItem } from '../types';
+import { HostelInventoryItem } from '/types';
+import { XIcon } from './Icons';
 
 interface StockUpdateModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { StudentClaim } from '../types';
+import { StudentClaim } from '/types';
 import { SpinnerIcon } from './Icons';
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Legal Guardian', 'Grandparent', 'Other'];

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Student, StudentClaim } from '../types';
-import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
+import { User, Student, StudentClaim } from '/types';
+import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '/utils';
 import { UserIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from './Icons';
 
 interface ParentReviewModalProps {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Student, StudentClaim } from '../types';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
@@ -19,7 +20,7 @@ const DetailItem: React.FC<{ label: string; value?: string | null }> = ({ label,
 );
 
 
-export const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, students, academicYear, onClose, onApprove }) => {
+const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, students, academicYear, onClose, onApprove }) => {
     const claims: StudentClaim[] = user.claimedStudents || 
         (user.claimedStudentId ? [{
             studentId: user.claimedStudentId,
@@ -35,6 +36,7 @@ export const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, stud
         
         let status: 'match' | 'dob_mismatch' | 'not_found' | 'missing_dob' = 'not_found';
         if (student) {
+            // FIX: Normalize both dates to 'YYYY-MM-DD' before comparing to handle different input formats.
             if (claim.dob && student.dateOfBirth && formatDateForStorage(student.dateOfBirth) === formatDateForStorage(claim.dob)) {
                 status = 'match';
             } else if (!claim.dob) {
@@ -51,7 +53,7 @@ export const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, stud
             .filter(r => r.status === 'match' && r.student)
             .map(r => r.student!.id);
         setVerifiedIds(new Set(matches));
-    }, [verificationResults]);
+    }, [verificationResults]); // Rerun if verification results change
 
     const handleApprove = () => {
         onApprove(Array.from(verifiedIds));
@@ -119,3 +121,4 @@ export const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, stud
         </div>
     );
 };
+export default ParentReviewModal;

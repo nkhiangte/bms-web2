@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -106,7 +101,7 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected casing for 'InsightsPage' import to resolve module resolution conflicts. The build process detected two files with the same name but different casing ('InsightsPage.tsx' and 'insightsPage.tsx'), causing an error. Using the lowercase version ensures consistency.
+// FIX: Corrected casing of import to match filename and avoid case-sensitivity issues on some systems.
 import InsightsPage from './pages/insightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';

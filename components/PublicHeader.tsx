@@ -41,6 +41,7 @@ const NavLinks: NavLinkItem[] = [
             { name: 'Eco Club', path: '/eco-club' },
         ],
     },
+    { name: 'Academics', path: '/academics' },
     {
         name: 'Campus',
         children: [

@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -70,94 +74,129 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
+        // FIX: Replaced mistyped variable names with their declared counterparts.
+        let grandTotal = 0;
         let failedSubjectsCount = 0;
         let gradedSubjectsPassed = 0;
-        const failedSubjects: string[] = [];
 
         numericSubjects.forEach(sd => {
-            const result = findResultWithAliases(studentExam?.results, sd);
-            let totalSubjectMark = 0, subjectFullMarks = 0;
-
+            const r = findResultWithAliases(studentExam?.results, sd);
+            let totalMark = 0;
             if (hasActivities) {
-                const examMark = Number(result?.examMarks ?? 0);
-                const activityMark = Number(result?.activityMarks ?? 0);
-                examTotal += examMark;
-                activityTotal += activityMark;
-                totalSubjectMark = examMark + activityMark;
-                subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
-                if (examMark < 20) { failedSubjectsCount++; failedSubjects.push(sd.name); }
+                const eMark = Number(r?.examMarks ?? 0);
+                const aMark = Number(r?.activityMarks ?? 0);
+                totalMark = eMark + aMark;
+                if (eMark < 20) failedSubjectsCount++;
             } else {
-                totalSubjectMark = Number(result?.marks ?? 0);
-                examTotal += totalSubjectMark;
-                subjectFullMarks = sd.examFullMarks;
-                const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
-                if (totalSubjectMark < failLimit) { failedSubjectsCount++; failedSubjects.push(sd.name); }
+                totalMark = Number(r?.marks ?? 0);
+                const limit = isClassIXorX ? 33 : 35;
+                if (totalMark < limit) failedSubjectsCount++;
             }
-            grandTotal += totalSubjectMark;
-            fullMarksTotal += subjectFullMarks;
+            grandTotal += totalMark;
         });
 
         gradedSubjects.forEach(sd => {
-            const result = findResultWithAliases(studentExam?.results, sd);
-            if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
+            const r = findResultWithAliases(studentExam?.results, sd);
+            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gradedSubjectsPassed++;
         });
         
-        const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
-        
-        let resultStatus = 'PASS';
-        if (gradedSubjectsPassed < gradedSubjects.length) resultStatus = 'FAIL';
-        else if (failedSubjectsCount > 1) resultStatus = 'FAIL';
-        else if (failedSubjectsCount === 1) resultStatus = 'SIMPLE PASS';
-        if (isNurseryToII && failedSubjectsCount > 0) resultStatus = 'FAIL';
-        
+        let res = 'PASS';
+        if (gradedSubjectsPassed < gradedSubjects.length) res = 'FAIL';
+        else if (failedSubjectsCount > 1) res = 'FAIL';
+        else if (failedSubjectsCount === 1) res = 'SIMPLE PASS';
+        if (isNurseryToII && failedSubjectsCount > 0) res = 'FAIL';
 
-        let division = '-';
-        if (isClassIXorX && resultStatus === 'PASS') {
-            if (percentage >= 75) division = 'Distinction';
-            else if (percentage >= 60) division = 'I Div';
-            else if (percentage >= 45) division = 'II Div';
-            else if (percentage >= 35) division = 'III Div';
-        }
-
-        let academicGrade = '-';
-        if (resultStatus === 'FAIL') academicGrade = 'E';
-        else {
-            if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
-        }
-        
-        let remark = '';
-        if (resultStatus === 'FAIL') {
-            remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
-        } else if (resultStatus === 'SIMPLE PASS') {
-            remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
-        } else if (resultStatus === 'PASS') {
-            if (percentage >= 90) remark = "Outstanding performance!";
-            else if (percentage >= 75) remark = "Excellent performance.";
-            else if (percentage >= 60) remark = "Good performance.";
-            else if (percentage >= 45) remark = "Satisfactory performance.";
-            else remark = "Passed. Needs to work harder.";
-        }
-
-        return { id: s.id, grandTotal, examTotal, activityTotal, percentage, result: resultStatus, division, academicGrade, remark };
+        return { id: s.id, grandTotal: grandTotal, result: res };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
     
-    const finalRankedData = new Map<string, typeof studentData[0] & {rank: number | '-'}>();
-    
-    studentData.forEach(s => {
-        if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
-            finalRankedData.set(s.id, { ...s, rank: '-' });
+    // Find current student's stats
+    const currentStudentStats = studentData.find(s => s.id === student.id);
+    if (!currentStudentStats) return null;
+
+    let rank: number | '-' = '-';
+    if (currentStudentStats.result === 'PASS') {
+        const rankIndex = uniqueScores.indexOf(currentStudentStats.grandTotal);
+        rank = rankIndex !== -1 ? rankIndex + 1 : '-';
+    }
+
+    // Recalculate details for current student to return full summary object
+    let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
+    const failedSubjects: string[] = [];
+    let gradedSubjectsPassed = 0;
+
+    numericSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        let totalSubjectMark = 0;
+        let subjectFullMarks = 0;
+
+        if (hasActivities) {
+            const examMark = Number(result?.examMarks ?? 0);
+            const activityMark = Number(result?.activityMarks ?? 0);
+            examTotal += examMark;
+            activityTotal += activityMark;
+            totalSubjectMark = examMark + activityMark;
+            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
+            if (examMark < 20) failedSubjects.push(sd.name);
         } else {
-            const rankIndex = uniqueScores.indexOf(s.grandTotal);
-            const rank = rankIndex !== -1 ? rankIndex + 1 : '-';
-            finalRankedData.set(s.id, { ...s, rank });
+            totalSubjectMark = Number(result?.marks ?? 0);
+            examTotal += totalSubjectMark;
+            subjectFullMarks = sd.examFullMarks;
+            const failLimit = isClassIXorX ? 33 : 35;
+            if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }
+        grandTotal += totalSubjectMark;
+        fullMarksTotal += subjectFullMarks;
     });
+
+    gradedSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
+    });
+
+    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
     
-    return finalRankedData.get(student.id) || null;
+    let division = '-';
+    if (isClassIXorX && currentStudentStats.result === 'PASS') {
+        if (percentage >= 75) division = 'Distinction';
+        else if (percentage >= 60) division = 'I Div';
+        else if (percentage >= 45) division = 'II Div';
+        else if (percentage >= 35) division = 'III Div';
+    }
+
+    let academicGrade = '-';
+    if (currentStudentStats.result === 'FAIL') academicGrade = 'E';
+    else {
+        if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+    }
+
+    let remark = '';
+    if (currentStudentStats.result === 'FAIL') {
+        remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
+    } else if (currentStudentStats.result === 'SIMPLE PASS') {
+        remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
+    } else if (currentStudentStats.result === 'PASS') {
+        if (percentage >= 90) remark = "Outstanding performance!";
+        else if (percentage >= 75) remark = "Excellent performance.";
+        else if (percentage >= 60) remark = "Good performance.";
+        else if (percentage >= 45) remark = "Satisfactory performance.";
+        else remark = "Passed. Needs to work harder.";
+    }
+
+    return { 
+        id: student.id, 
+        grandTotal, 
+        examTotal, 
+        activityTotal, 
+        percentage, 
+        result: currentStudentStats.result, 
+        division, 
+        academicGrade, 
+        remark, 
+        rank 
+    };
 };
 
 const MultiTermReportCard: React.FC<{

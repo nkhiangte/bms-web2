@@ -230,7 +230,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         />
-                        {searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}
+                        {searchError && <p className={`${searchError.startsWith('Warning') ? 'text-amber-600' : 'text-red-500'} text-sm mt-1`}>{searchError}</p>}
                     </div>
                     <button
                         type="button"
@@ -319,5 +319,3 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     </>
     );
 };
-
-export default GenerateTcPage;

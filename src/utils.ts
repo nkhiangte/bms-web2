@@ -70,7 +70,7 @@ const getGradeCode = (grade: Grade): string => {
     }
 };
 
-export const formatStudentId = (student: Student, academicYear: string): string => {
+export const formatStudentId = (student: Partial<Student>, academicYear: string): string => {
     if (student?.studentId) {
         return student.studentId;
     }
@@ -277,10 +277,15 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
 };
 
 export const formatDateForDisplay = (isoDate?: string): string => {
-  if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
-    return isoDate || '';
+  if (!isoDate) return '';
+  // Handles both YYYY-MM-DD and DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(isoDate)) {
+    return isoDate;
   }
-  const [year, month, day] = isoDate.split('-');
+  if (!/^\d{4}-\d{2}-\d{2}/.test(isoDate)) { // check only start, allows for ISO strings with time
+    return isoDate;
+  }
+  const [year, month, day] = isoDate.split('T')[0].split('-');
   return `${day}/${month}/${year}`;
 };
 
@@ -288,8 +293,8 @@ export const formatDateForStorage = (displayDate?: string): string => {
   if (!displayDate) {
     return '';
   }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) {
-    return displayDate;
+  if (/^\d{4}-\d{2}-\d{2}/.test(displayDate)) { // check only start
+    return displayDate.split('T')[0];
   }
   const match = displayDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) {
@@ -388,7 +393,7 @@ export const exportAttendanceToCsv = ({
     if (isStaff) headers.push('Days Late');
     
     const rows = people.map(person => {
-        const rowData = [
+        const rowData: (string | number)[] = [
             entityType === 'Student' ? formatStudentId(person as Student, academicYear) : (person as Staff).employeeId,
             entityType === 'Student' ? (person as Student).name : `${(person as Staff).firstName} ${(person as Staff).lastName}`,
         ];

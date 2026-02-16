@@ -4,7 +4,7 @@ import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon,
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { firebase } from '../firebaseConfig';
-import { ParentReviewModal } from '../components/ParentReviewModal';
+import ParentReviewModal from '../components/ParentReviewModal';
 import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;

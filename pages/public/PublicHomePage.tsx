@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
@@ -33,6 +32,15 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
 
     return (
         <>
+            <Link 
+                to="/admissions/online" 
+                className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-sky-500 to-sky-700 text-white p-4 text-center shadow-lg animate-pulse hover:animate-none hover:from-sky-400 hover:to-sky-600 transition-all duration-300"
+            >
+                <span className="font-bold text-xl tracking-wider uppercase">
+                    ADMISSION OPEN, Click Here
+                </span>
+            </Link>
+
              <section className="relative h-[600px] w-full">
                 <EditableContent
                     id="home_hero_bg"

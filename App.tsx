@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -102,7 +103,7 @@ import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
 // FIX: Corrected casing of import to match filename and avoid case-sensitivity issues on some systems.
-import InsightsPage from './pages/insightsPage';
+import InsightsPage from './pages/InsightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
@@ -116,7 +117,8 @@ import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
-import FeeManagementPage from './pages/FeeManagementPage';
+// FIX: Changed FeeManagementPage to a named import.
+import { FeeManagementPage } from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
 
 import NotificationContainer from './components/NotificationContainer';

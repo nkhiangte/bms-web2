@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { InventoryItem, InventoryStatus, User } from '/types';
+import { InventoryItem, InventoryStatus, User } from '../types';
 import { EditIcon, TrashIcon } from './Icons';
 
 interface InventoryTableProps {

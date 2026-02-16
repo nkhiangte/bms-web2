@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '/firebaseConfig';
-import { User } from '/types';
+import { db } from '../firebaseConfig';
+import { User } from '../types';
 import { EditIcon, SaveIcon, XIcon, SpinnerIcon, UploadIcon, LinkIcon } from './Icons';
-import { uploadToImgBB, resizeImage } from '/utils';
+import { uploadToImgBB, resizeImage } from '../utils';
 
 interface EditableContentProps {
     id: string; // Unique ID for Firestore document (e.g., 'home_hero_title')

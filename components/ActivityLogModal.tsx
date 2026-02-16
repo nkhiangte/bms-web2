@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ActivityLog, Assessment } from '/types';
+import { ActivityLog, Assessment } from '../types';
 import { XIcon, PlusIcon, TrashIcon } from './Icons';
 
 interface ActivityLogModalProps {

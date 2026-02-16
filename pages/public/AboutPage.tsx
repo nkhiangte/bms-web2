@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { User } from '/types';
-import EditableContent from '/components/EditableContent';
+import { User } from '../../types';
+import EditableContent from '../../components/EditableContent';
 
 interface AboutPageProps {
     user: User | null;

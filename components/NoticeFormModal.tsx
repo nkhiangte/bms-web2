@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Notice, Grade } from '/types';
-import { GRADES_LIST } from '/constants';
+import { Notice, Grade } from '../types';
+import { GRADES_LIST } from '../constants';
 import { SpinnerIcon } from './Icons';
 
 interface NoticeFormModalProps {

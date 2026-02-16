@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { NewsItem } from '/types';
+import { NewsItem } from '../types';
 import { PlusIcon, XIcon, SpinnerIcon, LinkIcon } from './Icons';
-import { uploadToImgBB, resizeImage } from '/utils';
+import { uploadToImgBB, resizeImage } from '../utils';
 
 interface NewsFormModalProps {
     isOpen: boolean;

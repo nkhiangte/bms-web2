@@ -1,7 +1,6 @@
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User } from '/types';
+import { User } from '../types';
 // FIX: Added 'AcademicCapIcon' and 'CalendarDaysIcon' to the import list to resolve a 'Cannot find name' error.
 import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon, UserIcon } from './Icons';
 

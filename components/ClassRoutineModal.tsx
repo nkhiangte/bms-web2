@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { DailyRoutine, ClassRoutine, Period } from '/types';
+import { DailyRoutine, ClassRoutine, Period } from '../types';
 import { CheckIcon, SpinnerIcon, PlusIcon, TrashIcon } from './Icons';
-import { PERIOD_LABELS, GRADES_LIST } from '/constants';
+import { PERIOD_LABELS, GRADES_LIST } from '../constants';
 
 interface ClassRoutineModalProps {
     isOpen: boolean;

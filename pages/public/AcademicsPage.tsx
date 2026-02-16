@@ -1,9 +1,8 @@
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { AcademicCapIcon, BookOpenIcon } from '/components/Icons';
-import EditableContent from '/components/EditableContent';
-import { User } from '/types';
+import { AcademicCapIcon, BookOpenIcon } from '../../components/Icons';
+import EditableContent from '../../components/EditableContent';
+import { User } from '../../types';
 
 const { Link } = ReactRouterDOM as any;
 

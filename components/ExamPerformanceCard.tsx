@@ -1,8 +1,7 @@
-
 import React, { useMemo } from 'react';
-import { Student, Exam, Grade, GradeDefinition, Attendance } from '/types';
+import { Student, Exam, Grade, GradeDefinition, Attendance } from '../types';
 import AcademicRecordTable from './AcademicRecordTable';
-import { GRADES_WITH_NO_ACTIVITIES, CONDUCT_GRADE_LIST } from '/constants';
+import { GRADES_WITH_NO_ACTIVITIES, CONDUCT_GRADE_LIST } from '../constants';
 
 interface ExamPerformanceCardProps {
     exam: Exam;

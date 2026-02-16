@@ -1,11 +1,9 @@
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { Student, Grade, StudentStatus, Gender, Category, BloodGroup, SubjectDefinition } from '/types';
-import { createDefaultFeePayments } from '/utils';
+import { Student, Grade, StudentStatus, Gender, Category, BloodGroup, SubjectDefinition } from '../types';
+import { createDefaultFeePayments } from '../utils';
 import { ArrowUpOnSquareIcon, XIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, InboxArrowDownIcon } from './Icons';
-import { OABC_GRADES } from '/constants';
+import { OABC_GRADES } from '../constants';
 
 interface ImportMarksModalProps {
     isOpen: boolean;

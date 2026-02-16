@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -57,7 +49,6 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         
         // Fallbacks for common name variations
         const mathNames = ['math', 'maths', 'mathematics'];
-        // FIX: Corrected typo from `normSubjName` to `normSubjDefName` to resolve a reference error.
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         
         if (normSubjDefName === 'english' && normResultName === 'english i') return true;
@@ -103,19 +94,19 @@ const calculateTermSummary = (
 
         for (const sd of numericSubjects) {
             const result = findResultWithAliases(studentExam?.results, sd);
-            let totalSubjectMark: number = 0;
+            let totalMark: number = 0;
 
             if (hasActivities) {
                 const examMark = Number(result?.examMarks ?? 0);
                 const activityMark = Number(result?.activityMarks ?? 0);
-                totalSubjectMark = Number(examMark) + Number(activityMark);
+                totalMark = Number(examMark) + Number(activityMark);
                 if (examMark < 20) { failedSubjectsCount++; }
             } else {
-                totalSubjectMark = Number(result?.marks ?? 0);
+                totalMark = Number(result?.marks ?? 0);
                 const failLimit = isClassIXorX ? 33 : 35; // KG, I, II use 35
-                if (totalSubjectMark < failLimit) { failedSubjectsCount++; }
+                if (totalMark < failLimit) { failedSubjectsCount++; }
             }
-            localGrandTotal += totalSubjectMark;
+            localGrandTotal += totalMark;
         }
 
         gradedSubjects.forEach(sd => {
@@ -366,7 +357,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         let currentSubjMarkValue: number = 0;
         let currentSubjFMValue: number = 0;
         
-        // FIX: Ensured all mark values are treated as numbers before performing arithmetic operations to prevent type errors.
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
@@ -382,6 +372,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = sd.examFullMarks || 0;
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
+            // FIX: Corrected variable name from totalSubjectMark to currentSubjMarkValue to fix "Cannot find name" error.
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
         localGrandTotal += currentSubjMarkValue;

@@ -1,3 +1,3 @@
-// This file is intentionally left blank to resolve a file casing conflict.
-// The correct component is now located at /pages/InsightsPage.tsx.
+// This file is deprecated. The correct component is in InsightsPage.tsx.
+// It is kept as an empty file to resolve casing conflict errors in the build system.
 export {};

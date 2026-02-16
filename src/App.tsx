@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -26,12 +22,12 @@ import StaffAttendancePage from './pages/StaffAttendancePage';
 import StaffAttendanceLogPage from './pages/StaffAttendanceLogPage';
 import ManageStaffPage from './pages/ManageStaffPage';
 import StaffDetailPage from './pages/StaffDetailPage';
+import StaffDetailPagePublic from './pages/StaffDetailPage';
 import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
-// FIX: Changed import for GenerateTcPage to a named import as it has no default export.
 import { GenerateTcPage } from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
 import PrintTcPage from './pages/PrintTcPage';
@@ -104,12 +100,11 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Corrected casing of import to match canonical filename.
-import InsightsPage from './pages/InsightsPage';
+// FIX: Using explicit filename and extension to avoid casing conflict with deprecated lowercase file.
+import InsightsPage from './pages/InsightsPage.tsx';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
-// FIX: Changed import for ParentsManagementPage to a named import as it has no default export.
 import { ParentsManagementPage } from './pages/ParentsManagementPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import StudentAttendancePage from './pages/StudentAttendancePage';

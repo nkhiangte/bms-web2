@@ -1,13 +1,8 @@
-
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, Chore Roster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup } from './types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup } from './types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from './constants';
 import { db, auth, firebase } from './firebaseConfig';
 
@@ -32,7 +27,6 @@ import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePa
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
-// FIX: Changed import for GenerateTcPage to a named import as it has no default export.
 import { GenerateTcPage } from './pages/GenerateTcPage';
 import TcRecordsPage from './pages/TcRecordsPage';
 import PrintTcPage from './pages/PrintTcPage';
@@ -90,7 +84,6 @@ import SportsPage from './pages/public/SportsPage';
 import FacilitiesPage from './pages/public/FacilitiesPage';
 import InfrastructurePage from './pages/public/InfrastructurePage';
 import GalleryPage from './pages/public/GalleryPage';
-// FIX: Changed import for ContactPage to a default import as it has a default export.
 import ContactPage from './pages/public/ContactPage';
 import SitemapPage from './pages/public/SitemapPage';
 import SitemapXmlPage from './pages/public/SitemapXmlPage';
@@ -106,12 +99,11 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-// FIX: Unified casing of InsightsPage import to resolve casing conflict.
-import InsightsPage from './pages/InsightsPage';
+// FIX: Using explicit filename and extension to avoid casing conflict with deprecated lowercase file.
+import InsightsPage from './pages/InsightsPage.tsx';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
-// FIX: Changed import for ParentsManagementPage to a named import as it has no default export.
 import { ParentsManagementPage } from './pages/ParentsManagementPage';
 import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
@@ -121,7 +113,6 @@ import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
 import HostelPage from './pages/public/HostelPage';
 import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
-// FIX: Changed FeeManagementPage to a default import as it has a default export.
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
 

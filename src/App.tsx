@@ -101,8 +101,8 @@ import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
 
-// FIX: Explicitly referencing InsightsPage.tsx to resolve build ambiguity with insightsPage.tsx
-import InsightsPageOriginal from './pages/InsightsPage.tsx';
+// FIX: Unified duplicate import of InsightsPage and corrected casing to prevent compilation conflict with insightsPage.tsx
+import InsightsPageOriginal from './pages/InsightsPage';
 
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';

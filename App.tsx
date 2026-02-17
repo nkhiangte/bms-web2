@@ -99,7 +99,6 @@ import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
 import ParentDashboardPage from './pages/ParentDashboardPage';
 import HomeworkScannerPage from './pages/HomeworkScannerPage';
 import ActivityLogPage from './pages/ActivityLogPage';
-import InsightsPage from './pages/InsightsPage';
 import SchoolSettingsPage from './pages/SchoolSettingsPage';
 import ManageHomeworkPage from './pages/ManageHomeworkPage';
 import ManageSyllabusPage from './pages/ManageSyllabusPage';
@@ -115,8 +114,8 @@ import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
 
-// FIX: Explicitly referencing InsightsPage.tsx to resolve build ambiguity with insightsPage.tsx
-import InsightsPageOriginal from './pages/InsightsPage.tsx';
+/* FIX: Unified duplicate import of InsightsPage and corrected casing to prevent compilation conflict with insightsPage.tsx */
+import InsightsPageOriginal from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';

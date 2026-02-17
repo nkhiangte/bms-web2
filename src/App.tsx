@@ -114,8 +114,8 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// FIX: Changed import path for InsightsPage to lowercase to resolve case sensitivity conflict.
-import InsightsPage from './pages/insightsPage';
+// FIX: Corrected casing of InsightsPage import to match filename.
+import InsightsPage from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';

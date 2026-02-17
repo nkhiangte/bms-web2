@@ -354,7 +354,7 @@ const MultiTermReportCard: React.FC<{
             <div className="mt-8 text-sm break-inside-avoid">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
                              {classTeacher ? (
                                  <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
                              ) : (
@@ -364,168 +364,11 @@ const MultiTermReportCard: React.FC<{
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
-                        <div className="h-8 min-w-[150px]"></div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
-                    </div>
-                </div>
-                <div className="flex justify-between mt-4 text-xs text-slate-500">
-                    <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
-    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
-    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
-
-    const processedReportData = useMemo(() => {
-        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents);
-    }, [student, exam, examTemplate.id, gradeDef, allStudents]);
-
-    const classTeacher = useMemo(() => {
-        if (!staff || !gradeDef?.classTeacherId) return null;
-        return staff.find((s: Staff) => s.id === gradeDef.classTeacherId);
-    }, [staff, gradeDef]);
-
-    return (
-        <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
-            <table className="min-w-full text-sm border-collapse">
-                <thead className="bg-slate-50 print:bg-transparent">
-                    {isNurseryToII ? (
-                        <tr className="border-b border-slate-400">
-                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
-                        </tr>
-                    ) : hasActivities ? (
-                        <>
-                            <tr className="border-b border-slate-400">
-                                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
-                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
-                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
-                                <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total Obtained</th>
-                            </tr>
-                            <tr className="border-b border-slate-400">
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            </tr>
-                        </>
-                    ) : ( // IX & X
-                         <tr className="border-b border-slate-400">
-                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
-                        </tr>
-                    )}
-                </thead>
-                <tbody>
-                     {gradeDef.subjects.map((sd: any) => {
-                        const result = findResultWithAliases(exam?.results, sd);
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        
-                        return (
-                             <tr key={sd.name} className="border-t border-slate-300">
-                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-                                {isNurseryToII ? (
-                                    <>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                    </>
-                                ) : hasActivities ? (
-                                    isGraded ? (
-                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
-                                    ) : (
-                                        <>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            {/* FIX: Ensure operands are numbers before addition to prevent type errors. */}
-                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
-                                        </>
-                                    )
-                                ) : ( // IX & X
-                                    <>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                    </>
-                                )}
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 text-sm print:py-1 print:bg-transparent">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                    {hasActivities && (
-                        <>
-                            <div className="font-semibold text-slate-600 text-right">Summative Total:</div>
-                            <div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>
-                            <div className="font-semibold text-slate-600 text-right">Activity Total:</div>
-                            <div className="font-bold text-slate-800">{processedReportData?.activityTotal}</div>
-                        </>
-                    )}
-                    <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
-                    <div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
-                    
-                    <div className="font-semibold text-slate-600 text-right">Percentage:</div>
-                    <div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
-
-                    {!isClassIXorX && (
-                        <>
-                            <div className="font-semibold text-slate-600 text-right">Grade:</div>
-                            <div className="font-bold text-slate-800">{processedReportData?.academicGrade}</div>
-                        </>
-                    )}
-                    {isClassIXorX && (
-                         <>
-                            <div className="font-semibold text-slate-600 text-right">Division:</div>
-                            <div className="font-bold text-slate-800">{processedReportData?.division}</div>
-                        </>
-                    )}
-
-                    <div className="font-semibold text-slate-600 text-right">Result:</div>
-                    <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
-                    
-                    <div className="font-semibold text-slate-600 text-right">Rank:</div>
-                    <div className="font-bold text-slate-800">{processedReportData?.rank}</div>
-                    <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
-                    <div className="font-bold text-slate-800">
-                        {(exam?.attendance && exam.attendance.totalWorkingDays > 0)
-                            ? `${((exam.attendance.daysPresent / exam.attendance.totalWorkingDays) * 100).toFixed(0)}%`
-                            : 'N/A'}
-                    </div>
-                </div>
-                
-                <div className="pt-1.5 mt-1.5 border-t">
-                    <span className="font-semibold">Teacher's Remarks: </span>
-                    <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
-                </div>
-            </div>
-             <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
-                <div className="flex justify-between items-end">
-                    <div className="text-center">
-                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
-                        </div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
-                    </div>
-                    <div className="text-center">
                         <div className="h-12 min-w-[150px]"></div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
-                <div className="flex justify-between mt-4 print:mt-1">
+                <div className="flex justify-between mt-4 text-xs text-slate-500">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
                     <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                 </div>
@@ -670,13 +513,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = (Number(sd.examFullMarks) || 0) + (Number(sd.activityFullMarks) || 0);
+            currentSubjFMValue = (Number(sd.examFullMarks || 0)) + (Number(sd.activityFullMarks || 0));
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
             localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = Number(sd.examFullMarks) || 0;
+            currentSubjFMValue = Number(sd.examFullMarks || 0);
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
@@ -808,14 +651,43 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center print-hidden">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
+            <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 text-center">{examDetails.name} - {grade}</h1>
-        <div className="mt-8 overflow-x-auto border rounded-lg">
-            <table className="min-w-full text-sm">
-                <thead className="bg-slate-100">
+        <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
+            <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
+        </div>
+
+        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
+            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
+            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
+                <button 
+                    onClick={() => setSortCriteria('rollNo')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Roll No
+                </button>
+                <button
+                    onClick={() => setSortCriteria('name')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Name
+                </button>
+                <button
+                    onClick={() => setSortCriteria('totalMarks')}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
+                >
+                    Total Marks
+                </button>
+            </div>
+        </div>
+        
+        <div className="mt-2 overflow-x-auto border rounded-lg">
+            <table id="mark-statement-table" className="min-w-[2000px] text-sm"> {/* Increased min-width for visibility */}
+                 <thead className="bg-slate-100">
                     <tr>
-                        <th className="px-3 py-2 text-left border-b border-r sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
-                        <th className="px-3 py-2 text-left border-b border-r min-w-48 align-middle">Student Name</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
                         
                         {subjectDefinitions.map(sd => {
                             if (hasActivities && sd.gradingSystem !== 'OABC') {
@@ -847,31 +719,47 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map(student => (
-                        <tr key={student.id} className={changedStudents.has(student.id) ? 'bg-sky-50' : ''}>
+                        <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
                             <td className="px-3 py-2 font-bold text-center border-r sticky left-0 bg-inherit">{student.rollNo}</td>
                             <td className="px-3 py-2 font-medium border-r">{student.name}</td>
                             
-                            {subjectDefinitions.map(sd => (
-                                <td key={sd.name} className="px-1 py-1 border-l text-center">
-                                    {sd.gradingSystem === 'OABC' ? (
-                                        <select value={marksData[student.id]?.[sd.name] as string ?? ''} onChange={e => handleMarkChange(student.id, sd.name, e.target.value, 'grade')} className="form-select w-16">
-                                            <option value="">-</option>
-                                            {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                                        </select>
-                                    ) : (
-                                        <div className="flex gap-1 justify-center">
-                                            {hasActivities ? (
-                                                <>
-                                                    <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={e => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} className="form-input w-12 text-center" placeholder="Ex" />
-                                                    <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={e => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} className="form-input w-12 text-center" placeholder="Ac" />
-                                                </>
-                                            ) : (
-                                                <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={e => handleMarkChange(student.id, sd.name, e.target.value, 'total')} className="form-input w-16 text-center" />
-                                            )}
-                                        </div>
-                                    )}
-                                </td>
-                            ))}
+                            {subjectDefinitions.map(sd => {
+                                const isOABC = sd.gradingSystem === 'OABC';
+
+                                if (isOABC) {
+                                    return (
+                                        <td key={sd.name} colSpan={1} className="px-1 py-1 border-l text-center">
+                                            <select
+                                                value={marksData[student.id]?.[sd.name] as string ?? ''}
+                                                onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
+                                                className="form-select w-20 text-center"
+                                            >
+                                                <option value="">-</option>
+                                                {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                                            </select>
+                                        </td>
+                                    );
+                                }
+
+                                if (hasActivities) {
+                                    return (
+                                        <React.Fragment key={sd.name}>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                            <td className="px-1 py-1 border-l text-center">
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} className="form-input w-20 text-center" placeholder="-" />
+                                            </td>
+                                        </React.Fragment>
+                                    );
+                                }
+                                
+                                return (
+                                    <td key={sd.name} className="px-1 py-1 border-l text-center">
+                                        <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} className="form-input w-20 text-center" placeholder="-" />
+                                    </td>
+                                );
+                            })}
 
                             <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{student.grandTotal}</td>
                             <td className="px-3 py-2 text-center border-l">{student.percentage.toFixed(2)}</td>

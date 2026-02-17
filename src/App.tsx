@@ -536,7 +536,8 @@ const App: React.FC = () => {
            <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async (hw) => { await db.collection('homework').add(hw); }} onDelete={async (id) => { await db.collection('homework').doc(id).delete(); }} allHomework={homework} />} />
            <Route path="manage-syllabus" element={<ManageSyllabusPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async (syl, id) => { await db.collection('syllabus').doc(id).set(syl); }} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
-           <Route path="insights" element={<InsightsPageOriginal />} />
+           {/* FIX: Passed required props to InsightsPageOriginal component */}
+           <Route path="insights" element={<InsightsPageOriginal students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
            <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

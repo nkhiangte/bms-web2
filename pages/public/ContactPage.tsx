@@ -18,7 +18,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
         e.preventDefault();
         
         const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-        const mailtoLink = `mailto:bmschamphai@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const mailtoLink = `mailto:bms@bms04.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
         // This will attempt to open the user's default email client
         window.location.href = mailtoLink;
@@ -64,7 +64,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
                                 <div className="flex items-center gap-4 group">
                                     <MailIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
                                     <span className="font-semibold">
-                                         <EditableContent id="contact_email" defaultContent="bmschamphai@gmail.com" type="text" user={user} />
+                                         <EditableContent id="contact_email" defaultContent="bms@bms04.com" type="text" user={user} />
                                     </span>
                                 </div>
                             </div>

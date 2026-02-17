@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
@@ -57,7 +56,7 @@ const HostelPage: React.FC<HostelPageProps> = ({ user }) => {
         e.preventDefault();
         const subject = "Hostel Inquiry";
         const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-        const mailtoLink = `mailto:bmschamphai@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const mailtoLink = `mailto:bms@bms04.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailtoLink;
         setIsSubmitted(true);
     };
@@ -272,7 +271,7 @@ const HostelPage: React.FC<HostelPageProps> = ({ user }) => {
                              <address className="not-italic mt-4 space-y-3 text-slate-600">
                                 <p className="flex items-center gap-3"><MapPinIcon className="w-5 h-5 text-sky-600"/><span>Bethel Veng, Champhai, Mizoram - 796321</span></p>
                                 <p className="flex items-center gap-3"><PhoneIcon className="w-5 h-5 text-sky-600"/><a href="tel:+919862148342" className="hover:text-sky-800">+91 9862148342</a></p>
-                                <p className="flex items-center gap-3"><MailIcon className="w-5 h-5 text-sky-600"/><a href="mailto:bmschamphai@gmail.com" className="hover:text-sky-800">bmschamphai@gmail.com</a></p>
+                                <p className="flex items-center gap-3"><MailIcon className="w-5 h-5 text-sky-600"/><a href="mailto:bms@bms04.com" className="hover:text-sky-800">bms@bms04.com</a></p>
                             </address>
                         </div>
                         <div>

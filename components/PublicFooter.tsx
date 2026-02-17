@@ -1,4 +1,3 @@
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { InstagramIcon, YouTubeIcon, MailIcon, PhoneIcon, FacebookIcon } from './Icons';
@@ -38,7 +37,7 @@ const PublicFooter: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <MailIcon className="w-5 h-5 flex-shrink-0 text-slate-400" />
-                                <a href="mailto:bmschamphai@gmail.com" className="hover:text-white">bmschamphai@gmail.com</a>
+                                <a href="mailto:bms@bms04.com" className="hover:text-white">bms@bms04.com</a>
                             </div>
                         </address>
                         <div className="mt-4 flex space-x-4">

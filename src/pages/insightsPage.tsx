@@ -1,3 +1,3 @@
 // This file is deprecated. The correct component is in InsightsPage.tsx.
-// It is kept as an empty file to resolve casing conflict errors in the build system.
+// Content removed to resolve casing conflict errors in build systems on case-insensitive file systems.
 export {};

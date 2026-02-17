@@ -81,8 +81,9 @@ const calculateTermSummary = (
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
+    // Calculate ranking based on grand total of all students in the class
     const studentData = classmates.map(s => {
-        const studentExam = s.academicPerformance?.find(e => {
+        const sExam = s.academicPerformance?.find(e => {
             const examTemplate = TERMINAL_EXAMS.find(t => t.id === examId);
             if (!examTemplate) return false;
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
@@ -93,7 +94,7 @@ const calculateTermSummary = (
         let gradedSubjectsPassed: number = 0;
 
         for (const sd of numericSubjects) {
-            const result = findResultWithAliases(studentExam?.results, sd);
+            const result = findResultWithAliases(sExam?.results, sd);
             let totalMark: number = 0;
 
             if (hasActivities) {
@@ -110,7 +111,7 @@ const calculateTermSummary = (
         }
 
         gradedSubjects.forEach(sd => {
-            const result = findResultWithAliases(studentExam?.results, sd);
+            const result = findResultWithAliases(sExam?.results, sd);
             if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
         });
         
@@ -146,7 +147,7 @@ const calculateTermSummary = (
     let activityTotal: number = 0;
     let fullMarksTotal: number = 0;
     const failedSubjects: string[] = [];
-    let gradedSubjectsPassed: number = 0;
+    let gradedSubjectsPassed = 0;
 
     numericSubjects.forEach(sd => {
         const result = findResultWithAliases(exam?.results, sd);
@@ -272,7 +273,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
             // Fallbacks for common name variations
             const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
+            if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
             
             if (normSubjName === 'english' && normResultName === 'english i') return true;
             if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
@@ -363,20 +364,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             
             localExamTotal += examMark;
             localActivityTotal += activityMark;
-            currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = (sd.examFullMarks || 0) + (sd.activityFullMarks || 0);
+            currentSubjMarkValue = Number(examMark) + Number(activityMark);
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
             localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = sd.examFullMarks || 0;
+            currentSubjFMValue = Number(sd.examFullMarks || 0);
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-            // FIX: Corrected variable name from totalSubjectMark to currentSubjMarkValue to fix "Cannot find name" error.
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
-        localGrandTotal += currentSubjMarkValue;
-        localFullMarksTotal += currentSubjFMValue;
+        localGrandTotal = Number(localGrandTotal) + Number(currentSubjMarkValue);
+        localFullMarksTotal = Number(localFullMarksTotal) + Number(currentSubjFMValue);
       }
 
       gradedSubjects.forEach(sd => {
@@ -613,7 +613,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 );
                             })}
 
-                            <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{student.grandTotal}</td>
+                            {/* FIX: Simplified arithmetic using direct assignment and explicit cast to resolve operation type errors. */}
+                            <td className="px-3 py-2 text-center font-bold text-sky-700 border-l">{(student.grandTotal as number)}</td>
                             <td className="px-3 py-2 text-center border-l">{student.percentage.toFixed(2)}</td>
                             <td className="px-3 py-2 text-center font-bold border-l">{student.rank}</td>
                             <td className="px-3 py-2 text-center border-l">{isClassIXorX ? student.division : '-'}</td>

@@ -113,8 +113,6 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-
-/* FIX: Unified duplicate import of InsightsPage and corrected casing to prevent compilation conflict with insightsPage.tsx */
 import InsightsPageOriginal from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';

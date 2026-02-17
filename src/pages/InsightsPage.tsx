@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Corrected imports to use GoogleGenAI and Type from @google/genai as per guidelines.
+// FIX: Using correct imports from @google/genai as per the latest SDK guidelines.
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
@@ -23,7 +23,7 @@ interface AnalysisResult {
     weaknesses: string[];
 }
 
-// FIX: Replaced deprecated SchemaType with Type and defined a valid OpenAPI schema.
+// FIX: responseSchema defined using Type enum from @google/genai for structured output.
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -128,7 +128,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // FIX: Initialized GoogleGenAI with apiKey named parameter and accessed response text via .text property.
+            // FIX: Initializing GoogleGenAI with named apiKey parameter and accessing text via .text property.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',

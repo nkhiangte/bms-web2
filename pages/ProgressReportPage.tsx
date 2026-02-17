@@ -1,13 +1,4 @@
 
-
-
-
-
-
-
-
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -35,7 +26,6 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
 
-        // Fallbacks for common name variations
         const mathNames = ['math', 'maths', 'mathematics'];
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         
@@ -76,10 +66,9 @@ const calculateTermSummary = (
             return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
         });
         
-        // FIX: Replaced mistyped variable names with their declared counterparts.
-        let grandTotal = 0;
-        let failedSubjectsCount = 0;
-        let gradedSubjectsPassed = 0;
+        let gTotal = 0;
+        let fSubjects = 0;
+        let gSubjectsPassed = 0;
 
         numericSubjects.forEach(sd => {
             const r = findResultWithAliases(studentExam?.results, sd);
@@ -88,33 +77,32 @@ const calculateTermSummary = (
                 const eMark = Number(r?.examMarks ?? 0);
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
-                if (eMark < 20) failedSubjectsCount++;
+                if (eMark < 20) fSubjects++;
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
-                if (totalMark < limit) failedSubjectsCount++;
+                if (totalMark < limit) fSubjects++;
             }
-            grandTotal += totalMark;
+            gTotal += totalMark;
         });
 
         gradedSubjects.forEach(sd => {
             const r = findResultWithAliases(studentExam?.results, sd);
-            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gradedSubjectsPassed++;
+            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gSubjectsPassed++;
         });
         
         let res = 'PASS';
-        if (gradedSubjectsPassed < gradedSubjects.length) res = 'FAIL';
-        else if (failedSubjectsCount > 1) res = 'FAIL';
-        else if (failedSubjectsCount === 1) res = 'SIMPLE PASS';
-        if (isNurseryToII && failedSubjectsCount > 0) res = 'FAIL';
+        if (gSubjectsPassed < gradedSubjects.length) res = 'FAIL';
+        else if (fSubjects > 1) res = 'FAIL';
+        else if (fSubjects === 1) res = 'SIMPLE PASS';
+        if (isNurseryToII && fSubjects > 0) res = 'FAIL';
 
-        return { id: s.id, grandTotal: grandTotal, result: res };
+        return { id: s.id, grandTotal: gTotal, result: res };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
     
-    // Find current student's stats
     const currentStudentStats = studentData.find(s => s.id === student.id);
     if (!currentStudentStats) return null;
 
@@ -124,7 +112,6 @@ const calculateTermSummary = (
         rank = rankIndex !== -1 ? rankIndex + 1 : '-';
     }
 
-    // Recalculate details for current student to return full summary object
     let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
     const failedSubjects: string[] = [];
     let gradedSubjectsPassed = 0;
@@ -209,7 +196,6 @@ const MultiTermReportCard: React.FC<{
     staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
@@ -264,24 +250,33 @@ const MultiTermReportCard: React.FC<{
                         const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
                         const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
                         const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
+                        const isGraded = sd.gradingSystem === 'OABC';
 
                         return (
                             <tr key={sd.name} className="text-center">
                                 <td className="p-1 border border-slate-400 text-left font-semibold">{sd.name}</td>
                                 {hasActivities ? (
-                                    <>
-                                        <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
-                                    </>
+                                    isGraded ? (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
+                                        </>
+                                    )
                                 ) : (
                                     <>
-                                        <td className="p-1 border border-slate-400">{term1Result?.marks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.marks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.marks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
                                     </>
                                 )}
                             </tr>
@@ -346,17 +341,13 @@ const MultiTermReportCard: React.FC<{
             <div className="mt-8 text-sm break-inside-avoid">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (
-                                 <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
-                             ) : (
-                                 <div className="h-4"></div>
-                             )}
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
-                        <div className="h-8 min-w-[150px]"></div>
+                        <div className="h-12 min-w-[150px]"></div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
@@ -441,7 +432,6 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            {/* FIX: Ensure operands are numbers before addition to prevent type errors. */}
                                             <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )

@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
@@ -54,6 +53,7 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
+    const classmates = allStudents.filter(s => s.grade === student.grade && s.status === StudentStatus.ACTIVE);
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -197,7 +197,6 @@ const MultiTermReportCard: React.FC<{
     staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
@@ -252,24 +251,33 @@ const MultiTermReportCard: React.FC<{
                         const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
                         const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
                         const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
+                        const isGraded = sd.gradingSystem === 'OABC';
 
                         return (
                             <tr key={sd.name} className="text-center">
                                 <td className="p-1 border border-slate-400 text-left font-semibold">{sd.name}</td>
                                 {hasActivities ? (
-                                    <>
-                                        <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
-                                    </>
+                                    isGraded ? (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
+                                        </>
+                                    )
                                 ) : (
                                     <>
-                                        <td className="p-1 border border-slate-400">{term1Result?.marks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term2Result?.marks ?? '-'}</td>
-                                        <td className="p-1 border border-slate-400">{term3Result?.marks ?? '-'}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
                                     </>
                                 )}
                             </tr>
@@ -425,7 +433,6 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            {/* FIX: Ensure operands are numbers before addition to prevent type errors. */}
                                             <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )

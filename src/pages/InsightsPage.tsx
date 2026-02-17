@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 // FIX: Using correct imports from @google/genai as per the latest SDK guidelines.
@@ -128,7 +129,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // FIX: Initializing GoogleGenAI with named apiKey parameter and accessing text via .text property.
+            // FIX: Initializing GoogleGenAI with named apiKey parameter and accessing text via .text property as per guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',

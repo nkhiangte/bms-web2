@@ -1,6 +1,6 @@
 
-// This file is a duplicate of InsightsPage.tsx with incorrect casing.
-// Content has been neutralized to resolve build system casing conflicts.
+
+// This file is a duplicate and is not used by the application.
 // The main component logic and Gemini API integration are maintained in InsightsPage.tsx.
 
 export {};

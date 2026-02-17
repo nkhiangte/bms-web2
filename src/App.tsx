@@ -66,6 +66,7 @@ import RulesPage from './pages/public/RulesPage';
 import AdmissionsPage from './pages/public/AdmissionsPage';
 import OnlineAdmissionPage from './pages/public/OnlineAdmissionPage';
 import AdmissionStatusPage from './pages/public/AdmissionStatusPage';
+import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import SuppliesPage from './pages/public/SuppliesPage';
 import StudentLifePage from './pages/public/StudentLifePage';
 import NccPage from './pages/public/NccPage';
@@ -115,8 +116,8 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// FIX: Corrected casing of InsightsPage import to resolve name collision and ensure correct module resolution.
-import InsightsPage from './pages/InsightsPage';
+// FIX: Using lowercase filename to match the file already included in the program and avoid casing conflicts.
+import InsightsPage from './pages/insightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';

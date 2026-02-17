@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -39,23 +40,25 @@ type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
+    const normSubjDefName = normalizeSubjectName(subjectDef.name).replace(/-/g, '').replace(/\s+/g, ' ');
     
     return results.find(r => {
-        const normResultName = normalizeSubjectName(r.subject);
+        const normResultName = normalizeSubjectName(r.subject).replace(/-/g, '').replace(/\s+/g, ' ');
         if (normResultName === normSubjDefName) return true;
         
         // Fallbacks for common name variations
         const mathNames = ['math', 'maths', 'mathematics'];
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         
-        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
+        // English aliases
+        const eng1Aliases = ['english', 'english i', 'english 1', 'eng i', 'eng 1'];
+        if (eng1Aliases.includes(normSubjDefName) && eng1Aliases.includes(normResultName)) return true;
+
+        const eng2Aliases = ['english ii', 'english 2', 'eng ii', 'eng 2'];
+        if (eng2Aliases.includes(normSubjDefName) && eng2Aliases.includes(normResultName)) return true;
+
+        const socAliases = ['social studies', 'social science', 'social sciences', 'soc studies', 'evs'];
+        if (socAliases.includes(normSubjDefName) && socAliases.includes(normResultName)) return true;
 
         return false;
     });

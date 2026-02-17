@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry } from '../types';
-import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon } from '../components/Icons';
+import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '../types';
+import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '../components/Icons';
 import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp } from '../utils';
-import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS } from '../constants';
+import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '../constants';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 
@@ -35,7 +35,7 @@ const DetailItem: React.FC<{label: string, value?: string | number}> = ({ label,
 const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children}) => (
     <div className="mb-8">
         <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">{title}</h2>
-        <div className="sm:col-span-2 lg:col-span-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
             {children}
         </div>
     </div>
@@ -62,7 +62,8 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
   
   const canEdit = user.role === 'admin' || (user.role === 'user' && student && student.grade === assignedGrade);
-  
+  const isAdmin = user.role === 'admin';
+
   const studentConductLog = useMemo(() => {
     if (!student) return [];
     return conductLog.filter(entry => entry.studentId === student.id);
@@ -140,6 +141,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   }
   
   const formattedStudentId = formatStudentId(student, academicYear);
+  const dues = calculateDues(student, feeStructure);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -234,34 +236,142 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
       
       <div>
             <DetailSection title="Personal Information">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    <DetailItem label="Student ID" value={formattedStudentId} />
-                    <DetailItem label="Permanent Education Number (PEN)" value={student.pen} />
-                    <DetailItem label="Date of Birth" value={formatDateForDisplay(student.dateOfBirth)} />
-                    <DetailItem label="Gender" value={student.gender} />
-                    <DetailItem label="Aadhaar Number" value={student.aadhaarNumber} />
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        <dt className="text-sm font-medium text-slate-600">Contact Number</dt>
-                        <dd className="mt-1 text-md font-semibold text-slate-900 flex justify-between items-center">
-                            <span>{student.contact || 'N/A'}</span>
-                            {student.contact && (
-                                <div className="flex items-center gap-2">
-                                    <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
-                                        <WhatsappIcon className="w-5 h-5"/>
-                                    </a>
-                                    <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
-                                        <MessageIcon className="w-5 h-5"/>
-                                    </a>
+                <DetailItem label="Student ID" value={formattedStudentId} />
+                <DetailItem label="Permanent Education Number (PEN)" value={student.pen} />
+                <DetailItem label="Date of Birth" value={formatDateForDisplay(student.dateOfBirth)} />
+                <DetailItem label="Gender" value={student.gender} />
+                <DetailItem label="Aadhaar Number" value={student.aadhaarNumber} />
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <dt className="text-sm font-medium text-slate-600">Contact Number</dt>
+                    <dd className="mt-1 text-md font-semibold text-slate-900 flex justify-between items-center">
+                        <span>{student.contact || 'N/A'}</span>
+                        {student.contact && (
+                            <div className="flex items-center gap-2">
+                                <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
+                                    <WhatsappIcon className="w-5 h-5"/>
+                                </a>
+                                <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
+                                    <MessageIcon className="w-5 h-5"/>
+                                </a>
+                            </div>
+                        )}
+                    </dd>
+                </div>
+                <DetailItem label="Blood Group" value={student.bloodGroup} />
+                <DetailItem label="CWSN" value={student.cwsn} />
+                <div className="lg:col-span-3">
+                    <DetailItem label="Address" value={student.address} />
+                </div>
+            </DetailSection>
+
+            {/* Fee Payment Status Section */}
+            <DetailSection title="Fee Payment Status">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Payment Progress Summary */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-slate-50 border rounded-xl p-6">
+                            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <CurrencyDollarIcon className="w-5 h-5 text-emerald-600"/>
+                                Monthly Tuition Fees ({academicYear})
+                            </h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                                {academicMonths.map(month => {
+                                    const isPaid = student.feePayments?.tuitionFeesPaid?.[month];
+                                    return (
+                                        <div 
+                                            key={month} 
+                                            className={`p-2 rounded-lg border text-center transition-colors ${
+                                                isPaid 
+                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                                                : 'bg-white border-slate-200 text-slate-400'
+                                            }`}
+                                        >
+                                            <div className="text-[10px] font-bold uppercase tracking-wider">{month.substring(0, 3)}</div>
+                                            <div className="mt-1">
+                                                <ClockIcon className="w-5 h-5 mx-auto opacity-30"/>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-slate-50 border rounded-xl p-4">
+                                <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Examination Fees</h3>
+                                <div className="space-y-2">
+                                    {TERMINAL_EXAMS.map(exam => {
+                                        const isPaid = student.feePayments?.examFeesPaid?.[exam.id as keyof typeof student.feePayments.examFeesPaid];
+                                        return (
+                                            <div key={exam.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                                                <span className="text-sm font-medium text-slate-700">{exam.name}</span>
+                                                {isPaid ? (
+                                                    <span className="text-emerald-600 font-bold text-xs flex items-center gap-1"><CheckCircleIcon className="w-4 h-4"/> PAID</span>
+                                                ) : (
+                                                    <span className="text-rose-600 font-bold text-xs flex items-center gap-1"><XCircleIcon className="w-4 h-4"/> UNPAID</span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
-                        </dd>
+                            </div>
+                            <div className="bg-slate-50 border rounded-xl p-4">
+                                <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">One-Time Charges</h3>
+                                <div className="flex items-center justify-between p-3 bg-white rounded border h-[42px]">
+                                    <span className="text-sm font-medium text-slate-700">Admission / Annual Misc Fees</span>
+                                    {student.feePayments?.admissionFeePaid ? (
+                                        <span className="text-emerald-600 font-bold text-xs flex items-center gap-1"><CheckCircleIcon className="w-4 h-4"/> PAID</span>
+                                    ) : (
+                                        <span className="text-rose-600 font-bold text-xs flex items-center gap-1"><XCircleIcon className="w-4 h-4"/> UNPAID</span>
+                                    )}
+                                </div>
+                                {isAdmin && (
+                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-4 w-full btn btn-secondary text-xs py-2">
+                                        Update Payment Status
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                    <DetailItem label="Blood Group" value={student.bloodGroup} />
-                    <DetailItem label="CWSN" value={student.cwsn} />
-                    <div className="sm:col-span-2 lg:col-span-3">
-                        <DetailItem label="Address" value={student.address} />
+
+                    {/* Outstanding Dues Summary */}
+                    <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 h-fit shadow-sm">
+                        <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <ExclamationTriangleIcon className="w-6 h-6 text-amber-600"/>
+                            Outstanding Dues
+                        </h3>
+                        {dues.length > 0 ? (
+                            <>
+                                <ul className="space-y-3">
+                                    {dues.map((due, idx) => (
+                                        <li key={idx} className="flex gap-2 text-sm text-amber-800">
+                                            <span className="font-bold mt-1 text-amber-600">•</span>
+                                            <span className="font-medium leading-tight">{due}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <div className="mt-8 pt-4 border-t border-amber-200">
+                                    <p className="text-xs text-amber-700 font-bold uppercase tracking-widest mb-1">Total Outstanding (Est.)</p>
+                                    <div className="text-3xl font-black text-amber-900">
+                                        {/* Dynamic calculation is visible on fee page, here we just show count or summary */}
+                                        {dues.length} Pending Items
+                                    </div>
+                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-4 w-full btn btn-primary bg-amber-600 hover:bg-amber-700 border-none shadow-amber-200 shadow-lg">
+                                        Manage & Pay Fees
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center py-6">
+                                <div className="bg-emerald-100 text-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircleIcon className="w-10 h-10"/>
+                                </div>
+                                <h4 className="font-bold text-emerald-800 text-lg">No Pending Dues</h4>
+                                <p className="text-sm text-emerald-700 mt-2">All school fees for {academicYear} are currently clear.</p>
+                            </div>
+                        )}
                     </div>
-                </dl>
+                </div>
             </DetailSection>
 
             <DetailSection title="Parent & Guardian Information">
@@ -276,6 +386,8 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                     <DetailItem label="Relationship with Guardian" value={student.guardianRelationship} />
                 </dl>
             </DetailSection>
+
+            
             
             <DetailSection title="School Conduct Log">
                 {canEdit && (

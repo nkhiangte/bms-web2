@@ -1,16 +1,9 @@
-
-
-
-
-
-
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '../types';
 import PhotoWithFallback from '../components/PhotoWithFallback';
-import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon, PlusIcon, SparklesIcon, ChevronDownIcon, MessageIcon, ArrowRightIcon, SpinnerIcon } from '../components/Icons';
+// FIX: Added ClockIcon and ExclamationTriangleIcon to the import list.
+import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon, PlusIcon, SparklesIcon, ChevronDownIcon, MessageIcon, ArrowRightIcon, SpinnerIcon, ClockIcon, ExclamationTriangleIcon } from '../components/Icons';
 import LinkChildModal from '../components/LinkChildModal';
 import { getDuesSummary } from '../utils';
 import AttendanceCalendarModal from '../components/AttendanceCalendarModal';
@@ -124,7 +117,6 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                         </div>
                         <div>
                             <h3 className="text-2xl font-bold text-slate-900">{student.name}</h3>
-                            {/* FIX: Corrected typo from `student.roll No` to `student.rollNo` to match the Student interface. */}
                             <p className="text-slate-700 font-semibold">{student.grade} - Roll No: {student.rollNo}</p>
                         </div>
                     </div>

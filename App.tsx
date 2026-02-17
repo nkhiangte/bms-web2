@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -113,8 +114,8 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// FIX: Corrected casing for InsightsPage import to match filename.
-import InsightsPageOriginal from './pages/insightsPage';
+// FIX: Changed import path for InsightsPage to lowercase to resolve case sensitivity conflict.
+import InsightsPage from './pages/insightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -386,7 +387,6 @@ const App: React.FC = () => {
             db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))));
             db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem))));
             db.collection('stockLogs').onSnapshot(s => setStockLogs(s.docs.map(d => ({ id: d.id, ...d.data() } as StockLog))));
-            db.collection('hostelDisciplineLog').onSnapshot(s => setDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry))));
             db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setChoreRoster(d.data() as ChoreRoster));
         }
     }
@@ -537,8 +537,7 @@ const App: React.FC = () => {
            <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async (hw) => { await db.collection('homework').add(hw); }} onDelete={async (id) => { await db.collection('homework').doc(id).delete(); }} allHomework={homework} />} />
            <Route path="manage-syllabus" element={<ManageSyllabusPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={async (syl, id) => { await db.collection('syllabus').doc(id).set(syl); }} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
-           {/* FIX: Passed required props to InsightsPageOriginal component */}
-           <Route path="insights" element={<InsightsPageOriginal students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
+           <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
            <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

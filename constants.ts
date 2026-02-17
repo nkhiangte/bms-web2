@@ -273,8 +273,32 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
         })
     ],
     feeStructure: {
-        newStudent: { oneTime: [], annual: [] },
-        existingStudent: { oneTime: [], annual: [] }
+        newStudent: {
+            oneTime: [
+                { id: 'reg', name: 'Registration', amount: 100 },
+                { id: 'adm', name: 'Admission Fee', amount: 3500 }
+            ],
+            annual: [
+                { id: 'lib', name: 'Library Fee', amount: 100 },
+                { id: 'med', name: 'Medical & Infirmary Fee', amount: 300 },
+                { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 250 },
+                { id: 'app', name: 'School App', amount: 150 },
+                { id: 'club', name: 'Activity & Hobby Club Fee', amount: 100 }
+            ]
+        },
+        existingStudent: {
+            oneTime: [
+                { id: 'reg', name: 'Registration', amount: 100 },
+                { id: 'adm', name: 'Admission Fee', amount: 2500 }
+            ],
+            annual: [
+                { id: 'lib', name: 'Library Fee', amount: 100 },
+                { id: 'med', name: 'Medical & Infirmary Fee', amount: 300 },
+                { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 250 },
+                { id: 'app', name: 'School App', amount: 150 },
+                { id: 'club', name: 'Activity & Hobby Club Fee', amount: 100 }
+            ]
+        }
     }
 };
 

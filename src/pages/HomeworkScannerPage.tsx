@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import * => ReactRouterDOM from 'react-router-dom';
 // FIX: Corrected import to use GoogleGenAI from @google/genai.
 import { GoogleGenAI } from "@google/genai";
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '../components/Icons';

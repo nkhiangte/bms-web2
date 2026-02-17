@@ -3,6 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '../components/Icons';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
+// FIX: Updated to use the new @google/genai API.
 import { GoogleGenAI } from "@google/genai";
 import ConfirmationModal from '../components/ConfirmationModal';
 

@@ -113,7 +113,8 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-import InsightsPageOriginal from './pages/InsightsPage';
+// FIX: Corrected casing for InsightsPage import to match filename.
+import InsightsPageOriginal from './pages/insightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -155,12 +156,12 @@ const App: React.FC = () => {
   const [hostelInventory, setHostelInventory] = useState<HostelInventoryItem[]>([]);
   const [stockLogs, setStockLogs] = useState<StockLog[]>([]);
   const [disciplineLog, setDisciplineLog] = useState<HostelDisciplineEntry[]>([]);
-  const [choreRoster, setChoreRoster] = useState<ChoreRoster>({} as ChoreRoster);
+  const [choreRoster, setChoreRoster] = useState({} as ChoreRoster);
   
   // Other Logs
   const [conductLog, setConductLog] = useState<ConductEntry[]>([]);
-  const [attendance, setAttendance] = useState<DailyStudentAttendance>({} as DailyStudentAttendance);
-  const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
+  const [attendance, setAttendance] = useState({} as DailyStudentAttendance);
+  const [staffAttendance, setStaffAttendance] = useState({} as StaffAttendanceRecord);
 
   const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
 

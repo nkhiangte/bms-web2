@@ -22,14 +22,14 @@ interface AnalysisResult {
     weaknesses: string[];
 }
 
-// FIX: Replaced deprecated SchemaType with Type.
+// FIX: Replaced deprecated SchemaType with Type and corrected a typo in a description.
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
         riskLevel: { type: Type.STRING, enum: ['Low Risk', 'Needs Monitoring', 'At Risk'] },
         summary: { type: Type.STRING, description: "A 2-3 sentence summary of the student's performance and risk level." },
-        strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of subjects or areas where the student is performing well." },
-        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of subjects or areas needing improvement." }
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
     },
     required: ['riskLevel', 'summary', 'strengths', 'weaknesses']
 };

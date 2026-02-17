@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade } from '../types';
 import { formatStudentId } from '../utils';
-import { BackIcon, HomeIcon, SearchIcon, DocumentReportIcon, AcademicCapIcon, ClipboardDocumentCheckIcon, ChevronDownIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, SearchIcon, DocumentReportIcon, AcademicCapIcon, ClipboardDocumentCheckIcon, ChevronDownIcon, PrinterIcon } from '../components/Icons';
 import { GRADES_LIST, TERMINAL_EXAMS } from '../constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -102,13 +102,23 @@ const ReportSearchPage: React.FC<ReportSearchPageProps> = ({ students, academicY
                         {TERMINAL_EXAMS.map(exam => <option key={exam.id} value={exam.id}>{exam.name}</option>)}
                     </select>
                 </div>
-                <button 
-                    onClick={handleClassReportView}
-                    disabled={!selectedGrade || !selectedExam}
-                    className="w-full btn btn-primary disabled:bg-slate-400"
-                >
-                    View Mark Statement
-                </button>
+                <div className="flex flex-col gap-3">
+                    <button 
+                        onClick={handleClassReportView}
+                        disabled={!selectedGrade || !selectedExam}
+                        className="w-full btn btn-primary disabled:bg-slate-400"
+                    >
+                        View Mark Statement
+                    </button>
+                    <Link
+                        to={selectedGrade && selectedExam ? `/portal/reports/bulk-print/${encodeURIComponent(selectedGrade)}/${selectedExam}` : '#'}
+                        target={selectedGrade && selectedExam ? "_blank" : undefined}
+                        className={`w-full btn btn-secondary flex items-center justify-center gap-2 ${(!selectedGrade || !selectedExam) ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                    >
+                        <PrinterIcon className="w-5 h-5"/>
+                        Bulk Print All Reports
+                    </Link>
+                </div>
             </div>
         </div>
 

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -114,7 +115,7 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// FIX: Corrected casing of InsightsPage import to match filename.
+// FIX: Corrected casing of InsightsPage import to resolve name collision and ensure correct module resolution.
 import InsightsPage from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';

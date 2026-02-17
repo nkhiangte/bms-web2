@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Corrected imports to use GoogleGenAI and Type from @google/genai.
+// FIX: Corrected imports to use GoogleGenAI and Type from @google/genai as per guidelines.
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
@@ -23,7 +23,7 @@ interface AnalysisResult {
     weaknesses: string[];
 }
 
-// FIX: Replaced deprecated SchemaType with Type and corrected a typo in a description.
+// FIX: Replaced deprecated SchemaType with Type and defined a valid OpenAPI schema.
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -89,7 +89,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         const studentConduct = conductLog.filter(c => c.studentId === studentToAnalyze.id);
         const studentGradeDef = gradeDefinitions[studentToAnalyze.grade];
 
-        // Sanitize data for the prompt
         const academicData = (studentToAnalyze.academicPerformance || []).map(exam => ({
             name: exam.name,
             results: exam.results.map(r => ({
@@ -104,7 +103,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         const conductData = studentConduct.map(c => ({
             type: c.type,
             category: c.category,
-            description: c.description.substring(0, 100) // Truncate long descriptions
+            description: c.description.substring(0, 100)
         }));
 
         const prompt = `
@@ -129,7 +128,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // FIX: Updated Gemini API initialization to use a named parameter for apiKey.
+            // FIX: Initialized GoogleGenAI with apiKey named parameter and accessed response text via .text property.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -140,7 +139,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 },
             });
             
-            // FIX: Updated to access generated text via the .text property rather than calling it as a method.
             const resultJson = JSON.parse(response.text || '{}');
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {

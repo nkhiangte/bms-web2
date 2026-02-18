@@ -1,2 +1,3 @@
-// This file is cleared to resolve a casing conflict with InsightsPage.tsx.
-// PascalCase naming is preferred for React components and matches the import in App.tsx.
+// This file has been cleared to resolve a casing conflict with InsightsPage.tsx.
+// Standard React component PascalCase naming is used in InsightsPage.tsx.
+export {};

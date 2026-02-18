@@ -176,7 +176,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = (Number(sd.examFullMarks || 0)) + (Number(sd.activityFullMarks || 0));
+            // Fix: Ensured both sides of the addition are explicitly treated as numbers to avoid arithmetic errors.
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {

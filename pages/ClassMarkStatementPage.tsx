@@ -112,7 +112,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade') => {
-    const subjectDef = subjectDefinitions.find(sd => subjectsMatch(sd.name, subjectName));
+    const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
     if (!subjectDef) return;
 
     let key = subjectName;
@@ -176,7 +176,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = (Number(sd.examFullMarks || 0)) + (Number(sd.activityFullMarks || 0));
+            // Fix: Ensured both sides of the addition are explicitly treated as numbers to avoid arithmetic errors.
+            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {

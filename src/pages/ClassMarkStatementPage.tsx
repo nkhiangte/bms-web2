@@ -54,6 +54,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     return students.filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade]);
 
+  // Added explicit type cast to SubjectDefinition[] to resolve arithmetic operation errors in useMemo below
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
     let subjects = gradeDefinitions[grade]?.subjects || [];
@@ -61,7 +62,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         subjects = subjects.map(sub => ({ ...sub, examFullMarks: 100, activityFullMarks: 0 }));
     }
     return subjects;
-  }, [grade, gradeDefinitions]);
+  }, [grade, gradeDefinitions]) as SubjectDefinition[];
   
   const hasActivities = useMemo(() => {
     if (!grade) return false;

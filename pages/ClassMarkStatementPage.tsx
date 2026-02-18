@@ -1,10 +1,9 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
 import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditSubjectsModal from '../components/EditSubjectsModal';
@@ -40,26 +39,7 @@ type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
-    
-    return results.find(r => {
-        const normResultName = normalizeSubjectName(r.subject);
-        if (normResultName === normSubjDefName) return true;
-        
-        // Fallbacks for common name variations
-        const mathNames = ['math', 'maths', 'mathematics'];
-        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
-        
-        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
-
-        return false;
-    });
+    return results.find(r => subjectsMatch(r.subject, subjectDef.name));
 };
 
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
@@ -122,7 +102,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else {
-            initialMarks[student.id][subjectDef.name] = result?.marks ?? null;
+            // Robust check: even if activities are disabled for class, check both marks and examMarks field
+            initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;
         }
       });
     });
@@ -131,7 +112,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade') => {
-    const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
+    const subjectDef = subjectDefinitions.find(sd => subjectsMatch(sd.name, subjectName));
     if (!subjectDef) return;
 
     let key = subjectName;
@@ -282,7 +263,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const originalExam = student.academicPerformance?.find(e => e.id === examId);
 
         const newResults = subjectDefinitions.map(sd => {
-            const originalResult = originalExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const originalResult = originalExam?.results.find(r => subjectsMatch(r.subject, sd.name));
             const newResult: SubjectMark = { subject: sd.name, ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) };
 
             if (sd.gradingSystem === 'OABC') {
@@ -365,7 +346,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
         
         <div className="mt-2 overflow-x-auto border rounded-lg">
-            <table id="mark-statement-table" className="min-w-full text-sm">
+            <table id="mark-statement-table" className="min-w-[2000px] text-sm">
                  <thead className="bg-slate-100">
                     <tr>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>

@@ -1,2 +1,3 @@
-// Fix: Reduced content to prevent identifier and casing collisions in environments with varying case-sensitivity.
+
+// This file is intentionally empty to resolve a casing naming conflict in the build system.
 export {};

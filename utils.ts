@@ -1,4 +1,3 @@
-
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
@@ -69,7 +68,7 @@ const getGradeCode = (grade: Grade): string => {
     }
 };
 
-export const formatStudentId = (student: Student, academicYear: string): string => {
+export const formatStudentId = (student: Partial<Student>, academicYear: string): string => {
     if (student?.studentId) {
         return student.studentId;
     }
@@ -217,6 +216,41 @@ export const getNextAcademicYear = (currentYear: string): string => {
     return `${start + 1}-${end + 1}`;
 };
 
+/**
+ * Aggressive normalization: strips ALL non-alphanumeric characters, including spaces.
+ * This ensures "English I" and "English" or "English - I" can be compared reliably.
+ */
+export const normalizeSubjectName = (name: string): string => {
+    if (!name) return '';
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
+/**
+ * Robust subject matching that handles common aliases and special characters.
+ */
+export const subjectsMatch = (name1: string, name2: string): boolean => {
+    const n1 = normalizeSubjectName(name1);
+    const n2 = normalizeSubjectName(name2);
+    
+    if (!n1 || !n2) return false;
+    if (n1 === n2) return true;
+
+    // Mapping for common subject aliases to handle inconsistencies in data entry.
+    // Since normalizeSubjectName strips spaces, "English I" becomes "englishi".
+    const aliases: string[][] = [
+        ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl'],
+        ['englishii', 'english2', 'engii', 'eng2'],
+        ['math', 'maths', 'mathematics'],
+        ['socialscience', 'socialstudies', 'socstudies', 'evs'],
+        ['mizo', 'lushei'],
+        ['drawing', 'art'],
+        ['cursive', 'writing', 'handwriting'],
+        ['spelling', 'spellings']
+    ];
+
+    return aliases.some(group => group.includes(n1) && group.includes(n2));
+};
+
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {
     if (!gradeDef || !gradeDef.subjects) return 'PASS';
 
@@ -235,7 +269,7 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
     let gradedSubjectsPassed = 0;
 
     numericSubjects.forEach(sd => {
-        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        const result = studentExam.results.find(r => subjectsMatch(r.subject, sd.name));
         if (hasActivities) { 
             const examMark = result?.examMarks ?? 0;
             if (examMark < 20) { 
@@ -252,7 +286,7 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
     });
 
     gradedSubjects.forEach(sd => {
-        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        const result = studentExam.results.find(r => subjectsMatch(r.subject, sd.name));
         if (result?.grade && OABC_GRADES.includes(result.grade as any)) {
             gradedSubjectsPassed++;
         }
@@ -514,11 +548,6 @@ export const parseSubjectAndTeacher = (subjectString: string): { subject: string
         return { subject: match[1].trim(), teacher: match[2].trim() };
     }
     return { subject: subjectString.trim(), teacher: null };
-};
-
-export const normalizeSubjectName = (name: string): string => {
-    if (!name) return '';
-    return name.trim().toLowerCase();
 };
 
 export const playNotificationSound = () => {

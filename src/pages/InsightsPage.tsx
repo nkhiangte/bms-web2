@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Using correct imports from @google/genai as per the latest SDK guidelines.
+// Fix: Import GoogleGenAI and Type from @google/genai as per latest SDK guidelines
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
@@ -23,7 +23,6 @@ interface AnalysisResult {
     weaknesses: string[];
 }
 
-// FIX: responseSchema defined using Type enum from @google/genai for structured output.
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -128,7 +127,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // FIX: Initializing GoogleGenAI with named apiKey parameter and accessing text via .text property as per guidelines.
+            // Fix: Initialize GoogleGenAI inside the function right before making the API call as per guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -139,6 +138,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 },
             });
             
+            // Fix: Access generated text directly from response.text (it is a property, not a method).
             const resultJson = JSON.parse(response.text || '{}');
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -115,8 +113,6 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-
-// FIX: Corrected import casing from 'insightsPage' to 'InsightsPage' to resolve casing conflict and prop type error.
 import InsightsPage from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';

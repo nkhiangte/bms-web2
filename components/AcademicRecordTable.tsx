@@ -1,6 +1,7 @@
 import React from 'react';
 import { SubjectMark, SubjectDefinition, Grade } from '../types';
 import { GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
+import { subjectsMatch } from '../utils';
 
 interface AcademicRecordTableProps {
     examName: string;
@@ -18,16 +19,13 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
 
     const handleMarkChange = (subjectName: string, field: 'marks' | 'examMarks' | 'grade', value: string) => {
         const newResults = results.map(r => {
-            if (r.subject === subjectName) {
+            if (subjectsMatch(r.subject, subjectName)) {
                 if (field === 'grade') {
-                    // Ensure the 'grade' property conforms to the SubjectMark type.
-                    // An empty string from the select should result in an undefined grade.
                     return { ...r, grade: value ? (value as 'O' | 'A' | 'B' | 'C') : undefined };
                 }
 
-                // Allow only digits or an empty string. This prevents non-numeric characters and handles clearing the input.
                 if (!/^\d*$/.test(value)) {
-                    return r; // Ignore invalid input
+                    return r; 
                 }
 
                 if (value === '') {
@@ -35,19 +33,13 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                 }
                 
                 const numValue = parseInt(value, 10);
-                if (isNaN(numValue)) {
-                    // This check is now redundant due to regex but kept for safety.
-                    return r;
-                }
+                const subjectDef = subjectDefinitions.find(sd => subjectsMatch(sd.name, subjectName));
+                if (!subjectDef) return r;
 
-                const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
-                if (!subjectDef) return r; // Should not happen
-
-                let maxMarks = 100; // Default
+                let maxMarks = 100;
                 if (field === 'examMarks') maxMarks = subjectDef.examFullMarks;
                 else if (field === 'marks') maxMarks = subjectDef.examFullMarks;
 
-                // Clamp value between 0 and maxMarks
                 const clampedValue = Math.max(0, Math.min(numValue, maxMarks));
 
                 return { ...r, [field]: clampedValue };
@@ -84,11 +76,10 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                         {subjectDefinitions.map(subjectDef => {
-                            const result = results.find(r => r.subject === subjectDef.name) || { subject: subjectDef.name };
+                            const result = results.find(r => subjectsMatch(r.subject, subjectDef.name)) || { subject: subjectDef.name };
                             const isOABC = subjectDef.gradingSystem === 'OABC';
                            
                             if (hasActivities) {
-                                // FIX: Default null/undefined marks to 0 before arithmetic operation to prevent TypeError.
                                  const examMarks = Number(result?.examMarks ?? 0);
                                  const activityMarks = Number(result?.activityMarks ?? 0);
                                  const totalMarks = examMarks + activityMarks;
@@ -130,8 +121,7 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                                 );
                             }
                             
-                            // Logic for grades without activities (Nursery, KG, I, II, IX, X)
-                            const marksObtained = result?.marks || 0;
+                            const marksObtained = result?.marks ?? result?.examMarks ?? 0;
                             const fullMarks = subjectDef.examFullMarks;
 
                             return (
@@ -150,7 +140,7 @@ const AcademicRecordTable: React.FC<AcademicRecordTableProps> = ({ examName, exa
                                             )
                                         ) : (
                                             isEditing ? (
-                                                 <input type="tel" pattern="[0-9]*" value={result.marks ?? ''} onChange={e => handleMarkChange(subjectDef.name, 'marks', e.target.value)} className="form-input w-24 text-center" max={fullMarks} />
+                                                 <input type="tel" pattern="[0-9]*" value={result.marks ?? result.examMarks ?? ''} onChange={e => handleMarkChange(subjectDef.name, 'marks', e.target.value)} className="form-input w-24 text-center" max={fullMarks} />
                                             ) : (
                                                  <span className="font-bold text-lg text-sky-700">{marksObtained}</span>
                                             )

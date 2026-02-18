@@ -171,18 +171,18 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         let currentSubjFMValue: number = 0;
         
         if (hasActivities) {
-            const examMark = Number(studentMarks[sd.name + '_exam'] ?? 0);
-            const activityMark = Number(studentMarks[sd.name + '_activity'] ?? 0);
+            // Fix: Simplified to avoid redundant Number wrapping while ensuring types are correct for arithmetic
+            const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
+            const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
             
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
-            // Fix: Ensured both sides of the addition are explicitly treated as numbers to avoid arithmetic errors.
             currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            currentSubjMarkValue = Number(studentMarks[sd.name] ?? 0);
+            currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);
             const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
@@ -222,7 +222,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
-    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
+    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => Number(b) - Number(a));
     
     const finalData = studentData.map(s => {
         if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
@@ -244,7 +244,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             if (aIsFail && !bIsFail) return 1;
             if (!aIsFail && bIsFail) return -1;
             
-            return b.grandTotal - a.grandTotal;
+            return Number(b.grandTotal) - Number(a.grandTotal);
         });
     } else {
         sortedData.sort((a, b) => a.rollNo - b.rollNo);

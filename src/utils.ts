@@ -228,9 +228,6 @@ export const normalizeSubjectName = (name: string): string => {
 /**
  * Robust subject matching that handles common aliases and special characters.
  */
-/**
- * Robust subject matching that handles common aliases and special characters.
- */
 export const subjectsMatch = (name1: string, name2: string): boolean => {
     const n1 = normalizeSubjectName(name1);
     const n2 = normalizeSubjectName(name2);
@@ -243,15 +240,15 @@ export const subjectsMatch = (name1: string, name2: string): boolean => {
         ['english', 'englishi', 'english1', 'engi', 'eng1'],
         ['englishii', 'english2', 'engii', 'eng2'],
         ['math', 'maths', 'mathematics'],
-        ['socialscience', 'socialstudies', 'socstudies', 'evs'],
+        ['socialscience', 'socialstudies', 'socstudies', 'evs', 'socialstudies'],
         ['mizo', 'lushei'],
         ['drawing', 'art'],
-        ['cursive', 'writing', 'handwriting']
+        ['cursive', 'writing', 'handwriting'],
+        ['spelling', 'spellings']
     ];
 
     return aliases.some(group => group.includes(n1) && group.includes(n2));
 };
-
 
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {
     if (!gradeDef || !gradeDef.subjects) return 'PASS';
@@ -629,14 +626,6 @@ export const uploadToImgBB = async (base64Image: string): Promise<string> => {
         method: 'POST',
         body: formData,
     });
-/**
- * Aggressive normalization: strips all non-alphanumeric characters.
- * Useful for matching "English I" with "English - I" or "ENG-I".
- */
-export const normalizeSubjectName = (name: string): string => {
-    if (!name) return '';
-    return name.toLowerCase().replace(/[^a-z0-9]/g, ''); // Normalizing non-alphanumeric characters.
-};
 
     const data = await response.json();
     if (data.success) {

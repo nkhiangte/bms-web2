@@ -115,7 +115,7 @@ import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
 
-// FIX: Corrected casing to 'InsightsPage' to ensure consistency across imports and resolve casing conflict errors in the compiler.
+// FIX: Corrected casing of InsightsPage import to resolve casing conflict errors in the compiler.
 import InsightsPage from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';

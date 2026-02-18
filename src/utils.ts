@@ -1,5 +1,3 @@
-
-
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
@@ -218,10 +216,10 @@ export const getNextAcademicYear = (currentYear: string): string => {
     return `${start + 1}-${end + 1}`;
 };
 
-// FIX: Moved normalizeSubjectName before its first usage to prevent "Cannot find name" errors.
 export const normalizeSubjectName = (name: string): string => {
     if (!name) return '';
-    return name.trim().toLowerCase();
+    // Strip hyphens, replace multiple spaces with one, and trim
+    return name.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
 };
 
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
@@ -40,25 +39,26 @@ type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name).replace(/-/g, '').replace(/\s+/g, ' ');
+    const normSubjDefName = normalizeSubjectName(subjectDef.name);
     
     return results.find(r => {
-        const normResultName = normalizeSubjectName(r.subject).replace(/-/g, '').replace(/\s+/g, ' ');
+        const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
         
-        // Fallbacks for common name variations
-        const mathNames = ['math', 'maths', 'mathematics'];
-        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+        // English variants
+        const eng1Variants = ['english', 'english i', 'english 1', 'eng i', 'eng 1'];
+        if (eng1Variants.includes(normSubjDefName) && eng1Variants.includes(normResultName)) return true;
+
+        const eng2Variants = ['english ii', 'english 2', 'eng ii', 'eng 2'];
+        if (eng2Variants.includes(normSubjDefName) && eng2Variants.includes(normResultName)) return true;
+
+        // Math variants
+        const mathVariants = ['math', 'maths', 'mathematics'];
+        if (mathVariants.includes(normSubjDefName) && mathVariants.includes(normResultName)) return true;
         
-        // English aliases
-        const eng1Aliases = ['english', 'english i', 'english 1', 'eng i', 'eng 1'];
-        if (eng1Aliases.includes(normSubjDefName) && eng1Aliases.includes(normResultName)) return true;
-
-        const eng2Aliases = ['english ii', 'english 2', 'eng ii', 'eng 2'];
-        if (eng2Aliases.includes(normSubjDefName) && eng2Aliases.includes(normResultName)) return true;
-
-        const socAliases = ['social studies', 'social science', 'social sciences', 'soc studies', 'evs'];
-        if (socAliases.includes(normSubjDefName) && socAliases.includes(normResultName)) return true;
+        // Social variants
+        const socVariants = ['social studies', 'social science', 'social sciences', 'soc studies', 'evs'];
+        if (socVariants.includes(normSubjDefName) && socVariants.includes(normResultName)) return true;
 
         return false;
     });
@@ -369,7 +369,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
         
         <div className="mt-2 overflow-x-auto border rounded-lg">
-            <table id="mark-statement-table" className="min-w-[2000px] text-sm"> {/* Increased min-width for visibility */}
+            <table id="mark-statement-table" className="min-w-[2000px] text-sm">
                  <thead className="bg-slate-100">
                     <tr>
                         <th rowSpan={hasActivities ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
@@ -465,25 +465,27 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             </table>
         </div>
 
-        <div className="mt-6 flex justify-end gap-4 print-hidden">
-            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary transition-colors">
-                <CogIcon className="w-5 h-5" /> Manage Subjects
+        <div className="mt-8 flex flex-wrap justify-end gap-3 print-hidden border-t pt-6">
+            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary flex items-center gap-2">
+                <CogIcon className="w-5 h-5" />
+                <span>Manage Subjects</span>
             </button>
             <Link
                 to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
                 target="_blank"
-                className="btn btn-secondary transition-colors"
+                className="btn btn-secondary flex items-center gap-2"
             >
                 <PrinterIcon className="w-5 h-5" />
-                Bulk Print Reports
+                <span>Bulk Print Reports</span>
             </Link>
-            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary transition-colors">
-                <InboxArrowDownIcon className="w-5 h-5" /> Import Marks
+            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary flex items-center gap-2">
+                <InboxArrowDownIcon className="w-5 h-5" />
+                <span>Import Marks</span>
             </button>
             <button
                 onClick={() => setIsConfirmSaveModalOpen(true)}
                 disabled={isSaving || changedStudents.size === 0}
-                className="btn btn-primary transition-colors disabled:opacity-50"
+                className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400"
             >
                 {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
                 <span>Save Changes ({changedStudents.size})</span>

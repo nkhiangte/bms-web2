@@ -1,4 +1,3 @@
-
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { 
@@ -54,7 +53,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
         { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
         { title: "Fee Management", description: "Collect tuition/exam fees and edit fee structures.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },
         { title: "Online Admissions", description: "Review and process new student applications.", icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
-        { title: "Admission Settings", description: "Configure items and sale items for online admission.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
+        { title: "Admission Settings", description: "Edit Admission & Re-admission fees for both new and existing students.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
         { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },
         { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
         { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },

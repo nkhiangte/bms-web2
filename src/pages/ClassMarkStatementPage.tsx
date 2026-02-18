@@ -102,7 +102,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else {
-            initialMarks[student.id][subjectDef.name] = result?.marks ?? null;
+            // Robust check: even if activities are disabled for class, check both marks and examMarks field
+            initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;
         }
       });
     });

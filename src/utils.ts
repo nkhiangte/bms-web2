@@ -237,8 +237,8 @@ export const subjectsMatch = (name1: string, name2: string): boolean => {
 
     // Mapping for common subject aliases to handle inconsistencies in data entry
     const aliases: string[][] = [
-        ['english', 'englishi', 'english1', 'engi', 'eng1'],
-        ['englishii', 'english2', 'engii', 'eng2'],
+        ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl', 'englishi'],
+        ['englishii', 'english2', 'engii', 'eng2', 'englishii'],
         ['math', 'maths', 'mathematics'],
         ['socialscience', 'socialstudies', 'socstudies', 'evs', 'socialstudies'],
         ['mizo', 'lushei'],

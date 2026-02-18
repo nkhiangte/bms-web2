@@ -1,3 +1,4 @@
+
 import { Grade, Gender, Category, GradeDefinition, Staff, MaritalStatus, Department, Designation, EmployeeType, BloodGroup, EmploymentStatus, StaffType, InventoryCategory, InventoryStatus, HostelDormitory, HostelStaffRole, HostelInventoryCategory, StockLogType, Qualification, CalendarEventType, IncidentSeverity, IncidentStatus, Chore, ConductGrade, DistinctionHolder, AdmissionSettings } from './types';
 
 // TODO: Replace with your actual ImgBB API key. You can get one for free from https://api.imgbb.com/
@@ -183,21 +184,18 @@ export const academicMonths = ["April", "May", "June", "July", "August", "Septem
 export const DEFAULT_FEE_STRUCTURE = {
   set1: {
       heads: [
-// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 1500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 500, type: 'term' as const }
       ]
   },
   set2: {
       heads: [
-// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2000, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 600, type: 'term' as const }
       ]
   },
   set3: {
       heads: [
-// FIX: Updated fee structure to more realistic values.
           { id: 'tui', name: 'Tuition Fee (Monthly)', amount: 2500, type: 'monthly' as const },
           { id: 'exam', name: 'Exam Fee (Per Term)', amount: 700, type: 'term' as const }
       ]
@@ -273,8 +271,30 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
         })
     ],
     feeStructure: {
-        newStudent: { oneTime: [], annual: [] },
-        existingStudent: { oneTime: [], annual: [] }
+        newStudent: {
+            oneTime: [
+                { id: 'reg', name: 'Registration Fee', amount: 100 },
+                { id: 'adm', name: 'Admission Fee', amount: 3500 }
+            ],
+            annual: [
+                { id: 'lib', name: 'Library Fee', amount: 100 },
+                { id: 'med', name: 'Medical & Infirmary', amount: 300 },
+                { id: 'evt', name: 'Events & Sports', amount: 250 },
+                { id: 'app', name: 'School App Fee', amount: 150 }
+            ]
+        },
+        existingStudent: {
+            oneTime: [
+                { id: 'reg', name: 'Registration Fee', amount: 100 },
+                { id: 'adm', name: 'Re-Admission Fee', amount: 2500 }
+            ],
+            annual: [
+                { id: 'lib', name: 'Library Fee', amount: 100 },
+                { id: 'med', name: 'Medical & Infirmary', amount: 300 },
+                { id: 'evt', name: 'Events & Sports', amount: 250 },
+                { id: 'app', name: 'School App Fee', amount: 150 }
+            ]
+        }
     }
 };
 

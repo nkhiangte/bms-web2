@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -27,6 +25,7 @@ import StaffDetailPage from './pages/StaffDetailPage';
 import StaffDocumentsPage from './pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
 import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
+// FIX: Kept this import as the primary one for AdmissionPaymentPage.
 import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
 import TransferManagementPage from './pages/TransferManagementPage';
 import { GenerateTcPage } from './pages/GenerateTcPage';
@@ -66,7 +65,7 @@ import RulesPage from './pages/public/RulesPage';
 import AdmissionsPage from './pages/public/AdmissionsPage';
 import OnlineAdmissionPage from './pages/public/OnlineAdmissionPage';
 import AdmissionStatusPage from './pages/public/AdmissionStatusPage';
-import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
+// FIX: Removed duplicate AdmissionPaymentPage import at line 69.
 import SuppliesPage from './pages/public/SuppliesPage';
 import StudentLifePage from './pages/public/StudentLifePage';
 import NccPage from './pages/public/NccPage';
@@ -116,8 +115,8 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// FIX: Using lowercase filename to match the file already included in the program and avoid casing conflicts.
-import InsightsPage from './pages/insightsPage';
+// FIX: Corrected import casing from 'insightsPage' to 'InsightsPage' to resolve duplication and module resolution errors.
+import InsightsPage from './pages/InsightsPage';
 
 import NotificationContainer from './components/NotificationContainer';
 import OfflineIndicator from './components/OfflineIndicator';

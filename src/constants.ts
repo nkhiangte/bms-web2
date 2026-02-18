@@ -272,26 +272,28 @@ export const DEFAULT_ADMISSION_SETTINGS: AdmissionSettings = {
     feeStructure: {
         newStudent: {
             oneTime: [
-                { id: 'reg', name: 'Registration Fee', amount: 100 },
-                { id: 'adm', name: 'Admission Fee', amount: 3500 }
+                { id: 'reg', name: 'Registration', amount: 100 },
+                { id: 'adm', name: 'Admission Fee', amount: 3000 },
+                { id: 'med', name: 'Medical & Infirmary Fee', amount: 300 },
+                { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 500 },
+                { id: 'app', name: 'School App', amount: 100 }
             ],
             annual: [
                 { id: 'lib', name: 'Library Fee', amount: 100 },
-                { id: 'med', name: 'Medical & Infirmary', amount: 300 },
-                { id: 'evt', name: 'Events & Sports', amount: 250 },
-                { id: 'app', name: 'School App Fee', amount: 150 }
+                { id: 'club', name: 'Activity & Hobby Club Fee', amount: 100 }
             ]
         },
         existingStudent: {
             oneTime: [
-                { id: 'reg', name: 'Registration Fee', amount: 100 },
-                { id: 'adm', name: 'Re-Admission Fee', amount: 2500 }
+                { id: 'adm', name: 'Admission Fee', amount: 2500 },
+                { id: 'med', name: 'Medical & Infirmary Fee', amount: 300 },
+                { id: 'evt', name: 'Events, Sports & Celebration Fee', amount: 500 },
+                { id: 'app', name: 'School App', amount: 100 },
+                { id: 'reg', name: 'Registration Fee', amount: 100 }
             ],
             annual: [
                 { id: 'lib', name: 'Library Fee', amount: 100 },
-                { id: 'med', name: 'Medical & Infirmary', amount: 300 },
-                { id: 'evt', name: 'Events & Sports', amount: 250 },
-                { id: 'app', name: 'School App Fee', amount: 150 }
+                { id: 'club', name: 'Activity & Hobby Club Fee', amount: 100 }
             ]
         }
     }

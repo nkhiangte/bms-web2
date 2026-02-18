@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 // FIX: Corrected import to use GoogleGenAI from @google/genai.
@@ -139,7 +140,7 @@ const HomeworkScannerPage: React.FC = () => {
             const textPart = { text: getPromptForType(scanType) };
             
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', // Vision-capable model
+                model: 'gemini-3-flash-preview', 
                 contents: { parts: [imagePart, textPart] },
             });
 

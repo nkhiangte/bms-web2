@@ -5,7 +5,7 @@ import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRA
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '../components/Icons';
 import ActivityLogModal from '../components/ActivityLogModal';
 import ExamPerformanceCard from '../components/ExamPerformanceCard';
-import { normalizeSubjectName } from '../utils';
+import { normalizeSubjectName, subjectsMatch } from '../utils';
 import { db } from '../firebaseConfig';
 
 const { useParams, Link } = ReactRouterDOM as any;
@@ -64,26 +64,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
           e.id === examTemplate.id || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
       );
       const results: SubjectMark[] = subjects.map(sd => {
-        const normSubjName = normalizeSubjectName(sd.name);
-        const existingResult = existingExam?.results.find(r => {
-            const normResultName = normalizeSubjectName(r.subject);
-            if (normResultName === normSubjName) return true;
-            
-            // Standardizing variations
-            const english1Variants = ['english', 'english i', 'english 1', 'eng i', 'eng 1'];
-            if (english1Variants.includes(normSubjName) && english1Variants.includes(normResultName)) return true;
-
-            const english2Variants = ['english ii', 'english 2', 'eng ii', 'eng 2'];
-            if (english2Variants.includes(normSubjName) && english2Variants.includes(normResultName)) return true;
-
-            const mathVariants = ['math', 'maths', 'mathematics'];
-            if (mathVariants.includes(normSubjName) && mathVariants.includes(normResultName)) return true;
-            
-            const socVariants = ['social studies', 'social science', 'social sciences', 'evs'];
-            if (socVariants.includes(normSubjName) && socVariants.includes(normResultName)) return true;
-            
-            return false;
-        });
+        const existingResult = existingExam?.results.find(r => subjectsMatch(r.subject, sd.name));
         
         return {
           subject: sd.name,

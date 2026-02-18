@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
 import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '../components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '../utils';
 import { ImportMarksModal } from '../components/ImportMarksModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditSubjectsModal from '../components/EditSubjectsModal';
@@ -39,29 +39,7 @@ type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
-    
-    return results.find(r => {
-        const normResultName = normalizeSubjectName(r.subject);
-        if (normResultName === normSubjDefName) return true;
-        
-        // English variants
-        const eng1Variants = ['english', 'english i', 'english 1', 'eng i', 'eng 1'];
-        if (eng1Variants.includes(normSubjDefName) && eng1Variants.includes(normResultName)) return true;
-
-        const eng2Variants = ['english ii', 'english 2', 'eng ii', 'eng 2'];
-        if (eng2Variants.includes(normSubjDefName) && eng2Variants.includes(normResultName)) return true;
-
-        // Math variants
-        const mathVariants = ['math', 'maths', 'mathematics'];
-        if (mathVariants.includes(normSubjDefName) && mathVariants.includes(normResultName)) return true;
-        
-        // Social variants
-        const socVariants = ['social studies', 'social science', 'social sciences', 'soc studies', 'evs'];
-        if (socVariants.includes(normSubjDefName) && socVariants.includes(normResultName)) return true;
-
-        return false;
-    });
+    return results.find(r => subjectsMatch(r.subject, subjectDef.name));
 };
 
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
@@ -104,8 +82,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   useEffect(() => {
     if (classStudents.length === 0) return;
-    if (Object.keys(marksData).length > 0 && changedStudents.size > 0) return;
-
     const initialMarks: MarksData = {};
     const initialAttendance: AttendanceData = {};
     classStudents.forEach(student => {
@@ -286,7 +262,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const originalExam = student.academicPerformance?.find(e => e.id === examId);
 
         const newResults = subjectDefinitions.map(sd => {
-            const originalResult = originalExam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+            const originalResult = originalExam?.results.find(r => subjectsMatch(r.subject, sd.name));
             const newResult: SubjectMark = { subject: sd.name, ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) };
 
             if (sd.gradingSystem === 'OABC') {

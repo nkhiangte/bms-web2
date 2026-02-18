@@ -1,3 +1,4 @@
+
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
@@ -216,10 +217,33 @@ export const getNextAcademicYear = (currentYear: string): string => {
     return `${start + 1}-${end + 1}`;
 };
 
+// FIX: Added robust subject name normalization for matching across different data entry points.
 export const normalizeSubjectName = (name: string): string => {
     if (!name) return '';
-    // Strip hyphens, replace multiple spaces with one, and trim
-    return name.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
+    // Strip everything except letters and numbers and convert to lowercase for aggressive matching
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
+// FIX: Added subjectsMatch utility to handle common subject aliases (e.g., Math vs Mathematics).
+export const subjectsMatch = (name1: string, name2: string): boolean => {
+    const n1 = normalizeSubjectName(name1);
+    const n2 = normalizeSubjectName(name2);
+    if (n1 === n2) return true;
+
+    // Mapping for common subject aliases
+    const aliases: Record<string, string[]> = {
+        'english': ['englishi', 'english1', 'engi', 'eng1', 'english'],
+        'englishii': ['englishii', 'english2', 'engii', 'eng2', 'englishii'],
+        'math': ['math', 'maths', 'mathematics', 'math'],
+        'socialscience': ['socialstudies', 'socialscience', 'socialsciences', 'evs', 'socstudies'],
+        'mizo': ['mizo', 'mizo', 'lushei'],
+    };
+
+    for (const group of Object.values(aliases)) {
+        if (group.includes(n1) && group.includes(n2)) return true;
+    }
+
+    return false;
 };
 
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {
@@ -240,7 +264,8 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
     let gradedSubjectsPassed = 0;
 
     numericSubjects.forEach(sd => {
-        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        // FIX: Using subjectsMatch for more accurate result lookup.
+        const result = studentExam.results.find(r => subjectsMatch(r.subject, sd.name));
         if (hasActivities) { 
             const examMark = result?.examMarks ?? 0;
             if (examMark < 20) { 
@@ -257,7 +282,8 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
     });
 
     gradedSubjects.forEach(sd => {
-        const result = studentExam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(sd.name));
+        // FIX: Using subjectsMatch for more accurate result lookup.
+        const result = studentExam.results.find(r => subjectsMatch(r.subject, sd.name));
         if (result?.grade && OABC_GRADES.includes(result.grade as any)) {
             gradedSubjectsPassed++;
         }
@@ -276,11 +302,11 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
 
 export const formatDateForDisplay = (isoDate?: string): string => {
   if (!isoDate) return '';
-  // Handles both YYYY-MM-DD and DD/MM/YYYY
+  // Handles both YYYY-MM-DD and already formatted DD/MM/YYYY
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(isoDate)) {
     return isoDate;
   }
-  if (!/^\d{4}-\d{2}-\d{2}/.test(isoDate)) { // check only start, allows for ISO strings with time
+  if (!/^\d{4}-\d{2}-\d{2}/.test(isoDate)) { 
     return isoDate;
   }
   const [year, month, day] = isoDate.split('T')[0].split('-');
@@ -291,7 +317,8 @@ export const formatDateForStorage = (displayDate?: string): string => {
   if (!displayDate) {
     return '';
   }
-  if (/^\d{4}-\d{2}-\d{2}/.test(displayDate)) { // check only start
+  // If already ISO, return as is
+  if (/^\d{4}-\d{2}-\d{2}/.test(displayDate)) { 
     return displayDate.split('T')[0];
   }
   const match = displayDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);

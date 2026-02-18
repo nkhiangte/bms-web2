@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
@@ -36,7 +37,7 @@ const FormField: React.FC<{
         {type === 'select' ? (
             <select id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px]">{options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>
         ) : type === 'textarea' ? (
-            <textarea id={name} name={name} value={value} onChange={onChange} required={required} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
+            <textarea id={name} name={name} value={value} onChange={onChange} required={required} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm" />
         ) : (
             <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-3" />
         )}
@@ -277,14 +278,14 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                                 </div>
 
                                 <FormField label="School Dues (if any)" name="schoolDuesIfAny" value={formData.schoolDuesIfAny} onChange={handleChange} />
-                                <FormField label="Qualified for Promotion" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
-                                <FormField label="Date of Last Attendance" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" />
-                                <FormField label="Date of Application of TC" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date" />
-                                <FormField label="Date of Issue of TC" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date" />
-                                <FormField label="Reason for Leaving" name="reasonForLeaving" value={formData.reasonForLeaving} onChange={handleChange} type="select" options={REASON_FOR_LEAVING_OPTIONS.map(r => ({value: r, label: r}))} />
-                                <FormField label="General Conduct" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
+                                <FormField label="Whether qualified for promotion:" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
+                                <FormField label="Date of last attendance at school:" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" />
+                                <FormField label="Date of application of TC:" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Date of issue of TC:" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Reason for leaving:" name="reasonForLeaving" value={formData.reasonForLeaving} onChange={handleChange} type="select" options={REASON_FOR_LEAVING_OPTIONS.map(r => ({value: r, label: r}))} />
+                                <FormField label="General Conduct:" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
                                 <div className="lg:col-span-2">
-                                    <FormField label="Any Other Remarks" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} type="textarea" required={false} />
+                                    <FormField label="Any Other Remarks:" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} type="textarea" required={false} />
                                 </div>
                             </div>
                         </fieldset>

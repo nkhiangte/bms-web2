@@ -59,7 +59,7 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id})`);
+                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). canEdit: ${canEdit}`);
                             if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
                             onEdit(staffMember); 
                         }} 
@@ -73,7 +73,7 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id})`);
+                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). canDelete: ${canDelete}`);
                             if(!canDelete) { alert("Only admins can delete staff."); return; }
                             onDelete(staffMember); 
                         }} 
@@ -249,8 +249,6 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
       }
   };
 
-
-  // --- Export Logic ---
   const getExportData = (dataToExport: Staff[]) => {
     const headers = [
         'EmployeeID', 'StaffType', 'FirstName', 'LastName', 'Gender', 'DateOfBirth', 'Nationality', 

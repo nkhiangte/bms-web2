@@ -46,9 +46,10 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
   }, [staffMember, gradeDefinitions]);
   
   const subjectsByGrade = useMemo(() => {
-      if (!staffMember?.assignedSubjects) {
-          console.log(`StaffDetailPage: No assigned subjects found for ${staffMember?.firstName} (ID: ${staffMember?.id}). Value: ${staffMember?.assignedSubjects}`);
-          return null; // Can be null or empty array
+      if (!staffMember) return null; // Ensure staffMember exists before accessing properties
+      if (!staffMember.assignedSubjects || staffMember.assignedSubjects.length === 0) {
+          console.log(`StaffDetailPage: No assigned subjects found for ${staffMember.firstName} (ID: ${staffMember.id}). Value: ${staffMember.assignedSubjects}`);
+          return null; 
       }
       console.log(`StaffDetailPage: Assigned subjects for ${staffMember.firstName} (ID: ${staffMember.id}):`, staffMember.assignedSubjects);
       return staffMember.assignedSubjects.reduce((acc, asgn) => {
@@ -111,7 +112,7 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
         <div className="text-center md:text-left flex-grow">
           <h1 className="text-4xl font-bold text-slate-900">{staffMember.firstName} {staffMember.lastName}</h1>
           <p className="text-sky-700 text-xl font-semibold mt-1">{staffMember.designation}</p>
-          <p className="text-slate-700 text-lg mt-1">{staffMember.department}</p>
+          <p className="text-sm text-slate-700">{staffMember.department}</p>
           <div className={`mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-md font-semibold ${statusStyle}`}>
             {staffMember.status}
           </div>

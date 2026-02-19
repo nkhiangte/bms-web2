@@ -317,3 +317,13 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   headers.join(','),
   ...rows.map(row => row.join(','))
 ].join('\n');
+  };
+
+  return (
+    <div>
+      {/* your JSX here */}
+    </div>
+  );
+};
+
+export default ManageStaffPage;

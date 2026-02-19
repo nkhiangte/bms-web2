@@ -1,14 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon } from '../components/Icons';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, UserIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon, SpinnerIcon } from '../components/Icons';
 import * as XLSX from 'xlsx';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import StaffFormModal from '../components/StaffFormModal';
+import ConfirmationModal from '../components/ConfirmationModal'; // Added ConfirmationModal import
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
-// Updated interface to match what App.tsx passes
 interface ManageStaffPageProps {
   staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
@@ -59,6 +59,7 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
+                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id})`);
                             if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
                             onEdit(staffMember); 
                         }} 
@@ -72,6 +73,7 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
+                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id})`);
                             if(!canDelete) { alert("Only admins can delete staff."); return; }
                             onDelete(staffMember); 
                         }} 
@@ -163,6 +165,9 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  // State for delete confirmation modal
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
   const confinedGrades: Grade[] = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II];
 
@@ -197,8 +202,9 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   };
 
   const handleOpenEdit = (staffMember: Staff) => {
+      console.log(`ManageStaffPage: Entering handleOpenEdit for ${staffMember.firstName} (ID: ${staffMember.id})`);
       if (!staffMember) {
-          alert("Error: No staff member selected.");
+          alert("Error: No staff member selected for editing.");
           return;
       }
       setEditingStaff(staffMember);
@@ -212,26 +218,37 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
           setIsModalOpen(false);
       } catch (error: any) {
           console.error("Failed to save staff:", error);
-          alert(`Failed to save staff member: ${error.message || 'Unknown error'}`);
+          alert(`Failed to save staff member: ${error.message || 'Unknown error. Check console for details.'}`);
       } finally {
           setIsSaving(false);
       }
   };
 
-  const handleDelete = async (staffMember: Staff) => {
+  const handleDeleteClick = (staffMember: Staff) => {
+      console.log(`ManageStaffPage: Entering handleDeleteClick for ${staffMember.firstName} (ID: ${staffMember.id})`);
       if (!staffMember || !staffMember.id) {
-          alert("Error: Invalid staff member record.");
+          alert("Error: Invalid staff member record for deletion.");
           return;
       }
-      if (window.confirm(`Are you sure you want to remove ${staffMember.firstName} ${staffMember.lastName}? This action cannot be undone.`)) {
-          try {
-              await onDeleteStaff(staffMember.id);
-          } catch (error: any) {
-              console.error("Failed to delete staff:", error);
-              alert(`Failed to delete staff member: ${error.message || 'Unknown error'}`);
-          }
+      setStaffToDelete(staffMember);
+      setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+      if (!staffToDelete) return;
+      setIsSaving(true); // Re-use isSaving for delete operation feedback
+      try {
+          await onDeleteStaff(staffToDelete.id);
+          setIsDeleteConfirmOpen(false);
+          setStaffToDelete(null);
+      } catch (error: any) {
+          console.error("Failed to delete staff:", error);
+          alert(`Failed to delete staff member: ${error.message || 'Unknown error. Check console for details.'}`);
+      } finally {
+          setIsSaving(false);
       }
   };
+
 
   // --- Export Logic ---
   const getExportData = (dataToExport: Staff[]) => {
@@ -407,11 +424,11 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                   <div className="animate-fade-in space-y-8">
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Confined Teachers (Nursery to Class II)</h2>
-                          <StaffGrid staff={confinedTeachers} onEdit={handleOpenEdit} onDelete={handleDelete} user={user} title="Confined Teachers" />
+                          <StaffGrid staff={confinedTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Confined Teachers" />
                       </div>
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Subject Wise Teachers</h2>
-                          <StaffGrid staff={subjectTeachers} onEdit={handleOpenEdit} onDelete={handleDelete} user={user} title="Subject Wise Teachers" />
+                          <StaffGrid staff={subjectTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Subject Wise Teachers" />
                       </div>
                   </div>
               )}
@@ -419,15 +436,15 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                   <div className="animate-fade-in space-y-8">
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Clerks</h2>
-                          <StaffGrid staff={clerks} onEdit={handleOpenEdit} onDelete={handleDelete} user={user} title="Clerks" />
+                          <StaffGrid staff={clerks} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Clerks" />
                       </div>
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Librarians</h2>
-                          <StaffGrid staff={librarians} onEdit={handleOpenEdit} onDelete={handleDelete} user={user} title="Librarians" />
+                          <StaffGrid staff={librarians} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Librarians" />
                       </div>
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Sports Teachers</h2>
-                          <StaffGrid staff={sportsTeachers} onEdit={handleOpenEdit} onDelete={handleDelete} user={user} title="Sports Teachers" />
+                          <StaffGrid staff={sportsTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Sports Teachers" />
                       </div>
                   </div>
               )}
@@ -446,6 +463,18 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
         gradeDefinitions={gradeDefinitions}
         isSaving={isSaving}
       />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Staff Deletion"
+        confirmDisabled={isSaving}
+      >
+        <p>Are you sure you want to permanently remove <span className="font-bold">{staffToDelete?.firstName} {staffToDelete?.lastName}</span> from the staff list? This action cannot be undone.</p>
+        {isSaving && <p className="mt-2 text-sm text-slate-500 flex items-center gap-2"><SpinnerIcon className="w-4 h-4"/> Deleting...</p>}
+      </ConfirmationModal>
     </div>
     </>
   );

@@ -113,7 +113,6 @@ import AcademicsPage from './pages/public/AcademicsPage';
 import CurriculumPage from './pages/public/CurriculumPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import FeesPage from './pages/public/FeesPage';
-// Fix: Use PascalCase import and suppression for potential redundant file casing conflict error
 // @ts-ignore
 import InsightsPage from './pages/InsightsPage';
 
@@ -283,6 +282,7 @@ const App: React.FC = () => {
 
   const handleSaveStaff = async (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGradeKey: Grade | null) => {
       let staffId = id;
+      console.log(`App.tsx: handleSaveStaff called for ID: ${id || 'new'}, assignedGrade: ${assignedGradeKey}. Data:`, staffData);
       try {
           if (id) {
               await db.collection('staff').doc(id).update(staffData);
@@ -324,12 +324,13 @@ const App: React.FC = () => {
           addNotification('Staff member saved successfully.', 'success');
       } catch (error) {
           console.error("Error saving staff:", error);
-          addNotification('Failed to save staff member.', 'error');
+          addNotification('Failed to save staff member. ' + (error as any).message, 'error');
           throw error;
       }
   };
 
   const handleDeleteStaff = async (id: string) => {
+      console.log(`App.tsx: handleDeleteStaff called for ID: ${id}`);
       try {
           await db.collection('staff').doc(id).delete();
           // Remove from class teacher role if assigned
@@ -350,7 +351,7 @@ const App: React.FC = () => {
             addNotification('Staff member deleted.', 'success');
       } catch (error) {
            console.error("Error deleting staff:", error);
-           addNotification('Failed to delete staff member.', 'error');
+           addNotification('Failed to delete staff member. ' + (error as any).message, 'error');
            throw error;
       }
   };

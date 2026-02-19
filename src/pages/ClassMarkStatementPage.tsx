@@ -266,7 +266,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         sortedData.sort((a, b) => a.rollNo - b.rollNo);
     }
     
-    return sortedData;
+    return sortedData as ProcessedStudent[];
   }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, sortCriteria]);
 
   const handleConfirmSave = async () => {

@@ -1,9 +1,9 @@
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
-import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '../types';
-import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
-import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '@/components/Icons';
+import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '@/types';
+import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '@/utils';
+import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '../types';
-import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '../components/Icons';
-import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp } from '../utils';
-import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '../constants';
-import ConfirmationModal from '../components/ConfirmationModal';
-import PhotoWithFallback from '../components/PhotoWithFallback';
+import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '@/types';
+import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '@/components/Icons';
+import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp, getFeeDetails } from '@/utils';
+import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '@/constants';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -35,7 +35,7 @@ const DetailItem: React.FC<{label: string, value?: string | number}> = ({ label,
 const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children}) => (
     <div className="mb-8">
         <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">{title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+        <div className="w-full">
             {children}
         </div>
     </div>
@@ -234,34 +234,36 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         </div>
       </div>
       
-      <div>
+      <div className="space-y-12">
             <DetailSection title="Personal Information">
-                <DetailItem label="Student ID" value={formattedStudentId} />
-                <DetailItem label="Permanent Education Number (PEN)" value={student.pen} />
-                <DetailItem label="Date of Birth" value={formatDateForDisplay(student.dateOfBirth)} />
-                <DetailItem label="Gender" value={student.gender} />
-                <DetailItem label="Aadhaar Number" value={student.aadhaarNumber} />
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <dt className="text-sm font-medium text-slate-600">Contact Number</dt>
-                    <dd className="mt-1 text-md font-semibold text-slate-900 flex justify-between items-center">
-                        <span>{student.contact || 'N/A'}</span>
-                        {student.contact && (
-                            <div className="flex items-center gap-2">
-                                <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
-                                    <WhatsappIcon className="w-5 h-5"/>
-                                </a>
-                                <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
-                                    <MessageIcon className="w-5 h-5"/>
-                                </a>
-                            </div>
-                        )}
-                    </dd>
-                </div>
-                <DetailItem label="Blood Group" value={student.bloodGroup} />
-                <DetailItem label="CWSN" value={student.cwsn} />
-                <div className="lg:col-span-3">
-                    <DetailItem label="Address" value={student.address} />
-                </div>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                    <DetailItem label="Student ID" value={formattedStudentId} />
+                    <DetailItem label="Permanent Education Number (PEN)" value={student.pen} />
+                    <DetailItem label="Date of Birth" value={formatDateForDisplay(student.dateOfBirth)} />
+                    <DetailItem label="Gender" value={student.gender} />
+                    <DetailItem label="Aadhaar Number" value={student.aadhaarNumber} />
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <dt className="text-sm font-medium text-slate-600">Contact Number</dt>
+                        <dd className="mt-1 text-md font-semibold text-slate-900 flex justify-between items-center">
+                            <span>{student.contact || 'N/A'}</span>
+                            {student.contact && (
+                                <div className="flex items-center gap-2">
+                                    <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
+                                        <WhatsappIcon className="w-5 h-5"/>
+                                    </a>
+                                    <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
+                                        <MessageIcon className="w-5 h-5"/>
+                                    </a>
+                                </div>
+                            )}
+                        </dd>
+                    </div>
+                    <DetailItem label="Blood Group" value={student.bloodGroup} />
+                    <DetailItem label="CWSN" value={student.cwsn} />
+                    <div className="sm:col-span-2 lg:col-span-3">
+                        <DetailItem label="Address" value={student.address} />
+                    </div>
+                </dl>
             </DetailSection>
 
             {/* Fee Payment Status Section */}
@@ -288,7 +290,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                                         >
                                             <div className="text-[10px] font-bold uppercase tracking-wider">{month.substring(0, 3)}</div>
                                             <div className="mt-1">
-                                                <ClockIcon className="w-5 h-5 mx-auto opacity-30"/>
+                                                {isPaid ? <CheckCircleIcon className="w-5 h-5 mx-auto"/> : <ClockIcon className="w-5 h-5 mx-auto opacity-30"/>}
                                             </div>
                                         </div>
                                     );

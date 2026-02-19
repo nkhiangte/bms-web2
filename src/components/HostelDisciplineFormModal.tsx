@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, FormEvent, useEffect } from 'react';
 import { HostelDisciplineEntry, Student, HostelResident, IncidentSeverity, IncidentStatus } from '@/types';
 import { INCIDENT_CATEGORIES, INCIDENT_SEVERITY_LIST, INCIDENT_STATUS_LIST } from '@/constants';

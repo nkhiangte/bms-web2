@@ -33,8 +33,17 @@ const StaffCard: React.FC<{
         [EmploymentStatus.RETIRED]: 'bg-slate-200 text-slate-700',
     };
 
-    const canEdit = user.role === 'admin' || (user.email && staffMember.emailAddress && user.email.trim().toLowerCase() === staffMember.emailAddress.trim().toLowerCase());
-    const canDelete = user.role === 'admin';
+    const isAdmin = user?.role?.toLowerCase() === 'admin';
+
+const canEdit =
+  isAdmin ||
+  (user?.email &&
+   staffMember.emailAddress &&
+   user.email.trim().toLowerCase() ===
+   staffMember.emailAddress.trim().toLowerCase());
+
+const canDelete = isAdmin;
+
 
     return (
         <div className={`bg-white rounded-xl shadow-lg p-5 flex flex-col transition-all duration-300 h-full ${!isActive ? 'opacity-70 bg-slate-50' : 'hover:shadow-xl hover:scale-[1.02]'}`}>

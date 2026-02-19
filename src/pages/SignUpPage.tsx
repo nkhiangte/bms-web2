@@ -16,4 +16,4 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault
+  e.preventDefault();

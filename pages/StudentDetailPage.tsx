@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '../types';
@@ -12,7 +13,7 @@ const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface StudentDetailPageProps {
   students: Student[];
-  onEdit: (student: Student) => void;
+  onEdit: (student: Student) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
@@ -44,7 +45,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 
 
 const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
-  const { studentId } = useParams();
+  const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
   const student = students.find(s => s.id === studentId);
@@ -179,7 +180,8 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         </div>
         <div className="text-center md:text-left flex-grow">
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">{student.name}</h1>
-          <p className="text-slate-700 text-lg mt-1">{student.grade} - ID: <span className="font-semibold">{formattedStudentId}</span></p>
+          <p className="text-slate-700 text-lg mt-1">{student.grade} - Roll No: <span className="font-semibold">{student.rollNo}</span></p>
+          <p className="text-slate-700 text-lg mt-1">ID: <span className="font-semibold">{formattedStudentId}</span></p>
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
              {canEdit && (
                 <button

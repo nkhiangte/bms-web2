@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, Gender } from '../types';
@@ -11,8 +12,8 @@ const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface StudentListPageProps {
   students: Student[];
-  onAdd: () => void;
-  onEdit: (student: Student) => void;
+  onAdd: (studentData: Omit<Student, 'id'>) => Promise<void>;
+  onEdit: (student: Student) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
@@ -144,7 +145,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
 
           {/* Add Student Button */}
           <button
-            onClick={onAdd}
+            onClick={() => onAdd({} as Omit<Student, 'id'>)}
             disabled={user.role !== 'admin'}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
             title={user.role !== 'admin' ? "Admin access required" : "Add a new student"}

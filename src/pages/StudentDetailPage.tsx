@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '@/types';
@@ -11,7 +12,7 @@ const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface StudentDetailPageProps {
   students: Student[];
-  onEdit: (student: Student) => void;
+  onEdit: (student: Student) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
@@ -43,7 +44,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 
 
 const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
-  const { studentId } = useParams();
+  const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
   const student = students.find(s => s.id === studentId);

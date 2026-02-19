@@ -57,8 +57,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
     try {
         const result = await onLogin(email, password);
         if (result && result.success) {
-            // FIX: Explicitly push the user into the portal dashboard.
-            // Using replace ensures they can't go back to the login page.
             navigate('/portal/dashboard', { replace: true });
         } else if (result && result.message) {
             setFormError(result.message);

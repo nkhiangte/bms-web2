@@ -1,5 +1,6 @@
 
-import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
+
+import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet, SubjectMark, SubjectDefinition } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
 
@@ -342,7 +343,7 @@ export const formatDateForNews = (isoDate?: string): string => {
 export function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3; 
     const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180/180;
     const Δφ = (lat2-lat1) * Math.PI/180;
     const Δλ = (lon2-lon1) * Math.PI/180;
 

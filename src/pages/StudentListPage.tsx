@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, Gender } from '@/types';
@@ -10,8 +11,8 @@ const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface StudentListPageProps {
   students: Student[];
-  onAdd: () => void;
-  onEdit: (student: Student) => void;
+  onAdd: (studentData: Omit<Student, 'id'>) => Promise<void>;
+  onEdit: (student: Student) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;

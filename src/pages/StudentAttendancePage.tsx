@@ -1,12 +1,11 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
-import { exportAttendanceToCsv } from '../utils';
-import { db } from '../firebaseConfig';
-import DateRangeExportModal from '../components/DateRangeExportModal';
+import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '@/types';
+import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import { exportAttendanceToCsv } from '@/utils';
+import { db } from '@/firebaseConfig';
+import DateRangeExportModal from '@/components/DateRangeExportModal';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 

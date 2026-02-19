@@ -98,6 +98,8 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                     ...staffMember,
                     yearsOfExperience: staffMember.yearsOfExperience ?? 0,
                     basicSalary: staffMember.basicSalary ?? null,
+                    // Use ISO dates if stored that way, or whatever logic you have. 
+                    // CustomDatePicker expects YYYY-MM-DD for `value`.
                     dateOfBirth: staffMember.dateOfBirth, 
                     dateOfJoining: staffMember.dateOfJoining,
                 });
@@ -200,6 +202,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
             delete dataToSave.teacherLicenseNumber;
         }
 
+        console.log("StaffFormModal: Submitting with data:", dataToSave, "Assigned Grade:", assignedGrade);
         onSubmit(dataToSave as Omit<Staff, 'id'>, assignedGrade || null);
     };
 

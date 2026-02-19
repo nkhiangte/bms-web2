@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade, CalendarEvent } from '../types';
-import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, DocumentReportIcon } from '../components/Icons';
-import { exportAttendanceToCsv, getHolidayDates } from '../utils';
-import DateRangeExportModal from '../components/DateRangeExportModal';
+import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade, CalendarEvent } from '@/types';
+import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, DocumentReportIcon } from '@/components/Icons';
+import { exportAttendanceToCsv, getHolidayDates } from '@/utils';
+import DateRangeExportModal from '@/components/DateRangeExportModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

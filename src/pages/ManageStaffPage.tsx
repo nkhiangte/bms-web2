@@ -42,16 +42,16 @@ const StaffCard: React.FC<{
         [EmploymentStatus.RETIRED]: 'bg-slate-200 text-slate-700',
     };
 
-    const isAdmin = user?.role?.toLowerCase() === 'admin';
+    const isadmin = user?.role?.toLowerCase() === 'admin';
 
 const canEdit =
-  isAdmin ||
+  isadmin ||
   (user?.email &&
    staffMember.emailAddress &&
    user.email.trim().toLowerCase() ===
    staffMember.emailAddress.trim().toLowerCase());
 
-const canDelete = isAdmin;
+const canDelete = isadmin;
 
 
     return (
@@ -96,7 +96,7 @@ const canDelete = isAdmin;
                             onDelete(staffMember); 
                         }} 
                         className="p-2 text-red-600 hover:bg-red-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
-                        title={canDelete ? "Remove Staff" : "Admin access required"}
+                        title={canDelete ? "Remove Staff" : "admin access required"}
                         disabled={!canDelete}
                     >
                         <TrashIcon className="w-5 h-5"/>

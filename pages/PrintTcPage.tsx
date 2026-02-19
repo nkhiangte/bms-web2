@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { TcRecord } from '../types';
@@ -42,7 +43,7 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
         );
     }
     
-    const { staffDetails, certData } = record;
+    // Properties accessed directly from record below
 
     return (
       <div className="bg-slate-200 print:bg-white flex justify-center py-8">

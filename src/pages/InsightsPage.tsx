@@ -1,2 +1,3 @@
-// Moved to src/pages/insightsPage.tsx to resolve casing conflict
+
+// This file is deprecated. Please use src/pages/insightsPage.tsx
 export {};

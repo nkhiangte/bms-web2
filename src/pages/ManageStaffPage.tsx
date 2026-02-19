@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, UserIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon, SpinnerIcon } from '../components/Icons';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon, SpinnerIcon } from '../components/Icons';
 import * as XLSX from 'xlsx';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import StaffFormModal from '../components/StaffFormModal';

@@ -1,2 +1,3 @@
-// This file has been renamed to src/pages/InsightsPage.tsx
-export { default } from './InsightsPage';
+// This file is deprecated to avoid casing issues with InsightsPage.tsx
+// Please use src/pages/InsightsPage.tsx (uppercase I)
+export {};

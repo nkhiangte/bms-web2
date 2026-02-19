@@ -1,13 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, UserIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon } from '../components/Icons';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon } from '../components/Icons';
 import * as XLSX from 'xlsx';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import StaffFormModal from '../components/StaffFormModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
+// Updated interface to match what App.tsx passes
 interface ManageStaffPageProps {
   staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
@@ -55,7 +56,12 @@ const StaffCard: React.FC<{
                 </div>
                 <div className="flex flex-col items-center gap-2 z-10">
                     <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(staffMember); }} 
+                        onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
+                            onEdit(staffMember); 
+                        }} 
                         className="p-2 text-slate-600 hover:bg-slate-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
                         title={canEdit ? "Edit Staff Details" : "You can only edit your own profile"}
                         disabled={!canEdit}
@@ -63,7 +69,12 @@ const StaffCard: React.FC<{
                         <EditIcon className="w-5 h-5"/>
                     </button>
                     <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(staffMember); }} 
+                        onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            if(!canDelete) { alert("Only admins can delete staff."); return; }
+                            onDelete(staffMember); 
+                        }} 
                         className="p-2 text-red-600 hover:bg-red-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
                         title={canDelete ? "Remove Staff" : "Admin access required"}
                         disabled={!canDelete}
@@ -178,14 +189,18 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   const clerks = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.CLERK), [nonTeachingStaff]);
   const librarians = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.LIBRARIAN), [nonTeachingStaff]);
   const sportsTeachers = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.SPORTS_TEACHER), [nonTeachingStaff]);
-  
-  // Handlers for Add/Edit/Delete
+
+  // --- Handlers ---
   const handleOpenAdd = () => {
       setEditingStaff(null);
       setIsModalOpen(true);
   };
 
   const handleOpenEdit = (staffMember: Staff) => {
+      if (!staffMember) {
+          alert("Error: No staff member selected.");
+          return;
+      }
       setEditingStaff(staffMember);
       setIsModalOpen(true);
   };
@@ -195,25 +210,30 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
       try {
           await onSaveStaff(staffData, editingStaff?.id, assignedGradeKey);
           setIsModalOpen(false);
-      } catch (error) {
+      } catch (error: any) {
           console.error("Failed to save staff:", error);
-          alert("Failed to save staff member. Please try again.");
+          alert(`Failed to save staff member: ${error.message || 'Unknown error'}`);
       } finally {
           setIsSaving(false);
       }
   };
 
   const handleDelete = async (staffMember: Staff) => {
-      if (window.confirm(`Are you sure you want to remove ${staffMember.firstName} ${staffMember.lastName}?`)) {
+      if (!staffMember || !staffMember.id) {
+          alert("Error: Invalid staff member record.");
+          return;
+      }
+      if (window.confirm(`Are you sure you want to remove ${staffMember.firstName} ${staffMember.lastName}? This action cannot be undone.`)) {
           try {
               await onDeleteStaff(staffMember.id);
-          } catch (error) {
+          } catch (error: any) {
               console.error("Failed to delete staff:", error);
-              alert("Failed to delete staff member.");
+              alert(`Failed to delete staff member: ${error.message || 'Unknown error'}`);
           }
       }
   };
 
+  // --- Export Logic ---
   const getExportData = (dataToExport: Staff[]) => {
     const headers = [
         'EmployeeID', 'StaffType', 'FirstName', 'LastName', 'Gender', 'DateOfBirth', 'Nationality', 

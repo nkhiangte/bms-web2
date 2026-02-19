@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';
@@ -60,7 +61,6 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). User role: ${user?.role}, User email: ${user?.email}, Staff email: ${staffMember.emailAddress}, canEdit: ${canEdit}`);
                             if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
                             onEdit(staffMember); 
                         }} 
@@ -74,7 +74,6 @@ const StaffCard: React.FC<{
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). User role: ${user?.role}, canDelete: ${canDelete}`);
                             if(!canDelete) { alert("Only admins can delete staff."); return; }
                             onDelete(staffMember); 
                         }} 
@@ -203,7 +202,6 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   };
 
   const handleOpenEdit = (staffMember: Staff) => {
-      console.log(`ManageStaffPage: Entering handleOpenEdit for ${staffMember.firstName} (ID: ${staffMember.id})`);
       if (!staffMember) {
           alert("Error: No staff member selected for editing.");
           return;
@@ -226,7 +224,6 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   };
 
   const handleDeleteClick = (staffMember: Staff) => {
-      console.log(`ManageStaffPage: Entering handleDeleteClick for ${staffMember.firstName} (ID: ${staffMember.id})`);
       if (!staffMember || !staffMember.id) {
           alert("Error: Invalid staff member record for deletion.");
           return;

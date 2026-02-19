@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, Gender } from '@/types';
-import { GRADES_LIST } from '@/constants';
-import StudentTable from '@/components/StudentTable';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
-import { formatStudentId } from '@/utils';
+import { Student, User, Grade, Gender } from '../types';
+import { GRADES_LIST } from '../constants';
+import StudentTable from '../components/StudentTable';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
+import { formatStudentId } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

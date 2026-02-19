@@ -313,4 +313,7 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
         return;
     }
     const { headers, rows } = getExportData(dataToExport);
-    const csvContent = [headers.join(','), ...rows.map(row => row.
+    const csvContent = [
+  headers.join(','),
+  ...rows.map(row => row.join(','))
+].join('\n');

@@ -219,18 +219,34 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark, rank: 0 };
+      // Explicitly construct the object to match ProcessedStudent interface
+      const processed: ProcessedStudent = {
+          ...student,
+          grandTotal: localGrandTotal,
+          examTotal: localExamTotal,
+          activityTotal: localActivityTotal,
+          percentage,
+          result,
+          division,
+          academicGrade,
+          remark,
+          rank: 0 // Placeholder, updated below
+      };
+      return processed;
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => Number(b) - Number(a));
     
     const finalData = studentData.map(s => {
+        let rank: number | '-' = '-';
         if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
-            return { ...s, rank: '-' as const };
+            rank = '-';
+        } else {
+            const rankIndex = uniqueScores.indexOf(s.grandTotal);
+            rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
         }
-        const rankIndex = uniqueScores.indexOf(s.grandTotal);
-        return { ...s, rank: rankIndex !== -1 ? (rankIndex + 1) : '-' as const };
+        return { ...s, rank };
     });
     
     let sortedData = finalData;
@@ -251,7 +267,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         sortedData.sort((a, b) => a.rollNo - b.rollNo);
     }
     
-    return sortedData as ProcessedStudent[];
+    return sortedData;
   }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, sortCriteria]);
 
   const handleConfirmSave = async () => {

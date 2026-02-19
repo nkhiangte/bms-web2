@@ -178,7 +178,8 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   const clerks = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.CLERK), [nonTeachingStaff]);
   const librarians = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.LIBRARIAN), [nonTeachingStaff]);
   const sportsTeachers = useMemo(() => nonTeachingStaff.filter(s => s.designation === Designation.SPORTS_TEACHER), [nonTeachingStaff]);
-
+  
+  // Handlers for Add/Edit/Delete
   const handleOpenAdd = () => {
       setEditingStaff(null);
       setIsModalOpen(true);

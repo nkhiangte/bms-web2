@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// Fix: Use correct Gemini API imports as per latest SDK guidelines
+// Fix: Use correct Gemini API imports and named parameters for initialization.
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
 import { GRADES_LIST } from '../constants';
@@ -126,7 +126,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // Fix: Create a new GoogleGenAI instance right before making an API call with named parameters.
+            // Fix: Initialize GoogleGenAI inside the function with named parameters.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -137,7 +137,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 },
             });
             
-            // Fix: Access generated text via the .text property (not a method call).
+            // Fix: Access result text via .text property (property, not a function call).
             const resultJson = JSON.parse(response.text || '{}');
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {

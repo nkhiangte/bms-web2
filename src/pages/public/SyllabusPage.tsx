@@ -17,6 +17,7 @@ type SyllabusData = {
 };
 
 const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions }) => {
+    // FIX: Changed useParams generic call to a result cast to avoid "Untyped function calls may not accept type arguments" error.
     const { grade } = useParams() as { grade: string };
     const decodedGrade = grade ? decodeURIComponent(grade) as Grade : undefined;
 
@@ -25,6 +26,7 @@ const SyllabusPage: React.FC<SyllabusPageProps> = ({ syllabus, gradeDefinitions 
         return gradeDefinitions[decodedGrade]?.subjects || [];
     }, [decodedGrade, gradeDefinitions]);
 
+    // FIX: Add explicit type to useMemo to ensure TypeScript correctly infers the shape of syllabusBySubject, resolving destructuring errors.
     const syllabusBySubject = useMemo<Record<string, SyllabusData>>(() => {
         const gradeSyllabus = syllabus.filter(s => s.grade === decodedGrade);
         

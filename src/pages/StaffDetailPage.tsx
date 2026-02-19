@@ -46,12 +46,7 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
   }, [staffMember, gradeDefinitions]);
   
   const subjectsByGrade = useMemo(() => {
-      if (!staffMember) return null; // Ensure staffMember exists before accessing properties
-      if (!staffMember.assignedSubjects || staffMember.assignedSubjects.length === 0) {
-          console.log(`StaffDetailPage: No assigned subjects found for ${staffMember.firstName} (ID: ${staffMember.id}). Value: ${staffMember.assignedSubjects}`);
-          return null; 
-      }
-      console.log(`StaffDetailPage: Assigned subjects for ${staffMember.firstName} (ID: ${staffMember.id}):`, staffMember.assignedSubjects);
+      if (!staffMember?.assignedSubjects) return null;
       return staffMember.assignedSubjects.reduce((acc, asgn) => {
           if (!acc[asgn.grade]) {
               acc[asgn.grade] = [];

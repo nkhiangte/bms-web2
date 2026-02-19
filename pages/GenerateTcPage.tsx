@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
@@ -136,7 +128,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         try {
             const prompt = `Convert the date ${formatDateForDisplay(foundStudent.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
             
-            // FIX: Updated Gemini API usage to conform to new guidelines.
+            // FIX: Updated Gemini API usage to use `GoogleGenAI` from `@google/genai` with correct initialization and method calls.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
@@ -168,7 +160,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         }
         setIsConfirmModalOpen(true);
     };
-
+    
     const handleConfirmSave = async () => {
         if (!foundStudent) return;
 

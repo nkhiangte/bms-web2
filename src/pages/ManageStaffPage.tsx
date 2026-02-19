@@ -1,12 +1,3 @@
-if (!user || !user.role) {
-  return (
-    <div className="p-6 text-center">
-      <SpinnerIcon className="w-6 h-6 animate-spin mx-auto" />
-      <p className="mt-2 text-slate-600">Loading user permissions...</p>
-    </div>
-  );
-}
-
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';
@@ -14,7 +5,7 @@ import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, UserIcon, Briefcase
 import * as XLSX from 'xlsx';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 import StaffFormModal from '../components/StaffFormModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // Added ConfirmationModal import
+import ConfirmationModal from '../components/ConfirmationModal'; 
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -42,17 +33,9 @@ const StaffCard: React.FC<{
         [EmploymentStatus.RETIRED]: 'bg-slate-200 text-slate-700',
     };
 
-    const isadmin = user?.role?.toLowerCase() === 'admin';
-
-const canEdit =
-  isadmin ||
-  (user?.email &&
-   staffMember.emailAddress &&
-   user.email.trim().toLowerCase() ===
-   staffMember.emailAddress.trim().toLowerCase());
-
-const canDelete = isadmin;
-
+    const isAdmin = user?.role?.toLowerCase() === 'admin';
+    const canEdit = isAdmin || (user?.email && staffMember.emailAddress && user.email.trim().toLowerCase() === staffMember.emailAddress.trim().toLowerCase());
+    const canDelete = isAdmin;
 
     return (
         <div className={`bg-white rounded-xl shadow-lg p-5 flex flex-col transition-all duration-300 h-full ${!isActive ? 'opacity-70 bg-slate-50' : 'hover:shadow-xl hover:scale-[1.02]'}`}>
@@ -77,7 +60,7 @@ const canDelete = isadmin;
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). canEdit: ${canEdit}`);
+                            console.log(`StaffCard: Edit button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). User role: ${user?.role}, User email: ${user?.email}, Staff email: ${staffMember.emailAddress}, canEdit: ${canEdit}`);
                             if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
                             onEdit(staffMember); 
                         }} 
@@ -91,12 +74,12 @@ const canDelete = isadmin;
                         onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
-                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). canDelete: ${canDelete}`);
+                            console.log(`StaffCard: Delete button clicked for ${staffMember.firstName} (ID: ${staffMember.id}). User role: ${user?.role}, canDelete: ${canDelete}`);
                             if(!canDelete) { alert("Only admins can delete staff."); return; }
                             onDelete(staffMember); 
                         }} 
                         className="p-2 text-red-600 hover:bg-red-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
-                        title={canDelete ? "Remove Staff" : "admin access required"}
+                        title={canDelete ? "Remove Staff" : "Admin access required"}
                         disabled={!canDelete}
                     >
                         <TrashIcon className="w-5 h-5"/>
@@ -340,160 +323,257 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
     link.href = URL.createObjectURL(blob);
     link.download = `BMS_Staff_${activeTab}.csv`;
     document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setIsExportMenuOpen(false);
-  };
+KITCHEN = 'Kitchen',
+    CLEANING = 'Cleaning',
+    OTHER = 'Other'
+}
 
-  const handleDownloadXlsx = () => {
-    const dataToExport = activeTab === 'teaching' ? teachingStaff : nonTeachingStaff;
-    if (dataToExport.length === 0) {
-        alert("No staff data available to download for the current view.");
-        return;
+export enum StockLogType {
+    IN = 'IN',
+    OUT = 'OUT'
+}
+
+export interface HostelResident {
+    id: string;
+    studentId: string;
+    dormitory: HostelDormitory;
+    dateOfJoining: string;
+}
+
+export interface HostelStaff {
+    id: string;
+    name: string;
+    role: HostelStaffRole;
+    contactNumber: string;
+    dateOfJoining: string;
+    salary: number;
+    paymentStatus: PaymentStatus;
+    gender: Gender;
+    dateOfBirth: string;
+    photographUrl: string;
+    bloodGroup?: BloodGroup;
+    aadhaarNumber?: string;
+    emailAddress?: string;
+    permanentAddress?: string;
+    dutyShift?: string;
+    assignedBlock?: HostelDormitory;
+    qualification?: Qualification;
+    expertise?: string;
+    attendancePercent?: number;
+    emergencyContactName?: string;
+    emergencyContactRelationship?: string;
+    emergencyContactNumber?: string;
+    medicalConditions?: string;
+}
+
+export enum PaymentStatus {
+    PAID = 'Paid',
+    PENDING = 'Pending'
+}
+
+export interface HostelInventoryItem extends InventoryItem {}
+
+export interface StockLog {
+    id: string;
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    type: StockLogType;
+    date: string;
+    notes?: string;
+}
+
+export interface HostelDisciplineEntry {
+    id: string;
+    studentId: string;
+    residentId?: string;
+    date: string;
+    category: string;
+    description: string;
+    severity: IncidentSeverity;
+    status: IncidentStatus;
+    actionTaken?: string;
+    reportedBy: string;
+    reportedById?: string;
+}
+
+export enum IncidentSeverity {
+    MINOR = 'Minor',
+    MAJOR = 'Major',
+    CRITICAL = 'Critical'
+}
+
+export enum IncidentStatus {
+    OPEN = 'Open',
+    PENDING_ACTION = 'Pending Action',
+    RESOLVED = 'Resolved'
+}
+
+export enum Chore {
+    GIRLS_I_CLEANING = "Girls' I Cleaning",
+    GIRLS_II_CLEANING = "Girls' II Cleaning",
+    FOOD_SERVER = "Food Server",
+    VERANDA_CLEANING = "Veranda Cleaning",
+    TEA_SERVER = "Tea Server",
+    RAG_WASHER = "Rag Washer",
+    MOPPER = "Mopper",
+    ROAD_SWEEPER = "Road Sweeper",
+    BOYS_DORM_CLEANER = "Boys' Dorm Cleaner",
+    SHOE_POLISHER = "Shoe Polisher",
+    TEACHERS_PLATE_WASHER = "Teachers' Plate Washer",
+    DINING_HALL_SWEEPER = "Dining Hall Sweeper",
+    BIO_WASTE_WATER_BOYS = "Bio Waste Water (Boys)"
+}
+
+export type DailyChoreAssignment = Record<string, string[]>;
+export type ChoreRoster = Record<Chore, DailyChoreAssignment>;
+
+export enum CalendarEventType {
+    HOLIDAY = 'Holiday',
+    EXAM = 'Exam Schedule',
+    EVENT = 'School Event',
+    MEETING = 'Staff Meeting'
+}
+
+export interface CalendarEvent {
+    id: string;
+    title: string;
+    date: string;
+    endDate?: string;
+    type: CalendarEventType;
+    description?: string;
+}
+
+export interface DistinctionHolder {
+    name: string;
+    parentage: string;
+    imageUrl: string;
+}
+
+export interface FeeSet {
+    heads: FeeHead[];
+}
+
+export interface FeeStructure {
+    set1: FeeSet;
+    set2: FeeSet;
+    set3: FeeSet;
+    gradeMap?: Record<string, Grade[]>;
+}
+
+export enum ConductEntryType {
+    MERIT = 'Merit',
+    DEMERIT = 'Demerit'
+}
+
+export interface ConductEntry {
+    id: string;
+    studentId: string;
+    date: string;
+    type: ConductEntryType;
+    category: string;
+    description: string;
+    recordedBy: string;
+    recordedById: string;
+}
+
+export enum AttendanceStatus {
+    PRESENT = 'Present',
+    ABSENT = 'Absent',
+    LATE = 'Late',
+    LEAVE = 'Leave'
+}
+
+export enum StudentAttendanceStatus {
+    PRESENT = 'Present',
+    ABSENT = 'Absent',
+    LEAVE = 'Leave'
+}
+
+export type StaffAttendanceRecord = Record<string, AttendanceStatus>;
+export type StudentAttendanceRecord = Record<string, StudentAttendanceStatus>;
+export type DailyStudentAttendance = Record<Grade, Record<string, StudentAttendanceRecord>>;
+
+export interface TcRecord {
+    id: string;
+    refNo: string;
+    studentDbId: string;
+    studentDisplayId: string;
+    nameOfStudent: string;
+    gender: string;
+    fatherName: string;
+    motherName: string;
+    currentClass: string;
+    rollNo: number;
+    dateOfBirth: string;
+    category: string;
+    religion: string;
+    dateOfBirthInWords: string;
+    schoolDuesIfAny: string;
+    qualifiedForPromotion: string;
+    dateOfLastAttendance: string;
+    dateOfApplicationOfTc: string;
+    dateOfIssueOfTc: string;
+    reasonForLeaving: string;
+    generalConduct: string;
+    anyOtherRemarks: string;
+}
+
+export interface ServiceCertificateRecord {
+    id: string;
+    certData: {
+        refNo: string;
+        lastWorkingDay: string;
+        issueDate: string;
+        reasonForLeaving: string;
+        generalConduct: string;
+        remarks: string;
+    };
+    staffDetails: {
+        staffId: string;
+        staffNumericId: string;
+        name: string;
+        gender: Gender;
+        designation: string;
+        dateOfJoining: string;
+        dateOfBirth: string;
+    };
+}
+
+export interface NewsItem {
+    id: string;
+    title: string;
+    date: string;
+    content: string;
+    imageUrls?: string[];
+}
+
+export interface ExamScheduleItem {
+    date: string;
+    day: string;
+    morning?: string;
+    afternoon?: string;
+}
+
+export interface ExamRoutine {
+    id: string;
+    title: string;
+    exams: ExamScheduleItem[];
+}
+
+export interface Period {
+  subject: string;
+}
+
+export interface ClassRoutine {
+  class: string;
+  periods: Period[];
+}
+
+export type DailyRoutine = ClassRoutine[];
+
+declare global {
+    interface Window {
+        Razorpay: any;
     }
-    const { headers, rows } = getExportData(dataToExport);
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Staff List');
-    XLSX.writeFile(workbook, `BMS_Staff_${activeTab}.xlsx`);
-    setIsExportMenuOpen(false);
-  };
-  
-  const handlePrintPdf = () => {
-    window.print();
-    setIsExportMenuOpen(false);
-  };
-
-  const dataForPrint = activeTab === 'teaching' ? teachingStaff : nonTeachingStaff;
-
-  return (
-    <>
-    <div>
-      <div className="space-y-6 print-hidden">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="mb-6 flex justify-between items-center">
-                  <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
-                      <BackIcon className="w-5 h-5" /> Back
-                  </button>
-                  <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home/Dashboard">
-                      <HomeIcon className="w-5 h-5" /> <span>Home</span>
-                  </Link>
-              </div>
-
-              <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
-                  <div>
-                      <h1 className="text-3xl font-bold text-slate-800">Manage Staff</h1>
-                      <p className="text-slate-700 mt-1">Add, view, and manage staff profiles and assignments.</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto ml-auto">
-                      <div className="relative w-full sm:w-auto">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <SearchIcon className="h-5 w-5 text-slate-600" />
-                          </div>
-                          <input type="text" placeholder="Search by name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition placeholder:text-slate-600" aria-label="Search staff by name" />
-                      </div>
-                      <Link
-                          to="/portal/staff/certificates"
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
-                      >
-                          <DocumentReportIcon className="h-5 h-5" />
-                          Service Certificates
-                      </Link>
-                      <div className="relative">
-                          <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="btn btn-secondary w-full">
-                              <InboxArrowDownIcon className="h-5 h-5" />
-                              Export
-                              <ChevronDownIcon className="w-4 h-4" />
-                          </button>
-                          {isExportMenuOpen && (
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
-                                  <div className="py-1">
-                                      <button onClick={handlePrintPdf} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as PDF</button>
-                                      <button onClick={handleDownloadXlsx} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as XLSX</button>
-                                      <button onClick={handleDownloadCsv} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as CSV</button>
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-                      {user.role === 'admin' && (
-                        <button onClick={handleOpenAdd} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition">
-                            <PlusIcon className="h-5 h-5" /> Add Staff
-                        </button>
-                      )}
-                  </div>
-              </div>
-              
-              <div className="border-b border-slate-200">
-                  <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-                      <button onClick={() => setActiveTab('teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'teaching' ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
-                          Teaching Staff
-                      </button>
-                      <button onClick={() => setActiveTab('non-teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'non-teaching' ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
-                          Non-Teaching Staff
-                      </button>
-                  </nav>
-              </div>
-          </div>
-
-          <div className="space-y-8 print-hidden">
-              {activeTab === 'teaching' && (
-                  <div className="animate-fade-in space-y-8">
-                      <div>
-                          <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Confined Teachers (Nursery to Class II)</h2>
-                          <StaffGrid staff={confinedTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Confined Teachers" />
-                      </div>
-                      <div>
-                          <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Subject Wise Teachers</h2>
-                          <StaffGrid staff={subjectTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Subject Wise Teachers" />
-                      </div>
-                  </div>
-              )}
-              {activeTab === 'non-teaching' && (
-                  <div className="animate-fade-in space-y-8">
-                      <div>
-                          <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Clerks</h2>
-                          <StaffGrid staff={clerks} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Clerks" />
-                      </div>
-                      <div>
-                          <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Librarians</h2>
-                          <StaffGrid staff={librarians} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Librarians" />
-                      </div>
-                      <div>
-                          <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Sports Teachers</h2>
-                          <StaffGrid staff={sportsTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Sports Teachers" />
-                      </div>
-                  </div>
-              )}
-          </div>
-      </div>
-      <div className="printable-area">
-          <PrintableStaffList staff={dataForPrint} />
-      </div>
-
-      <StaffFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSave}
-        staffMember={editingStaff}
-        allStaff={staff}
-        gradeDefinitions={gradeDefinitions}
-        isSaving={isSaving}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirm Staff Deletion"
-        confirmDisabled={isSaving}
-      >
-        <p>Are you sure you want to permanently remove <span className="font-bold">{staffToDelete?.firstName} {staffToDelete?.lastName}</span> from the staff list? This action cannot be undone.</p>
-        {isSaving && <p className="mt-2 text-sm text-slate-500 flex items-center gap-2"><SpinnerIcon className="w-4 h-4"/> Deleting...</p>}
-      </ConfirmationModal>
-    </div>
-    </>
-  );
-};
-
-export default ManageStaffPage;
+}

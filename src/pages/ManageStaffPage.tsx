@@ -1,3 +1,12 @@
+if (!user || !user.role) {
+  return (
+    <div className="p-6 text-center">
+      <SpinnerIcon className="w-6 h-6 animate-spin mx-auto" />
+      <p className="mt-2 text-slate-600">Loading user permissions...</p>
+    </div>
+  );
+}
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '../types';

@@ -102,4 +102,13 @@ const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions, user
                         })}
                     </div>
                 ) : (
-                    <div className="text-center py-16 border-2 border-dashed border-slate-20
+                    <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
+                        <p className="text-slate-700 text-lg font-semibold">Faculty Information Not Available</p>
+                        <p className="text-slate-600 mt-2">Faculty information is currently being updated. Please check back soon.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+export default FacultyPage;

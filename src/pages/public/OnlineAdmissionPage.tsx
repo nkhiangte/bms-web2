@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, OnlineAdmission, Grade, Gender, Category, Student, BloodGroup } from '@/types';

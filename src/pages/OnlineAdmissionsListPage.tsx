@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { OnlineAdmission, Student } from '@/types';

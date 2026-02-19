@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { OnlineAdmission, Grade, Student, StudentStatus, Gender, Category, BloodGroup } from '@/types';
 import { GRADES_LIST } from '@/constants';

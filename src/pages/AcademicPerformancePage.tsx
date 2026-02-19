@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '../types';
-import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
-import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '../components/Icons';
-import ActivityLogModal from '../components/ActivityLogModal';
-import ExamPerformanceCard from '../components/ExamPerformanceCard';
-import { normalizeSubjectName, subjectsMatch } from '../utils';
-import { db } from '../firebaseConfig';
+import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '@/types';
+import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
+import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '@/components/Icons';
+import ActivityLogModal from '@/components/ActivityLogModal';
+import ExamPerformanceCard from '@/components/ExamPerformanceCard';
+import { normalizeSubjectName, subjectsMatch } from '@/utils';
+import { db } from '@/firebaseConfig';
 
 const { useParams, Link } = ReactRouterDOM as any;
 

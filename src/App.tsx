@@ -281,6 +281,80 @@ const App: React.FC = () => {
       }
   };
 
+  const handleSaveStaff = async (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGradeKey: Grade | null) => {
+      let staffId = id;
+      try {
+          if (id) {
+              await db.collection('staff').doc(id).update(staffData);
+          } else {
+              const docRef = await db.collection('staff').add(staffData);
+              staffId = docRef.id;
+          }
+
+          // Handle Class Teacher Assignment
+          // Remove from previous classes first
+          const gradeDefRef = db.collection('config').doc('gradeDefinitions');
+          const doc = await gradeDefRef.get();
+          if (doc.exists) {
+              const currentDefs = doc.data() as Record<Grade, GradeDefinition>;
+              let modified = false;
+
+              Object.keys(currentDefs).forEach(k => {
+                  const key = k as Grade;
+                  // If this teacher was assigned to this class, remove them
+                  if (currentDefs[key].classTeacherId === staffId) {
+                      delete currentDefs[key].classTeacherId;
+                      modified = true;
+                  }
+              });
+
+              // Assign to new class if specified
+              if (assignedGradeKey) {
+                  if (!currentDefs[assignedGradeKey]) {
+                      currentDefs[assignedGradeKey] = { subjects: [] }; 
+                  }
+                  currentDefs[assignedGradeKey].classTeacherId = staffId;
+                  modified = true;
+              }
+
+              if (modified) {
+                  await gradeDefRef.set(currentDefs);
+              }
+          }
+          addNotification('Staff member saved successfully.', 'success');
+      } catch (error) {
+          console.error("Error saving staff:", error);
+          addNotification('Failed to save staff member.', 'error');
+          throw error;
+      }
+  };
+
+  const handleDeleteStaff = async (id: string) => {
+      try {
+          await db.collection('staff').doc(id).delete();
+          // Remove from class teacher role if assigned
+           const gradeDefRef = db.collection('config').doc('gradeDefinitions');
+            const doc = await gradeDefRef.get();
+            if (doc.exists) {
+                const currentDefs = doc.data() as Record<Grade, GradeDefinition>;
+                let modified = false;
+                Object.keys(currentDefs).forEach(k => {
+                    const key = k as Grade;
+                    if (currentDefs[key].classTeacherId === id) {
+                        delete currentDefs[key].classTeacherId;
+                        modified = true;
+                    }
+                });
+                if (modified) await gradeDefRef.set(currentDefs);
+            }
+            addNotification('Staff member deleted.', 'success');
+      } catch (error) {
+           console.error("Error deleting staff:", error);
+           addNotification('Failed to delete staff member.', 'error');
+           throw error;
+      }
+  };
+
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -488,7 +562,7 @@ const App: React.FC = () => {
            <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={() => {}} user={user!} />} />
            <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={() => {}} onDelete={async (s) => { await db.collection('students').doc(s.id).update({ status: 'Deleted' }); }} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={() => {}} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
            <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={null} onUpdateAttendance={async (g, d, r) => { await db.collection('studentAttendance').doc(d).set({ [g]: r }, { merge: true }); }} user={user!} fetchStudentAttendanceForMonth={async () => ({})} fetchStudentAttendanceForRange={async () => ({})} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
-           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onAdd={() => {}} onEdit={() => {}} onDelete={() => {}} user={user!} />} />
+           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} />} />
            <Route path="staff/attendance" element={<StaffAttendancePage user={user!} staff={staff} attendance={null} onMarkAttendance={() => {}} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} calendarEvents={calendarEvents} />} />
            <Route path="staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={async () => ({})} fetchStaffAttendanceForRange={async () => ({})} academicYear={academicYear} user={user!} calendarEvents={calendarEvents} />} />
            <Route path="staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={() => {}} gradeDefinitions={gradeDefinitions} />} />

@@ -213,12 +213,12 @@ const MultiTermReportCard: React.FC<{
 
         if (summary3?.result === 'PASS' || summary3?.result === 'SIMPLE PASS') {
             if (student.grade === Grade.X) {
-                return `Passed. School reopens on April 7, 2025`;
+                return `Passed. School reopens on April 1, 2026`;
             }
             if (nextGrade) {
-                return `Promoted to ${nextGrade}. School reopens on April 7, 2025`;
+                return `Promoted to ${nextGrade}. School reopens on April 7, 2026`;
             }
-            return `Promoted. School reopens on April 7, 2025`;
+            return `Promoted. School reopens on April 1, 2026`;
         } else if (summary3?.result === 'FAIL') {
             return "Detained";
         }

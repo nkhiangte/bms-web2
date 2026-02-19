@@ -1,4 +1,6 @@
 
+
+
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -578,7 +580,7 @@ export interface FeeStructure {
     set1: FeeSet;
     set2: FeeSet;
     set3: FeeSet;
-// FIX: Added optional gradeMap to allow for dynamic fee set assignments.
+    // FIX: Added optional gradeMap to allow for dynamic fee set assignments.
     gradeMap?: Record<string, Grade[]>;
 }
 

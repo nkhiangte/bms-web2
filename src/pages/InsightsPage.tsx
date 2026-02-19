@@ -1,12 +1,10 @@
 
-
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// Fix: Use correct Gemini API imports and named parameters for initialization.
 import { GoogleGenAI, Type } from "@google/genai";
-import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
-import { GRADES_LIST } from '../constants';
-import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '../components/Icons';
+import { Student, Grade, GradeDefinition, User, ConductEntry } from '@/types';
+import { GRADES_LIST } from '@/constants';
+import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '@/components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -128,7 +126,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
         `;
 
         try {
-            // Fix: Initialize GoogleGenAI inside the function with named parameters.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -139,7 +136,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
                 },
             });
             
-            // Fix: Access result text via .text property (property, not a function call).
             const resultJson = JSON.parse(response.text || '{}');
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {

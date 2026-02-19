@@ -1,3 +1,4 @@
+
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet } from './types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from './constants';
 import { useState, useEffect } from 'react';
@@ -217,8 +218,8 @@ export const getNextAcademicYear = (currentYear: string): string => {
 };
 
 /**
- * Aggressive normalization: strips all non-alphanumeric characters.
- * Useful for matching "English I" with "English - I" or "ENG-I".
+ * Aggressive normalization: strips ALL non-alphanumeric characters, including spaces.
+ * This ensures "English I" and "English" or "English - I" can be compared reliably.
  */
 export const normalizeSubjectName = (name: string): string => {
     if (!name) return '';
@@ -235,12 +236,13 @@ export const subjectsMatch = (name1: string, name2: string): boolean => {
     if (!n1 || !n2) return false;
     if (n1 === n2) return true;
 
-    // Mapping for common subject aliases to handle inconsistencies in data entry
+    // Mapping for common subject aliases to handle inconsistencies in data entry.
+    // Since normalizeSubjectName strips spaces, "English I" becomes "englishi".
     const aliases: string[][] = [
-        ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl', 'englishi'],
-        ['englishii', 'english2', 'engii', 'eng2', 'englishii'],
+        ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl'],
+        ['englishii', 'english2', 'engii', 'eng2'],
         ['math', 'maths', 'mathematics'],
-        ['socialscience', 'socialstudies', 'socstudies', 'evs', 'socialstudies'],
+        ['socialscience', 'socialstudies', 'socstudies', 'evs'],
         ['mizo', 'lushei'],
         ['drawing', 'art'],
         ['cursive', 'writing', 'handwriting'],

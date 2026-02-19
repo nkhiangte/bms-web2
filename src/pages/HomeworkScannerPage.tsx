@@ -1,8 +1,8 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Corrected import to use GoogleGenAI from @google/genai.
 import { GoogleGenAI } from "@google/genai";
-import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '@/components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -133,7 +133,6 @@ const HomeworkScannerPage: React.FC = () => {
         setAnalysisResult(null);
 
         try {
-            // FIX: Corrected Gemini API initialization to use a named parameter for apiKey.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const imagePart = await fileToGenerativePart(imageFile);
             const textPart = { text: getPromptForType(scanType) };
@@ -143,7 +142,6 @@ const HomeworkScannerPage: React.FC = () => {
                 contents: { parts: [imagePart, textPart] },
             });
 
-            // FIX: Updated to access generated text via the .text property rather than calling it as a method.
             setAnalysisResult(response.text ?? 'No response from AI.');
         } catch (err) {
             console.error("Gemini API error:", err);

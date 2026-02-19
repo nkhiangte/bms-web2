@@ -1,13 +1,14 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
-import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '../components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '../utils';
-import { ImportMarksModal } from '../components/ImportMarksModal';
-import ConfirmationModal from '../components/ConfirmationModal';
-import EditSubjectsModal from '../components/EditSubjectsModal';
-import { db } from '../firebaseConfig';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
+import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
+import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { ImportMarksModal } from '@/components/ImportMarksModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import EditSubjectsModal from '@/components/EditSubjectsModal';
+import { db } from '@/firebaseConfig';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -171,6 +172,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         let currentSubjFMValue: number = 0;
         
         if (hasActivities) {
+            // Fix: Simplified to avoid redundant Number wrapping while ensuring types are correct for arithmetic
             const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
             
@@ -217,7 +219,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
+      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark, rank: 0 };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');

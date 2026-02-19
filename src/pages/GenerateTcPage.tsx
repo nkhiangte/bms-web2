@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
-import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '../components/Icons';
-import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
-// FIX: Updated to use the new @google/genai API.
+import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '@/types';
+import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '@/components/Icons';
+import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '@/utils';
 import { GoogleGenAI } from "@google/genai";
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { useNavigate, useParams, Link } = ReactRouterDOM as any;
 
@@ -37,7 +36,7 @@ const FormField: React.FC<{
         {type === 'select' ? (
             <select id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px]">{options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>
         ) : type === 'textarea' ? (
-            <textarea id={name} name={name} value={value} onChange={onChange} required={required} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm" />
+            <textarea id={name} name={name} value={value} onChange={onChange} required={required} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" />
         ) : (
             <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-3" />
         )}
@@ -129,13 +128,11 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         try {
             const prompt = `Convert the date ${formatDateForDisplay(foundStudent.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
             
-            // FIX: Corrected Gemini API initialization to use a named parameter for apiKey.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: prompt,
             });
-            // FIX: Updated to access generated text via the .text property rather than calling it as a method.
             const text = response.text;
             if (text) {
                 setFormData(prev => ({ ...prev, dateOfBirthInWords: text.replace(/["*]/g, '').trim() }));

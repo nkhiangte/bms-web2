@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '@/firebaseConfig';
 import { 
     UserIcon, MailIcon, PhoneIcon, HomeIcon, LockClosedIcon, 
     CheckCircleIcon, BackIcon, SpinnerIcon, PlusIcon, TrashIcon
-} from '../components/Icons';
-import { StudentClaim } from '../types';
+} from '@/components/Icons';
+import { StudentClaim } from '@/types';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
@@ -215,7 +216,7 @@ const ParentRegistrationPage: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:p-8">
             <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-8">
                     <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-16 mx-auto mb-4" />

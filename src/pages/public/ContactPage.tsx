@@ -1,8 +1,8 @@
 
 import React, { useState, FormEvent } from 'react';
-import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon, FacebookIcon, CheckCircleIcon } from '../../components/Icons';
-import EditableContent from '../../components/EditableContent';
-import { User } from '../../types';
+import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon, FacebookIcon, CheckCircleIcon } from '@/components/Icons';
+import EditableContent from '@/components/EditableContent';
+import { User } from '@/types';
 
 interface ContactPageProps {
     user: User | null;

@@ -2,9 +2,9 @@
 import React from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, UserIcon } from '../../components/Icons';
-import { DISTINCTION_HOLDERS_BY_YEAR } from '../../constants';
-import { DistinctionHolder } from '../../types';
+import { BackIcon, UserIcon } from '@/components/Icons';
+import { DISTINCTION_HOLDERS_BY_YEAR } from '@/constants';
+import { DistinctionHolder } from '@/types';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 

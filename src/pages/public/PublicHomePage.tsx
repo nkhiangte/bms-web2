@@ -2,10 +2,10 @@
 import React, { useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '../../components/Icons';
-import { NewsItem, User } from '../../types';
-import { formatDateForNews } from '../../utils';
-import EditableContent from '../../components/EditableContent';
+import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '@/components/Icons';
+import { NewsItem, User } from '@/types';
+import { formatDateForNews } from '@/utils';
+import EditableContent from '@/components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 

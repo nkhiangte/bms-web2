@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { NewsItem, User } from '../../types';
-import { formatDateForNews } from '../../utils';
-import EditableContent from '../../components/EditableContent';
+import { NewsItem, User } from '@/types';
+import { formatDateForNews } from '@/utils';
+import EditableContent from '@/components/EditableContent';
 
 interface NewsPageProps {
     news: NewsItem[];

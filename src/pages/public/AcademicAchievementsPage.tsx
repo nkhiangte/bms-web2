@@ -2,7 +2,7 @@
 import React from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { DistinctionHolder } from '../../types';
+import { DistinctionHolder } from '@/types';
 
 const { Link } = ReactRouterDOM as any;
 

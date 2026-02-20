@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission, FeePayments } from '../../types';
-import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon } from '../../components/Icons';
-import { resizeImage, uploadToImgBB } from '../../utils';
-import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
-import { db } from '../../firebaseConfig';
+import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission, FeePayments } from '@/types';
+import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon } from '@/components/Icons';
+import { resizeImage, uploadToImgBB } from '@/utils';
+import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '@/constants';
+import { db } from '@/firebaseConfig';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Grade, GradeDefinition } from '../../types';
-import { GRADES_LIST } from '../../constants';
+import { Grade, GradeDefinition } from '@/types';
+import { GRADES_LIST } from '@/constants';
 
 interface CurriculumPageProps {
     gradeDefinitions: Record<Grade, GradeDefinition>;

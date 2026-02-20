@@ -1,9 +1,9 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, EmploymentStatus, Grade, GradeDefinition, User } from '../../types';
-import { UserIcon } from '../../components/Icons';
-import EditableContent from '../../components/EditableContent';
+import { Staff, EmploymentStatus, Grade, GradeDefinition, User } from '@/types';
+import { UserIcon } from '@/components/Icons';
+import EditableContent from '@/components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 

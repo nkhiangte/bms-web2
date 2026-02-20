@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon } from '../../components/Icons';
+import { BackIcon } from '@/components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 

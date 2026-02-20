@@ -1,8 +1,8 @@
 
 import React from 'react';
-import EditableContent from '../../components/EditableContent';
-import DynamicImageGrid from '../../components/DynamicImageGrid';
-import { User } from '../../types';
+import EditableContent from '@/components/EditableContent';
+import DynamicImageGrid from '@/components/DynamicImageGrid';
+import { User } from '@/types';
 
 interface EcoClubPageProps {
     user: User | null;

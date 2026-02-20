@@ -1,11 +1,11 @@
 
 import React, { useState, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { db } from '../../firebaseConfig';
-import { OnlineAdmission, User } from '../../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon, BackIcon } from '../../components/Icons';
-import { formatDateForDisplay } from '../../utils';
-import EditableContent from '../../components/EditableContent';
+import { db } from '@/firebaseConfig';
+import { OnlineAdmission, User } from '@/types';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon, ArrowRightIcon, BackIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
+import EditableContent from '@/components/EditableContent';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 

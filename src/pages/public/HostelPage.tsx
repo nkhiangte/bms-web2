@@ -2,10 +2,10 @@
 import React, { useState, FormEvent } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { ShieldCheckIcon, UsersIcon, BookOpenIcon, BuildingOfficeIcon, PhoneIcon, MailIcon } from '../../components/Icons';
-import EditableContent from '../../components/EditableContent';
-import DynamicImageGrid from '../../components/DynamicImageGrid';
-import { User } from '../../types';
+import { ShieldCheckIcon, UsersIcon, BookOpenIcon, BuildingOfficeIcon, PhoneIcon, MailIcon } from '@/components/Icons';
+import EditableContent from '@/components/EditableContent';
+import DynamicImageGrid from '@/components/DynamicImageGrid';
+import { User } from '@/types';
 
 const { Link } = ReactRouterDOM as any;
 

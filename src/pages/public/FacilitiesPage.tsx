@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import EditableContent from '../../components/EditableContent';
-import { User } from '../../types';
+import EditableContent from '@/components/EditableContent';
+import { User } from '@/types';
 
 interface GalleryImage {
     src: string;

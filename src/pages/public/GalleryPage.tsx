@@ -2,9 +2,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { FolderIcon } from '../../components/Icons';
-import DynamicImageGrid from '../../components/DynamicImageGrid';
-import { User } from '../../types';
+import { FolderIcon } from '@/components/Icons';
+import DynamicImageGrid from '@/components/DynamicImageGrid';
+import { User } from '@/types';
 
 const { useLocation } = ReactRouterDOM as any;
 

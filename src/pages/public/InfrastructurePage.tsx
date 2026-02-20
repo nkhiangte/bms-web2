@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { User } from '../../types';
-import EditableContent from '../../components/EditableContent';
-import DynamicImageGrid, { GridItem } from '../../components/DynamicImageGrid';
+import { User } from '@/types';
+import EditableContent from '@/components/EditableContent';
+import DynamicImageGrid, { GridItem } from '@/components/DynamicImageGrid';
 
 interface InfrastructurePageProps {
     user: User | null;

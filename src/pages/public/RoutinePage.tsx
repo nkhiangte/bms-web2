@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 // Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, EditIcon, PlusIcon, TrashIcon, SyncIcon, SpinnerIcon } from '../../components/Icons';
-import { ROUTINE_DAYS, PERIOD_LABELS, PERIOD_TIMES } from '../../constants';
-import { ExamRoutine, DailyRoutine, User, ClassRoutine } from '../../types';
-import ExamRoutineModal from '../../components/ExamRoutineModal';
-import ClassRoutineModal from '../../components/ClassRoutineModal';
-import { timetableData } from '../../timetableData';
+import { BackIcon, HomeIcon, EditIcon, PlusIcon, TrashIcon, SyncIcon, SpinnerIcon } from '@/components/Icons';
+import { ROUTINE_DAYS, PERIOD_LABELS, PERIOD_TIMES } from '@/constants';
+import { ExamRoutine, DailyRoutine, User, ClassRoutine } from '@/types';
+import ExamRoutineModal from '@/components/ExamRoutineModal';
+import ClassRoutineModal from '@/components/ClassRoutineModal';
+import { timetableData } from '@/timetableData';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 

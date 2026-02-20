@@ -1,8 +1,8 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User } from '../../types';
-import EditableContent from '../../components/EditableContent';
+import { User } from '@/types';
+import EditableContent from '@/components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 

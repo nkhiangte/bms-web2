@@ -1,7 +1,7 @@
 
 import React from 'react';
-import EditableContent from '../../components/EditableContent';
-import { User } from '../../types';
+import EditableContent from '@/components/EditableContent';
+import { User } from '@/types';
 
 const RuleSection: React.FC<{ title: string; id: string; defaultContent: string; user: User | null }> = ({ title, id, defaultContent, user }) => (
     <section className="mb-8">

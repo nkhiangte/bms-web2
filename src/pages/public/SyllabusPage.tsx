@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '../../types';
-import { BookOpenIcon, BackIcon, HomeIcon } from '../../components/Icons';
-import { normalizeSubjectName } from '../../utils';
+import { Syllabus, GradeDefinition, Grade, SyllabusTopic } from '@/types';
+import { BookOpenIcon, BackIcon, HomeIcon } from '@/components/Icons';
+import { normalizeSubjectName } from '@/utils';
 
 const { useParams, Link } = ReactRouterDOM as any;
 

@@ -52,6 +52,7 @@ import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
 import GalleryManagerPage from '@/pages/GalleryManagerPage';
+import WebsiteMediaManagerPage from '@/pages/WebsiteMediaManagerPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 import { UserManagementPage } from '@/pages/UserManagementPage';
@@ -1361,6 +1362,7 @@ const App: React.FC = () => {
            <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
            <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
            <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />
+           <Route path="media-manager" element={<WebsiteMediaManagerPage user={user!} />} />
            <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
            <Route path="parents" element={<ParentsManagementPage allUsers={users} students={students} academicYear={academicYear} currentUser={user!} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateParentUser} />} />
            <Route path="promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user!} />} />

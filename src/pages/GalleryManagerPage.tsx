@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '@/types';
 import { db } from '@/firebaseConfig';
 import { uploadToImgBB, resizeImage } from '@/utils';
-import { BackIcon, HomeIcon, PlusIcon, TrashIcon, SpinnerIcon, CheckIcon, FolderIcon, XIcon } from '@/components/Icons';
+import { BackIcon, HomeIcon, PlusIcon, TrashIcon, SpinnerIcon, CheckIcon, XIcon } from '@/components/Icons';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
@@ -204,7 +204,9 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                         }`}
                                         style={{ paddingLeft: `${(path.length - 1) * 14 + 10}px`, paddingRight: '6px' }}
                                     >
-                                        <FolderIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                                        </svg>
                                         <span className="truncate">{path[path.length - 1]}</span>
                                     </button>
                                     <div className="flex items-center opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0">
@@ -245,7 +247,9 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                     {selectedPath.length === 0 ? (
                         <div className="flex items-center justify-center h-64 border-2 border-dashed border-slate-200 rounded-xl">
                             <div className="text-center text-slate-400">
-                                <FolderIcon className="w-12 h-12 mx-auto mb-2" />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                                </svg>
                                 <p className="font-semibold">Select a folder to manage images</p>
                             </div>
                         </div>

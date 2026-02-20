@@ -1306,7 +1306,11 @@ const App: React.FC = () => {
         <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
 
         {/* Auth Routes */}
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
+        <Route path="/login" element={
+            authLoading
+            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin"/></div>
+            : user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />
+        } />
         <Route path="/signup" element={<SignUpPage onSignUp={async (n, e, p) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if(c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending' }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
         <Route path="/parent-registration" element={<ParentRegistrationPage />} />
         <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if(c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudents: [{ fullName: sname, studentId: sid, dob: dob, relationship: rel }], registrationDetails: { fullName: n, relationship: rel } }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />

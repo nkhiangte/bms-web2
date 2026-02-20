@@ -4,6 +4,7 @@ import { User, OnlineAdmission, Grade, Gender, Category, Student, BloodGroup } f
 import { GRADES_LIST, CATEGORY_LIST, GENDER_LIST, BLOOD_GROUP_LIST } from '@/constants';
 import { UploadIcon, SpinnerIcon, CheckIcon, XIcon, PlusIcon, UserIcon, SearchIcon, ArrowRightIcon, SaveIcon, BackIcon } from '@/components/Icons';
 import EditableContent from '@/components/EditableContent';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import { resizeImage, uploadToImgBB, getNextGrade } from '@/utils';
 import { db } from '@/firebaseConfig';
 
@@ -348,7 +349,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                      <div><label className="block text-sm font-bold">Class Applying For*</label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>{GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                      <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                     <div><label className="block text-sm font-bold">Date of Birth*</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                     <CustomDatePicker label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} required={true} minYear={1960} maxYear={new Date().getFullYear()} />
                                      <div><label className="block text-sm font-bold">Gender*</label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                      <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
                                      <div><label className="block text-sm font-bold">PEN No. (Optional)</label><input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>

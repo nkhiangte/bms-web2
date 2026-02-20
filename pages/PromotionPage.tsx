@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, StudentStatus, User } from '../types';
-import { GRADES_LIST } from '@/constants';
-import { BackIcon, HomeIcon, AcademicCapIcon } from '../components/Icons';
-import ConfirmationModal from '../components/ConfirmationModal';
-import { calculateStudentResult } from '@/utils';
+import { Student, Grade, GradeDefinition, StudentStatus, User } from '@/types';
+import { GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, AcademicCapIcon } from '@/components/Icons';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { calculateStudentResult } from '../utils';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
@@ -56,7 +56,8 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
     const handleConfirmPromotion = async () => {
         setIsPromoting(true);
         await onPromoteStudents();
-        setIsPromodalOpen(false);
+        setIsPromoting(false);
+        setIsConfirmModalOpen(false);
         // The reload is handled by onPromoteStudents in App.tsx
     };
     

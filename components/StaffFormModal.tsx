@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
+import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '@/types';
 import { 
     GRADES_LIST,
     GENDER_LIST, 
@@ -203,6 +204,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
             delete dataToSave.teacherLicenseNumber;
         }
 
+        console.log("StaffFormModal: Submitting with data:", dataToSave, "Assigned Grade:", assignedGrade);
         onSubmit(dataToSave as Omit<Staff, 'id'>, assignedGrade || null);
     };
 

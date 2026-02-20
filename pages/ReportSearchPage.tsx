@@ -1,10 +1,11 @@
 
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade } from '@/types';
-import { formatStudentId } from '@/utils';
+import { formatStudentId } from '../utils';
 import { BackIcon, HomeIcon, SearchIcon, DocumentReportIcon, AcademicCapIcon, ClipboardDocumentCheckIcon, ChevronDownIcon, PrinterIcon } from '@/components/Icons';
-import { GRADES_LIST, TERMINAL_EXAMS } from '@/constants';
+import { GRADES_LIST, TERMINAL_EXAMS } from '../constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

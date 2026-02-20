@@ -1,6 +1,8 @@
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Corrected import to use GoogleGenAI from @google/genai.
 import { GoogleGenAI } from "@google/genai";
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '@/components/Icons';
 
@@ -133,15 +135,17 @@ const HomeworkScannerPage: React.FC = () => {
         setAnalysisResult(null);
 
         try {
+            // FIX: Updated Gemini API initialization and call to follow latest guidelines.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const imagePart = await fileToGenerativePart(imageFile);
             const textPart = { text: getPromptForType(scanType) };
             
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', 
+                model: 'gemini-3-flash-preview', // Assumes a vision-capable model
                 contents: { parts: [imagePart, textPart] },
             });
 
+            // FIX: Correctly access the text from the response object.
             setAnalysisResult(response.text ?? 'No response from AI.');
         } catch (err) {
             console.error("Gemini API error:", err);

@@ -1,11 +1,12 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 // Fix: Use correct Gemini API imports and named parameters for initialization.
 import { GoogleGenAI, Type } from "@google/genai";
-import { Student, Grade, GradeDefinition, User, ConductEntry } from '@/types';
-import { GRADES_LIST } from '@/constants';
-import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '@/components/Icons';
+import { Student, Grade, GradeDefinition, User, ConductEntry } from '../types';
+import { GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '../components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,3 +1,5 @@
+
+
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
@@ -17,7 +19,7 @@ interface ClassStudentsPageProps {
   onDelete: (student: Student) => void;
   user: User;
   assignedGrade: Grade | null;
-  onAddStudentToClass: (grade: Grade) => void;
+  onAddStudentToClass: (studentData: Omit<Student, 'id'>) => Promise<void>; // FIX: Changed type to match App.tsx's handleAddStudent
   onUpdateBulkFeePayments: (updates: Array<{ studentId: string; payments: FeePayments }>) => Promise<void>;
   feeStructure: FeeStructure;
 }
@@ -121,78 +123,4 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="form-input w-full sm:w-64"
                 />
-                <div className="flex gap-2 w-full sm:w-auto justify-end">
-                     {isAdmin && (
-                        <button onClick={() => onOpenImportModal(grade)} className="btn btn-secondary whitespace-nowrap">
-                            <ArrowUpOnSquareIcon className="w-5 h-5"/> Import
-                        </button>
-                    )}
-                     {(isAdmin || isClassTeacher) && (
-                        <>
-                            <Link to={`/portal/classes/${encodeURIComponent(grade)}/attendance`} className="btn btn-secondary whitespace-nowrap">
-                                <CalendarDaysIcon className="w-5 h-5"/> Attendance
-                            </Link>
-                            <button onClick={() => onAddStudentToClass(grade)} className="btn btn-primary whitespace-nowrap">
-                                <PlusIcon className="w-5 h-5"/> Add Student
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Students List */}
-            {filteredStudents.length === 0 ? (
-                 <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
-                    <p className="text-slate-700 text-lg font-semibold">No students found for {academicYear}.</p>
-                    <p className="text-slate-500">Students will appear here after promotion or new admission.</p>
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {filteredStudents.map(student => {
-                        return (
-                            <div key={student.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-white hover:shadow-md transition-all">
-                                <div className="flex items-center gap-3 sm:gap-4">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs sm:text-sm flex-shrink-0">
-                                        {student.rollNo}
-                                    </div>
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-slate-100">
-                                        <PhotoWithFallback src={student.photographUrl} alt={student.name} />
-                                    </div>
-                                    <div>
-                                        <Link to={`/portal/student/${student.id}`} className="font-bold text-base sm:text-lg text-sky-700 hover:underline block">{student.name}</Link>
-                                        <div className="text-xs sm:text-sm text-slate-500 flex flex-col sm:flex-row sm:gap-4">
-                                            <span>ID: {formatStudentId(student, academicYear)}</span>
-                                            <span>Parent: {student.fatherName}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                                     <div className="flex items-center gap-2">
-                                         {student.contact && (
-                                             <>
-                                                <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full">
-                                                    <WhatsappIcon className="w-5 h-5"/>
-                                                </a>
-                                                <a href={`tel:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full">
-                                                    <MessageIcon className="w-5 h-5"/>
-                                                </a>
-                                             </>
-                                         )}
-                                         {isAdmin && (
-                                            <button onClick={() => onDelete(student)} className="p-2 text-red-600 hover:bg-red-100 rounded-full">
-                                                <TrashIcon className="w-5 h-5"/>
-                                            </button>
-                                         )}
-                                     </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default ClassStudentsPage;
+                <div className="flex

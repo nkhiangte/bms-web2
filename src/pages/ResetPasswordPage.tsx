@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -63,7 +64,7 @@ const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onResetPassword }
         <p className="text-slate-600">The password reset link is invalid or expired.</p>
       </div>
     );
-  }
+  };
 
   return (
     <div className="max-w-md mx-auto mt-20 bg-white p-6 rounded-xl shadow-lg">

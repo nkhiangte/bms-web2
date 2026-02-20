@@ -139,7 +139,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
             });
             
             // Fix: Access result text via .text property (property, not a function call).
-            const resultJson = JSON.parse(response.text || '{}');
+            const resultJson = JSON.parse(response.text ?? '{}');
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
         } catch (error) {
             console.error("Error generating analysis:", error);

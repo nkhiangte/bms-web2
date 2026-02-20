@@ -1,12 +1,11 @@
 
-
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, Gender } from '../types';
-import { GRADES_LIST } from '../constants';
-import StudentTable from '../components/StudentTable';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
-import { formatStudentId } from '../utils';
+import { Student, User, Grade, Gender } from '@/types';
+import { GRADES_LIST } from '@/constants';
+import StudentTable from '@/components/StudentTable';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import { formatStudentId } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -183,9 +182,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
                           <thead className="bg-slate-100">
                               <tr>
                                   <th className="px-4 py-2 text-left text-xs font-bold text-slate-600 uppercase">Class</th>
-                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Male</th>
-                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Female</th>
-                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Total</th>
+                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Male</th>
+                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Female</th>
+                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Total</th>
                               </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-200">

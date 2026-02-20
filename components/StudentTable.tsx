@@ -1,11 +1,10 @@
 
-
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Student, Grade } from '../types';
-import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon, UserIcon } from './Icons';
+import { User, Student, Grade } from '@/types';
+import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon, UserIcon, EditIcon } from './Icons';
 import PhotoWithFallback from './PhotoWithFallback';
-import { formatStudentId } from '../utils';
+import { formatStudentId } from '@/utils';
 
 const { Link } = ReactRouterDOM as any;
 

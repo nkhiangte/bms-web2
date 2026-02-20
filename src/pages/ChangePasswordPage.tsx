@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, CheckIcon, HomeIcon } from '../components/Icons';
+import { BackIcon, CheckIcon, HomeIcon } from '@/components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 

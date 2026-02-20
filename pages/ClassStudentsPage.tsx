@@ -1,11 +1,10 @@
 
-
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '../types';
-import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '../components/Icons';
+import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
+import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '@/components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp } from '@/utils';
-import PhotoWithFallback from '../components/PhotoWithFallback';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -19,7 +18,7 @@ interface ClassStudentsPageProps {
   onDelete: (student: Student) => void;
   user: User;
   assignedGrade: Grade | null;
-  onAddStudentToClass: (grade: Grade) => void;
+  onAddStudentToClass: (studentData: Omit<Student, 'id'>) => Promise<void>;
   onUpdateBulkFeePayments: (updates: Array<{ studentId: string; payments: FeePayments }>) => Promise<void>;
   feeStructure: FeeStructure;
 }
@@ -134,7 +133,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                             <Link to={`/portal/classes/${encodeURIComponent(grade)}/attendance`} className="btn btn-secondary whitespace-nowrap">
                                 <CalendarDaysIcon className="w-5 h-5"/> Attendance
                             </Link>
-                            <button onClick={() => onAddStudentToClass(grade)} className="btn btn-primary whitespace-nowrap">
+                            <button onClick={() => onAddStudentToClass({ grade: grade, name: '', rollNo: 0, studentId: '', contact: '', dateOfBirth: '', gender: 'Male', address: '', aadhaarNumber: '', pen: '', category: 'General', fatherName: '', fatherOccupation: '', fatherAadhaar: '', motherName: '', motherOccupation: '', motherAadhaar: '', guardianName: '', guardianRelationship: '', lastSchoolAttended: '', healthConditions: '', achievements: '', status: 'Active', cwsn: 'No', religion: '', photographUrl: '', feePayments: { admissionFeePaid: false, tuitionFeesPaid: {}, examFeesPaid: { terminal1: false, terminal2: false, terminal3: false } }, academicYear: academicYear })} className="btn btn-primary whitespace-nowrap">
                                 <PlusIcon className="w-5 h-5"/> Add Student
                             </button>
                         </>

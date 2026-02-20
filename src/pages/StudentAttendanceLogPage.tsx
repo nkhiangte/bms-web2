@@ -116,9 +116,9 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
         const date = new Date(year, month, day);
         const dateStr = date.toISOString().split('T')[0];
         const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 0; // Sunday
+        const isWeekend = dayOfWeek === 0; // Only Sunday is a holiday
 
-        const status = monthlyAttendance[dateStr];
+        const status = monthlyData[dateStr];
         let statusClass = 'bg-white';
         let statusText = isWeekend ? 'Holiday' : 'Not Marked';
 

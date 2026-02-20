@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '@/components/Icons';
 import AcademicYearForm from '@/components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType } from '@/types';
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry } from '@/types'; // FIX: Add HostelDisciplineEntry import
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -18,6 +18,7 @@ interface DashboardPageProps {
   pendingParentCount: number;
   pendingStaffCount: number;
   onUpdateAcademicYear: (year: string) => Promise<void>;
+  disciplineLog: HostelDisciplineEntry[]; // FIX: Add disciplineLog prop
 }
 
 const DashboardCard: React.FC<{
@@ -124,11 +125,17 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear, disciplineLog }) => { // FIX: Added disciplineLog prop
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
+  
+  useEffect(() => {
+    // If a parent user lands on this page, redirect them to their specific dashboard.
+    if (user.role === 'parent') {
+      navigate('/portal/parent-dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
-  // FIX: Hooks must be called before any early return to prevent "Rendered fewer hooks than expected" error
   const isAdmin = user.role === 'admin';
   const totalPending = pendingAdmissionsCount + pendingParentCount + pendingStaffCount;
   
@@ -156,6 +163,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
               )}
           </div>
       );
+  }
+  
+  // Render a loading state for parents while redirecting to avoid flashing the admin content.
+  if (user.role === 'parent') {
+    return (
+        <div className="flex items-center justify-center" style={{ height: '60vh' }}>
+            <SpinnerIcon className="w-10 h-10 text-sky-600" />
+        </div>
+    );
   }
 
   return (

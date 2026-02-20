@@ -1,8 +1,6 @@
 
-
-
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
+import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '@/types';
 import { 
     GRADES_LIST,
     GENDER_LIST, 
@@ -211,7 +209,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
 
     const gradeOptions = Object.keys(gradeDefinitions).map(gradeKey => {
         const gradeDef = gradeDefinitions[gradeKey as Grade];
-        const assignedTeacher = gradeDef.classTeacherId ? allStaff.find(s => s.id === gradeDef.classTeacherId) : null;
+        const assignedTeacher = allStaff.find(s => s.id === gradeDef?.classTeacherId);
         
         let label = gradeKey;
         if (assignedTeacher && (!staffMember || assignedTeacher.id !== staffMember.id)) {

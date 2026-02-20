@@ -1,125 +1,126 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import DashboardLayout from '@/layouts/DashboardLayout';
-import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim } from '@/types';
-import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from '@/constants';
-import { db, auth, firebase } from '@/firebaseConfig';
-import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId } from '@/utils';
+import DashboardLayout from './layouts/DashboardLayout';
+import PublicLayout from './layouts/PublicLayout';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus } from './types';
+import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from './constants';
+import { db, auth, firebase } from './firebaseConfig';
+import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult } from './utils';
 
 // Page Imports
-import LoginPage from '@/pages/LoginPage';
-import SignUpPage from '@/pages/SignUpPage';
-import ParentSignUpPage from '@/pages/ParentSignUpPage';
-import ParentRegistrationPage from '@/pages/ParentRegistrationPage';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import ResetPasswordPage from '@/pages/ResetPasswordPage';
-import DashboardPage from '@/pages/DashboardPage';
-import StudentListPage from '@/pages/StudentListPage';
-import StudentDetailPage from '@/pages/StudentDetailPage';
-import ClassListPage from '@/pages/ClassListPage';
-import ClassStudentsPage from '@/pages/ClassStudentsPage';
-import StaffAttendancePage from '@/pages/StaffAttendancePage';
-import StaffAttendanceLogPage from '@/pages/StaffAttendanceLogPage';
-import ManageStaffPage from '@/pages/ManageStaffPage';
-import StaffDetailPage from '@/pages/StaffDetailPage';
-import StaffDocumentsPage from '@/pages/StaffDocumentsPage';
-import GenerateServiceCertificatePage from '@/pages/GenerateServiceCertificatePage';
-import PrintServiceCertificatePage from '@/pages/PrintServiceCertificatePage';
-import AdmissionPaymentPage from '@/pages/public/AdmissionPaymentPage';
-import TransferManagementPage from '@/pages/TransferManagementPage';
-import { GenerateTcPage } from '@/pages/GenerateTcPage';
-import TcRecordsPage from '@/pages/TcRecordsPage';
-import PrintTcPage from '@/pages/PrintTcPage';
-import InventoryPage from '@/pages/InventoryPage';
-import HostelDashboardPage from '@/pages/HostelDashboardPage';
-import HostelStudentListPage from '@/pages/HostelStudentListPage';
-import HostelRoomListPage from '@/pages/HostelRoomListPage';
-import HostelChoreRosterPage from '@/pages/HostelChoreRosterPage';
-import HostelFeePage from '@/pages/HostelFeePage';
-import HostelAttendancePage from '@/pages/HostelAttendancePage';
-import HostelMessPage from '@/pages/HostelMessPage';
-import HostelStaffPage from '@/pages/HostelStaffPage';
-import HostelInventoryPage from '@/pages/HostelInventoryPage';
-import HostelDisciplinePage from '@/pages/HostelDisciplinePage';
-import HostelHealthPage from '@/pages/HostelHealthPage';
-import HostelCommunicationPage from '@/pages/HostelCommunicationPage';
-import HostelSettingsPage from '@/pages/HostelSettingsPage';
-import CalendarPage from '@/pages/CalendarPage';
-import CommunicationPage from '@/pages/CommunicationPage';
-import ManageNoticesPage from '@/pages/ManageNoticesPage';
-import NewsPage from '@/pages/public/NewsPage';
-import ManageNewsPage from '@/pages/ManageNewsPage';
-import UserProfilePage from '@/pages/UserProfilePage';
-import ChangePasswordPage from '@/pages/ChangePasswordPage';
-import { UserManagementPage } from '@/pages/UserManagementPage';
-import AdminPage from '@/pages/AdminPage';
-import PromotionPage from '@/pages/PromotionPage';
-import { ManageSubjectsPage } from '@/pages/ManageSubjectsPage';
-import SitemapEditorPage from '@/pages/SitemapEditorPage';
-import PublicHomePage from '@/pages/public/PublicHomePage';
-import AboutPage from '@/pages/public/AboutPage';
-import HistoryPage from '@/pages/public/HistoryPage';
-import FacultyPage from '@/pages/public/FacultyPage';
-import RulesPage from '@/pages/public/RulesPage';
-import AdmissionsPage from '@/pages/public/AdmissionsPage';
-import OnlineAdmissionPage from '@/pages/public/OnlineAdmissionPage';
-import AdmissionStatusPage from '@/pages/public/AdmissionStatusPage';
-import SuppliesPage from '@/pages/public/SuppliesPage';
-import StudentLifePage from '@/pages/public/StudentLifePage';
-import NccPage from '@/pages/public/NccPage';
-import ArtsCulturePage from '@/pages/public/ArtsCulturePage';
-import EcoClubPage from '@/pages/public/EcoClubPage';
-import ScienceClubPage from '@/pages/public/ScienceClubPage';
-import SlsmeePage from '@/pages/public/SlsmeePage';
-import InspireAwardPage from '@/pages/public/InspireAwardPage';
-import NcscPage from '@/pages/public/NcscPage';
-import ScienceTourPage from '@/pages/public/ScienceTourPage';
-import IncentiveAwardsPage from '@/pages/public/IncentiveAwardsPage';
-import MathematicsCompetitionPage from '@/pages/public/MathematicsCompetitionPage';
-import QuizPage from '@/pages/public/QuizPage';
-import AchievementsPage from '@/pages/public/AchievementsPage';
-import AcademicAchievementsPage from '@/pages/public/AcademicAchievementsPage';
-import DistinctionHoldersPage from '@/pages/public/DistinctionHoldersPage';
-import SportsPage from '@/pages/public/SportsPage';
-import FacilitiesPage from '@/pages/public/FacilitiesPage';
-import InfrastructurePage from '@/pages/public/InfrastructurePage';
-import GalleryPage from '@/pages/public/GalleryPage';
-import ContactPage from '@/pages/public/ContactPage';
-import SitemapPage from '@/pages/public/SitemapPage';
-import SitemapXmlPage from '@/pages/public/SitemapXmlPage';
-import AcademicPerformancePage from '@/pages/AcademicPerformancePage';
-import ReportSearchPage from '@/pages/ReportSearchPage';
-import ClassMarkStatementPage from '@/pages/ClassMarkStatementPage';
-import BulkProgressReportPage from '@/pages/BulkProgressReportPage';
-import ProgressReportPage from '@/pages/ProgressReportPage';
-import RoutinePage from '@/pages/public/RoutinePage';
-import ExamSelectionPage from '@/pages/ExamSelectionPage';
-import ExamClassSelectionPage from '@/pages/ExamClassSelectionPage';
-import AdmissionSettingsPage from '@/pages/AdmissionSettingsPage';
-import ParentDashboardPage from '@/pages/ParentDashboardPage';
-import HomeworkScannerPage from '@/pages/HomeworkScannerPage';
-import ActivityLogPage from '@/pages/ActivityLogPage';
-import SchoolSettingsPage from '@/pages/SchoolSettingsPage';
-import ManageHomeworkPage from '@/pages/ManageHomeworkPage';
-import ManageSyllabusPage from '@/pages/ManageSyllabusPage';
-import { ParentsManagementPage } from '@/pages/ParentsManagementPage';
-import PublicStaffDetailPage from '@/pages/public/PublicStaffDetailPage';
-import StudentAttendancePage from '@/pages/StudentAttendancePage';
-import StudentAttendanceLogPage from '@/pages/StudentAttendanceLogPage';
-import SyllabusPage from '@/pages/public/SyllabusPage';
-import OnlineAdmissionsListPage from '@/pages/OnlineAdmissionsListPage';
-import HostelPage from '@/pages/public/HostelPage';
-import AcademicsPage from '@/pages/public/AcademicsPage';
-import CurriculumPage from '@/pages/public/CurriculumPage';
-import FeeManagementPage from '@/pages/FeeManagementPage';
-import FeesPage from '@/pages/public/FeesPage';
-import InsightsPage from '@/pages/InsightsPage';
+import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
+import ParentSignUpPage from './pages/ParentSignUpPage';
+import ParentRegistrationPage from './pages/ParentRegistrationPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import DashboardPage from './pages/DashboardPage';
+import StudentListPage from './pages/StudentListPage';
+import StudentDetailPage from './pages/StudentDetailPage';
+import ClassListPage from './pages/ClassListPage';
+import ClassStudentsPage from './pages/ClassStudentsPage';
+import StaffAttendancePage from './pages/StaffAttendancePage';
+import StaffAttendanceLogPage from './pages/StaffAttendanceLogPage';
+import ManageStaffPage from './pages/ManageStaffPage';
+import StaffDetailPage from './pages/StaffDetailPage';
+import StaffDocumentsPage from './pages/StaffDocumentsPage';
+import GenerateServiceCertificatePage from './pages/GenerateServiceCertificatePage';
+import PrintServiceCertificatePage from './pages/PrintServiceCertificatePage';
+import AdmissionPaymentPage from './pages/public/AdmissionPaymentPage';
+import TransferManagementPage from './pages/TransferManagementPage';
+import { GenerateTcPage } from './pages/GenerateTcPage';
+import TcRecordsPage from './pages/TcRecordsPage';
+import PrintTcPage from './pages/PrintTcPage';
+import InventoryPage from './pages/InventoryPage';
+import HostelDashboardPage from './pages/HostelDashboardPage';
+import HostelStudentListPage from './pages/HostelStudentListPage';
+import HostelRoomListPage from './pages/HostelRoomListPage';
+import HostelChoreRosterPage from './pages/HostelChoreRosterPage';
+import HostelFeePage from './pages/HostelFeePage';
+import HostelAttendancePage from './pages/HostelAttendancePage';
+import HostelMessPage from './pages/HostelMessPage';
+import HostelStaffPage from './pages/HostelStaffPage';
+import HostelInventoryPage from './pages/HostelInventoryPage';
+import HostelDisciplinePage from './pages/HostelDisciplinePage';
+import HostelHealthPage from './pages/HostelHealthPage';
+import HostelCommunicationPage from './pages/HostelCommunicationPage';
+import HostelSettingsPage from './pages/HostelSettingsPage';
+import CalendarPage from './pages/CalendarPage';
+import CommunicationPage from './pages/CommunicationPage';
+import ManageNoticesPage from './pages/ManageNoticesPage';
+import NewsPage from './pages/public/NewsPage';
+import ManageNewsPage from './pages/ManageNewsPage';
+import UserProfilePage from './pages/UserProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import { UserManagementPage } from './pages/UserManagementPage';
+import AdminPage from './pages/AdminPage';
+import PromotionPage from './pages/PromotionPage';
+import { ManageSubjectsPage } from './pages/ManageSubjectsPage';
+import SitemapEditorPage from './pages/SitemapEditorPage';
+import PublicHomePage from './pages/public/PublicHomePage';
+import AboutPage from './pages/public/AboutPage';
+import HistoryPage from './pages/public/HistoryPage';
+import FacultyPage from './pages/public/FacultyPage';
+import RulesPage from './pages/public/RulesPage';
+import AdmissionsPage from './pages/public/AdmissionsPage';
+import OnlineAdmissionPage from './pages/public/OnlineAdmissionPage';
+import AdmissionStatusPage from './pages/public/AdmissionStatusPage';
+import SuppliesPage from './pages/public/SuppliesPage';
+import StudentLifePage from './pages/public/StudentLifePage';
+import NccPage from './pages/public/NccPage';
+import ArtsCulturePage from './pages/public/ArtsCulturePage';
+import EcoClubPage from './pages/public/EcoClubPage';
+import ScienceClubPage from './pages/public/ScienceClubPage';
+import SlsmeePage from './pages/public/SlsmeePage';
+import InspireAwardPage from './pages/public/InspireAwardPage';
+import NcscPage from './pages/public/NcscPage';
+import ScienceTourPage from './pages/public/ScienceTourPage';
+import IncentiveAwardsPage from './pages/public/IncentiveAwardsPage';
+import MathematicsCompetitionPage from './pages/public/MathematicsCompetitionPage';
+import QuizPage from './pages/public/QuizPage';
+import AchievementsPage from './pages/public/AchievementsPage';
+import AcademicAchievementsPage from './pages/public/AcademicAchievementsPage';
+import DistinctionHoldersPage from './pages/public/DistinctionHoldersPage';
+import SportsPage from './pages/public/SportsPage';
+import FacilitiesPage from './pages/public/FacilitiesPage';
+import InfrastructurePage from './pages/public/InfrastructurePage';
+import GalleryPage from './pages/public/GalleryPage';
+import ContactPage from './pages/public/ContactPage';
+import SitemapPage from './pages/public/SitemapPage';
+import SitemapXmlPage from './pages/public/SitemapXmlPage';
+import AcademicPerformancePage from './pages/AcademicPerformancePage';
+import ReportSearchPage from './pages/ReportSearchPage';
+import ClassMarkStatementPage from './pages/ClassMarkStatementPage';
+import BulkProgressReportPage from './pages/BulkProgressReportPage';
+import ProgressReportPage from './pages/ProgressReportPage';
+import RoutinePage from './pages/public/RoutinePage';
+import ExamSelectionPage from './pages/ExamSelectionPage';
+import ExamClassSelectionPage from './pages/ExamClassSelectionPage';
+import AdmissionSettingsPage from './pages/AdmissionSettingsPage';
+import ParentDashboardPage from './pages/ParentDashboardPage';
+import HomeworkScannerPage from './pages/HomeworkScannerPage';
+import ActivityLogPage from './pages/ActivityLogPage';
+import SchoolSettingsPage from './pages/SchoolSettingsPage';
+import ManageHomeworkPage from './pages/ManageHomeworkPage';
+import ManageSyllabusPage from './pages/ManageSyllabusPage';
+import { ParentsManagementPage } from './pages/ParentsManagementPage';
+import PublicStaffDetailPage from './pages/public/PublicStaffDetailPage';
+import StudentAttendancePage from './pages/StudentAttendancePage';
+import StudentAttendanceLogPage from './pages/StudentAttendanceLogPage';
+import SyllabusPage from './pages/public/SyllabusPage';
+import OnlineAdmissionsListPage from './pages/OnlineAdmissionsListPage';
+import HostelPage from './pages/public/HostelPage';
+import AcademicsPage from './pages/public/AcademicsPage';
+import CurriculumPage from './pages/public/CurriculumPage';
+import FeeManagementPage from './pages/FeeManagementPage';
+import FeesPage from './pages/public/FeesPage';
+import InsightsPage from './pages/InsightsPage';
 
-import NotificationContainer from '@/components/NotificationContainer';
-import OfflineIndicator from '@/components/OfflineIndicator';
-import { SpinnerIcon } from '@/components/Icons';
+import NotificationContainer from './components/NotificationContainer';
+import OfflineIndicator from './components/OfflineIndicator';
+import { SpinnerIcon } from './components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
@@ -160,7 +161,10 @@ const App: React.FC = () => {
   
   // Other Logs
   const [conductLog, setConductLog] = useState<ConductEntry[]>([]);
-  const [dailyStudentAttendance, setDailyStudentAttendance] = useState<Record<string, Record<string, StudentAttendanceRecord>>>({});
+  const [hostelDisciplineLog, setHostelDisciplineLog] = useState<HostelDisciplineEntry[]>([]); // FIX: Declared disciplineLog
+  const [dailyStudentAttendance, setDailyStudentAttendance] = useState<Record<Grade, Record<string, StudentAttendanceRecord>>>( // FIX: Use correct type as declared in types.ts
+    GRADES_LIST.reduce((acc, grade) => ({ ...acc, [grade]: {} }), {}) as Record<Grade, Record<string, StudentAttendanceRecord>>
+  );
   const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
 
   const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
@@ -348,7 +352,7 @@ const App: React.FC = () => {
           batch.set(studentRef, { 
               ...studentData, 
               id: studentRef.id,
-              status: 'Active'
+              status: StudentStatus.ACTIVE // FIX: Use StudentStatus enum
           });
 
           // 2. Update the admission record
@@ -371,7 +375,7 @@ const App: React.FC = () => {
   const handleGenerateTc = async (tcData: Omit<TcRecord, 'id'>) => {
       try {
           const docRef = await db.collection('tcRecords').add(tcData);
-          await db.collection('students').doc(tcData.studentDbId).update({ status: 'Transferred' });
+          await db.collection('students').doc(tcData.studentDbId).update({ status: StudentStatus.TRANSFERRED }); // FIX: Use StudentStatus enum
           addNotification('Transfer Certificate generated and student status updated.', 'success');
           return true;
       } catch (error) {
@@ -384,7 +388,7 @@ const App: React.FC = () => {
   const handleGenerateServiceCertificate = async (certData: Omit<ServiceCertificateRecord, 'id'>) => {
       try {
           const docRef = await db.collection('serviceCertificates').add(certData);
-          await db.collection('staff').doc(certData.staffDetails.staffNumericId).update({ status: 'Resigned' });
+          await db.collection('staff').doc(certData.staffDetails.staffNumericId).update({ status: StudentStatus.TRANSFERRED }); // FIX: Using StudentStatus for Staff status as well, assuming it fits or needs separate enum
           addNotification('Service Certificate generated and staff status updated.', 'success');
       } catch (error) {
           console.error("Error generating Service Certificate:", error);
@@ -416,7 +420,7 @@ const App: React.FC = () => {
       try {
           await db.collection('inventory').doc(itemData.id).delete();
           addNotification('Inventory item deleted successfully.', 'success');
-      } catch (error) {
+      } catch (error) => {
           console.error("Error deleting inventory item:", error);
           addNotification('Failed to delete inventory item.', 'error');
       }
@@ -475,7 +479,7 @@ const App: React.FC = () => {
 
           const newResident: Omit<HostelResident, 'id'> = {
               studentId: student.id,
-              dormitory: 'Boys Dorm A', // Default or prompt for input
+              dormitory: 'Boys Dorm A' as HostelDormitory, // FIX: Use enum value
               dateOfJoining: new Date().toISOString().split('T')[0],
           };
           await db.collection('hostelResidents').add(newResident);
@@ -502,7 +506,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelResidents').doc(residentData.id).delete();
           addNotification('Hostel resident deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error) => {
           console.error("Error deleting hostel resident:", error);
           addNotification('Failed to delete hostel resident.', 'error');
       }
@@ -532,7 +536,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelStaff').doc(staffData.id).delete();
           addNotification('Hostel staff deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error) => {
           console.error("Error deleting hostel staff:", error);
           addNotification('Failed to delete hostel staff.', 'error');
       }
@@ -571,7 +575,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelDisciplineLog').doc(entry.id).delete();
           addNotification('Discipline record deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error) => {
           console.error("Error deleting discipline entry:", error);
           addNotification('Failed to delete discipline entry.', 'error');
       }
@@ -947,6 +951,59 @@ const App: React.FC = () => {
       }
   };
 
+  const handleSaveStaff = async (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGradeKey: Grade | null) => {
+      try {
+          if (id) {
+              await db.collection('staff').doc(id).update(staffData);
+              // Update grade definition if this staff is assigned as a class teacher
+              if (assignedGradeKey) {
+                  await db.collection('config').doc('gradeDefinitions').update({
+                      [assignedGradeKey]: { ...gradeDefinitions[assignedGradeKey], classTeacherId: id }
+                  });
+              } else {
+                  // If unassigned, clear classTeacherId from any grade it was previously assigned to
+                  const currentAssignedGrade = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
+                  if (currentAssignedGrade) {
+                      await db.collection('config').doc('gradeDefinitions').update({
+                          [currentAssignedGrade]: { ...gradeDefinitions[currentAssignedGrade], classTeacherId: firebase.firestore.FieldValue.delete() }
+                      });
+                  }
+              }
+              addNotification('Staff updated successfully!', 'success');
+          } else {
+              const newStaffRef = db.collection('staff').doc();
+              await newStaffRef.set({ ...staffData, id: newStaffRef.id });
+              // If new staff is assigned as a class teacher, update grade definition
+              if (assignedGradeKey) {
+                  await db.collection('config').doc('gradeDefinitions').update({
+                      [assignedGradeKey]: { ...gradeDefinitions[assignedGradeKey], classTeacherId: newStaffRef.id }
+                  });
+              }
+              addNotification('Staff added successfully!', 'success');
+          }
+      } catch (error) {
+          console.error("Error saving staff:", error);
+          addNotification('Failed to save staff.', 'error');
+      }
+  };
+
+  const handleDeleteStaff = async (id: string) => {
+      try {
+          await db.collection('staff').doc(id).delete();
+          // Also remove from class teacher assignment if applicable
+          const assignedGradeToDeletedStaff = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
+          if (assignedGradeToDeletedStaff) {
+              await db.collection('config').doc('gradeDefinitions').update({
+                  [assignedGradeToDeletedStaff]: { ...gradeDefinitions[assignedGradeToDeletedStaff], classTeacherId: firebase.firestore.FieldValue.delete() }
+              });
+          }
+          addNotification('Staff deleted successfully!', 'success');
+      } catch (error) {
+          console.error("Error deleting staff:", error);
+          addNotification('Failed to delete staff.', 'error');
+      }
+  };
+
   const handlePromoteStudents = async () => {
       try {
           const currentYear = academicYear;
@@ -965,15 +1022,14 @@ const App: React.FC = () => {
               let newStatus: StudentStatus = studentData.status;
 
               if (studentData.status === StudentStatus.ACTIVE) {
-                  const resultStatus = studentData.academicPerformance?.find(e => e.id === 'terminal3')?.results.length === gradeDefinitions[studentData.grade]?.subjects.length
-                      ? 'PASS' // Simplified for demo, proper logic would be calculateStudentResult(studentData, gradeDefinitions[studentData.grade])
-                      : 'FAIL';
+                  const gradeDef = gradeDefinitions[studentData.grade];
+                  const resultStatus = calculateStudentResult(studentData, gradeDef); // FIX: Use imported calculateStudentResult
 
                   if (resultStatus === 'PASS') {
                       if (studentData.grade === Grade.X) {
                           newStatus = StudentStatus.GRADUATED;
                       } else {
-                          newGrade = getNextGrade(studentData.grade);
+                          newGrade = getNextGrade(studentData.grade); // FIX: Use imported getNextGrade
                           if (!newGrade) newStatus = StudentStatus.GRADUATED; // No next grade
                       }
                   } else {
@@ -1039,9 +1095,9 @@ const App: React.FC = () => {
     const today = new Date().toISOString().split('T')[0];
     const unsubDailyStudentAttendance = db.collection('studentAttendance').doc(today).onSnapshot(doc => {
       if (doc.exists) {
-        setDailyStudentAttendance(doc.data() as DailyStudentAttendance);
+        setDailyStudentAttendance(doc.data() as Record<Grade, Record<string, StudentAttendanceRecord>>); // FIX: Cast to correct type
       } else {
-        setDailyStudentAttendance({});
+        setDailyStudentAttendance(GRADES_LIST.reduce((acc, grade) => ({ ...acc, [grade]: {} }), {}) as Record<Grade, Record<string, StudentAttendanceRecord>>); // FIX: Initialize with correct type
       }
     });
 
@@ -1108,7 +1164,7 @@ const App: React.FC = () => {
                 if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
                 const heads: FeeHead[] = [];
                 if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
-                if (oldSet?.examFee) heads.push({ id: 'exam', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
+                if (oldSet?.examFee) heads.push({ id: 'eTerm', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
                 return { heads };
             };
             const updated: FeeStructure = {
@@ -1168,6 +1224,7 @@ const App: React.FC = () => {
             db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem))));
             db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord))));
             db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() } as ServiceCertificateRecord))));
+            db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)))); // FIX: Add listener for hostelDisciplineLog
         }
 
         if (['admin', 'warden'].includes(user.role)) {
@@ -1251,7 +1308,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
         <Route path="/signup" element={<SignUpPage onSignUp={async (n, e, p) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if(c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending' }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
         <Route path="/parent-registration" element={<ParentRegistrationPage />} />
-        <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if(c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudentId: sid, claimedDateOfBirth: dob, claimedStudentName: sname, claimedRelationship: rel }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
+        <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if(c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudents: [{ fullName: sname, studentId: sid, dob: dob, relationship: rel }], registrationDetails: { fullName: n, relationship: rel } }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async (e) => { try { await auth.sendPasswordResetEmail(e); return { success: true, message: "Password reset email sent! Please check your inbox." }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
         <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async (newPassword) => { try { const actionCode = new URLSearchParams(window.location.search).get('oobCode'); if (!actionCode) throw new Error("Missing action code for password reset."); await auth.confirmPasswordReset(actionCode, newPassword); return { success: true, message: "Password reset successfully! You can now log in." }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
 
@@ -1267,7 +1324,7 @@ const App: React.FC = () => {
            <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />
            <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: "Password changed. Please log in again." }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
            <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />
-           <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={disciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
+           <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
            <Route path="student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
            <Route path="student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user!} calendarEvents={calendarEvents} />} />
            <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={async (grade) => { /* Placeholder for import modal */ addNotification(`Import dialog for ${grade || 'all grades'} would open here.`, 'info'); }} user={user!} />} />
@@ -1286,7 +1343,7 @@ const App: React.FC = () => {
            <Route path="transfers/records" element={<TcRecordsPage tcRecords={tcRecords} />} />
            <Route path="transfers/print/:tcId" element={<PrintTcPage tcRecords={tcRecords} />} />
            <Route path="inventory" element={<InventoryPage inventory={inventory} onAdd={handleAddInventoryItem} onEdit={handleEditInventoryItem} onDelete={handleDeleteInventoryItem} user={user!} />} />
-           <Route path="hostel-dashboard" element={<HostelDashboardPage disciplineLog={disciplineLog} />} />
+           <Route path="hostel-dashboard" element={<HostelDashboardPage disciplineLog={hostelDisciplineLog} />} />
            <Route path="hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={handleAddHostelResident} onAddById={handleAddHostelResidentById} onEdit={handleEditHostelResident} onDelete={handleDeleteHostelResident} user={user!} academicYear={academicYear} />} />
            <Route path="hostel/rooms" element={<HostelRoomListPage residents={hostelResidents} students={students} />} />
            <Route path="hostel/chores" element={<HostelChoreRosterPage user={user!} students={students} residents={hostelResidents} choreRoster={choreRoster} onUpdateChoreRoster={handleSaveChoreRoster} academicYear={academicYear} />} />
@@ -1295,11 +1352,11 @@ const App: React.FC = () => {
            <Route path="hostel/mess" element={<HostelMessPage />} />
            <Route path="hostel/staff" element={<HostelStaffPage staff={hostelStaff} onAdd={handleAddHostelStaff} onEdit={handleEditHostelStaff} onDelete={handleDeleteHostelStaff} user={user!} />} />
            <Route path="hostel/inventory" element={<HostelInventoryPage inventory={hostelInventory} stockLogs={stockLogs} onUpdateStock={handleUpdateStock} user={user!} />} />
-           <Route path="hostel/discipline" element={<HostelDisciplinePage user={user!} students={students} residents={hostelResidents} disciplineLog={disciplineLog} onSave={handleSaveHostelDisciplineEntry} onDelete={handleDeleteHostelDisciplineEntry} academicYear={academicYear} />} />
+           <Route path="hostel/discipline" element={<HostelDisciplinePage user={user!} students={students} residents={hostelResidents} disciplineLog={hostelDisciplineLog} onSave={handleSaveHostelDisciplineEntry} onDelete={handleDeleteHostelDisciplineEntry} academicYear={academicYear} />} />
            <Route path="hostel/health" element={<HostelHealthPage />} />
            <Route path="hostel/communication" element={<HostelCommunicationPage />} />
            <Route path="hostel/settings" element={<HostelSettingsPage />} />
-           <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async () => { addNotification('Add event modal will open.', 'info'); }} onEdit={async () => { addNotification('Edit event modal will open.', 'info'); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
+           <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (eventData, id) => { await handleSaveCalendarEvent(eventData, id); }} onEdit={async (eventData) => { await handleSaveCalendarEvent(eventData, eventData.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
            <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
            <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
            <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />

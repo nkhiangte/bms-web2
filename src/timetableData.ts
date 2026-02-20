@@ -1,4 +1,5 @@
 
+
 export interface Period {
   subject: string;
 }
@@ -18,7 +19,7 @@ export const timetableData: Record<string, DailyRoutine> = {
     { class: 'Class VII', periods: [{ subject: 'Social Science(PS Lala)' }, { subject: 'Science(Lalremruati)' }, { subject: 'Maths(Lynda)' }, { subject: 'Mizo(Lalchhuanawma)' }, { subject: 'English I(Lalhruaimawii)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'English II(Malsawmi)' }, { subject: '' }] },
     { class: 'Class VI', periods: [{ subject: 'Maths(Lalremruati)' }, { subject: 'English I(Judith)' }, { subject: 'Social Science(PS Lala)' }, { subject: 'Science(Lalremruati)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'English II(Isaac)' }, { subject: 'Mizo(Lalchhuanawma)' }, { subject: '' }] },
     { class: 'Class V', periods: [{ subject: 'English I(Judith)' }, { subject: 'English II' }, { subject: 'Maths(Lalremruati)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'Mizo(Lalchhuanawma)' }, { subject: 'EVS(PS Lala)' }, { subject: 'Cursive(Isaac)' }, { subject: '' }] },
-    { class: 'Class IV', periods: [{ subject: 'Maths(Lalchhuanawma)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'English I(Judith)' }, { subject: 'EVS(PS Lala)' }, { subject: 'English II(Judith)' }, { subject: 'Mizo(Lalchhuanawma)' }, { subject: 'Cursive(Saichhingpuii)' }, { subject: '' }] },
+    { class: 'Class IV', periods: [{ subject: 'Maths(Lalchhuanawma)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'English I(Judith)' }, { subject: 'EVS(PS Lala)' }, { subject: 'English II(Judith)' }, { subject: 'Drawing(Sharon)' }, { subject: 'Games' }, { subject: '' }] },
     { class: 'Class III', periods: [{ subject: 'Mizo(Lalhruaimawii)' }, { subject: 'Maths(Lalchhuanawma)' }, { subject: 'Hindi(Saichhingpuii)' }, { subject: 'English I(Judith)' }, { subject: 'EVS(PS Lala)' }, { subject: 'Cursive(Sharon)' }, { subject: 'English II(Judith)' }, { subject: '' }] },
   ],
   TUESDAY: [

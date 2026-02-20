@@ -1,4 +1,6 @@
+
 import React, { ErrorInfo, ReactNode } from 'react';
+import { SpinnerIcon, XIcon } from './Icons';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -10,7 +12,6 @@ interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-// Explicitly use React.Component to resolve inheritance errors with setState and props.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
@@ -19,14 +20,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   };
 
   static getDerivedStateFromError(error: any): Partial<ErrorBoundaryState> {
-    // Update state so the next render will show the fallback UI.
     return { hasError: true, error: error };
   }
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
-    // FIX: Explicitly cast 'this' to 'any' to resolve 'Property setState does not exist' error.
-    (this as any).setState({ errorInfo: errorInfo });
+    console.error("Uncaught error caught by ErrorBoundary:", error, errorInfo);
+    this.setState({ errorInfo: errorInfo });
   }
 
   handleClearCacheAndReload = () => {
@@ -65,13 +64,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         <div className="flex items-center justify-center min-h-screen bg-slate-100 p-4">
             <div className="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-8 text-center">
                 <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <XIcon className="h-6 w-6 text-red-600" />
                 </div>
                 <h1 className="mt-5 text-2xl font-bold text-slate-800">Oops! Something went wrong.</h1>
                 <p className="mt-2 text-slate-600">
-                    An unexpected error occurred. You can try refreshing the page or clearing the cache to resolve the issue.
+                    An unexpected error occurred in the application.
                 </p>
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
@@ -109,7 +106,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    // FIX: Explicitly cast 'this' to 'any' to resolve 'Property props does not exist' error.
-    return (this as any).props.children || null;
+    return this.props.children;
   }
 }

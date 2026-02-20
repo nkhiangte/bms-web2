@@ -1,7 +1,7 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { InstagramIcon, YouTubeIcon, MailIcon, PhoneIcon, FacebookIcon } from './Icons';
+import { InstagramIcon, YouTubeIcon, MailIcon, PhoneIcon, FacebookIcon } from '@/components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 

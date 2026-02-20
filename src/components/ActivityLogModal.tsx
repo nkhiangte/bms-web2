@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ActivityLog, Assessment } from '../types';
-import { XIcon, PlusIcon, TrashIcon } from './Icons';
+import { ActivityLog, Assessment } from '@/types';
+import { XIcon, PlusIcon, TrashIcon } from '@/components/Icons';
 
 interface ActivityLogModalProps {
     isOpen: boolean;

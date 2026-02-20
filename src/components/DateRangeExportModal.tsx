@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { XIcon, InboxArrowDownIcon, SpinnerIcon } from './Icons';
+import { XIcon, InboxArrowDownIcon, SpinnerIcon } from '@/components/Icons';
 
 interface DateRangeExportModalProps {
     isOpen: boolean;

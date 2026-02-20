@@ -12,7 +12,7 @@ import {
     EMPLOYMENT_STATUS_LIST,
     STAFF_TYPE_LIST,
 } from '@/constants';
-import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from './Icons';
+import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from '@/components/Icons';
 import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '@/utils';
 import CustomDatePicker from './CustomDatePicker';
 

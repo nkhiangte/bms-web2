@@ -1,7 +1,7 @@
 
 
 import React, { ErrorInfo, ReactNode } from 'react';
-import { SpinnerIcon, XIcon } from './Icons';
+import { SpinnerIcon, XIcon } from '@/components/Icons';
 
 interface ErrorBoundaryState {
   hasError: boolean;

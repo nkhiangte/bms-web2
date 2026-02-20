@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { ChevronDownIcon, UserIcon } from './Icons';
-import { User } from '../types';
+import { ChevronDownIcon, UserIcon } from '@/components/Icons';
+import { User } from '@/types';
 
 const { Link, NavLink, useLocation } = ReactRouterDOM as any;
 

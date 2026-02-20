@@ -1,8 +1,8 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Staff, TcRecord, ServiceCertificateRecord, Grade } from '../types';
-import { HomeIcon, ChevronRightIcon } from './Icons';
+import { Student, Staff, TcRecord, ServiceCertificateRecord, Grade } from '@/types';
+import { HomeIcon, ChevronRightIcon } from '@/components/Icons';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 

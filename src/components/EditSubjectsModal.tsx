@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Grade, GradeDefinition, SubjectDefinition } from '@/types';
-import { PlusIcon, TrashIcon } from './Icons';
+import { PlusIcon, TrashIcon } from '@/components/Icons';
 import { GRADES_WITH_NO_ACTIVITIES } from '@/constants';
 
 interface EditSubjectsModalProps {

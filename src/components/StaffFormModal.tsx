@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
+import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '@/types';
 import { 
     GRADES_LIST,
     GENDER_LIST, 
@@ -11,9 +11,9 @@ import {
     BLOOD_GROUP_LIST,
     EMPLOYMENT_STATUS_LIST,
     STAFF_TYPE_LIST,
-} from '../constants';
-import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from './Icons';
-import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '../utils';
+} from '@/constants';
+import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from '@/components/Icons';
+import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '@/utils';
 import CustomDatePicker from './CustomDatePicker';
 
 const AccordionSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {

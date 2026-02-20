@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SpinnerIcon, OfflineIcon } from './Icons';
+import { SpinnerIcon, OfflineIcon } from '@/components/Icons';
 
 const OfflineIndicator: React.FC = () => {
     const [status, setStatus] = useState<'online' | 'offline' | 'syncing'>(navigator.onLine ? 'online' : 'offline');

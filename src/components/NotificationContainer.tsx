@@ -1,7 +1,7 @@
 
 import React from 'react';
 import NotificationToast from './NotificationToast';
-import { NotificationType } from '../types';
+import { NotificationType } from '@/types';
 
 interface NotificationContainerProps {
     notifications: { id: string; message: string; type: NotificationType; title?: string; }[];

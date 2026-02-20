@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserIcon } from './Icons';
+import { UserIcon } from '@/components/Icons';
 
 interface PhotoWithFallbackProps {
     src?: string;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Student, Grade, FeePayments, FeeStructure } from '../types';
-import { getFeeDetails } from '../utils';
-import { TERMINAL_EXAMS, academicMonths } from '../constants';
-import { SpinnerIcon, CheckIcon, XIcon, CurrencyDollarIcon } from './Icons';
+import { Student, Grade, FeePayments, FeeStructure } from '@/types';
+import { getFeeDetails } from '@/utils';
+import { TERMINAL_EXAMS, academicMonths } from '@/constants';
+import { SpinnerIcon, CheckIcon, XIcon, CurrencyDollarIcon } from '@/components/Icons';
 
 interface ExamFeeCollectionModalProps {
     isOpen: boolean;

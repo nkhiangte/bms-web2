@@ -1,12 +1,11 @@
 
-
-import React from 'react';
+import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, Grade } from '@/types';
 import { EditIcon, UserIcon } from './Icons';
-import { formatStudentId } from '../utils';
+import { formatStudentId } from '@/utils';
 
-const { Link } = ReactRouterDOM;
+const { Link } = ReactRouterDOM as any;
 
 interface StudentTableProps {
     students: Student[];

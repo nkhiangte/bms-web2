@@ -8,7 +8,7 @@ import StudentTable from '@/components/StudentTable';
 import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
 import { formatStudentId } from '../utils';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link, useNavigate } = ReactRouterDOM;
 
 interface StudentListPageProps {
   students: Student[];

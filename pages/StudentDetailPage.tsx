@@ -9,7 +9,7 @@ import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } 
 import ConfirmationModal from '@/components/ConfirmationModal';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 
-const { Link, useNavigate, useParams } = ReactRouterDOM as any;
+const { Link, useNavigate, useParams } = ReactRouterDOM;
 
 interface StudentDetailPageProps {
   students: Student[];
@@ -45,7 +45,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 
 
 const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
-  const { studentId } = useParams() as { studentId: string };
+  const { studentId } = useParams();
   const navigate = useNavigate();
   
   const student = students.find(s => s.id === studentId);

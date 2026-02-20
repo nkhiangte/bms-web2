@@ -10,7 +10,7 @@ import ExamPerformanceCard from '@/components/ExamPerformanceCard';
 import { normalizeSubjectName, subjectsMatch } from '../utils';
 import { db } from '../firebaseConfig';
 
-const { useParams, Link } = ReactRouterDOM as any;
+const { useParams, Link } = ReactRouterDOM;
 
 interface AcademicPerformancePageProps {
   students: Student[];
@@ -23,7 +23,7 @@ interface AcademicPerformancePageProps {
 }
 
 const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ students, onUpdateAcademic, gradeDefinitions, academicYear, user, assignedGrade, assignedSubjects }) => {
-  const { studentId } = useParams() as { studentId: string };
+  const { studentId } = useParams();
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
   const [classmates, setClassmates] = useState<Student[]>([]);

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import NotificationToast from './NotificationToast';
+import NotificationToast from './NotificationToast.tsx';
 import { NotificationType } from '../types';
 
 interface NotificationContainerProps {

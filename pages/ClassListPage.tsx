@@ -6,7 +6,7 @@ import { GRADES_LIST } from '../constants';
 import { BookOpenIcon, HomeIcon, BackIcon, CogIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
 import { Grade, GradeDefinition, Staff, User } from '@/types';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link, useNavigate } = ReactRouterDOM;
 
 interface ClassListPageProps {
     gradeDefinitions: Record<Grade, GradeDefinition>;

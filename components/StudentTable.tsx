@@ -1,10 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, Grade } from '@/types';
-import { ChevronDownIcon, LogoutIcon, KeyIcon, SyncIcon, UserIcon, EditIcon } from './Icons';
-import PhotoWithFallback from './PhotoWithFallback';
-import { formatStudentId } from '@/utils';
+import { EditIcon, UserIcon } from './Icons';
+import { formatStudentId } from '../utils';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -17,38 +16,6 @@ interface StudentTableProps {
 }
 
 const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicYear, user, assignedGrade }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const handleClearCache = () => {
-    setIsMenuOpen(false);
-    if (!window.confirm("This will clear all application caches and force a reload. This can help fix display issues. Are you sure you want to proceed?")) {
-        return;
-    }
-
-    let unregistering: Promise<any> = Promise.resolve();
-    if ('serviceWorker' in navigator) {
-        unregistering = navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            return Promise.all(registrations.map(r => r.unregister()));
-        });
-    }
-
-    unregistering.then(() => {
-        return caches.keys();
-    }).then(function(cacheNames) {
-        return Promise.all(
-            cacheNames.map(function(cacheName) {
-                return caches.delete(cacheName);
-            })
-        );
-    }).then(() => {
-        alert("Cache and service workers cleared. The application will now perform a hard reload.");
-        window.location.reload();
-    }).catch(error => {
-        console.error("Cache clearing failed:", error);
-        alert("Could not clear cache. Please try clearing your browser's data manually.");
-    });
-  };
-
   if (students.length === 0) {
     return (
       <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">

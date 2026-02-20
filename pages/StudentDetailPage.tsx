@@ -3,8 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '@/types';
 import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '@/components/Icons';
-import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp, getFeeDetails } from '@/utils';
-import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '@/constants';
+import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp, getFeeDetails } from '../utils';
+import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '../constants';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 

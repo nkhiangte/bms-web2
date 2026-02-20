@@ -6,7 +6,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES } from '@/constants';
 import { db, auth, firebase } from '@/firebaseConfig';
-import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult } from '@/utils';
+import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade } from '@/utils';
 
 // Page Imports
 import LoginPage from '@/pages/LoginPage';
@@ -228,7 +228,7 @@ const App: React.FC = () => {
           await db.collection('config').doc('academic').set({ currentAcademicYear: year });
           setAcademicYear(year);
           addNotification(`Academic year set to ${year}.`, 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error setting academic year:", error);
           addNotification('Failed to set academic year.', 'error');
       }
@@ -240,7 +240,7 @@ const App: React.FC = () => {
           const studentId = formatStudentId(studentData, academicYear);
           await newStudentRef.set({ ...studentData, id: newStudentRef.id, studentId, academicYear });
           addNotification('Student added successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error adding student:", error);
           addNotification('Failed to add student.', 'error');
       }
@@ -252,7 +252,7 @@ const App: React.FC = () => {
           const { id, feePayments, academicPerformance, ...updatableData } = studentData;
           await db.collection('students').doc(id).update(updatableData);
           addNotification('Student updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating student:", error);
           addNotification('Failed to update student.', 'error');
       }
@@ -262,7 +262,7 @@ const App: React.FC = () => {
       try {
           await db.collection('students').doc(student.id).update({ status: 'Dropped' }); // Mark as dropped instead of deleting
           addNotification(`Student ${student.name} marked as dropped.`, 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting student:", error);
           addNotification('Failed to drop student.', 'error');
       }
@@ -272,7 +272,7 @@ const App: React.FC = () => {
       try {
           await db.collection('students').doc(studentId).update({ feePayments: payments });
           addNotification('Fee payments updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating fee payments:", error);
           addNotification('Failed to update fee payments.', 'error');
       }
@@ -287,7 +287,7 @@ const App: React.FC = () => {
       try {
           await batch.commit();
           addNotification('Bulk fee payments updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating bulk fee payments:", error);
           addNotification('Failed to update bulk fee payments.', 'error');
       }
@@ -297,7 +297,7 @@ const App: React.FC = () => {
       try {
           await db.collection('students').doc(studentId).update({ academicPerformance: performance });
           addNotification('Academic performance updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating academic performance:", error);
           addNotification('Failed to update academic performance.', 'error');
       }
@@ -308,7 +308,7 @@ const App: React.FC = () => {
           const newDefs = { ...gradeDefinitions, [grade]: newDefinition };
           await db.collection('config').doc('gradeDefinitions').set(newDefs);
           addNotification(`Grade definition for ${grade} updated.`, 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating grade definition:", error);
           addNotification('Failed to update grade definition.', 'error');
       }
@@ -324,7 +324,7 @@ const App: React.FC = () => {
       });
       await batch.commit();
       addNotification('All academic records have been reset.', 'success');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting all academic marks:", error);
       addNotification('Failed to reset all academic records.', 'error');
     }
@@ -335,7 +335,7 @@ const App: React.FC = () => {
           await db.collection('config').doc('feeStructure').set(newStructure);
           addNotification('Fee structure updated successfully!', 'success');
           return true;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating fee structure:", error);
           addNotification('Failed to update fee structure.', 'error');
           return false;
@@ -364,7 +364,7 @@ const App: React.FC = () => {
 
           await batch.commit();
           addNotification(`Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`, 'success', 'Enrollment Complete');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Enrollment failed:", error);
           addNotification("Failed to enroll student. Please check database permissions.", 'error', 'Enrollment Failed');
           throw error;
@@ -377,7 +377,7 @@ const App: React.FC = () => {
           await db.collection('students').doc(tcData.studentDbId).update({ status: StudentStatus.TRANSFERRED }); // FIX: Use StudentStatus enum
           addNotification('Transfer Certificate generated and student status updated.', 'success');
           return true;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error generating TC:", error);
           addNotification('Failed to generate Transfer Certificate.', 'error');
           return false;
@@ -389,7 +389,7 @@ const App: React.FC = () => {
           const docRef = await db.collection('serviceCertificates').add(certData);
           await db.collection('staff').doc(certData.staffDetails.staffNumericId).update({ status: StudentStatus.TRANSFERRED }); // FIX: Using StudentStatus for Staff status as well, assuming it fits or needs separate enum
           addNotification('Service Certificate generated and staff status updated.', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error generating Service Certificate:", error);
           addNotification('Failed to generate Service Certificate.', 'error');
       }
@@ -399,7 +399,7 @@ const App: React.FC = () => {
       try {
           await db.collection('inventory').add(itemData);
           addNotification('Inventory item added successfully.', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error adding inventory item:", error);
           addNotification('Failed to add inventory item.', 'error');
       }
@@ -409,7 +409,7 @@ const App: React.FC = () => {
       try {
           await db.collection('inventory').doc(itemData.id).update(itemData);
           addNotification('Inventory item updated successfully.', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error editing inventory item:", error);
           addNotification('Failed to edit inventory item.', 'error');
       }
@@ -419,7 +419,7 @@ const App: React.FC = () => {
       try {
           await db.collection('inventory').doc(itemData.id).delete();
           addNotification('Inventory item deleted successfully.', 'success');
-      } catch (error) => {
+      } catch (error: any) {
           console.error("Error deleting inventory item:", error);
           addNotification('Failed to delete inventory item.', 'error');
       }
@@ -459,7 +459,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelResidents').add(residentData);
           addNotification('Hostel resident added successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error adding hostel resident:", error);
           addNotification('Failed to add hostel resident.', 'error');
       }
@@ -484,7 +484,7 @@ const App: React.FC = () => {
           await db.collection('hostelResidents').add(newResident);
           addNotification(`Student ${student.name} added as hostel resident.`, 'success');
           return { success: true };
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error adding hostel resident by ID:", error);
           addNotification('Failed to add hostel resident by ID.', 'error');
           return { success: false, message: 'Failed to add. Please try again.' };
@@ -495,7 +495,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelResidents').doc(residentData.id).update(residentData);
           addNotification('Hostel resident updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error editing hostel resident:", error);
           addNotification('Failed to edit hostel resident.', 'error');
       }
@@ -505,7 +505,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelResidents').doc(residentData.id).delete();
           addNotification('Hostel resident deleted successfully!', 'success');
-      } catch (error) => {
+      } catch (error: any) {
           console.error("Error deleting hostel resident:", error);
           addNotification('Failed to delete hostel resident.', 'error');
       }
@@ -515,7 +515,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelStaff').add(staffData);
           addNotification('Hostel staff added successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error adding hostel staff:", error);
           addNotification('Failed to add hostel staff.', 'error');
       }
@@ -525,7 +525,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelStaff').doc(staffData.id).update(staffData);
           addNotification('Hostel staff updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error editing hostel staff:", error);
           addNotification('Failed to edit hostel staff.', 'error');
       }
@@ -535,7 +535,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelStaff').doc(staffData.id).delete();
           addNotification('Hostel staff deleted successfully!', 'success');
-      } catch (error) => {
+      } catch (error: any) {
           console.error("Error deleting hostel staff:", error);
           addNotification('Failed to delete hostel staff.', 'error');
       }
@@ -545,7 +545,7 @@ const App: React.FC = () => {
       try {
           await db.collection('choreRoster').doc('current').set(newRoster);
           addNotification('Chore roster updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating chore roster:", error);
           addNotification('Failed to update chore roster.', 'error');
       }
@@ -564,7 +564,7 @@ const App: React.FC = () => {
               await db.collection('hostelDisciplineLog').add(fullEntry);
           }
           addNotification('Discipline record saved successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving discipline entry:", error);
           addNotification('Failed to save discipline entry.', 'error');
       }
@@ -574,7 +574,7 @@ const App: React.FC = () => {
       try {
           await db.collection('hostelDisciplineLog').doc(entry.id).delete();
           addNotification('Discipline record deleted successfully!', 'success');
-      } catch (error) => {
+      } catch (error: any) {
           console.error("Error deleting discipline entry:", error);
           addNotification('Failed to delete discipline entry.', 'error');
       }
@@ -584,7 +584,7 @@ const App: React.FC = () => {
       try {
           await db.collection('studentAttendance').doc(date).set({ [grade]: records }, { merge: true });
           addNotification('Student attendance saved.', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error marking student attendance:", error);
           addNotification('Failed to save student attendance.', 'error');
       }
@@ -605,7 +605,7 @@ const App: React.FC = () => {
               }
           });
           return monthData;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error fetching student attendance for month:", error);
           addNotification('Failed to fetch student attendance data.', 'error');
           return {};
@@ -627,7 +627,7 @@ const App: React.FC = () => {
               }
           });
           return rangeData;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error fetching student attendance for range:", error);
           addNotification('Failed to fetch student attendance data for range.', 'error');
           return {};
@@ -639,7 +639,7 @@ const App: React.FC = () => {
       try {
           await db.collection('staffAttendance').doc(today).set({ [staffId]: status }, { merge: true });
           addNotification('Staff attendance marked.', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error marking staff attendance:", error);
           addNotification('Failed to mark staff attendance.', 'error');
       }
@@ -657,7 +657,7 @@ const App: React.FC = () => {
               monthData[doc.id] = doc.data() as StaffAttendanceRecord;
           });
           return monthData;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error fetching staff attendance for month:", error);
           addNotification('Failed to fetch staff attendance data.', 'error');
           return {};
@@ -676,7 +676,7 @@ const App: React.FC = () => {
               rangeData[doc.id] = doc.data() as StaffAttendanceRecord;
           });
           return rangeData;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error fetching staff attendance for range:", error);
           addNotification('Failed to fetch staff attendance data for range.', 'error');
           return {};
@@ -695,7 +695,7 @@ const App: React.FC = () => {
               await db.collection('homework').add(dataWithCreator);
           }
           addNotification('Homework saved successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving homework:", error);
           addNotification('Failed to save homework.', 'error');
       }
@@ -705,7 +705,7 @@ const App: React.FC = () => {
       try {
           await db.collection('homework').doc(id).delete();
           addNotification('Homework deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting homework:", error);
           addNotification('Failed to delete homework.', 'error');
       }
@@ -715,7 +715,7 @@ const App: React.FC = () => {
       try {
           await db.collection('syllabus').doc(id).set(syllabus);
           addNotification('Syllabus saved successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving syllabus:", error);
           addNotification('Failed to save syllabus.', 'error');
       }
@@ -758,7 +758,7 @@ const App: React.FC = () => {
       try {
           await batch.commit();
           addNotification('Activity logs updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error bulk updating activity logs:", error);
           addNotification('Failed to bulk update activity logs.', 'error');
       }
@@ -773,7 +773,7 @@ const App: React.FC = () => {
           });
           addNotification('Message sent to teacher!', 'success');
           return true;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error sending message:", error);
           addNotification('Failed to send message.', 'error');
           return false;
@@ -792,7 +792,7 @@ const App: React.FC = () => {
               await db.collection('notices').add(dataWithCreator);
           }
           addNotification('Notice saved successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving notice:", error);
           addNotification('Failed to save notice.', 'error');
       }
@@ -802,7 +802,7 @@ const App: React.FC = () => {
       try {
           await db.collection('notices').doc(id).delete();
           addNotification('Notice deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting notice:", error);
           addNotification('Failed to delete notice.', 'error');
       }
@@ -816,7 +816,7 @@ const App: React.FC = () => {
             await db.collection('news').add(item);
         }
         addNotification('News item saved successfully!', 'success');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error saving news item:", error);
         addNotification('Failed to save news item.', 'error');
     }
@@ -826,7 +826,7 @@ const App: React.FC = () => {
       try {
           await db.collection('news').doc(id).delete();
           addNotification('News item deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting news item:", error);
           addNotification('Failed to delete news item.', 'error');
       }
@@ -841,7 +841,7 @@ const App: React.FC = () => {
           }
           addNotification('Calendar event saved successfully!', 'success');
           return true;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving calendar event:", error);
           addNotification('Failed to save calendar event.', 'error');
           return false;
@@ -852,7 +852,7 @@ const App: React.FC = () => {
       try {
           await db.collection('calendarEvents').doc(event.id).delete();
           addNotification('Calendar event deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting calendar event:", error);
           addNotification('Failed to delete calendar event.', 'error');
       }
@@ -867,7 +867,7 @@ const App: React.FC = () => {
           }
           addNotification('Exam routine saved successfully!', 'success');
           return true;
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving exam routine:", error);
           addNotification('Failed to save exam routine.', 'error');
           return false;
@@ -878,7 +878,7 @@ const App: React.FC = () => {
       try {
           await db.collection('examRoutines').doc(routine.id).delete();
           addNotification('Exam routine deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting exam routine:", error);
           addNotification('Failed to delete exam routine.', 'error');
       }
@@ -888,7 +888,7 @@ const App: React.FC = () => {
       try {
           await db.collection('classRoutines').doc(day).set({ routine });
           addNotification(`Class routine for ${day} updated.`, 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating class routine:", error);
           addNotification('Failed to update class routine.', 'error');
       }
@@ -898,7 +898,7 @@ const App: React.FC = () => {
       try {
           await db.collection('config').doc('sitemap').set({ content: newContent });
           addNotification('Sitemap updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving sitemap:", error);
           addNotification('Failed to save sitemap.', 'error');
       }
@@ -922,7 +922,7 @@ const App: React.FC = () => {
     try {
         await db.collection('users').doc(uid).update({ role: newRole });
         addNotification(`User role updated to ${newRole}.`, 'success');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating user role:", error);
         addNotification('Failed to update user role.', 'error');
     }
@@ -934,7 +934,7 @@ const App: React.FC = () => {
           // For now, this marks the user as deleted in Firestore and blocks access.
           await db.collection('users').doc(uid).delete();
           addNotification('User deleted successfully (Firestore record).', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting user:", error);
           addNotification('Failed to delete user.', 'error');
       }
@@ -944,7 +944,7 @@ const App: React.FC = () => {
       try {
           await db.collection('users').doc(uid).update(updates);
           addNotification('Parent account updated successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error updating parent user:", error);
           addNotification('Failed to update parent account.', 'error');
       }
@@ -980,7 +980,7 @@ const App: React.FC = () => {
               }
               addNotification('Staff added successfully!', 'success');
           }
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving staff:", error);
           addNotification('Failed to save staff.', 'error');
       }
@@ -997,7 +997,7 @@ const App: React.FC = () => {
               });
           }
           addNotification('Staff deleted successfully!', 'success');
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error deleting staff:", error);
           addNotification('Failed to delete staff.', 'error');
       }
@@ -1075,7 +1075,7 @@ const App: React.FC = () => {
           await batch.commit();
           addNotification(`Academic year advanced to ${nextYear}. Students promoted/detained.`, 'success', 'Promotion Complete');
           window.location.reload(); // Force reload to fetch new year's data
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error promoting students:", error);
           addNotification('Failed to promote students. Check console for details.', 'error', 'Promotion Failed');
       }
@@ -1128,7 +1128,7 @@ const App: React.FC = () => {
                     const newUser: User = { uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: 'user' };
                     setUser(newUser);
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching user session:", error);
                 setUser(null);
             }
@@ -1317,7 +1317,7 @@ const App: React.FC = () => {
             ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin"/></div>
             : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
         }>
-           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} />} />
+           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
            <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted for approval!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
            <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />
            <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />

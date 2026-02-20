@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, MessageIcon, WhatsappIcon, SpinnerIcon } from '../components/Icons';
-import { Student, Grade, StudentStatus, User } from '../types';
-import { GRADES_LIST } from '../constants';
-import { formatPhoneNumberForWhatsApp } from '../utils';
+import { BackIcon, HomeIcon, MessageIcon, WhatsappIcon, SpinnerIcon } from '@/components/Icons';
+import { Student, Grade, StudentStatus, User } from '@/types';
+import { GRADES_LIST } from '@/constants';
+import { formatPhoneNumberForWhatsApp } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

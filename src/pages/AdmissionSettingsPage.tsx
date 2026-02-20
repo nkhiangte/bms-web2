@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { AdmissionSettings, AdmissionItemConfig, FeeHead } from '../types';
-import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon, CurrencyDollarIcon } from '../components/Icons';
-import { GRADES_LIST, UNIFORM_SIZES } from '../constants';
+import { AdmissionSettings, AdmissionItemConfig, FeeHead } from '@/types';
+import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon, CurrencyDollarIcon } from '@/components/Icons';
+import { GRADES_LIST, UNIFORM_SIZES } from '@/constants';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 

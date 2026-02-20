@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { HostelResident, Student, User } from '../types';
-import { BackIcon, HomeIcon, UsersIcon, PlusIcon, EditIcon, TrashIcon } from '../components/Icons';
-import { formatStudentId } from '../utils';
+import { HostelResident, Student, User } from '@/types';
+import { BackIcon, HomeIcon, UsersIcon, PlusIcon, EditIcon, TrashIcon } from '@/components/Icons';
+import { formatStudentId } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

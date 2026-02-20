@@ -1,10 +1,10 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { ServiceCertificateRecord } from '../types';
-import { BackIcon, HomeIcon, PrinterIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
-import { SCHOOL_BANNER_URL } from '../constants';
+import { ServiceCertificateRecord } from '@/types';
+import { BackIcon, HomeIcon, PrinterIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
+import { SCHOOL_BANNER_URL } from '@/constants';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 

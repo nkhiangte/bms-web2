@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Grade, SubjectAssignment, Syllabus, SyllabusTopic, GradeDefinition } from '../types';
-import { BackIcon, HomeIcon, BookOpenIcon, PlusIcon, TrashIcon, CheckIcon, SpinnerIcon } from '../components/Icons';
-import { GRADES_LIST } from '../constants';
-import { normalizeSubjectName } from '../utils';
+import { User, Grade, SubjectAssignment, Syllabus, SyllabusTopic, GradeDefinition } from '@/types';
+import { BackIcon, HomeIcon, BookOpenIcon, PlusIcon, TrashIcon, CheckIcon, SpinnerIcon } from '@/components/Icons';
+import { GRADES_LIST } from '@/constants';
+import { normalizeSubjectName } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

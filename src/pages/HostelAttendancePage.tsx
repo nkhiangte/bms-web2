@@ -1,7 +1,7 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, ClipboardDocumentCheckIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, ClipboardDocumentCheckIcon } from '@/components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

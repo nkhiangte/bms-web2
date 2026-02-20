@@ -1,10 +1,10 @@
 
 import React, { useState, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User } from '../types';
-import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon } from '../components/Icons';
-import PhotoWithFallback from '../components/PhotoWithFallback';
-import { resizeImage, uploadToImgBB } from '../utils';
+import { User } from '@/types';
+import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon } from '@/components/Icons';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
+import { resizeImage, uploadToImgBB } from '@/utils';
 
 const { Link } = ReactRouterDOM as any;
 

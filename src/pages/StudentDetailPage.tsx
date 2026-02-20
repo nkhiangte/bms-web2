@@ -533,4 +533,3 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
 };
 
 export default StudentDetailPage;
-    

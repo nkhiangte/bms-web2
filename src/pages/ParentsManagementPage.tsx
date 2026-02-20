@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { User, Student, StudentClaim } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon, PhoneIcon, WhatsappIcon } from '../components/Icons';
+import { User, Student, StudentClaim } from '@/types';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon, PhoneIcon, WhatsappIcon } from '@/components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
-import ConfirmationModal from '../components/ConfirmationModal';
-import { firebase } from '../firebaseConfig';
-import ParentReviewModal from '../components/ParentReviewModal';
-import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp } from '../utils';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { firebase } from '@/firebaseConfig';
+import ParentReviewModal from '@/components/ParentReviewModal';
+import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

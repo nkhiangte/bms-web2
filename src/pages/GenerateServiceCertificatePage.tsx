@@ -1,9 +1,9 @@
 
 import React, { useState, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, ServiceCertificateRecord, EmploymentStatus, User } from '../types';
-import { BackIcon, HomeIcon, DocumentPlusIcon, CheckIcon } from '../components/Icons';
-import ConfirmationModal from '../components/ConfirmationModal';
+import { Staff, ServiceCertificateRecord, EmploymentStatus, User } from '@/types';
+import { BackIcon, HomeIcon, DocumentPlusIcon, CheckIcon } from '@/components/Icons';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

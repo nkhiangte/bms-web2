@@ -1,7 +1,7 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, DocumentReportIcon } from '../components/Icons';
-import { TERMINAL_EXAMS } from '../constants';
+import { BackIcon, HomeIcon, DocumentReportIcon } from '@/components/Icons';
+import { TERMINAL_EXAMS } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

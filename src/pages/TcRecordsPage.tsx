@@ -2,9 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { TcRecord } from '../types';
-import { BackIcon, HomeIcon, PrinterIcon, DocumentPlusIcon, SearchIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
+import { TcRecord } from '@/types';
+import { BackIcon, HomeIcon, PrinterIcon, DocumentPlusIcon, SearchIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { GRADES_LIST, TERMINAL_EXAMS } from '../constants';
-import { BookOpenIcon, HomeIcon, BackIcon } from '../components/Icons';
-import { Grade, GradeDefinition, Staff, User } from '../types';
+import { GRADES_LIST, TERMINAL_EXAMS } from '@/constants';
+import { BookOpenIcon, HomeIcon, BackIcon } from '@/components/Icons';
+import { Grade, GradeDefinition, Staff, User } from '@/types';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 

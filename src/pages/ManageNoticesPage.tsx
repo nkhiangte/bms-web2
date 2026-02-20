@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Notice, Grade } from '../types';
-import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon, MegaphoneIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
-import NoticeFormModal from '../components/NoticeFormModal';
-import { GRADES_LIST } from '../constants';
+import { User, Notice, Grade } from '@/types';
+import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon, MegaphoneIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
+import NoticeFormModal from '@/components/NoticeFormModal';
+import { GRADES_LIST } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

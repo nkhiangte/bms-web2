@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon } from '../components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon } from '@/components/Icons';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 

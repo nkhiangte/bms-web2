@@ -9,7 +9,7 @@ import {
     DocumentReportIcon,
     CogIcon,
     CurrencyDollarIcon
-} from '../components/Icons';
+} from '@/components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, CalendarEvent, CalendarEventType } from '../types';
-import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon } from '../components/Icons';
+import { User, CalendarEvent, CalendarEventType } from '@/types';
+import { BackIcon, HomeIcon, PlusIcon, EditIcon, TrashIcon } from '@/components/Icons';
 
 const { Link } = ReactRouterDOM as any;
 

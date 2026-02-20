@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, UploadIcon, SaveIcon, SpinnerIcon } from '../components/Icons';
-import { resizeImage, uploadToImgBB } from '../utils';
+import { BackIcon, HomeIcon, UploadIcon, SaveIcon, SpinnerIcon } from '@/components/Icons';
+import { resizeImage, uploadToImgBB } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

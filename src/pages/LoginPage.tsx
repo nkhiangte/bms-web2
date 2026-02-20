@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
 
-const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
+const { Link, useLocation } = ReactRouterDOM as any;
 
 interface LoginPageProps {
   onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
@@ -24,7 +24,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [loading, setLoading] = useState(false);
   
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const state = location.state as { message?: string } | null;
@@ -57,11 +56,10 @@ const LoginPage: React.FC<LoginPageProps> = ({
     
     try {
         const result = await onLogin(email, password);
-        if (result && result.success) {
-            navigate('/portal/dashboard', { replace: true });
-        } else if (result && result.message) {
+        if (!result?.success && result?.message) {
             setFormError(result.message);
         }
+        // Navigation is handled by App.tsx route guard once onAuthStateChanged fires
     } catch (err: any) {
         setFormError(err.message || "An unexpected error occurred during login.");
     } finally {
@@ -75,11 +73,10 @@ const LoginPage: React.FC<LoginPageProps> = ({
     setLoading(true);
     try {
       const result = await onGoogleSignIn();
-      if (result && result.success) {
-        navigate('/portal/dashboard', { replace: true });
-      } else if (result && result.message) {
+      if (!result?.success && result?.message) {
         setFormError(result.message);
       }
+      // Navigation is handled by App.tsx route guard once onAuthStateChanged fires
     } catch (err: any) {
       setFormError(err.message || "An unexpected error occurred during Google sign-in.");
     } finally {

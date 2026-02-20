@@ -470,56 +470,18 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                     <p className="text-xs text-slate-400 mb-3">{images.length} image(s) in this folder</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                         {images.map(img => (
-                                            <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
-                                                {editingId === img.id ? (
-                                                    // Edit mode overlay
-                                                    <div className="absolute inset-0 bg-black/80 z-20 flex flex-col p-3 gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={editTitle}
-                                                            onChange={e => setEditTitle(e.target.value)}
-                                                            className="w-full rounded px-2 py-1 text-xs bg-white text-slate-800 focus:outline-none"
-                                                            placeholder="Title"
-                                                            autoFocus
-                                                        />
-                                                        <textarea
-                                                            value={editCaption}
-                                                            onChange={e => setEditCaption(e.target.value)}
-                                                            className="w-full rounded px-2 py-1 text-xs bg-white text-slate-800 focus:outline-none flex-1 resize-none"
-                                                            placeholder="Caption (optional)"
-                                                            rows={3}
-                                                        />
-                                                        <div className="flex gap-1.5">
-                                                            <button onClick={handleSaveEdit} disabled={isSavingEdit}
-                                                                className="flex-1 flex items-center justify-center gap-1 bg-sky-600 text-white text-xs py-1.5 rounded font-semibold hover:bg-sky-700 disabled:opacity-50">
-                                                                {isSavingEdit ? <SpinnerIcon className="w-3 h-3" /> : <CheckIcon className="w-3 h-3" />}
-                                                                Save
-                                                            </button>
-                                                            <button onClick={() => setEditingId(null)}
-                                                                className="flex-1 bg-slate-600 text-white text-xs py-1.5 rounded font-semibold hover:bg-slate-700">
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : null}
+                                            <div key={img.id}
+                                                className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm cursor-pointer"
+                                                onClick={() => handleStartEdit(img)}
+                                            >
                                                 <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
-                                                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
                                                     <p className="text-white text-xs font-semibold truncate">{img.title}</p>
                                                     {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
                                                 </div>
-                                                <div className="absolute top-1.5 right-1.5 flex gap-1">
+                                                <div className="absolute top-1.5 right-1.5">
                                                     <button
-                                                        onClick={() => handleStartEdit(img)}
-                                                        className="bg-sky-600 text-white p-1.5 rounded-full hover:bg-sky-700 shadow"
-                                                        title="Edit title & caption"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="12" height="12">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(img.id)}
+                                                        onClick={e => { e.stopPropagation(); handleDelete(img.id); }}
                                                         className="bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 shadow"
                                                         title="Delete image"
                                                     >
@@ -528,6 +490,61 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                 </div>
                                             </div>
                                         ))}
+
+                                        {/* Lightbox / Edit Modal */}
+                                        {editingId && (() => {
+                                            const img = images.find(i => i.id === editingId);
+                                            if (!img) return null;
+                                            return (
+                                                <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4"
+                                                    onClick={() => setEditingId(null)}>
+                                                    <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+                                                        onClick={e => e.stopPropagation()}>
+                                                        {/* Image */}
+                                                        <div className="flex-1 bg-black flex items-center justify-center min-h-0" style={{maxHeight: '60vh'}}>
+                                                            <img src={img.imageSrc} alt={img.title}
+                                                                className="max-w-full max-h-full object-contain" />
+                                                        </div>
+                                                        {/* Edit fields */}
+                                                        <div className="p-5 space-y-3 border-t border-slate-200">
+                                                            <h3 className="font-bold text-slate-800 text-sm">Edit Details</h3>
+                                                            <div>
+                                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={editTitle}
+                                                                    onChange={e => setEditTitle(e.target.value)}
+                                                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                                                                    placeholder="Image title"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-semibold text-slate-600 mb-1">Caption</label>
+                                                                <textarea
+                                                                    value={editCaption}
+                                                                    onChange={e => setEditCaption(e.target.value)}
+                                                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 resize-none"
+                                                                    placeholder="Add a caption (optional)"
+                                                                    rows={2}
+                                                                />
+                                                            </div>
+                                                            <div className="flex justify-end gap-3 pt-1">
+                                                                <button onClick={() => setEditingId(null)}
+                                                                    className="px-4 py-2 text-sm font-semibold border border-slate-300 rounded-lg hover:bg-slate-100">
+                                                                    Close
+                                                                </button>
+                                                                <button onClick={handleSaveEdit} disabled={isSavingEdit}
+                                                                    className="flex items-center gap-2 bg-sky-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50">
+                                                                    {isSavingEdit ? <SpinnerIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
+                                                                    Save Changes
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </>
                             )}

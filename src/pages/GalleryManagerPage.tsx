@@ -210,6 +210,31 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
 
     const pendingCount = uploadItems.filter(i => i.status === 'pending').length;
 
+    // Edit state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [editCaption, setEditCaption] = useState('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    const handleStartEdit = (img: GalleryImage) => {
+        setEditingId(img.id);
+        setEditTitle(img.title);
+        setEditCaption(img.caption);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingId) return;
+        setIsSavingEdit(true);
+        try {
+            const updated = images.map(img => img.id === editingId
+                ? { ...img, title: editTitle, caption: editCaption }
+                : img);
+            await db.collection('website_content').doc(selectedId).set({ items: updated }, { merge: true });
+            setEditingId(null);
+        } catch { alert('Failed to save.'); }
+        finally { setIsSavingEdit(false); }
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
             {/* Header */}
@@ -446,19 +471,61 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                         {images.map(img => (
                                             <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                                                {editingId === img.id ? (
+                                                    // Edit mode overlay
+                                                    <div className="absolute inset-0 bg-black/80 z-20 flex flex-col p-3 gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={editTitle}
+                                                            onChange={e => setEditTitle(e.target.value)}
+                                                            className="w-full rounded px-2 py-1 text-xs bg-white text-slate-800 focus:outline-none"
+                                                            placeholder="Title"
+                                                            autoFocus
+                                                        />
+                                                        <textarea
+                                                            value={editCaption}
+                                                            onChange={e => setEditCaption(e.target.value)}
+                                                            className="w-full rounded px-2 py-1 text-xs bg-white text-slate-800 focus:outline-none flex-1 resize-none"
+                                                            placeholder="Caption (optional)"
+                                                            rows={3}
+                                                        />
+                                                        <div className="flex gap-1.5">
+                                                            <button onClick={handleSaveEdit} disabled={isSavingEdit}
+                                                                className="flex-1 flex items-center justify-center gap-1 bg-sky-600 text-white text-xs py-1.5 rounded font-semibold hover:bg-sky-700 disabled:opacity-50">
+                                                                {isSavingEdit ? <SpinnerIcon className="w-3 h-3" /> : <CheckIcon className="w-3 h-3" />}
+                                                                Save
+                                                            </button>
+                                                            <button onClick={() => setEditingId(null)}
+                                                                className="flex-1 bg-slate-600 text-white text-xs py-1.5 rounded font-semibold hover:bg-slate-700">
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
                                                 <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
                                                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <p className="text-white text-xs font-semibold truncate">{img.title}</p>
                                                     {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
                                                 </div>
-                                                <button
-                                                    onClick={() => handleDelete(img.id)}
-                                                    className="absolute top-1.5 right-1.5 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow"
-                                                    title="Delete image"
-                                                >
-                                                    <TrashIcon className="w-3.5 h-3.5" />
-                                                </button>
+                                                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleStartEdit(img)}
+                                                        className="bg-sky-600 text-white p-1.5 rounded-full hover:bg-sky-700 shadow"
+                                                        title="Edit title & caption"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="12" height="12">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(img.id)}
+                                                        className="bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 shadow"
+                                                        title="Delete image"
+                                                    >
+                                                        <TrashIcon className="w-3 h-3" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

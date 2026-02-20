@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '@/types';
@@ -10,7 +9,7 @@ import ExamPerformanceCard from '@/components/ExamPerformanceCard';
 import { normalizeSubjectName, subjectsMatch } from '@/utils';
 import { db } from '@/firebaseConfig';
 
-const { useParams, Link } = ReactRouterDOM as any;
+const { Link, useParams } = ReactRouterDOM as any;
 
 interface AcademicPerformancePageProps {
   students: Student[];

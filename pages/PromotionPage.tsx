@@ -2,10 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, StudentStatus, User } from '@/types';
+import { Student, Grade, GradeDefinition, StudentStatus, User } from '../types';
 import { GRADES_LIST } from '../constants';
-import { BackIcon, HomeIcon, AcademicCapIcon } from '@/components/Icons';
-import ConfirmationModal from '@/components/ConfirmationModal';
+import { BackIcon, HomeIcon, AcademicCapIcon } from '../components/Icons';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { calculateStudentResult } from '../utils';
 
 const { useNavigate, Link } = ReactRouterDOM as any;

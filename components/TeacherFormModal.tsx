@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '@/types';
+import { Staff, Grade, GradeDefinition, Gender, MaritalStatus, Department, Designation, EmployeeType, Qualification, BloodGroup, EmploymentStatus, StaffType, SubjectAssignment } from '../types';
 import { 
     GRADES_LIST,
     GENDER_LIST, 
@@ -12,9 +13,9 @@ import {
     BLOOD_GROUP_LIST,
     EMPLOYMENT_STATUS_LIST,
     STAFF_TYPE_LIST,
-} from '@/constants';
+} from '../constants';
 import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon, PlusIcon, TrashIcon } from './Icons';
-import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '@/utils';
+import { formatDateForDisplay, formatDateForStorage, resizeImage, uploadToImgBB } from '../utils';
 import CustomDatePicker from './CustomDatePicker';
 
 const AccordionSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {
@@ -209,7 +210,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
 
     const gradeOptions = Object.keys(gradeDefinitions).map(gradeKey => {
         const gradeDef = gradeDefinitions[gradeKey as Grade];
-        const assignedTeacher = allStaff.find(s => s.id === gradeDef?.classTeacherId);
+        const assignedTeacher = gradeDef.classTeacherId ? allStaff.find(s => s.id === gradeDef.classTeacherId) : null;
         
         let label = gradeKey;
         if (assignedTeacher && (!staffMember || assignedTeacher.id !== staffMember.id)) {

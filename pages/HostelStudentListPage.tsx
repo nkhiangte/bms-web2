@@ -1,10 +1,10 @@
 
 
 import React, { useMemo, useState } from 'react';
-import * => ReactRouterDOM from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { HostelResident, Student, User } from '../types';
 import { BackIcon, HomeIcon, UsersIcon, PlusIcon, EditIcon, TrashIcon } from '../components/Icons';
-import { formatStudentId } from '@/utils';
+import { formatStudentId } from '../utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -33,7 +33,7 @@ const HostelStudentListPage: React.FC<HostelStudentListPageProps> = ({ residents
                 studentClass: student?.grade || 'N/A',
                 studentIdForDisplay: student ? formatStudentId(student, academicYear) : 'N/A',
             };
-        }).sort((a, b) => a.studentName.localeCompare(b.name));
+        }).sort((a, b) => a.studentName.localeCompare(b.studentName));
     }, [residents, students, academicYear]);
 
     const handleSearchSubmit = async (e: React.FormEvent) => {

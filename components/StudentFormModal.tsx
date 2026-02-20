@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { Grade, Student, Gender, StudentStatus, Category, BloodGroup } from '@/types';
-import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '@/constants';
+import { Grade, Student, Gender, StudentStatus, Category, BloodGroup } from '../types';
+import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../constants';
 import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon } from './Icons';
-import { formatStudentId, resizeImage, uploadToImgBB } from '@/utils';
+import { formatDateForDisplay, formatDateForStorage, formatStudentId, resizeImage, uploadToImgBB } from '../utils';
 import CustomDatePicker from './CustomDatePicker';
 
 interface StudentFormModalProps {

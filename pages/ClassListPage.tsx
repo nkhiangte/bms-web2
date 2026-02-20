@@ -3,8 +3,8 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { GRADES_LIST } from '../constants';
-import { BookOpenIcon, HomeIcon, BackIcon, CogIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
-import { Grade, GradeDefinition, Staff, User } from '@/types';
+import { BookOpenIcon, HomeIcon, BackIcon, CogIcon, ArrowUpOnSquareIcon } from '../components/Icons';
+import { Grade, GradeDefinition, Staff, User } from '../types';
 
 const { Link, useNavigate } = ReactRouterDOM;
 

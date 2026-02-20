@@ -3,14 +3,14 @@
 
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
-import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '@/components/Icons';
+import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '../types';
+import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '../components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp } from '../utils';
-import PhotoWithFallback from '@/components/PhotoWithFallback';
-import { ImportStudentsModal } from '@/components/ImportStudentsModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
-import StudentFormModal from '@/components/StudentFormModal'; // FIX: Import StudentFormModal
+import PhotoWithFallback from '../components/PhotoWithFallback';
+import { ImportStudentsModal } from '../components/ImportStudentsModal';
+import ConfirmationModal from '../components/ConfirmationModal';
+import ExamFeeCollectionModal from '../components/ExamFeeCollectionModal';
+import StudentFormModal from '../components/StudentFormModal'; 
 
 const { Link, useNavigate, useParams } = ReactRouterDOM;
 
@@ -276,5 +276,34 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 isOpen={isConfirmDeleteModalOpen}
                 onClose={() => setIsConfirmDeleteModalOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Confirm Student D...
-```
+                title="Confirm Student Deletion"
+            >
+                <p>Are you sure you want to remove <span className="font-bold">{studentToDelete?.name}</span> from the active student list? This will mark the student as 'Dropped'.</p>
+            </ConfirmationModal>
+
+            {grade && (
+                <StudentFormModal
+                    isOpen={isAddStudentModalOpen}
+                    onClose={() => setIsAddStudentModalOpen(false)}
+                    onSubmit={handleAddStudentSubmit}
+                    student={null}
+                    newStudentTargetGrade={grade}
+                    academicYear={academicYear}
+                    isSaving={isSavingStudent}
+                />
+            )}
+            {grade && (
+                <ExamFeeCollectionModal
+                    isOpen={isExamFeeModalOpen}
+                    onClose={() => setIsExamFeeModalOpen(false)}
+                    onSave={onUpdateBulkFeePayments}
+                    students={classStudents}
+                    grade={grade}
+                    feeStructure={feeStructure}
+                />
+            )}
+        </>
+    );
+};
+
+export default ClassStudentsPage;

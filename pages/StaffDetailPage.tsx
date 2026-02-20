@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, Grade, GradeDefinition, EmploymentStatus, SubjectAssignment } from '../types';
 import { BackIcon, EditIcon, UserIcon, HomeIcon, MailIcon, PhoneIcon, BriefcaseIcon, AcademicCapIcon, CurrencyDollarIcon, BookOpenIcon } from '../components/Icons';
-import { formatDateForDisplay } from '@/utils';
+import { formatDateForDisplay } from '../utils';
 import PhotoWithFallback from '../components/PhotoWithFallback';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;

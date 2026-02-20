@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission, FeePayments } from '../../types';
+import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission } from '../../types';
 import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon } from '../../components/Icons';
 import { resizeImage, uploadToImgBB } from '../../utils';
+import { jsPDF } from 'jspdf';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '../../constants';
+import EditableContent from '../../components/EditableContent';
 import { db } from '../../firebaseConfig';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
@@ -101,7 +103,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }, [allItems]);
 
     const merchandiseTotal = useMemo(() => {
-// FIX: Cast the result of Object.entries to explicitly type the 'details' object, resolving property access errors.
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             if (!item) return total;
@@ -298,3 +299,4 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 };
 
 export default AdmissionPaymentPage;
+    

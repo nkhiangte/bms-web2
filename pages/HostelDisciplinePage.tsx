@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, ShieldCheckIcon, PlusIcon, EditIcon, TrashIcon, InboxArrowDownIcon } from '../components/Icons';
@@ -151,7 +152,7 @@ const HostelDisciplinePage: React.FC<HostelDisciplinePageProps> = ({ user, stude
                             {filteredLog.map(entry => (
                                 <tr key={entry.id}>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-sky-700">
-                                        <Link to={`/student/${entry.studentId}`} className="hover:underline">{entry.studentName}</Link>
+                                        <Link to={`/portal/student/${entry.studentId}`} className="hover:underline">{entry.studentName}</Link>
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatDateForDisplay(entry.date)}</td>
                                     <td className="px-4 py-3 text-sm text-slate-800">{entry.category}</td>

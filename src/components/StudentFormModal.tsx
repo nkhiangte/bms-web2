@@ -1,11 +1,10 @@
 
-
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { Grade, Student, Gender, StudentStatus, Category, BloodGroup } from '@/types';
 import { GRADES_LIST, GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '@/constants';
-import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon } from '@/components/Icons';
+import { ChevronDownIcon, ChevronUpIcon, UserIcon, SpinnerIcon } from './Icons';
 import { formatDateForDisplay, formatDateForStorage, formatStudentId, resizeImage, uploadToImgBB } from '@/utils';
-import CustomDatePicker from '@/components/CustomDatePicker';
+import CustomDatePicker from './CustomDatePicker';
 
 interface StudentFormModalProps {
   isOpen: boolean;
@@ -343,3 +342,4 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
 };
 
 export default StudentFormModal;
+    

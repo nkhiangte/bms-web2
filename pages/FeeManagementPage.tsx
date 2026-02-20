@@ -2,10 +2,10 @@
 
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '@/components/Icons';
-import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '@/types';
-import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '@/utils';
-import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
+import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '../types';
+import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
+import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '../constants';
 
 const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
 
@@ -70,7 +70,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   const [isSavingStructure, setIsSavingStructure] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
-  // State for adding grades
   const [addingGradeToSet, setAddingGradeToSet] = useState<string | null>(null); 
 
   const duesSummary = useMemo(() => {
@@ -79,7 +78,6 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
   }, [foundStudent, feeStructure]);
 
   useEffect(() => {
-    // Only sync editable structure when we are not currently editing or saving
     if (!isEditingStructure && !isSavingStructure && feeStructure && feeStructure.set1) {
         setEditableStructure(feeStructure);
     }

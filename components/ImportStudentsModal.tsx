@@ -5,7 +5,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Student, Grade, StudentStatus, Gender, Category, BloodGroup } from '../types';
 import { createDefaultFeePayments } from '../utils';
-import { ArrowUpOnSquareIcon, XIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon } from './Icons';
+import { ArrowUpOnSquareIcon, XIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, InboxArrowDownIcon } from './Icons';
 import { GENDER_LIST, CATEGORY_LIST, BLOOD_GROUP_LIST } from '../constants';
 
 interface ImportStudentsModalProps {
@@ -208,72 +208,8 @@ export const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen
                     <div className="p-4 bg-slate-50 border rounded-lg space-y-3">
                         <h3 className="font-bold text-slate-800">Instructions</h3>
                         <ol className="list-decimal list-inside text-sm text-slate-700 space-y-1">
-                            <li><a href="/students_template.xlsx" download className="text-sky-600 font-semibold hover:underline">Download the Excel template.</a></li>
+                            <li><button onClick={handleDownloadTemplate} className="text-sky-600 font-semibold hover:underline inline-flex items-center gap-1"><InboxArrowDownIcon className="w-4 h-4"/> Download the Excel template.</button></li>
                             <li>Fill in the student details. Do not change the column headers.</li>
                             <li>Select the target class for import below.</li>
                             <li>Upload the completed file. The system will validate the data before importing.</li>
-                        </ol>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                        <div>
-                            <label htmlFor="target-grade" className="block text-sm font-bold text-slate-800">Target Class</label>
-                            <select id="target-grade" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value as Grade)} disabled={!!grade || isProcessing} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm disabled:bg-slate-100">
-                                <option value="">-- Select a class --</option>
-                                {allGrades.map(g => <option key={g} value={g}>{g}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="file-upload" className="block text-sm font-bold text-slate-800">Upload File</label>
-                            <input type="file" id="file-upload" onChange={handleFileChange} disabled={!targetGrade || isProcessing} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 disabled:opacity-50"/>
-                        </div>
-                    </div>
-                    
-                    {parseError && <p className="text-red-600 font-semibold">{parseError}</p>}
-                    
-                    {(isProcessing || parsedStudents.length > 0) && (
-                        <div className="mt-4">
-                            <h3 className="font-bold text-slate-800 mb-2">Validation Preview</h3>
-                            {isProcessing ? (
-                                <div className="flex items-center justify-center gap-2 p-8"><SpinnerIcon className="w-6 h-6"/><span>Processing file...</span></div>
-                            ) : (
-                                <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                                    <table className="min-w-full text-sm">
-                                        <thead className="bg-slate-100 sticky top-0"><tr className="text-left"><th className="p-2">Roll</th><th className="p-2">Name</th><th className="p-2">Status</th><th className="p-2">Errors</th></tr></thead>
-                                        <tbody className="divide-y">
-                                            {parsedStudents.map((s, i) => (
-                                                <tr key={i} className={s.errors.length > 0 ? 'bg-red-50' : 'bg-emerald-50'}>
-                                                    <td className="p-2 font-mono">{s.rollNo}</td>
-                                                    <td className="p-2 font-semibold">{s.name}</td>
-                                                    <td className="p-2">{s.errors.length > 0 ? <XCircleIcon className="w-5 h-5 text-red-500"/> : <CheckCircleIcon className="w-5 h-5 text-emerald-500"/>}</td>
-                                                    <td className="p-2 text-red-700">{s.errors.join(', ')}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                <div className="bg-slate-50 px-6 py-4 flex justify-between items-center rounded-b-xl border-t">
-                    <div>
-                        {parsedStudents.length > 0 && (
-                            <span className={`font-semibold ${hasErrors ? 'text-amber-700' : 'text-emerald-700'}`}>
-                                {validCount} of {parsedStudents.length} records are valid and ready to import.
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex gap-3">
-                        <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isImporting}>Cancel</button>
-                        <button type="button" onClick={handleSubmit} className="btn btn-primary" disabled={isImporting || isProcessing || hasErrors || parsedStudents.length === 0}>
-                            {isImporting ? <SpinnerIcon className="w-5 h-5"/> : <ArrowUpOnSquareIcon className="w-5 h-5"/>}
-                            {isImporting ? 'Importing...' : `Import ${validCount} Students`}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+                        </

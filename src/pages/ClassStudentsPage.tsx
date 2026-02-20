@@ -8,6 +8,7 @@ import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
+import StudentFormModal from '@/components/StudentFormModal'; 
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -40,7 +41,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     onUpdateBulkFeePayments,
     feeStructure
 }) => {
-    const { grade: encodedGrade } = useParams();
+    const { grade: encodedGrade } = useParams() as { grade: string };
     const grade = encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined;
     const navigate = useNavigate();
 

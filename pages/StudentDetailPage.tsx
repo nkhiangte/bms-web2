@@ -1,12 +1,13 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '@/types';
-import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '@/components/Icons';
-import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp, getFeeDetails } from '@/utils';
-import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '@/constants';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import PhotoWithFallback from '@/components/PhotoWithFallback';
+import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '../types';
+import { BackIcon, EditIcon, UserIcon, DocumentReportIcon, HomeIcon, CurrencyDollarIcon, CheckCircleIcon, XCircleIcon, MessageIcon, WhatsappIcon, PlusIcon, SpinnerIcon, CheckIcon, TrashIcon, ChevronDownIcon, CalendarDaysIcon, ClockIcon, ExclamationTriangleIcon } from '../components/Icons';
+import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumberForWhatsApp, getFeeDetails } from '../utils';
+import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '../constants';
+import ConfirmationModal from '../components/ConfirmationModal';
+import PhotoWithFallback from '../components/PhotoWithFallback';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -521,5 +522,15 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         isOpen={!!entryToDelete}
         onClose={() => setEntryToDelete(null)}
         onConfirm={handleConfirmDeleteEntry}
-        title="Confirm D...
-```
+        title="Confirm Deletion"
+    >
+        <p>Are you sure you want to delete this conduct log entry? This action cannot be undone.</p>
+        <div className="mt-2 p-2 bg-slate-100 rounded-md text-sm">
+            <p><span className="font-semibold">{entryToDelete?.category}:</span> {entryToDelete?.description}</p>
+        </div>
+    </ConfirmationModal>
+    </>
+  );
+};
+
+export default StudentDetailPage;

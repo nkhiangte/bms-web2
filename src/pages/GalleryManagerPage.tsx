@@ -10,7 +10,7 @@ const { useNavigate, Link } = ReactRouterDOM as any;
 interface GalleryManagerPageProps { user: User; }
 interface GalleryImage { id: string; title: string; caption: string; imageSrc: string; }
 interface GalleryFolder { name: string; subfolders?: GalleryFolder[]; }
-interface UploadItem { file: File; preview: string; title: string; status: 'pending' | 'uploading' | 'done' | 'error'; }
+interface UploadItem { file: File; preview: string; title: string; caption: string; status: 'pending' | 'uploading' | 'done' | 'error'; }
 
 const FOLDERS_DOC_ID = 'gallery_folders';
 
@@ -164,6 +164,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
         const items: UploadItem[] = files.map(file => ({
             file, preview: URL.createObjectURL(file),
             title: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+            caption: '',
             status: 'pending',
         }));
         setUploadItems(prev => [...prev, ...items]);
@@ -183,7 +184,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                 newImages.push({
                     id: `${Date.now()}_${i}`,
                     title: uploadItems[i].title || 'Untitled',
-                    caption: '',
+                    caption: uploadItems[i].caption || '',
                     imageSrc: url,
                 });
                 setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'done' } : it));
@@ -371,14 +372,24 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                     item.status === 'uploading' ? 'bg-sky-50 border-sky-300' : 'bg-white border-slate-200'
                                                 }`}>
                                                     <img src={item.preview} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
-                                                    <input
-                                                        type="text"
-                                                        value={item.title}
-                                                        onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, title: e.target.value } : it))}
-                                                        className="flex-1 border border-slate-200 rounded px-2 py-1 text-xs min-w-0 focus:outline-none focus:border-sky-400"
-                                                        disabled={item.status !== 'pending'}
-                                                        placeholder="Image title"
-                                                    />
+                                                    <div className="flex-1 flex flex-col gap-1 min-w-0">
+                                                        <input
+                                                            type="text"
+                                                            value={item.title}
+                                                            onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, title: e.target.value } : it))}
+                                                            className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
+                                                            disabled={item.status !== 'pending'}
+                                                            placeholder="Title"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={item.caption}
+                                                            onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, caption: e.target.value } : it))}
+                                                            className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
+                                                            disabled={item.status !== 'pending'}
+                                                            placeholder="Caption (optional)"
+                                                        />
+                                                    </div>
                                                     <div className="w-16 text-center flex-shrink-0 text-xs font-semibold">
                                                         {item.status === 'pending' && <span className="text-slate-400">Ready</span>}
                                                         {item.status === 'uploading' && <SpinnerIcon className="w-4 h-4 text-sky-600 mx-auto" />}
@@ -438,7 +449,8 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                 <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
                                                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <p className="text-white text-xs truncate">{img.title}</p>
+                                                    <p className="text-white text-xs font-semibold truncate">{img.title}</p>
+                                                    {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
                                                 </div>
                                                 <button
                                                     onClick={() => handleDelete(img.id)}

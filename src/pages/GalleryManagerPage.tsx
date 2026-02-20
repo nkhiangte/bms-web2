@@ -508,7 +508,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                     <p className="text-white text-xs font-semibold truncate">{img.title}</p>
                                                     {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
                                                 </div>
-                                                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute top-1.5 right-1.5 flex gap-1">
                                                     <button
                                                         onClick={() => handleStartEdit(img)}
                                                         className="bg-sky-600 text-white p-1.5 rounded-full hover:bg-sky-700 shadow"

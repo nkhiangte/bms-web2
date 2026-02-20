@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '../types';
-import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '../components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '../utils';
-import { ImportMarksModal } from '../components/ImportMarksModal';
-import ConfirmationModal from '../components/ConfirmationModal';
-import EditSubjectsModal from '../components/EditSubjectsModal';
-import { db } from '../firebaseConfig';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
+import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
+import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { ImportMarksModal } from '@/components/ImportMarksModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import EditSubjectsModal from '@/components/EditSubjectsModal';
+import { db } from '@/firebaseConfig';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -218,18 +218,34 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark };
+      // Explicitly construct the object to match ProcessedStudent interface
+      const processed: ProcessedStudent = {
+          ...student,
+          grandTotal: localGrandTotal,
+          examTotal: localExamTotal,
+          activityTotal: localActivityTotal,
+          percentage,
+          result,
+          division,
+          academicGrade,
+          remark,
+          rank: 0 // Placeholder, updated below
+      };
+      return processed;
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => Number(b) - Number(a));
     
     const finalData = studentData.map(s => {
+        let rank: number | '-' = '-';
         if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
-            return { ...s, rank: '-' as const };
+            rank = '-';
+        } else {
+            const rankIndex = uniqueScores.indexOf(s.grandTotal);
+            rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
         }
-        const rankIndex = uniqueScores.indexOf(s.grandTotal);
-        return { ...s, rank: rankIndex !== -1 ? (rankIndex + 1) : '-' as const };
+        return { ...s, rank };
     });
     
     let sortedData = finalData;

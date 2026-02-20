@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { User } from '../types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon } from '../components/Icons';
+import { User } from '@/types';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon } from '@/components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

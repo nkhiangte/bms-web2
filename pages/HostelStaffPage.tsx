@@ -1,8 +1,7 @@
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, BriefcaseIcon, UserIcon, PhoneIcon, UserGroupIcon, CalendarDaysIcon, PlusIcon, EditIcon, TrashIcon } from '../components/Icons';
-import { HostelStaff, HostelStaffRole, PaymentStatus, User } from '../types';
+import { BackIcon, HomeIcon, BriefcaseIcon, UserIcon, PhoneIcon, UserGroupIcon, CalendarDaysIcon, PlusIcon, EditIcon, TrashIcon } from '@/components/Icons';
+import { HostelStaff, HostelStaffRole, PaymentStatus, User } from '@/types';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,10 +1,8 @@
-
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { HostelResident, Student } from '../types';
-import { BackIcon, HomeIcon, BedIcon, UsersIcon } from '../components/Icons';
-import { HOSTEL_DORMITORY_LIST } from '../constants';
+import { HostelResident, Student } from '@/types';
+import { BackIcon, HomeIcon, BedIcon, UsersIcon } from '@/components/Icons';
+import { HOSTEL_DORMITORY_LIST } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -63,7 +61,7 @@ const HostelRoomListPage: React.FC<HostelRoomListPageProps> = ({ residents, stud
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {dorm.occupants.map(occupant => (
                                     <Link 
-                                        to={`/portal/student/${occupant.id}`} 
+                                        to={`/student/${occupant.id}`} 
                                         key={occupant.id}
                                         className="bg-slate-50 p-3 rounded-lg border hover:bg-sky-50 hover:border-sky-300 transition-colors"
                                     >

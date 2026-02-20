@@ -2,11 +2,11 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { GRADES_LIST } from '../constants';
-import { BookOpenIcon, HomeIcon, BackIcon, CogIcon, ArrowUpOnSquareIcon } from '../components/Icons';
-import { Grade, GradeDefinition, Staff, User } from '../types';
+import { GRADES_LIST } from '@/constants';
+import { BookOpenIcon, HomeIcon, BackIcon, CogIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
+import { Grade, GradeDefinition, Staff, User } from '@/types';
 
-const { Link, useNavigate } = ReactRouterDOM;
+const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface ClassListPageProps {
     gradeDefinitions: Record<Grade, GradeDefinition>;

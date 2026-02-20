@@ -1,18 +1,15 @@
 
-
-
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '../types';
-import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '../components/Icons';
-import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp } from '../utils';
-import PhotoWithFallback from '../components/PhotoWithFallback';
-import { ImportStudentsModal } from '../components/ImportStudentsModal';
-import ConfirmationModal from '../components/ConfirmationModal';
-import ExamFeeCollectionModal from '../components/ExamFeeCollectionModal';
-import StudentFormModal from '../components/StudentFormModal'; 
+import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
+import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '@/components/Icons';
+import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp } from '@/utils';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
+import { ImportStudentsModal } from '@/components/ImportStudentsModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
 
-const { Link, useNavigate, useParams } = ReactRouterDOM;
+const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface ClassStudentsPageProps {
   students: Student[];

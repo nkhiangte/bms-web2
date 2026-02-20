@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '../components/Icons';
-import AcademicYearForm from '../components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType } from '../types';
+import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '@/components/Icons';
+import AcademicYearForm from '@/components/AcademicYearForm';
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry } from '@/types'; // FIX: Add HostelDisciplineEntry import
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -17,6 +18,7 @@ interface DashboardPageProps {
   pendingParentCount: number;
   pendingStaffCount: number;
   onUpdateAcademicYear: (year: string) => Promise<void>;
+  disciplineLog: HostelDisciplineEntry[]; // FIX: Add disciplineLog prop
 }
 
 const DashboardCard: React.FC<{
@@ -123,7 +125,7 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear, disciplineLog }) => { // FIX: Added disciplineLog prop
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
   
@@ -147,9 +149,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
             const eventDate = new Date(event.date + 'T00:00:00');
             return eventDate >= today;
         })
-        .slice(0, 5);
+        .slice(0, 5); // Show up to 5 upcoming events
     }, [calendarEvents]);
 
+  // Handle pending user state early return - This is safe because useMemo is called above
   if (user.role === 'pending' || user.role === 'pending_parent') {
       return (
           <div className="text-center bg-white p-10 rounded-xl shadow-lg">
@@ -173,6 +176,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
 
   return (
     <div>
+        {/* Academic Year Modal */}
         {(!academicYear || isChangingYear) && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative">

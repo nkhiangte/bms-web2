@@ -1,11 +1,9 @@
-
-
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { InventoryItem, User } from '../types';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ArchiveBoxIcon } from '../components/Icons';
-import InventoryTable from '../components/InventoryTable';
-import { INVENTORY_CATEGORY_LIST, INVENTORY_STATUS_LIST } from '../constants';
+import { InventoryItem, User } from '@/types';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ArchiveBoxIcon } from '@/components/Icons';
+import InventoryTable from '@/components/InventoryTable';
+import { INVENTORY_CATEGORY_LIST, INVENTORY_STATUS_LIST } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

@@ -1,10 +1,9 @@
 
-
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Staff, StaffAttendanceRecord, AttendanceStatus, CalendarEvent } from '../types';
-import { BackIcon, HomeIcon, CalendarDaysIcon, CheckIcon, XIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, DocumentReportIcon } from '../components/Icons';
-import { getDistanceFromLatLonInM, exportAttendanceToCsv } from '../utils';
+import { User, Staff, StaffAttendanceRecord, AttendanceStatus, CalendarEvent } from '@/types';
+import { BackIcon, HomeIcon, CalendarDaysIcon, CheckIcon, XIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, DocumentReportIcon } from '@/components/Icons';
+import { getDistanceFromLatLonInM, exportAttendanceToCsv } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 

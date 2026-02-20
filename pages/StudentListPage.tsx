@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, Gender } from '../types';
-import { GRADES_LIST } from '../constants';
-import StudentTable from '../components/StudentTable';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '../components/Icons';
-import { formatStudentId } from '../utils';
+import { Student, User, Grade, Gender } from '@/types';
+import { GRADES_LIST } from '@/constants';
+import StudentTable from '@/components/StudentTable';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import { formatStudentId } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -183,9 +183,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
                           <thead className="bg-slate-100">
                               <tr>
                                   <th className="px-4 py-2 text-left text-xs font-bold text-slate-600 uppercase">Class</th>
-                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Male</th>
-                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Female</th>
-                                  <th scope="col" className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Total</th>
+                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Male</th>
+                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Female</th>
+                                  <th className="px-4 py-2 text-center text-xs font-bold text-slate-600 uppercase">Total</th>
                               </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-200">
@@ -200,10 +200,10 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
                           </tbody>
                           <tfoot className="bg-slate-100 border-t-2 border-slate-300">
                               <tr>
-                                  <th scope="col" className="px-4 py-2 text-left font-bold text-slate-800">Total</th>
-                                  <th scope="col" className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.males}</th>
-                                  <th scope="col" className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.females}</th>
-                                  <th scope="col" className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.total}</th>
+                                  <th className="px-4 py-2 text-left font-bold text-slate-800">Total</th>
+                                  <th className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.males}</th>
+                                  <th className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.females}</th>
+                                  <th className="px-4 py-2 text-center font-bold text-slate-800">{statsByGrade.totals.total}</th>
                               </tr>
                           </tfoot>
                       </table>

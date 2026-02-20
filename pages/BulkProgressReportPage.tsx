@@ -1,10 +1,11 @@
 
+
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '../types';
-import { BackIcon, PrinterIcon } from '../components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '../constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '../utils';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
+import { BackIcon, PrinterIcon } from '@/components/Icons';
+import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
@@ -17,29 +18,13 @@ interface ProgressReportPageProps {
 
 // --- Reusable Logic and Components ---
 
+// Fix: Use robust subjectsMatch utility for subject lookup
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
-    
-    return results.find(r => {
-        const normResultName = normalizeSubjectName(r.subject);
-        if (normResultName === normSubjDefName) return true;
-
-        const mathNames = ['math', 'maths', 'mathematics'];
-        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
-        
-        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
-
-        return false;
-    });
+    return results.find(r => subjectsMatch(r.subject, subjectDef.name));
 };
 
+// Fix: Centralized logic for term summary calculation
 const calculateTermSummary = (
     student: Student,
     exam: Exam | undefined,
@@ -510,7 +495,162 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                 </div>
                 <div className="flex justify-between mt-4 print:mt-1">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
-                    <p>Time : {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
+
+    const processedReportData = useMemo(() => {
+        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents);
+    }, [student, exam, examTemplate.id, gradeDef, allStudents]);
+
+    const classTeacher = useMemo(() => {
+        if (!staff || !gradeDef?.classTeacherId) return null;
+        return staff.find((s: Staff) => s.id === gradeDef.classTeacherId);
+    }, [staff, gradeDef]);
+
+    return (
+        <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
+            <table className="min-w-full text-sm border-collapse">
+                <thead className="bg-slate-50 print:bg-transparent">
+                    {isNurseryToII ? (
+                        <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    ) : hasActivities ? (
+                        <>
+                            <tr className="border-b border-slate-400">
+                                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
+                                <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total Obtained</th>
+                            </tr>
+                            <tr className="border-b border-slate-400">
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            </tr>
+                        </>
+                    ) : ( // IX & X
+                         <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    )}
+                </thead>
+                <tbody>
+                     {gradeDef.subjects.map((sd: any) => {
+                        const result = findResultWithAliases(exam?.results, sd);
+                        const isGraded = sd.gradingSystem === 'OABC';
+                        
+                        return (
+                             <tr key={sd.name} className="border-t border-slate-300">
+                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                {isNurseryToII ? (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                ) : hasActivities ? (
+                                    isGraded ? (
+                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
+                                    ) : (
+                                        <>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
+                                        </>
+                                    )
+                                ) : ( // IX & X
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 text-sm print:py-1 print:bg-transparent">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {hasActivities && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Summative Total:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>
+                            <div className="font-semibold text-slate-600 text-right">Activity Total:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.activityTotal}</div>
+                        </>
+                    )}
+                    <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
+                    
+                    <div className="font-semibold text-slate-600 text-right">Percentage:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
+
+                    {!isClassIXorX && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Grade:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.academicGrade}</div>
+                        </>
+                    )}
+                    {isClassIXorX && (
+                         <>
+                            <div className="font-semibold text-slate-600 text-right">Division:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.division}</div>
+                        </>
+                    )}
+
+                    <div className="font-semibold text-slate-600 text-right">Result:</div>
+                    <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
+                    
+                    <div className="font-semibold text-slate-600 text-right">Rank:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.rank}</div>
+                    <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
+                    <div className="font-bold text-slate-800">
+                        {(exam?.attendance && exam.attendance.totalWorkingDays > 0)
+                            ? `${((exam.attendance.daysPresent / exam.attendance.totalWorkingDays) * 100).toFixed(0)}%`
+                            : 'N/A'}
+                    </div>
+                </div>
+                
+                <div className="pt-1.5 mt-1.5 border-t">
+                    <span className="font-semibold">Teacher's Remarks: </span>
+                    <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
+                </div>
+            </div>
+             <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
+                <div className="flex justify-between items-end">
+                    <div className="text-center">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        </div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="h-12 min-w-[150px]"></div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                    </div>
+                </div>
+                <div className="flex justify-between mt-4 print:mt-1">
+                    <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
                 </div>
             </div>
         </div>

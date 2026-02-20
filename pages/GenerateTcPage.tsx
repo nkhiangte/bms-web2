@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '../types';
-import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '../components/Icons';
-import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '../utils';
-// FIX: Updated to use the new @google/genai API.
+import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '@/types';
+import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '@/components/Icons';
+import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '@/utils';
 import { GoogleGenAI } from "@google/genai";
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { useNavigate, useParams, Link } = ReactRouterDOM as any;
 
@@ -128,13 +128,11 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         try {
             const prompt = `Convert the date ${formatDateForDisplay(foundStudent.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
             
-            // FIX: Updated Gemini API usage to use `GoogleGenAI` from `@google/genai` with correct initialization and method calls.
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: prompt,
             });
-            // FIX: Access response text via the .text property, not as a function.
             const text = response.text;
             if (text) {
                 setFormData(prev => ({ ...prev, dateOfBirthInWords: text.replace(/["*]/g, '').trim() }));
@@ -160,7 +158,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         }
         setIsConfirmModalOpen(true);
     };
-    
+
     const handleConfirmSave = async () => {
         if (!foundStudent) return;
 
@@ -186,7 +184,6 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         }
     };
     
-    // FIX: Added the missing JSX return statement to make this a valid React component.
     return (
     <>
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
@@ -278,14 +275,14 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                                 </div>
 
                                 <FormField label="School Dues (if any)" name="schoolDuesIfAny" value={formData.schoolDuesIfAny} onChange={handleChange} />
-                                <FormField label="Qualified for Promotion" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
-                                <FormField label="Date of Last Attendance" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" />
-                                <FormField label="Date of Application of TC" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date" />
-                                <FormField label="Date of Issue of TC" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date" />
-                                <FormField label="Reason for Leaving" name="reasonForLeaving" value={formData.reasonForLeaving} onChange={handleChange} type="select" options={REASON_FOR_LEAVING_OPTIONS.map(r => ({value: r, label: r}))} />
-                                <FormField label="General Conduct" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
+                                <FormField label="Whether qualified for promotion:" name="qualifiedForPromotion" value={formData.qualifiedForPromotion} onChange={handleChange} type="select" options={[{value: 'Yes', label: 'Yes'}, {value: 'No', label: 'No'}, {value: 'Not Applicable', label: 'Not Applicable'}]} />
+                                <FormField label="Date of last attendance at school:" name="dateOfLastAttendance" value={formData.dateOfLastAttendance} onChange={handleChange} type="date" />
+                                <FormField label="Date of application of TC:" name="dateOfApplicationOfTc" value={formData.dateOfApplicationOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Date of issue of TC:" name="dateOfIssueOfTc" value={formData.dateOfIssueOfTc} onChange={handleChange} type="date" />
+                                <FormField label="Reason for leaving:" name="reasonForLeaving" value={formData.reasonForLeaving} onChange={handleChange} type="select" options={REASON_FOR_LEAVING_OPTIONS.map(r => ({value: r, label: r}))} />
+                                <FormField label="General Conduct:" name="generalConduct" value={formData.generalConduct} onChange={handleChange} />
                                 <div className="lg:col-span-2">
-                                    <FormField label="Any Other Remarks" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} type="textarea" required={false} />
+                                    <FormField label="Any Other Remarks:" name="anyOtherRemarks" value={formData.anyOtherRemarks} onChange={handleChange} type="textarea" required={false} />
                                 </div>
                             </div>
                         </fieldset>

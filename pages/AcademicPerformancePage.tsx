@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '@/types';
-import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
+import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '@/components/Icons';
 import ActivityLogModal from '@/components/ActivityLogModal';
 import ExamPerformanceCard from '@/components/ExamPerformanceCard';
-import { normalizeSubjectName, subjectsMatch } from '../utils';
-import { db } from '../firebaseConfig';
+import { normalizeSubjectName, subjectsMatch } from '@/utils';
+import { db } from '@/firebaseConfig';
 
-const { useParams, Link } = ReactRouterDOM;
+const { useParams, Link } = ReactRouterDOM as any;
 
 interface AcademicPerformancePageProps {
   students: Student[];
@@ -23,7 +23,7 @@ interface AcademicPerformancePageProps {
 }
 
 const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ students, onUpdateAcademic, gradeDefinitions, academicYear, user, assignedGrade, assignedSubjects }) => {
-  const { studentId } = useParams();
+  const { studentId } = useParams() as { studentId: string };
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
   const [classmates, setClassmates] = useState<Student[]>([]);

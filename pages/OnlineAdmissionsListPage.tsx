@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { OnlineAdmission, Student } from '../types';
-import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon, UserIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
-import ConfirmationModal from '../components/ConfirmationModal';
-import EnrollStudentModal from '../components/EnrollStudentModal';
+import { OnlineAdmission, Student } from '@/types';
+import { SpinnerIcon, CheckCircleIcon, XCircleIcon, ClockIcon, InformationCircleIcon, InboxArrowDownIcon, EyeIcon, TrashIcon, EditIcon, CurrencyDollarIcon, UserIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import EnrollStudentModal from '@/components/EnrollStudentModal';
 
 const { useNavigate } = ReactRouterDOM as any;
 

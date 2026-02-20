@@ -1,10 +1,10 @@
 
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { TcRecord } from '../types';
-import { BackIcon, PrinterIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
-import { SCHOOL_BANNER_URL } from '../constants';
+import { TcRecord } from '@/types';
+import { BackIcon, PrinterIcon } from '@/components/Icons';
+import { formatDateForDisplay } from '@/utils';
+import { SCHOOL_BANNER_URL } from '@/constants';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 

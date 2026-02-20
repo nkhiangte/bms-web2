@@ -4,7 +4,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Staff, Grade, GradeDefinition, EmploymentStatus, SubjectAssignment } from '../types';
 import { BackIcon, EditIcon, UserIcon, HomeIcon, MailIcon, PhoneIcon, BriefcaseIcon, AcademicCapIcon, CurrencyDollarIcon, BookOpenIcon } from '../components/Icons';
-import { formatDateForDisplay } from '../utils';
+import { formatDateForDisplay } from '@/utils';
+import PhotoWithFallback from '../components/PhotoWithFallback';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -12,30 +13,6 @@ interface StaffDetailPageProps {
   staff: Staff[];
   onEdit: (staffMember: Staff) => void;
   gradeDefinitions: Record<Grade, GradeDefinition>;
-}
-
-const PhotoWithFallback: React.FC<{src?: string, alt: string}> = ({ src, alt }) => {
-    const [hasError, setHasError] = useState(!src);
-
-    useEffect(() => {
-        setHasError(!src);
-    }, [src]);
-
-    const handleError = () => {
-        setHasError(true);
-    };
-
-    return (
-        <div className="relative w-full h-full bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
-            {hasError ? (
-                <div className="flex items-center justify-center text-slate-500 w-full h-full">
-                    <UserIcon className="w-2/3 h-2/3" />
-                </div>
-            ) : (
-                 <img src={src} alt={alt} className="h-full w-full object-cover" onError={handleError} />
-            )}
-        </div>
-    )
 }
 
 const DetailItem: React.FC<{label: string, value?: string | number | null, children?: React.ReactNode}> = ({ label, value, children }) => {
@@ -132,7 +109,7 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
         <div className="text-center md:text-left flex-grow">
           <h1 className="text-4xl font-bold text-slate-900">{staffMember.firstName} {staffMember.lastName}</h1>
           <p className="text-sky-700 text-xl font-semibold mt-1">{staffMember.designation}</p>
-          <p className="text-slate-700 text-lg mt-1">{staffMember.department}</p>
+          <p className="text-sm text-slate-700">{staffMember.department}</p>
           <div className={`mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-md font-semibold ${statusStyle}`}>
             {staffMember.status}
           </div>

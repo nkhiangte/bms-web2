@@ -1,8 +1,9 @@
 
+
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, GradeDefinition, User } from '../types';
-import { GRADES_LIST, GRADES_WITH_NO_ACTIVITIES } from '../constants';
+import { GRADES_LIST, GRADES_WITH_NO_ACTIVITIES } from '@/constants';
 import { BackIcon, HomeIcon, EditIcon, BookOpenIcon, TrashIcon } from '../components/Icons';
 import EditSubjectsModal from '../components/EditSubjectsModal';
 import ConfirmationModal from '../components/ConfirmationModal';

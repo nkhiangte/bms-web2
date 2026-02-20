@@ -1,9 +1,11 @@
+
+
 import React, { useState, FormEvent, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '../components/Icons';
-import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '../types';
-import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '../utils';
-import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '../constants';
+import { BackIcon, HomeIcon, SearchIcon, CurrencyDollarIcon, UserIcon, CheckIcon, CheckCircleIcon, XCircleIcon, SpinnerIcon, EditIcon, SaveIcon, TrashIcon, PlusIcon, XIcon } from '@/components/Icons';
+import { Student, Grade, StudentStatus, FeePayments, User, FeeStructure, FeeSet, NotificationType, FeeHead } from '@/types';
+import { calculateDues, formatStudentId, getFeeDetails, getDuesSummary } from '@/utils';
+import { TERMINAL_EXAMS, academicMonths, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 
 const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
 
@@ -58,7 +60,6 @@ const PaymentInfoModal: React.FC<{ isOpen: boolean, onClose: () => void, qrCodeU
 
 const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academicYear, onUpdateFeePayments, user, feeStructure, onUpdateFeeStructure, addNotification, schoolConfig }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [studentIdInput, setStudentIdInput] = useState('');
   const [foundStudent, setFoundStudent] = useState<Student | null>(null);
   const [searchError, setSearchError] = useState('');

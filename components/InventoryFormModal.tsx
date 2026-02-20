@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { InventoryItem, InventoryCategory, InventoryStatus } from '../types';
-import { INVENTORY_CATEGORY_LIST, INVENTORY_STATUS_LIST } from '../constants';
-import { formatDateForDisplay, formatDateForStorage } from '../utils';
+import { INVENTORY_CATEGORY_LIST, INVENTORY_STATUS_LIST } from '@/constants';
+import { formatDateForDisplay, formatDateForStorage } from '@/utils';
 
 interface InventoryFormModalProps {
   isOpen: boolean;

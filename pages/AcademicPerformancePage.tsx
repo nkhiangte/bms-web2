@@ -1,19 +1,20 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '../types';
-import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '../constants';
+import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '../components/Icons';
 import ActivityLogModal from '../components/ActivityLogModal';
 import ExamPerformanceCard from '../components/ExamPerformanceCard';
-import { normalizeSubjectName } from '../utils';
-import { db } from '../firebaseConfig';
+import { normalizeSubjectName, subjectsMatch } from '@/utils';
+import { db } from '@/firebaseConfig';
 
 const { useParams, Link } = ReactRouterDOM as any;
 
 interface AcademicPerformancePageProps {
   students: Student[];
-  onUpdateAcademic: (studentId: string, performance: Exam[]) => void;
+  onUpdateAcademic: (studentId: string, performance: Exam[]) => Promise<void>;
   gradeDefinitions: Record<Grade, GradeDefinition>;
   academicYear: string;
   user: User;
@@ -22,7 +23,7 @@ interface AcademicPerformancePageProps {
 }
 
 const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ students, onUpdateAcademic, gradeDefinitions, academicYear, user, assignedGrade, assignedSubjects }) => {
-  const { studentId } = useParams();
+  const { studentId } = useParams() as { studentId: string };
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
   const [classmates, setClassmates] = useState<Student[]>([]);
@@ -65,25 +66,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
           e.id === examTemplate.id || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
       );
       const results: SubjectMark[] = subjects.map(sd => {
-        const normSubjName = normalizeSubjectName(sd.name);
-        const existingResult = existingExam?.results.find(r => {
-            const normResultName = normalizeSubjectName(r.subject);
-            if (normResultName === normSubjName) return true;
-            
-            // Fallbacks for common name variations
-            const mathNames = ['math', 'maths', 'mathematics'];
-            if (mathNames.includes(normSubjName) && mathNames.includes(normResultName)) return true;
-            
-            if (normSubjName === 'english' && normResultName === 'english i') return true;
-            if (normSubjName === 'english - ii' && normResultName === 'english ii') return true;
-            if (normSubjName === 'social studies' && normResultName === 'social science') return true;
-            if (normSubjName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-            if (normSubjName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-            if (normSubjName === 'spellings' && normResultName === 'spelling') return true;
-            if (normSubjName === 'rhymes' && normResultName === 'rhyme') return true;
-            
-            return false;
-        });
+        const existingResult = existingExam?.results.find(r => subjectsMatch(r.subject, sd.name));
         
         return {
           subject: sd.name,
@@ -110,9 +93,9 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
     setPerformanceData(prev => prev.map(exam => exam.id === examId ? { ...exam, [field]: value } : exam));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if(student) {
-      onUpdateAcademic(student.id, performanceData);
+      await onUpdateAcademic(student.id, performanceData);
     }
     setIsEditing(false);
   };
@@ -154,6 +137,43 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                 />
             ))}
         </div>
+        {editingActivityLogFor && (
+            <ActivityLogModal
+                isOpen={!!editingActivityLogFor}
+                onClose={() => setEditingActivityLogFor(null)}
+                onLogChange={(log: ActivityLog) => {
+                    if (student && editingActivityLogFor) {
+                        const newPerformanceData = performanceData.map(exam => {
+                            if (exam.id === editingActivityLogFor.examId) {
+                                const newResults = exam.results.map(result => {
+                                    if (result.subject === editingActivityLogFor.subjectName) {
+                                        const totalActivityMarks = Math.round(
+                                            (log.classTest.scaledMarks || 0) + 
+                                            (log.homework.scaledMarks || 0) + 
+                                            (log.project.scaledMarks || 0)
+                                        );
+                                        return { ...result, activityLog: log, activityMarks: totalActivityMarks };
+                                    }
+                                    return result;
+                                });
+                                return { ...exam, results: newResults };
+                            }
+                            return exam;
+                        });
+                        setPerformanceData(newPerformanceData);
+                        onUpdateAcademic(student.id, newPerformanceData); // Persist changes immediately
+                    }
+                }}
+                studentName={student?.name || ''}
+                examName={editingActivityLogFor.examId}
+                subjectName={editingActivityLogFor.subjectName}
+                initialLog={performanceData.find(e => e.id === editingActivityLogFor.examId)?.results.find(r => r.subject === editingActivityLogFor.subjectName)?.activityLog}
+                // Placeholder navigation handlers for now
+                onNavigate={() => {}}
+                canNavigatePrev={false}
+                canNavigateNext={false}
+            />
+        )}
     </div>
   );
 };

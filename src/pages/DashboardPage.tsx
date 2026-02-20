@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '@/components/Icons';
@@ -265,4 +266,88 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                     description={`Take daily attendance for ${assignedGrade}.`}
                     icon={<CalendarDaysIcon className="w-7 h-7" />}
                     color="amber"
-                    action={<Link to={`/portal/classes/${encodeURIComponent(assigned
+                    action={<Link to={`/portal/classes/${encodeURIComponent(assignedGrade)}/attendance`}>Take Attendance</Link>}
+                />
+            )}
+
+            <DashboardCard
+                title="Staff Attendance"
+                description="Mark and view daily staff attendance."
+                icon={<CalendarDaysIcon className="w-7 h-7" />}
+                color="teal"
+                action={<Link to="/portal/staff/attendance">Mark Attendance</Link>}
+            />
+            
+            <DashboardCard
+                title="Register New Student"
+                description={`Add a new student to the ${academicYear} database.`}
+                icon={<PlusIcon className="w-7 h-7" />}
+                color="emerald"
+                action={<button onClick={() => navigate('/portal/students')} disabled={!isAdmin}>Add New Student</button>}
+            />
+            <DashboardCard
+                title="Manage Classes"
+                description="Browse students by their class."
+                icon={<BookOpenIcon className="w-7 h-7" />}
+                color="indigo"
+                action={<Link to="/portal/classes">Browse Classes</Link>}
+            />
+             <DashboardCard
+                title="Class Routine"
+                description="View the daily class timetable."
+                icon={<BookOpenIcon className="w-7 h-7" />}
+                color="indigo"
+                action={<Link to="/portal/routine">View Routine</Link>}
+            />
+                <DashboardCard
+                title="Communication"
+                description="Send bulk SMS or WhatsApp to parents."
+                icon={<MegaphoneIcon className="w-7 h-7" />}
+                color="teal"
+                action={<Link to="/portal/communication">{isAdmin ? 'Send Messages' : 'View Communication'}</Link>}
+            />
+            <DashboardCard
+                title="Transfer Management"
+                description="Generate and manage Transfer Certificates."
+                icon={<TransferIcon className="w-7 h-7" />}
+                color="amber"
+                action={<Link to="/portal/transfers">{isAdmin ? 'Manage Transfers' : 'View Records'}</Link>}
+            />
+            
+            <DashboardCard
+                title="Inventory"
+                description="Track and manage all school assets."
+                icon={<ArchiveBoxIcon className="w-7 h-7" />}
+                color="violet"
+                action={<Link to="/portal/inventory">{isAdmin ? 'Manage Inventory' : 'View Inventory'}</Link>}
+            />
+
+            <DashboardCard
+                title="Hostel Management"
+                description="Manage hostel rooms, students, and staff."
+                icon={<BuildingOfficeIcon className="w-7 h-7" />}
+                color="rose"
+                action={<Link to="/portal/hostel-dashboard">{isAdmin ? 'Manage Hostel' : 'View Hostel'}</Link>}
+            />
+
+            <DashboardCard
+                title="School Calendar"
+                description="View holidays, exams, and school events."
+                icon={<CalendarDaysIcon className="w-7 h-7" />}
+                color="teal"
+                action={<Link to="/portal/calendar">View Calendar</Link>}
+            />
+        
+            {!isAdmin && <DashboardCard
+                title={"View Staff"}
+                description={"View all staff profiles."}
+                icon={<BriefcaseIcon className="w-7 h-7" />}
+                color="sky"
+                action={<Link to="/portal/staff">{"View Staff"}</Link>}
+            />}
+        </div>
+    </div>
+  );
+};
+
+export default DashboardPage;

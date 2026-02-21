@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus } from '@/types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { db, auth, firebase } from '@/firebaseConfig';
 import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade } from '@/utils';
@@ -119,6 +119,7 @@ import FeeManagementPage from '@/pages/FeeManagementPage';
 import FeesPage from '@/pages/public/FeesPage';
 import InsightsPage from '@/pages/InsightsPage';
 import ManageNavigationPage from '@/pages/ManageNavigationPage';
+
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -907,6 +908,32 @@ const App: React.FC = () => {
       }
   };
 
+  const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
+      try {
+          const id = item.id || db.collection('navigation').doc().id;
+          await db.collection('navigation').doc(id).set({
+              ...item,
+              id,
+              isActive: true,
+              updatedAt: new Date().toISOString()
+          }, { merge: true });
+          addNotification('Navigation item saved!', 'success');
+      } catch (error: any) {
+          console.error("Error saving navigation item:", error);
+          addNotification('Failed to save navigation item.', 'error');
+      }
+  };
+
+  const handleDeleteNavItem = async (id: string) => {
+      try {
+          await db.collection('navigation').doc(id).delete();
+          addNotification('Navigation item deleted.', 'success');
+      } catch (error: any) {
+          console.error("Error deleting navigation item:", error);
+          addNotification('Failed to delete navigation item.', 'error');
+      }
+  };
+
   const handleUpdateUserProfile = async (updates: { photoURL?: string }) => {
     try {
         if (!user || !user.uid) return { success: false, message: "User not authenticated." };
@@ -1062,33 +1089,11 @@ const App: React.FC = () => {
               });
           });
 
-     // ADD THESE INSIDE THE APP COMPONENT
-const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
-    try {
-        // This uses your existing 'db' (Firestore) instance
-        const id = item.id || db.collection('navigation').doc().id;
-        await db.collection('navigation').doc(id).set({
-            ...item,
-            id,
-            isActive: true,
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-        // If you have a toast/notification system, call it here:
-        // addNotification('Saved successfully', 'success');
-    } catch (error) {
-        console.error("Error saving navigation item:", error);
-    }
-};
-
-const handleDeleteNavItem = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this menu item?')) {
-        try {
-            await db.collection('navigation').doc(id).delete();
-        } catch (error) {
-            console.error("Error deleting navigation item:", error);
-        }
-    }
-};
+          // 3. Delete old student attendance records (optional, can be archived too)
+          const studentAttendanceSnapshot = await db.collection('studentAttendance').get();
+          studentAttendanceSnapshot.docs.forEach(doc => {
+              batch.delete(db.collection('studentAttendance').doc(doc.id));
+          });
 
           // 4. Delete old staff attendance records
           const staffAttendanceSnapshot = await db.collection('staffAttendance').get();
@@ -1144,11 +1149,6 @@ const handleDeleteNavItem = async (id: string) => {
     };
   }, []); // Run only once on mount
 
-  // Fetch Navigation Menu
-    const unsubNav = db.collection('navigation').orderBy('order', 'asc').onSnapshot(snapshot => {
-        setNavigation(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem)));
-    });
-  
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -1227,6 +1227,11 @@ const handleDeleteNavItem = async (id: string) => {
     });
 
 
+    // Navigation menu listener
+    const unsubNav = db.collection('navigation').orderBy('order', 'asc').onSnapshot(snapshot => {
+        setNavigation(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem)));
+    });
+
     return () => {
         unsubNews();
         unsubExamRoutines();
@@ -1236,6 +1241,7 @@ const handleDeleteNavItem = async (id: string) => {
         unsubAdmSettings();
         unsubGradeDefs();
         unsubSitemap();
+        unsubNav();
     };
   }, []);
 
@@ -1287,17 +1293,7 @@ const handleDeleteNavItem = async (id: string) => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
-      <Route 
-  path="manage-navigation" 
-  element={
-    <ManageNavigationPage 
-      navigation={navigation} 
-      onSave={handleSaveNavItem} 
-      onDelete={handleDeleteNavItem} 
-    />
-  } 
-/>       
-      const sanitizedData = Object.fromEntries(
+              const sanitizedData = Object.fromEntries(
                 Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
               );
 
@@ -1428,18 +1424,9 @@ const handleDeleteNavItem = async (id: string) => {
            <Route path="manage-syllabus" element={<ManageSyllabusPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveSyllabus} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
+           <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
- <Route 
-  path="manage-navigation" 
-  element={
-    <ManageNavigationPage 
-      navigation={navigation} 
-      onSave={handleSaveNavItem}    // Must match the function name above
-      onDelete={handleDeleteNavItem} // Must match the function name above
-    />
-  } 
-/>
-          <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
+           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>
       </Routes>
     </>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '@/components/Icons';
 import { NewsItem, User } from '@/types';
@@ -8,7 +8,7 @@ import EditableContent from '@/components/EditableContent';
 const { Link } = ReactRouterDOM as any;
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string; }> = ({ icon, title, description, link }) => (
-    <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2">
+    <div className="bg-white/80 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2 border border-white/50">
         <div className="text-sky-500 mb-4">{icon}</div>
         <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
         <p className="mt-2 text-slate-600">{description}</p>
@@ -28,6 +28,24 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
         return [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
     }, [news]);
 
+    // Set fixed background on body when this page mounts, remove on unmount
+    useEffect(() => {
+        const prev = document.body.style.cssText;
+        document.body.style.backgroundImage = "url('https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg')";
+        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        return () => {
+            // Restore original body styles on page leave
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundAttachment = '';
+            document.body.style.backgroundSize = '';
+            document.body.style.backgroundPosition = '';
+            document.body.style.backgroundRepeat = '';
+        };
+    }, []);
+
     return (
         <>
             {/* Admission Banner — fixed at bottom */}
@@ -40,36 +58,17 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                 </span>
             </Link>
 
-            {/* ── HERO SECTION ── Full viewport height, background fixed (parallax) */}
+            {/* ── HERO SECTION ── Full viewport, text centered over background */}
             <section
                 className="relative w-full flex items-center justify-center"
-                style={{
-                    height: 'calc(100vh - 128px)', // 128px = sticky header height; adjust if needed
-                    backgroundImage: "url('https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg')",
-                    backgroundAttachment: 'fixed',  // ← image stays still while page scrolls
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }}
+                style={{ height: 'calc(100vh - 128px)' }}
             >
-                {/* Hidden EditableContent so admin can still swap the bg image via CMS */}
-                <div className="absolute inset-0 pointer-events-none opacity-0">
-                    <EditableContent
-                        id="home_hero_bg"
-                        defaultContent="https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg"
-                        type="image"
-                        user={user}
-                        className="w-full h-full object-cover"
-                        imgAlt="School Hero Background"
-                    />
-                </div>
-
-                {/* Dark overlay */}
+                {/* Dark overlay only on hero */}
                 <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
 
                 {/* Centered welcome text */}
                 <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-                    <div className="bg-black/30 backdrop-blur-sm border border-white/20 p-8 md:p-12 rounded-2xl shadow-2xl animate-fade-in">
+                    <div className="bg-black/30 backdrop-blur-sm border border-white/20 p-8 md:p-12 rounded-2xl shadow-2xl">
                         <h1
                             className="text-5xl md:text-7xl font-extrabold leading-tight text-white tracking-tight"
                             style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}
@@ -81,9 +80,9 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 user={user}
                             />
                         </h1>
-                        <div className="w-24 h-1 bg-sky-500 mx-auto my-6 rounded-full"></div>
+                        <div className="w-24 h-1 bg-sky-400 mx-auto my-6 rounded-full"></div>
                         <p
-                            className="text-xl md:text-3xl text-sky-50 font-medium tracking-wide"
+                            className="text-xl md:text-3xl text-sky-100 font-medium tracking-wide"
                             style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}
                         >
                             <EditableContent
@@ -104,12 +103,12 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                 </div>
             </section>
 
-            {/* ── LATEST NEWS ── duplicate banner removed */}
-            <section className="py-20 bg-slate-50">
+            {/* ── LATEST NEWS ── Semi-transparent so background shows through */}
+            <section className="py-20 bg-slate-900/70 backdrop-blur-sm">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-slate-800">Latest News &amp; Announcements</h2>
-                        <p className="mt-4 max-w-2xl mx-auto text-slate-600">
+                        <h2 className="text-3xl font-bold text-white">Latest News &amp; Announcements</h2>
+                        <p className="mt-4 max-w-2xl mx-auto text-slate-300">
                             Stay updated with the latest happenings at Bethel Mission School.
                         </p>
                     </div>
@@ -117,41 +116,43 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         {latestNews.length > 0 ? (
                             latestNews.map(item => (
-                                <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+                                <div key={item.id} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg shadow-md overflow-hidden flex flex-col">
                                     {item.imageUrls && item.imageUrls.length > 0 && (
                                         <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover" />
                                     )}
                                     <div className="p-6 flex flex-col flex-grow">
-                                        <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
-                                        <h3 className="mt-2 text-xl font-bold text-slate-800">{item.title}</h3>
-                                        <p className="mt-3 text-slate-600 whitespace-pre-wrap flex-grow">
+                                        <p className="text-sm font-semibold text-sky-400">{formatDateForNews(item.date)}</p>
+                                        <h3 className="mt-2 text-xl font-bold text-white">{item.title}</h3>
+                                        <p className="mt-3 text-slate-300 whitespace-pre-wrap flex-grow">
                                             {item.content.substring(0, 150)}{item.content.length > 150 ? '...' : ''}
                                         </p>
-                                        <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 self-start">
+                                        <Link to="/news" className="mt-4 font-semibold text-sky-400 hover:text-sky-200 self-start">
                                             Read More &rarr;
                                         </Link>
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="md:col-span-2 text-center py-16 border-2 border-dashed border-slate-200 rounded-lg bg-white">
-                                <p className="text-slate-700 text-lg font-semibold">No news articles found.</p>
-                                <p className="text-slate-600 mt-2">Please check back later for updates.</p>
+                            <div className="md:col-span-2 text-center py-16 border-2 border-dashed border-white/20 rounded-lg bg-white/10">
+                                <p className="text-white text-lg font-semibold">No news articles found.</p>
+                                <p className="text-slate-300 mt-2">Please check back later for updates.</p>
                             </div>
                         )}
                     </div>
                     {news.length > 2 && (
                         <div className="text-center mt-12">
-                            <Link to="/news" className="btn btn-primary">View All News</Link>
+                            <Link to="/news" className="px-6 py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-lg transition-colors">
+                                View All News
+                            </Link>
                         </div>
                     )}
                 </div>
             </section>
 
             {/* ── WHY CHOOSE US ── */}
-            <section className="py-20 bg-white">
+            <section className="py-20 bg-white/10 backdrop-blur-sm">
                 <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-bold text-slate-800">
+                    <h2 className="text-3xl font-bold text-white" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.5)' }}>
                         <EditableContent
                             id="home_choose_title"
                             defaultContent="Why Choose Us?"
@@ -159,7 +160,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                             user={user}
                         />
                     </h2>
-                    <div className="mt-4 max-w-3xl mx-auto text-slate-600">
+                    <div className="mt-4 max-w-3xl mx-auto text-slate-200">
                         <EditableContent
                             id="home_choose_desc"
                             defaultContent="At Bethel Mission School, we are dedicated to providing a nurturing yet challenging educational environment that fosters academic excellence, strong moral character, and a lifelong passion for learning."
@@ -191,37 +192,37 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
             </section>
 
             {/* ── CONNECT WITH US ── */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-slate-900/70 backdrop-blur-sm">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold text-slate-800">Connect With Us</h2>
-                        <p className="mt-4 max-w-2xl mx-auto text-slate-600">
+                        <h2 className="text-3xl font-bold text-white">Connect With Us</h2>
+                        <p className="mt-4 max-w-2xl mx-auto text-slate-300">
                             Follow us on social media to stay updated with our latest news, events, and student achievements.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div className="flex flex-col items-center md:items-start gap-8">
                             <a href="https://www.facebook.com/bethel.ms" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-600 hover:text-blue-600 transition-transform transform hover:scale-105">
-                                <FacebookIcon className="w-16 h-16 text-blue-600" />
+                                className="flex items-center gap-4 text-slate-300 hover:text-blue-400 transition-transform transform hover:scale-105">
+                                <FacebookIcon className="w-16 h-16 text-blue-400" />
                                 <div>
-                                    <span className="text-xl font-bold">Facebook</span>
+                                    <span className="text-xl font-bold text-white">Facebook</span>
                                     <p>@bethel.ms</p>
                                 </div>
                             </a>
                             <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-600 hover:text-rose-600 transition-transform transform hover:scale-105">
+                                className="flex items-center gap-4 text-slate-300 hover:text-rose-400 transition-transform transform hover:scale-105">
                                 <InstagramIcon className="w-16 h-16" />
                                 <div>
-                                    <span className="text-xl font-bold">Instagram</span>
+                                    <span className="text-xl font-bold text-white">Instagram</span>
                                     <p>@bms_champhai</p>
                                 </div>
                             </a>
                             <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-600 hover:text-red-600 transition-transform transform hover:scale-105">
+                                className="flex items-center gap-4 text-slate-300 hover:text-red-400 transition-transform transform hover:scale-105">
                                 <YouTubeIcon className="w-16 h-16" />
                                 <div>
-                                    <span className="text-xl font-bold">YouTube</span>
+                                    <span className="text-xl font-bold text-white">YouTube</span>
                                     <p>@BethelMissionSchoolChamphai</p>
                                 </div>
                             </a>

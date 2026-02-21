@@ -45,6 +45,8 @@ const StockUpdateModal: React.FC<StockUpdateModalProps> = ({ isOpen, onClose, on
 
   const isAdding = updateType === 'add';
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>

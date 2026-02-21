@@ -198,6 +198,8 @@ export interface SubjectMark {
     marks?: number | null;
     examMarks?: number | null;
     activityMarks?: number | null;
+    saMarks?: number | null;   // Summative Assessment (max 80) — Class IX terminal3 only
+    faMarks?: number | null;   // Formative Assessment (max 20) — Class IX terminal3 only
     grade?: 'O' | 'A' | 'B' | 'C';
     activityLog?: ActivityLog;
 }

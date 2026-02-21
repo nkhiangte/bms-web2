@@ -373,9 +373,9 @@ export const examRoutines: Routine[] = [
 
 
 export const TERMINAL_EXAMS: { id: 'terminal1' | 'terminal2' | 'terminal3'; name: string }[] = [
-    { id: 'terminal1', name: 'First Terminal Examination' },
-    { id: 'terminal2', name: 'Second Terminal Examination' },
-    { id: 'terminal3', name: 'Third Terminal Examination' },
+    { id: 'terminal1', name: 'I Terminal Examination' },
+    { id: 'terminal2', name: 'II Terminal Examination' },
+    { id: 'terminal3', name: 'III Terminal Examination' },
 ];
 
 export const CONDUCT_GRADE_LIST: ConductGrade[] = ['Excellent', 'Good', 'Satisfactory', 'Needs Improvement'];

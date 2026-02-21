@@ -1062,9 +1062,10 @@ const App: React.FC = () => {
               });
           });
 
-        const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
+     // ADD THESE INSIDE THE APP COMPONENT
+const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
     try {
-        // Use your existing 'db' instance
+        // This uses your existing 'db' (Firestore) instance
         const id = item.id || db.collection('navigation').doc().id;
         await db.collection('navigation').doc(id).set({
             ...item,
@@ -1072,25 +1073,22 @@ const App: React.FC = () => {
             isActive: true,
             updatedAt: new Date().toISOString()
         }, { merge: true });
+        // If you have a toast/notification system, call it here:
+        // addNotification('Saved successfully', 'success');
     } catch (error) {
-        console.error("Error saving nav:", error);
+        console.error("Error saving navigation item:", error);
     }
 };
 
 const handleDeleteNavItem = async (id: string) => {
-    if (window.confirm('Delete this menu item?')) {
+    if (window.confirm('Are you sure you want to delete this menu item?')) {
         try {
             await db.collection('navigation').doc(id).delete();
         } catch (error) {
-            console.error("Error deleting nav:", error);
+            console.error("Error deleting navigation item:", error);
         }
     }
 };
-          // 3. Delete old student attendance records (optional, can be archived too)
-          const studentAttendanceSnapshot = await db.collection('studentAttendance').get();
-          studentAttendanceSnapshot.docs.forEach(doc => {
-              batch.delete(db.collection('studentAttendance').doc(doc.id));
-          });
 
           // 4. Delete old staff attendance records
           const staffAttendanceSnapshot = await db.collection('staffAttendance').get();
@@ -1431,7 +1429,15 @@ const handleDeleteNavItem = async (id: string) => {
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
-      <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />  } 
+ <Route 
+  path="manage-navigation" 
+  element={
+    <ManageNavigationPage 
+      navigation={navigation} 
+      onSave={handleSaveNavItem}    // Must match the function name above
+      onDelete={handleDeleteNavItem} // Must match the function name above
+    />
+  } 
 />
           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

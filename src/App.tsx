@@ -118,7 +118,7 @@ import CurriculumPage from '@/pages/public/CurriculumPage';
 import FeeManagementPage from '@/pages/FeeManagementPage';
 import FeesPage from '@/pages/public/FeesPage';
 import InsightsPage from '@/pages/InsightsPage';
-
+import ManageNavigationPage from '@/pages/ManageNavigationPage';
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -1427,7 +1427,9 @@ const App: React.FC = () => {
            <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
-           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
+      <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />  } 
+/>
+          <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>
       </Routes>
     </>

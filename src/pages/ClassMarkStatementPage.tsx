@@ -132,6 +132,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         } else if (hasActivities) {
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
+        } else if (grade === Grade.IX && examId === 'terminal3') {
+            // SA: prefer saMarks, fall back to examMarks (pre-SA/FA data stored this way), then marks
+            initialMarks[student.id][subjectDef.name + '_sa'] = result?.saMarks ?? result?.examMarks ?? result?.marks ?? null;
+            // FA: prefer faMarks, fall back to activityMarks (safe fallback)
+            initialMarks[student.id][subjectDef.name + '_fa'] = result?.faMarks ?? result?.activityMarks ?? null;
         } else {
             // Robust check: even if activities are disabled for class, check both marks and examMarks field
             initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;

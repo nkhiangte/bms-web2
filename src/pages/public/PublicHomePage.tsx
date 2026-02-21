@@ -82,7 +82,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                         </h1>
                         <div className="w-24 h-1 bg-sky-400 mx-auto my-6 rounded-full"></div>
                         <p
-                            className="text-xl md:text-3xl text-sky-100 font-medium tracking-wide"
+                            className="text-xl md:text-3xl text-white font-medium tracking-wide"
                             style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}
                         >
                             <EditableContent
@@ -116,17 +116,17 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         {latestNews.length > 0 ? (
                             latestNews.map(item => (
-                                <div key={item.id} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg shadow-md overflow-hidden flex flex-col">
+                                <div key={item.id} className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow transform hover:-translate-y-2 overflow-hidden flex flex-col">
                                     {item.imageUrls && item.imageUrls.length > 0 && (
-                                        <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover" />
+                                        <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover rounded-lg mb-4" />
                                     )}
-                                    <div className="p-6 flex flex-col flex-grow">
-                                        <p className="text-sm font-semibold text-sky-400">{formatDateForNews(item.date)}</p>
-                                        <h3 className="mt-2 text-xl font-bold text-white">{item.title}</h3>
-                                        <p className="mt-3 text-slate-300 whitespace-pre-wrap flex-grow">
+                                    <div className="flex flex-col flex-grow">
+                                        <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
+                                        <h3 className="mt-2 text-xl font-bold text-slate-800">{item.title}</h3>
+                                        <p className="mt-3 text-slate-600 whitespace-pre-wrap flex-grow">
                                             {item.content.substring(0, 150)}{item.content.length > 150 ? '...' : ''}
                                         </p>
-                                        <Link to="/news" className="mt-4 font-semibold text-sky-400 hover:text-sky-200 self-start">
+                                        <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 self-start">
                                             Read More &rarr;
                                         </Link>
                                     </div>

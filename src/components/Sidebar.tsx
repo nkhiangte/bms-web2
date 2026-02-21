@@ -38,6 +38,7 @@ const portalNavLinks = [
     { name: 'Gallery Manager', path: '/portal/gallery-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Website Media', path: '/portal/media-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },
+    { name: 'Manage Navigation', path: '/portal/manage-navigation', icon: <CogIcon className="w-5 h-5" />, roles: ['admin'] },
 ];
 
 const publicNavLinks = [

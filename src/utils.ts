@@ -1,5 +1,3 @@
-
-
 import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet, SubjectMark, SubjectDefinition } from '@/types';
 import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
 import { useState, useEffect } from 'react';
@@ -122,14 +120,14 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
 
     const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0 && monthlyFees.length > 0) {
-        const monthlyTotal = monthlyFees.reduce((sum, h => sum + h.amount), 0);
+        const monthlyTotal = monthlyFees.reduce((sum, h) => sum + h.amount, 0);
         const totalDue = unpaidTuitionMonths.length * monthlyTotal;
         const names = monthlyFees.map(h => h.name).join(' + ');
         duesMessages.push(`${names}: ${unpaidTuitionMonths.length} month(s) pending (${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalDue)})`);
     }
 
     if (termFees.length > 0) {
-        const termTotal = termFees.reduce((sum, h => sum + h.amount), 0);
+        const termTotal = termFees.reduce((sum, h) => sum + h.amount, 0);
         const unpaidExams: string[] = [];
         if (!feePayments.examFeesPaid?.terminal1) unpaidExams.push('Term 1');
         if (!feePayments.examFeesPaid?.terminal2) unpaidExams.push('Term 2');

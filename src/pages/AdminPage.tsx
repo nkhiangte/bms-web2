@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { 
     BackIcon, 
@@ -10,6 +10,9 @@ import {
     CogIcon,
     CurrencyDollarIcon
 } from '@/components/Icons';
+import { db } from '@/firebaseConfig';
+import { formatStudentId } from '@/utils';
+import { Student } from '@/types';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -40,14 +43,53 @@ interface AdminPageProps {
     pendingAdmissionsCount: number;
     pendingParentCount: number;
     pendingStaffCount: number;
+    students: Student[];
+    academicYear: string;
 }
 
 const AdminPage: React.FC<AdminPageProps> = ({
     pendingAdmissionsCount,
     pendingParentCount,
-    pendingStaffCount
+    pendingStaffCount,
+    students,
+    academicYear
 }) => {
     const navigate = useNavigate();
+    const [migrating, setMigrating] = useState(false);
+    const [migrateResult, setMigrateResult] = useState<string | null>(null);
+
+    const handleMigrateStudentIds = async () => {
+        if (!window.confirm('This will write the correct studentId and academicYear into every student record that is missing them. Continue?')) return;
+        setMigrating(true);
+        setMigrateResult(null);
+        try {
+            const snapshot = await db.collection('students').get();
+            const batch = db.batch();
+            let count = 0;
+            snapshot.docs.forEach(doc => {
+                const s = doc.data() as Student;
+                const updates: Record<string, any> = {};
+                // Compute correct studentId for this student using current academicYear
+                const correctId = formatStudentId({ ...s, studentId: undefined }, academicYear);
+                if (!s.studentId || s.studentId !== correctId) {
+                    updates.studentId = correctId;
+                }
+                if (!s.academicYear) {
+                    updates.academicYear = academicYear;
+                }
+                if (Object.keys(updates).length > 0) {
+                    batch.update(doc.ref, updates);
+                    count++;
+                }
+            });
+            await batch.commit();
+            setMigrateResult(`✅ Done! Updated ${count} student records.`);
+        } catch (err: any) {
+            setMigrateResult(`❌ Error: ${err.message}`);
+        } finally {
+            setMigrating(false);
+        }
+    };
 
     const adminLinks = [
         { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
@@ -81,6 +123,19 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 {adminLinks.map(link => (
                     <AdminCard key={link.title} {...link} />
                 ))}
+            </div>
+
+            <div className="mt-10 p-6 bg-amber-50 border border-amber-200 rounded-xl">
+                <h2 className="text-lg font-bold text-amber-800 mb-1">🔧 Data Maintenance</h2>
+                <p className="text-sm text-amber-700 mb-4">Run this once to write correct <code>studentId</code> and <code>academicYear</code> fields into all student records. Safe to run multiple times.</p>
+                <button
+                    onClick={handleMigrateStudentIds}
+                    disabled={migrating}
+                    className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                >
+                    {migrating ? 'Updating...' : 'Fix Student IDs in Database'}
+                </button>
+                {migrateResult && <p className="mt-3 text-sm font-semibold text-slate-700">{migrateResult}</p>}
             </div>
         </div>
     );

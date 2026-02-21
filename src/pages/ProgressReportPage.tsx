@@ -64,7 +64,8 @@ const calculateTermSummary = (
             if (e.id === examId) return true;
             if (!e.name) return false;
             const eName = e.name.trim().toLowerCase();
-            if (examTemplate && eName === examTemplate.name.trim().toLowerCase()) return true;
+            const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
+            if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
             const legacyNames: Record<string, string[]> = {
                 terminal1: ['first terminal examination', 'i terminal examination'],
                 terminal2: ['second terminal examination', 'ii terminal examination'],

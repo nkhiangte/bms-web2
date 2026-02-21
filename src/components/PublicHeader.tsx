@@ -69,17 +69,16 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const location = useLocation();
 
-    // Filter for top-level items and sort them by 'order'
-    const menuItems = navigation
-        .filter(item => item.isActive && !item.parent)
-        .sort((a, b) => a.order - b.order);
+    // Inside PublicHeader component
+const menuItems = (navigation || []) // Fallback to empty array if undefined
+    .filter(item => item.isActive && !item.parent)
+    .sort((a, b) => a.order - b.order);
 
-    // Function to get children for a specific parent
-    const getChildren = (parentId: string) => {
-        return navigation
-            .filter(item => item.isActive && item.parent === parentId)
-            .sort((a, b) => a.order - b.order);
-    };
+const getChildren = (parentId: string) => {
+    return (navigation || []) // Fallback to empty array if undefined
+        .filter(item => item.isActive && item.parent === parentId)
+        .sort((a, b) => a.order - b.order);
+};
 
     const activeLinkStyle = { color: 'var(--primary)' };
     // ... rest of your existing logic

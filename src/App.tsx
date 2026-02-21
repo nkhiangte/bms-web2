@@ -133,6 +133,7 @@ const App: React.FC = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
+  const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
   
   // Configuration
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
@@ -1061,6 +1062,26 @@ const App: React.FC = () => {
               });
           });
 
+        const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
+      try {
+          if (item.id) {
+              await db.collection('navigation').doc(item.id).update(item);
+          } else {
+              await db.collection('navigation').add({ ...item, isActive: true });
+          }
+          addNotification('Menu item saved successfully!', 'success');
+      } catch (error) {
+          addNotification('Failed to save menu item.', 'error');
+      }
+  };
+
+  const handleDeleteNavItem = async (id: string) => {
+      if (window.confirm('Are you sure you want to delete this menu item?')) {
+          await db.collection('navigation').doc(id).delete();
+          addNotification('Menu item deleted.', 'info');
+      }
+  };
+        
           // 3. Delete old student attendance records (optional, can be archived too)
           const studentAttendanceSnapshot = await db.collection('studentAttendance').get();
           studentAttendanceSnapshot.docs.forEach(doc => {
@@ -1121,6 +1142,11 @@ const App: React.FC = () => {
     };
   }, []); // Run only once on mount
 
+  // Fetch Navigation Menu
+    const unsubNav = db.collection('navigation').orderBy('order', 'asc').onSnapshot(snapshot => {
+        setNavigation(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem)));
+    });
+  
   // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -1259,7 +1285,17 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
-              const sanitizedData = Object.fromEntries(
+      <Route 
+  path="manage-navigation" 
+  element={
+    <ManageNavigationPage 
+      navigation={navigation} 
+      onSave={handleSaveNavItem} 
+      onDelete={handleDeleteNavItem} 
+    />
+  } 
+/>       
+      const sanitizedData = Object.fromEntries(
                 Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
               );
 

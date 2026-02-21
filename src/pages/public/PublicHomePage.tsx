@@ -200,49 +200,56 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                             Follow us on social media to stay updated with our latest news, events, and student achievements.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                        <div className="flex flex-col items-center md:items-start gap-8">
-                            <a href="https://www.facebook.com/bethel.ms" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-300 hover:text-blue-400 transition-transform transform hover:scale-105">
-                                <FacebookIcon className="w-16 h-16 text-blue-400" />
-                                <div>
-                                    <span className="text-xl font-bold text-white">Facebook</span>
-                                    <p>@bethel.ms</p>
-                                </div>
-                            </a>
-                            <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-300 hover:text-rose-400 transition-transform transform hover:scale-105">
-                                <InstagramIcon className="w-16 h-16" />
-                                <div>
-                                    <span className="text-xl font-bold text-white">Instagram</span>
-                                    <p>@bms_champhai</p>
-                                </div>
-                            </a>
-                            <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-4 text-slate-300 hover:text-red-400 transition-transform transform hover:scale-105">
-                                <YouTubeIcon className="w-16 h-16" />
-                                <div>
-                                    <span className="text-xl font-bold text-white">YouTube</span>
-                                    <p>@BethelMissionSchoolChamphai</p>
-                                </div>
-                            </a>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl mx-auto">
+
+                        {/* Social links — white card */}
+                        <div className="bg-white p-8 rounded-xl shadow-lg">
+                            <h3 className="text-xl font-bold text-slate-800 mb-6">Find Us On</h3>
+                            <div className="flex flex-col gap-5">
+                                <a href="https://www.facebook.com/bethel.ms" target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-4 text-slate-600 hover:text-blue-600 transition-transform transform hover:scale-105">
+                                    <FacebookIcon className="w-8 h-8 text-blue-600 flex-shrink-0" />
+                                    <div>
+                                        <span className="text-base font-bold text-slate-800">Facebook</span>
+                                        <p className="text-sm text-slate-500">@bethel.ms</p>
+                                    </div>
+                                </a>
+                                <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-4 text-slate-600 hover:text-rose-600 transition-transform transform hover:scale-105">
+                                    <InstagramIcon className="w-8 h-8 flex-shrink-0" />
+                                    <div>
+                                        <span className="text-base font-bold text-slate-800">Instagram</span>
+                                        <p className="text-sm text-slate-500">@bms_champhai</p>
+                                    </div>
+                                </a>
+                                <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-4 text-slate-600 hover:text-red-600 transition-transform transform hover:scale-105">
+                                    <YouTubeIcon className="w-8 h-8 flex-shrink-0" />
+                                    <div>
+                                        <span className="text-base font-bold text-slate-800">YouTube</span>
+                                        <p className="text-sm text-slate-500">@BethelMissionSchoolChamphai</p>
+                                    </div>
+                                </a>
+                            </div>
                         </div>
 
-                        <div className="flex justify-center lg:justify-end">
+                        {/* Facebook Plugin — white card */}
+                        <div className="bg-white p-4 rounded-xl shadow-lg flex justify-center overflow-hidden">
                             <div className="fb-page"
                                 data-href="https://www.facebook.com/bethel.ms"
                                 data-tabs="timeline"
-                                data-width="380"
-                                data-height="500"
-                                data-small-header="false"
+                                data-width="320"
+                                data-height="400"
+                                data-small-header="true"
                                 data-adapt-container-width="true"
                                 data-hide-cover="false"
-                                data-show-facepile="true">
+                                data-show-facepile="false">
                                 <blockquote cite="https://www.facebook.com/bethel.ms" className="fb-xfbml-parse-ignore">
                                     <a href="https://www.facebook.com/bethel.ms">Bethel Mission School, Champhai</a>
                                 </blockquote>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </section>

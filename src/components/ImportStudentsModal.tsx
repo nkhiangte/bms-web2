@@ -196,6 +196,8 @@ export const ImportStudentsModal: React.FC<ImportStudentsModalProps> = ({ isOpen
     const hasErrors = parsedStudents.some(p => p.errors.length > 0);
     const validCount = parsedStudents.filter(p => p.errors.length === 0).length;
 
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col h-full max-h-[90vh]" onClick={e => e.stopPropagation()}>

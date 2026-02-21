@@ -1045,8 +1045,11 @@ const App: React.FC = () => {
               }
               
               const studentRef = db.collection('students').doc(doc.id);
+              const updatedGrade = newGrade || studentData.grade;
+              const newStudentId = formatStudentId({ ...studentData, grade: updatedGrade }, nextYear);
               batch.update(studentRef, {
-                  grade: newGrade || studentData.grade, // Update grade for promoted, keep for detained
+                  grade: updatedGrade, // Update grade for promoted, keep for detained
+                  studentId: newStudentId, // Keep studentId current with new grade+year
                   academicYear: nextYear,
                   academicPerformance: [], // Reset academic performance for the new year
                   feePayments: { // Reset fees for the new year
@@ -1325,7 +1328,7 @@ const App: React.FC = () => {
         }>
            <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
            <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted for approval!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
-           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} />} />
+           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} />} />
            <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />
            <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: "Password changed. Please log in again." }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
            <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />

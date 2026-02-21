@@ -78,6 +78,11 @@ const calculateTermSummary = (
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
+            } else if (isClassIXorX && examId === 'terminal3') {
+                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+                const faMark = Number(r?.faMarks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+                if (totalMark < 33) fSubjects++;
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
@@ -196,6 +201,8 @@ const MultiTermReportCard: React.FC<{
     staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isIXTerminal3Report = student.grade === Grade.IX; // IX terminal3 shows SA+FA split
     const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
@@ -229,19 +236,33 @@ const MultiTermReportCard: React.FC<{
             <table className="w-full border-collapse border border-slate-400 text-sm">
                 <thead>
                     <tr className="bg-slate-100">
-                        <th rowSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>
-                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">I Entry</th>
-                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">II Entry</th>
-                        <th colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">III Entry</th>
+                        <th rowSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>
+                        <th colSpan={isIXorX ? 2 : hasActivities ? 2 : 1} className="p-1 border border-slate-400">I Terminal Examination</th>
+                        <th colSpan={isIXorX ? 2 : hasActivities ? 2 : 1} className="p-1 border border-slate-400">II Terminal Examination</th>
+                        <th colSpan={isIXorX ? 2 : hasActivities ? 2 : 1} className="p-1 border border-slate-400">III Terminal Examination</th>
                     </tr>
-                    {hasActivities && (
+                    {(hasActivities || isIXorX) && (
                         <tr className="bg-slate-100 text-xs">
-                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
-                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
-                            <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                            <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                            {hasActivities ? (
+                                <>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                </>
+                            ) : isIXorX ? (
+                                <>
+                                    {/* I Terminal: marks only — span 2 each */}
+                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
+                                    {/* II Terminal: marks only */}
+                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
+                                    {/* III Terminal: SA + FA */}
+                                    <th className="p-1 border border-slate-400 font-semibold">SA <span className="font-normal text-slate-400">/80</span></th>
+                                    <th className="p-1 border border-slate-400 font-semibold">FA <span className="font-normal text-slate-400">/20</span></th>
+                                </>
+                            ) : null}
                         </tr>
                     )}
                 </thead>
@@ -272,6 +293,24 @@ const MultiTermReportCard: React.FC<{
                                             <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
                                         </>
                                     )
+                                ) : isIXTerminal3Report ? (
+                                    isGraded ? (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* I Terminal: marks span 2 cols */}
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.marks ?? '-'}</td>
+                                            {/* II Terminal: marks span 2 cols */}
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.marks ?? '-'}</td>
+                                            {/* III Terminal: SA and FA in separate cols */}
+                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.saMarks ?? (term3Result?.marks != null ? term3Result.marks : '-')}</td>
+                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.faMarks ?? '-'}</td>
+                                        </>
+                                    )
                                 ) : (
                                     <>
                                         <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
@@ -297,33 +336,33 @@ const MultiTermReportCard: React.FC<{
                     )}
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Grand Total</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.grandTotal ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.grandTotal ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.grandTotal ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Result</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.result ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.result ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.result ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Rank</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.rank ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.rank ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.rank ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Percentage</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Grade</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.academicGrade ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.academicGrade ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.academicGrade ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.academicGrade ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Attendance %</td>

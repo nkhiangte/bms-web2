@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
 import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
@@ -73,6 +73,34 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
   // Class IX terminal3 uses SA (max 80) + FA (max 20) split columns
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
+
+  // Keyboard navigation: Enter moves to next student's same column
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const current = e.currentTarget;
+    const row = parseInt(current.getAttribute('data-row') || '0', 10);
+    const col = parseInt(current.getAttribute('data-col') || '0', 10);
+    // Find the input in the next row with same col
+    const next = tableRef.current?.querySelector<HTMLInputElement>(
+      `input[data-row="${row + 1}"][data-col="${col}"]`
+    );
+    if (next) {
+      next.focus();
+      next.select();
+    } else {
+      // Wrap to first row, next column
+      const nextColFirst = tableRef.current?.querySelector<HTMLInputElement>(
+        `input[data-col="${col + 1}"][data-row="0"]`
+      );
+      if (nextColFirst) {
+        nextColFirst.focus();
+        nextColFirst.select();
+      }
+    }
+  }, []);
 
   const [marksData, setMarksData] = useState<MarksData>({});
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
@@ -379,7 +407,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             </div>
         </div>
         
-        <div className="mt-2 overflow-x-auto border rounded-lg">
+        <div className="mt-2 overflow-x-auto border rounded-lg" ref={tableRef}>
             <table id="mark-statement-table" className="min-w-[2000px] text-sm">
                  <thead className="bg-slate-100">
                     <tr>
@@ -425,7 +453,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                     )}
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                    {processedData.map(student => (
+                    {processedData.map((student, studentIndex) => {
+                        // Build flat ordered column keys for this class/exam type
+                        // so every input gets a stable data-col index for keyboard nav
+                        let colIndex = 0;
+                        return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
                             <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-inherit whitespace-nowrap">{student.rollNo}</td>
                             <td className="px-2 py-1 font-medium border-r whitespace-nowrap">{student.name}</td>
@@ -434,6 +466,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 const isOABC = sd.gradingSystem === 'OABC';
 
                                 if (isOABC) {
+                                    const col = colIndex++;
                                     return (
                                         <td key={sd.name} colSpan={1} className="px-0.5 py-1 border-l text-center">
                                             <select
@@ -449,35 +482,86 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 }
 
                                 if (isIXTerminal3) {
-                                    const saTotal = Number(marksData[student.id]?.[sd.name + '_sa'] || 0) + Number(marksData[student.id]?.[sd.name + '_fa'] || 0);
+                                    const saCol = colIndex++;
+                                    const faCol = colIndex++;
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_sa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')} className="form-input w-16 text-center" placeholder="-" max={80} />
+                                                <input
+                                                    type="number"
+                                                    value={marksData[student.id]?.[sd.name + '_sa'] ?? ''}
+                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')}
+                                                    onKeyDown={handleKeyDown}
+                                                    data-row={studentIndex}
+                                                    data-col={saCol}
+                                                    className="form-input w-16 text-center"
+                                                    placeholder="-"
+                                                    max={80}
+                                                />
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_fa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')} className="form-input w-16 text-center" placeholder="-" max={20} />
+                                                <input
+                                                    type="number"
+                                                    value={marksData[student.id]?.[sd.name + '_fa'] ?? ''}
+                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')}
+                                                    onKeyDown={handleKeyDown}
+                                                    data-row={studentIndex}
+                                                    data-col={faCol}
+                                                    className="form-input w-16 text-center"
+                                                    placeholder="-"
+                                                    max={20}
+                                                />
                                             </td>
                                         </React.Fragment>
                                     );
                                 }
 
                                 if (hasActivities) {
+                                    const examCol = colIndex++;
+                                    const actCol = colIndex++;
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} className="form-input w-16 text-center" placeholder="-" />
+                                                <input
+                                                    type="number"
+                                                    value={marksData[student.id]?.[sd.name + '_exam'] ?? ''}
+                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')}
+                                                    onKeyDown={handleKeyDown}
+                                                    data-row={studentIndex}
+                                                    data-col={examCol}
+                                                    className="form-input w-16 text-center"
+                                                    placeholder="-"
+                                                />
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} className="form-input w-16 text-center" placeholder="-" />
+                                                <input
+                                                    type="number"
+                                                    value={marksData[student.id]?.[sd.name + '_activity'] ?? ''}
+                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')}
+                                                    onKeyDown={handleKeyDown}
+                                                    data-row={studentIndex}
+                                                    data-col={actCol}
+                                                    className="form-input w-16 text-center"
+                                                    placeholder="-"
+                                                />
                                             </td>
                                         </React.Fragment>
                                     );
                                 }
                                 
+                                const totalCol = colIndex++;
                                 return (
                                     <td key={sd.name} className="px-0.5 py-1 border-l text-center">
-                                        <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} className="form-input w-16 text-center" placeholder="-" />
+                                        <input
+                                            type="number"
+                                            value={marksData[student.id]?.[sd.name] ?? ''}
+                                            onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')}
+                                            onKeyDown={handleKeyDown}
+                                            data-row={studentIndex}
+                                            data-col={totalCol}
+                                            className="form-input w-16 text-center"
+                                            placeholder="-"
+                                        />
                                     </td>
                                 );
                             })}
@@ -495,7 +579,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                         </tr>
-                    ))}
+                        );
+                    })}
                 </tbody>
             </table>
         </div>

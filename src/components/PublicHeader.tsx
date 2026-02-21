@@ -231,8 +231,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
         </nav>
     </div>
 )}
-            )}
-        </header>
+                </header>
     );
 };
 export default PublicHeader;

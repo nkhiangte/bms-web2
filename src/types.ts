@@ -702,3 +702,13 @@ declare global {
         Razorpay: any;
     }
 }
+
+// Website Navigation Menu Interface
+export interface NavMenuItem {
+    id: string;
+    label: string;
+    path: string;
+    order: number;
+    parent?: string;
+    isActive: boolean;
+}

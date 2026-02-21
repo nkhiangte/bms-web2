@@ -1227,9 +1227,13 @@ const App: React.FC = () => {
     });
 
 
-    // Navigation menu listener
-    const unsubNav = db.collection('navigation').orderBy('order', 'asc').onSnapshot(snapshot => {
-        setNavigation(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem)));
+    // Navigation menu listener (sort client-side to avoid needing a Firestore index)
+    const unsubNav = db.collection('navigation').onSnapshot(snapshot => {
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem));
+        setNavigation(items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+    }, (error) => {
+        console.error("Navigation listener error:", error);
+        // Don't crash - just leave navigation empty
     });
 
     return () => {

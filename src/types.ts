@@ -697,18 +697,18 @@ export interface ClassRoutine {
 
 export type DailyRoutine = ClassRoutine[];
 
-declare global {
-    interface Window {
-        Razorpay: any;
-    }
-}
 
-// Website Navigation Menu Interface
 export interface NavMenuItem {
     id: string;
     label: string;
     path: string;
     order: number;
-    parent?: string;
-    isActive: boolean;
+    isActive?: boolean;
+    updatedAt?: string;
+}
+
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
 }

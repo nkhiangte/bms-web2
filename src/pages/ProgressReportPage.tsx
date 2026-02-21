@@ -60,10 +60,17 @@ const calculateTermSummary = (
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
     const studentData = classmates.map(s => {
-        const studentExam = s.academicPerformance?.find(e => {
-            const examTemplate = TERMINAL_EXAMS.find(t => t.id === examId);
-            if (!examTemplate) return false;
-            return e.id === examId || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase());
+        const studentExam = s.academicPerformance?.find((e) => {
+            if (e.id === examId) return true;
+            if (!e.name) return false;
+            const eName = e.name.trim().toLowerCase();
+            if (examTemplate && eName === examTemplate.name.trim().toLowerCase()) return true;
+            const legacyNames: Record<string, string[]> = {
+                terminal1: ['first terminal examination', 'i terminal examination'],
+                terminal2: ['second terminal examination', 'ii terminal examination'],
+                terminal3: ['third terminal examination', 'iii terminal examination'],
+            };
+            return (legacyNames[examId] || []).includes(eName);
         });
         
         let gTotal = 0;
@@ -647,13 +654,27 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                         <p className="font-semibold mt-1 print:text-sm">Academic Session: {academicYear}</p>
                     </header>
 
-                    <section className="mb-2 p-2 border-2 border-slate-400 rounded-lg grid grid-cols-3 print:grid-cols-3 gap-x-2 gap-y-1 text-sm print:mb-1 print:p-1 print:gap-y-0.5">
-                        <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold text-base">{student.name}</span></div>
-                        <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold text-base">{student.fatherName}</span></div>
-                        <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold text-base">{formatDateForDisplay(student.dateOfBirth)}</span></div>
-                        <div><strong className="block text-slate-600">Class:</strong><span className="font-bold text-base">{student.grade}</span></div>
-                        <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold text-base">{student.rollNo}</span></div>
-                        <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
+                    <section className="mb-2 border-2 border-slate-400 rounded-lg text-sm print:mb-1 flex items-stretch">
+                        <div className="flex-1 p-2 print:p-1 grid grid-cols-3 gap-x-2 gap-y-1 print:gap-y-0.5 content-start">
+                            <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold text-base">{student.name}</span></div>
+                            <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold text-base">{student.fatherName}</span></div>
+                            <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold text-base">{formatDateForDisplay(student.dateOfBirth)}</span></div>
+                            <div><strong className="block text-slate-600">Class:</strong><span className="font-bold text-base">{student.grade}</span></div>
+                            <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold text-base">{student.rollNo}</span></div>
+                            <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
+                        </div>
+                        <div className="border-l-2 border-slate-400 flex-shrink-0 w-24 print:w-20 flex items-center justify-center p-1">
+                            {student.photographUrl ? (
+                                <img
+                                    src={student.photographUrl}
+                                    alt={student.name}
+                                    className="w-full h-24 print:h-20 object-cover rounded"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                            ) : (
+                                <div className="w-full h-24 print:h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs text-center">No Photo</div>
+                            )}
+                        </div>
                     </section>
 
                     <section className="mt-4 print:mt-2">

@@ -174,7 +174,7 @@ const ReportSearchPage: React.FC<ReportSearchPageProps> = ({ students, academicY
                                         {TERMINAL_EXAMS.map(exam => (
                                             <Link
                                                 key={exam.id}
-                                                to={`/progress-report/${foundStudent.id}/${exam.id}`}
+                                                to={`/portal/progress-report/${foundStudent.id}/${exam.id}`}
                                                 target="_blank"
                                                 className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
                                                 onClick={() => setIsReportDropdownOpen(false)}

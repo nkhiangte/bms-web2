@@ -8,6 +8,7 @@ import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
+import StudentFormModal from '@/components/StudentFormModal';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 

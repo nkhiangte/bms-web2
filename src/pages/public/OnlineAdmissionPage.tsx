@@ -37,6 +37,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
+    // FIX: Scroll to top whenever step changes (fixes landing at bottom of page)
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [step]);
     
     // Selection State
     const [showIdInput, setShowIdInput] = useState<'existing' | 'continue' | null>(null);
@@ -88,13 +93,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         setFetchError('');
 
         const fillFormWithStudent = (data: Student | OnlineAdmission, isAdmissionDraft = false) => {
-             const studentData = data as Student; // Assume student structure for properties
+             const studentData = data as Student;
              const admissionData = data as OnlineAdmission;
              
              const nextGrade = isAdmissionDraft ? admissionData.admissionGrade : getNextGrade(studentData.grade);
              
              setFormData(prev => ({
-                 ...(isAdmissionDraft ? admissionData : prev), // Load draft or keep defaults
+                 ...(isAdmissionDraft ? admissionData : prev),
                  studentType: 'Existing',
                  previousStudentId: studentData.studentId || idInput,
                  admissionGrade: nextGrade || studentData.grade, 
@@ -136,7 +141,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 return;
             }
 
-            // Existing student logic
              let snapshot = await db.collection('students').where('studentId', '==', idInput).limit(1).get();
 
              if (!snapshot.empty) {
@@ -196,7 +200,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        // Validation for new students
         const isNewStudent = formData.studentType === 'Newcomer';
         const isNursery = formData.admissionGrade === Grade.NURSERY;
 

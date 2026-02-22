@@ -1338,8 +1338,7 @@ const App: React.FC = () => {
           <Route path="facilities" element={<FacilitiesPage user={user} />} />
           <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
           <Route path="hostel" element={<HostelPage user={user} />} /> 
-         <Route path="gallery" element={<GalleryPage user={user} />} />
-          <Route path="gallery" element={<GalleryPage user={user} />} />
+       <Route path="gallery/*" element={<GalleryPage user={user} />} />
           <Route path="contact" element={<ContactPage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />

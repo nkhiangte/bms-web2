@@ -1,99 +1,109 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-// Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
-import { FolderIcon } from '@/components/Icons';
-import DynamicImageGrid from '@/components/DynamicImageGrid';
+import { FolderIcon, SpinnerIcon } from '@/components/Icons';
 import { User } from '@/types';
+import { db } from '@/firebaseConfig';
 
 const { useLocation } = ReactRouterDOM as any;
 
-// Data structure definitions
+// ── Types (must match GalleryManagerPage exactly) ──────────────────────────
 interface GalleryImage {
-  src: string;
-  alt: string;
+    id: string;
+    title: string;
+    caption: string;
+    imageSrc: string;
 }
 
 interface GalleryFolder {
-  name: string;
-  thumbnail: string;
-  images?: GalleryImage[]; // Legacy support for hardcoded images
-  subfolders?: GalleryFolder[];
+    name: string;
+    thumbnail?: string;
+    subfolders?: GalleryFolder[];
 }
 
-// Hierarchical data structure for the entire gallery
-const galleryData: GalleryFolder[] = [
-    {
-        name: 'By Event/Occasion',
-        thumbnail: 'https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg',
-        subfolders: [
-            { name: 'Annual Day', thumbnail: 'https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg' },
-            { name: 'Sports Day', thumbnail: 'https://i.ibb.co/G4nP4YwB/photo-collage-png-1.png' },
-            {
-                name: 'Science Fair',
-                thumbnail: 'https://i.ibb.co/wJgWfX6/science-lab.jpg',
-                subfolders: [
-                    { name: 'Science Exhibition', thumbnail: 'https://i.ibb.co/PZQWjnSw/513908221-24296131616677879-6351230232773483387-n.jpg' },
-                    { name: 'Science Congress', thumbnail: 'https://i.ibb.co/gbZSsDzP/515223941-24291994003758307-393261482748103493-n.jpg' },
-                    { name: 'Inspire Award Manak', thumbnail: 'https://i.ibb.co/4RQczTjb/511184389-1141633194662722-6900955725830066556-n.jpg' },
-                ]
-            },
-            { name: 'Independence Day', thumbnail: 'https://i.ibb.co/cS90VHKc/476668433-1037388101753899-3862117555630986673-n.jpg' },
-            { name: 'Teachers Day', thumbnail: 'https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg' },
-            { name: 'Cultural Programs', thumbnail: 'https://i.ibb.co/jPvswhZt/473249294-1015300233962686-4114946528800957864-n.jpg' },
-            { name: 'Competitions', thumbnail: 'https://i.ibb.co/xqSRg0WL/nano-banana-no-bg-2025-08-30-T18-20-46.jpg' },
-            { 
-                name: 'Field Trips', 
-                thumbnail: 'https://i.ibb.co/JjD8shYt/482014936-1057351903090852-7796551938999983593-n.jpg',
-                subfolders: [
-                    {
-                        name: 'Eco-Club',
-                        thumbnail: 'https://i.ibb.co/JjD8shYt/482014936-1057351903090852-7796551938999983593-n.jpg',
-                    }
-                ]
-            },
-        ]
-    },
-    {
-        name: 'By Year',
-        thumbnail: 'https://i.ibb.co/yc3mzG5V/IMG-4859.jpg',
-        subfolders: [
-            { name: '2025 Events', thumbnail: 'https://i.ibb.co/yc3mzG5V/IMG-4859.jpg' },
-            { name: '2024 Events', thumbnail: 'https://i.ibb.co/yc3mzG5V/IMG-4859.jpg' },
-            { name: '2023 Events', thumbnail: 'https://i.ibb.co/yc3mzG5V/IMG-4859.jpg' },
-        ]
-    },
-    {
-        name: 'By Category',
-        thumbnail: 'https://i.ibb.co/L5r89w8/classroom.jpg',
-        subfolders: [
-            { 
-                name: 'Students', 
-                thumbnail: 'https://i.ibb.co/qY7bFZS/students-hands-up.jpg', 
-                subfolders: [
-                    { name: 'Nursery', thumbnail: 'https://i.ibb.co/qY7bFZS/students-hands-up.jpg' },
-                    { name: 'Kindergarten', thumbnail: 'https://i.ibb.co/7tJPj551/KG.jpg' },
-                    { name: 'Class I', thumbnail: 'https://i.ibb.co/Xf5c4818/Class-I.jpg' },
-                    { name: 'Class II', thumbnail: 'https://i.ibb.co/tMrpjDZ0/class-II.jpg' },
-                    { name: 'Class III', thumbnail: 'https://i.ibb.co/cXSYv4mz/Class-III.jpg' },
-                    { name: 'Class IV', thumbnail: 'https://i.ibb.co/d03Y9tK8/IV.jpg' },
-                    { name: 'Class V', thumbnail: 'https://i.ibb.co/Y4h2LgxK/V.jpg' },
-                    { name: 'Class VI', thumbnail: 'https://i.ibb.co/YHMpJV4/vi.jpg' },
-                    { name: 'Class VII', thumbnail: 'https://i.ibb.co/mr37WwBH/VII.jpg' },
-                    { name: 'Class VIII', thumbnail: 'https://i.ibb.co/r2wSqfQn/VIII.jpg' },
-                    { name: 'Class IX', thumbnail: 'https://i.ibb.co/JFFqxc47/IX.jpg' },
-                    { name: 'Class X', thumbnail: 'https://i.ibb.co/Rk4f4FCm/X.jpg' },
-                ]
-            },
-            { name: 'Campus & Infrastructure', thumbnail: 'https://i.ibb.co/BHqzjc7B/476817001-1037388215087221-6787739082745578123-n.jpg' },
-            { name: 'Classrooms', thumbnail: 'https://i.ibb.co/L5r89w8/classroom.jpg' },
-            { name: 'Achievements', thumbnail: 'https://i.ibb.co/wJgWfX6/science-lab.jpg' },
-            { name: 'Activities', thumbnail: 'https://i.ibb.co/0Y1k4g3/art-class.jpg' },
-            { name: 'Alumni', thumbnail: 'https://i.ibb.co/yc3mzG5V/IMG-4859.jpg' },
-        ]
-    }
+// ── Helpers (must match GalleryManagerPage exactly) ────────────────────────
+const FOLDERS_DOC_ID = 'gallery_folders';
+
+const pathToId = (path: string[]) =>
+    `gallery_${path.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, '_')).join('_')}`;
+
+// Default folders (fallback if Firestore has none yet)
+const DEFAULT_FOLDERS: GalleryFolder[] = [
+    { name: 'By Event/Occasion', subfolders: [
+        { name: 'Annual Day' }, { name: 'Sports Day' },
+        { name: 'Science Fair', subfolders: [
+            { name: 'Science Exhibition' }, { name: 'Science Congress' }, { name: 'Inspire Award Manak' },
+        ]},
+        { name: 'Independence Day' }, { name: 'Teachers Day' },
+        { name: 'Cultural Programs' }, { name: 'Competitions' },
+        { name: 'Field Trips', subfolders: [{ name: 'Eco-Club' }] },
+    ]},
+    { name: 'By Year', subfolders: [
+        { name: '2025 Events' }, { name: '2024 Events' }, { name: '2023 Events' },
+    ]},
+    { name: 'By Category', subfolders: [
+        { name: 'Students', subfolders: [
+            { name: 'Nursery' }, { name: 'Kindergarten' },
+            { name: 'Class I' }, { name: 'Class II' }, { name: 'Class III' },
+            { name: 'Class IV' }, { name: 'Class V' }, { name: 'Class VI' },
+            { name: 'Class VII' }, { name: 'Class VIII' }, { name: 'Class IX' }, { name: 'Class X' },
+        ]},
+        { name: 'Campus & Infrastructure' }, { name: 'Classrooms' },
+        { name: 'Achievements' }, { name: 'Activities' }, { name: 'Alumni' },
+    ]}
 ];
 
+// ── Lightbox ───────────────────────────────────────────────────────────────
+const Lightbox: React.FC<{ images: GalleryImage[]; index: number; onClose: () => void; onNav: (i: number) => void }> = ({ images, index, onClose, onNav }) => {
+    const img = images[index];
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowRight') onNav(Math.min(index + 1, images.length - 1));
+            if (e.key === 'ArrowLeft') onNav(Math.max(index - 1, 0));
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [index]);
+
+    return (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="relative max-w-5xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                {/* Close */}
+                <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
+
+                {/* Image */}
+                <img src={img.imageSrc} alt={img.title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" />
+
+                {/* Caption */}
+                {(img.title || img.caption) && (
+                    <div className="mt-4 text-center">
+                        {img.title && <p className="text-white font-semibold text-lg">{img.title}</p>}
+                        {img.caption && <p className="text-slate-300 text-sm mt-1">{img.caption}</p>}
+                    </div>
+                )}
+
+                {/* Prev / Next */}
+                {index > 0 && (
+                    <button onClick={() => onNav(index - 1)}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white/70 hover:text-white text-4xl font-light">
+                        ‹
+                    </button>
+                )}
+                {index < images.length - 1 && (
+                    <button onClick={() => onNav(index + 1)}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white/70 hover:text-white text-4xl font-light">
+                        ›
+                    </button>
+                )}
+
+                {/* Counter */}
+                <p className="text-slate-400 text-sm mt-3">{index + 1} / {images.length}</p>
+            </div>
+        </div>
+    );
+};
+
+// ── Main Component ─────────────────────────────────────────────────────────
 interface GalleryPageProps {
     user: User | null;
 }
@@ -102,89 +112,202 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
     const location = useLocation();
     const [currentPath, setCurrentPath] = useState<string[]>([]);
 
+    // Folder tree from Firestore
+    const [folderTree, setFolderTree] = useState<GalleryFolder[]>(DEFAULT_FOLDERS);
+    const [folderTreeLoading, setFolderTreeLoading] = useState(true);
+
+    // Images for current leaf folder
+    const [images, setImages] = useState<GalleryImage[]>([]);
+    const [imagesLoading, setImagesLoading] = useState(false);
+
+    // Lightbox
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+    // Scroll to top on path change
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPath]);
+
+    // Load folder tree from Firestore
+    useEffect(() => {
+        const unsub = db.collection('website_content').doc(FOLDERS_DOC_ID).onSnapshot(
+            doc => {
+                if (doc.exists && doc.data()?.folders) {
+                    setFolderTree(doc.data()!.folders);
+                }
+                setFolderTreeLoading(false);
+            },
+            () => setFolderTreeLoading(false)
+        );
+        return () => unsub();
+    }, []);
+
+    // Navigate to initial path from router state
     useEffect(() => {
         if (location.state?.initialPath && Array.isArray(location.state.initialPath)) {
             setCurrentPath(location.state.initialPath);
         }
     }, [location.state]);
 
-    const handleFolderClick = (folderName: string) => {
-        setCurrentPath(prev => [...prev, folderName]);
-    };
-
-    const handleBreadcrumbClick = (index: number) => {
-        setCurrentPath(prev => prev.slice(0, index + 1));
-    };
-
-    const currentContent = useMemo(() => {
-        let content: { subfolders?: GalleryFolder[] } = { subfolders: galleryData };
-        let currentLevel = galleryData;
-        
-        for (const folderName of currentPath) {
-            const nextFolder = currentLevel.find(f => f.name === folderName);
-            if (nextFolder) {
-                content = { subfolders: nextFolder.subfolders };
-                currentLevel = nextFolder.subfolders || [];
-            } else {
-                // If not found (shouldn't happen in normal flow), revert to root
-                return { subfolders: galleryData };
-            }
+    // Current folder content
+    const currentSubfolders = useMemo(() => {
+        if (currentPath.length === 0) return folderTree;
+        let level = folderTree;
+        for (const name of currentPath) {
+            const found = level.find(f => f.name === name);
+            if (!found) return [];
+            level = found.subfolders || [];
         }
-        return content;
-    }, [currentPath]);
+        return level;
+    }, [currentPath, folderTree]);
 
-    const isLeafNode = !currentContent.subfolders || currentContent.subfolders.length === 0;
+    const isLeafNode = currentPath.length > 0 && currentSubfolders.length === 0;
 
-    // Generate a unique ID for Firestore based on the folder path
-    const galleryId = currentPath.length > 0 
-        ? `gallery_${currentPath.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, '_')).join('_')}`
-        : 'gallery_root';
+    // Load images when at a leaf folder
+    useEffect(() => {
+        if (!isLeafNode) { setImages([]); return; }
+        const id = pathToId(currentPath);
+        setImagesLoading(true);
+        const unsub = db.collection('website_content').doc(id).onSnapshot(
+            doc => { setImages(doc.exists ? (doc.data()?.items || []) : []); setImagesLoading(false); },
+            () => setImagesLoading(false)
+        );
+        return () => unsub();
+    }, [isLeafNode, currentPath.join('/')]);
+
+    // Get thumbnail for a folder (first image from its Firestore doc, or none)
+    const [folderThumbs, setFolderThumbs] = useState<Record<string, string>>({});
+    useEffect(() => {
+        // Pre-fetch thumbnails for current visible subfolders
+        currentSubfolders.forEach(async (folder) => {
+            const path = [...currentPath, folder.name];
+            const id = pathToId(path);
+            try {
+                const doc = await db.collection('website_content').doc(id).get();
+                const items: GalleryImage[] = doc.exists ? (doc.data()?.items || []) : [];
+                if (items.length > 0) {
+                    setFolderThumbs(prev => ({ ...prev, [folder.name]: items[0].imageSrc }));
+                }
+            } catch {}
+        });
+    }, [currentSubfolders]);
 
     return (
         <>
+            {lightboxIndex !== null && (
+                <Lightbox
+                    images={images}
+                    index={lightboxIndex}
+                    onClose={() => setLightboxIndex(null)}
+                    onNav={setLightboxIndex}
+                />
+            )}
+
             <div className="bg-slate-50 py-16 min-h-screen">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="mb-8">
-                        <h1 className="text-4xl font-extrabold text-slate-800 text-center">School Gallery</h1>
+
+                    <div className="mb-8 text-center">
+                        <h1 className="text-4xl font-extrabold text-slate-800">School Gallery</h1>
+                        <p className="mt-2 text-slate-500">Browse photos by event, year, or category</p>
                     </div>
-                    
+
                     {/* Breadcrumbs */}
-                    <nav className="text-sm font-semibold text-slate-600 mb-8 flex items-center flex-wrap" aria-label="Breadcrumb">
-                        <button onClick={() => setCurrentPath([])} className="hover:text-sky-600">Gallery</button>
+                    <nav className="text-sm font-semibold text-slate-600 mb-8 flex items-center flex-wrap gap-1" aria-label="Breadcrumb">
+                        <button onClick={() => setCurrentPath([])} className="hover:text-sky-600 transition-colors">Gallery</button>
                         {currentPath.map((folder, index) => (
                             <React.Fragment key={folder}>
-                                <span className="mx-2">/</span>
-                                <button onClick={() => handleBreadcrumbClick(index)} className="hover:text-sky-600">
+                                <span className="text-slate-300">/</span>
+                                <button
+                                    onClick={() => setCurrentPath(prev => prev.slice(0, index + 1))}
+                                    className={`hover:text-sky-600 transition-colors ${index === currentPath.length - 1 ? 'text-sky-600' : ''}`}
+                                >
                                     {folder}
                                 </button>
                             </React.Fragment>
                         ))}
                     </nav>
 
-                    {!isLeafNode ? (
-                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                            {/* Render Folders */}
-                            {currentContent.subfolders?.map((folder) => (
-                                <div 
-                                    key={folder.name}
-                                    onClick={() => handleFolderClick(folder.name)}
-                                    className="aspect-square relative rounded-lg overflow-hidden shadow-md cursor-pointer group"
-                                >
+                    {folderTreeLoading ? (
+                        <div className="flex justify-center py-20">
+                            <SpinnerIcon className="w-10 h-10 text-sky-500" />
+                        </div>
+                    ) : !isLeafNode ? (
+                        /* ── Folder Grid ── */
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                            {currentSubfolders.map(folder => {
+                                const thumb = folderThumbs[folder.name] || folder.thumbnail;
+                                const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
+                                return (
                                     <div
-                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                                        style={{ backgroundImage: `url(${folder.thumbnail})` }}
-                                    ></div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
-                                    <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
-                                        <FolderIcon className="w-8 h-8 opacity-80" />
-                                        <h3 className="font-bold text-lg mt-1">{folder.name}</h3>
+                                        key={folder.name}
+                                        onClick={() => setCurrentPath(prev => [...prev, folder.name])}
+                                        className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group"
+                                    >
+                                        {thumb ? (
+                                            <div
+                                                className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                                                style={{ backgroundImage: `url(${thumb})` }}
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 bg-gradient-to-br from-sky-100 to-slate-200 flex items-center justify-center">
+                                                <FolderIcon className="w-16 h-16 text-sky-300" />
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+                                        <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
+                                            <FolderIcon className="w-6 h-6 opacity-80 mb-1" />
+                                            <h3 className="font-bold text-base leading-tight">{folder.name}</h3>
+                                            {hasSubfolders && (
+                                                <p className="text-xs text-white/60 mt-0.5">{folder.subfolders!.length} subfolder{folder.subfolders!.length !== 1 ? 's' : ''}</p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
-                        // Render Dynamic Grid for Leaf Nodes
-                        <DynamicImageGrid id={galleryId} user={user} displayType="grid" />
+                        /* ── Image Grid (Leaf Node) ── */
+                        imagesLoading ? (
+                            <div className="flex justify-center py-20">
+                                <SpinnerIcon className="w-10 h-10 text-sky-500" />
+                            </div>
+                        ) : images.length === 0 ? (
+                            <div className="text-center py-24 border-2 border-dashed border-slate-200 rounded-xl">
+                                <FolderIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                <p className="text-slate-500 font-semibold">No photos in this folder yet.</p>
+                                <p className="text-slate-400 text-sm mt-1">Check back soon!</p>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-sm text-slate-400 mb-4">{images.length} photo{images.length !== 1 ? 's' : ''}</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                                    {images.map((img, idx) => (
+                                        <div
+                                            key={img.id}
+                                            onClick={() => setLightboxIndex(idx)}
+                                            className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group"
+                                        >
+                                            <img
+                                                src={img.imageSrc}
+                                                alt={img.title}
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                                                <svg className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                </svg>
+                                            </div>
+                                            {(img.title || img.caption) && (
+                                                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                                    {img.title && <p className="text-white text-sm font-semibold truncate">{img.title}</p>}
+                                                    {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )
                     )}
                 </div>
             </div>

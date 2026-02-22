@@ -4,9 +4,9 @@ import { FolderIcon, SpinnerIcon } from '@/components/Icons';
 import { User } from '@/types';
 import { db } from '@/firebaseConfig';
 
-const { useLocation } = ReactRouterDOM as any;
+const { useNavigate, useParams } = ReactRouterDOM as any;
 
-// ── Types (must match GalleryManagerPage exactly) ──────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 interface GalleryImage {
     id: string;
     title: string;
@@ -20,13 +20,29 @@ interface GalleryFolder {
     subfolders?: GalleryFolder[];
 }
 
-// ── Helpers (must match GalleryManagerPage exactly) ────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 const FOLDERS_DOC_ID = 'gallery_folders';
 
+// Convert folder name to URL-safe slug: "By Category" → "by-category"
+const toSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// Convert URL slug back to folder name by searching the tree
+const slugToName = (slug: string, folders: GalleryFolder[]): string | null => {
+    for (const f of folders) {
+        if (toSlug(f.name) === slug) return f.name;
+        if (f.subfolders) {
+            const found = slugToName(slug, f.subfolders);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+// Convert path array to Firestore doc ID
 const pathToId = (path: string[]) =>
     `gallery_${path.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, '_')).join('_')}`;
 
-// Default folders (fallback if Firestore has none yet)
+// Default folders fallback
 const DEFAULT_FOLDERS: GalleryFolder[] = [
     { name: 'By Event/Occasion', subfolders: [
         { name: 'Annual Day' }, { name: 'Sports Day' },
@@ -53,7 +69,12 @@ const DEFAULT_FOLDERS: GalleryFolder[] = [
 ];
 
 // ── Lightbox ───────────────────────────────────────────────────────────────
-const Lightbox: React.FC<{ images: GalleryImage[]; index: number; onClose: () => void; onNav: (i: number) => void }> = ({ images, index, onClose, onNav }) => {
+const Lightbox: React.FC<{
+    images: GalleryImage[];
+    index: number;
+    onClose: () => void;
+    onNav: (i: number) => void;
+}> = ({ images, index, onClose, onNav }) => {
     const img = images[index];
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -68,35 +89,22 @@ const Lightbox: React.FC<{ images: GalleryImage[]; index: number; onClose: () =>
     return (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative max-w-5xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                {/* Close */}
                 <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
-
-                {/* Image */}
                 <img src={img.imageSrc} alt={img.title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" />
-
-                {/* Caption */}
                 {(img.title || img.caption) && (
                     <div className="mt-4 text-center">
                         {img.title && <p className="text-white font-semibold text-lg">{img.title}</p>}
                         {img.caption && <p className="text-slate-300 text-sm mt-1">{img.caption}</p>}
                     </div>
                 )}
-
-                {/* Prev / Next */}
                 {index > 0 && (
                     <button onClick={() => onNav(index - 1)}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white/70 hover:text-white text-4xl font-light">
-                        ‹
-                    </button>
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white/70 hover:text-white text-5xl">‹</button>
                 )}
                 {index < images.length - 1 && (
                     <button onClick={() => onNav(index + 1)}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white/70 hover:text-white text-4xl font-light">
-                        ›
-                    </button>
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white/70 hover:text-white text-5xl">›</button>
                 )}
-
-                {/* Counter */}
                 <p className="text-slate-400 text-sm mt-3">{index + 1} / {images.length}</p>
             </div>
         </div>
@@ -109,8 +117,10 @@ interface GalleryPageProps {
 }
 
 const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
-    const location = useLocation();
-    const [currentPath, setCurrentPath] = useState<string[]>([]);
+    const navigate = useNavigate();
+    // React Router wildcard param — captures everything after /gallery/
+    const params = useParams();
+    const slugPath: string = (params['*'] || '').replace(/^\/+|\/+$/g, ''); // trim slashes
 
     // Folder tree from Firestore
     const [folderTree, setFolderTree] = useState<GalleryFolder[]>(DEFAULT_FOLDERS);
@@ -123,18 +133,19 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
     // Lightbox
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-    // Scroll to top on path change
+    // Folder thumbnail cache
+    const [folderThumbs, setFolderThumbs] = useState<Record<string, string>>({});
+
+    // Scroll to top on navigation
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [currentPath]);
+    }, [slugPath]);
 
     // Load folder tree from Firestore
     useEffect(() => {
         const unsub = db.collection('website_content').doc(FOLDERS_DOC_ID).onSnapshot(
             doc => {
-                if (doc.exists && doc.data()?.folders) {
-                    setFolderTree(doc.data()!.folders);
-                }
+                if (doc.exists && doc.data()?.folders) setFolderTree(doc.data()!.folders);
                 setFolderTreeLoading(false);
             },
             () => setFolderTreeLoading(false)
@@ -142,14 +153,23 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
         return () => unsub();
     }, []);
 
-    // Navigate to initial path from router state
-    useEffect(() => {
-        if (location.state?.initialPath && Array.isArray(location.state.initialPath)) {
-            setCurrentPath(location.state.initialPath);
+    // Convert URL slug path → folder name path array
+    // e.g. "by-category/classrooms" → ["By Category", "Classrooms"]
+    const currentPath: string[] = useMemo(() => {
+        if (!slugPath || folderTreeLoading) return [];
+        const slugs = slugPath.split('/').filter(Boolean);
+        const result: string[] = [];
+        let level = folderTree;
+        for (const slug of slugs) {
+            const found = level.find(f => toSlug(f.name) === slug);
+            if (!found) break;
+            result.push(found.name);
+            level = found.subfolders || [];
         }
-    }, [location.state]);
+        return result;
+    }, [slugPath, folderTree, folderTreeLoading]);
 
-    // Current folder content
+    // Current folder's subfolders
     const currentSubfolders = useMemo(() => {
         if (currentPath.length === 0) return folderTree;
         let level = folderTree;
@@ -163,7 +183,23 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
 
     const isLeafNode = currentPath.length > 0 && currentSubfolders.length === 0;
 
-    // Load images when at a leaf folder
+    // Navigate to a folder — updates the URL
+    const navigateTo = (folderName: string) => {
+        const newSlug = [...currentPath, folderName].map(toSlug).join('/');
+        navigate(`/gallery/${newSlug}`);
+    };
+
+    // Navigate via breadcrumb
+    const navigateToBreadcrumb = (index: number) => {
+        if (index < 0) {
+            navigate('/gallery');
+        } else {
+            const newPath = currentPath.slice(0, index + 1).map(toSlug).join('/');
+            navigate(`/gallery/${newPath}`);
+        }
+    };
+
+    // Load images at leaf node
     useEffect(() => {
         if (!isLeafNode) { setImages([]); return; }
         const id = pathToId(currentPath);
@@ -175,11 +211,9 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
         return () => unsub();
     }, [isLeafNode, currentPath.join('/')]);
 
-    // Get thumbnail for a folder (first image from its Firestore doc, or none)
-    const [folderThumbs, setFolderThumbs] = useState<Record<string, string>>({});
+    // Pre-fetch folder thumbnails
     useEffect(() => {
-        // Pre-fetch thumbnails for current visible subfolders
-        currentSubfolders.forEach(async (folder) => {
+        currentSubfolders.forEach(async folder => {
             const path = [...currentPath, folder.name];
             const id = pathToId(path);
             try {
@@ -212,13 +246,15 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
                     </div>
 
                     {/* Breadcrumbs */}
-                    <nav className="text-sm font-semibold text-slate-600 mb-8 flex items-center flex-wrap gap-1" aria-label="Breadcrumb">
-                        <button onClick={() => setCurrentPath([])} className="hover:text-sky-600 transition-colors">Gallery</button>
+                    <nav className="text-sm font-semibold text-slate-600 mb-8 flex items-center flex-wrap gap-1">
+                        <button onClick={() => navigateToBreadcrumb(-1)} className="hover:text-sky-600 transition-colors">
+                            Gallery
+                        </button>
                         {currentPath.map((folder, index) => (
                             <React.Fragment key={folder}>
                                 <span className="text-slate-300">/</span>
                                 <button
-                                    onClick={() => setCurrentPath(prev => prev.slice(0, index + 1))}
+                                    onClick={() => navigateToBreadcrumb(index)}
                                     className={`hover:text-sky-600 transition-colors ${index === currentPath.length - 1 ? 'text-sky-600' : ''}`}
                                 >
                                     {folder}
@@ -240,7 +276,7 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
                                 return (
                                     <div
                                         key={folder.name}
-                                        onClick={() => setCurrentPath(prev => [...prev, folder.name])}
+                                        onClick={() => navigateTo(folder.name)}
                                         className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group"
                                     >
                                         {thumb ? (
@@ -258,7 +294,9 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
                                             <FolderIcon className="w-6 h-6 opacity-80 mb-1" />
                                             <h3 className="font-bold text-base leading-tight">{folder.name}</h3>
                                             {hasSubfolders && (
-                                                <p className="text-xs text-white/60 mt-0.5">{folder.subfolders!.length} subfolder{folder.subfolders!.length !== 1 ? 's' : ''}</p>
+                                                <p className="text-xs text-white/60 mt-0.5">
+                                                    {folder.subfolders!.length} subfolder{folder.subfolders!.length !== 1 ? 's' : ''}
+                                                </p>
                                             )}
                                         </div>
                                     </div>
@@ -288,8 +326,7 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
                                             className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group"
                                         >
                                             <img
-                                                src={img.imageSrc}
-                                                alt={img.title}
+                                                src={img.imageSrc} alt={img.title}
                                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">

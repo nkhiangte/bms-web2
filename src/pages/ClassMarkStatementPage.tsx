@@ -54,7 +54,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     return students.filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade]);
 
-  // Added explicit type cast to SubjectDefinition[] to resolve arithmetic operation errors in useMemo below
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
     let subjects = gradeDefinitions[grade]?.subjects || [];
@@ -71,10 +70,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const isClassIXorX = useMemo(() => grade === Grade.IX || grade === Grade.X, [grade]);
   const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
-  // Class IX terminal3 uses SA (max 80) + FA (max 20) split columns
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
 
-  // Keyboard navigation: Enter moves to next student's same column
   const tableRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -83,7 +80,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const current = e.currentTarget;
     const row = parseInt(current.getAttribute('data-row') || '0', 10);
     const col = parseInt(current.getAttribute('data-col') || '0', 10);
-    // Find the input in the next row with same col
     const next = tableRef.current?.querySelector<HTMLInputElement>(
       `input[data-row="${row + 1}"][data-col="${col}"]`
     );
@@ -91,7 +87,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       next.focus();
       next.select();
     } else {
-      // Wrap to first row, next column
       const nextColFirst = tableRef.current?.querySelector<HTMLInputElement>(
         `input[data-col="${col + 1}"][data-row="0"]`
       );
@@ -111,8 +106,17 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
   const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
 
+  // FIX: Prevents Firestore real-time listener from wiping unsaved marks.
+  // Without this, whenever App.tsx's onSnapshot fires (e.g. another student
+  // record updates), classStudents changes, this useEffect re-runs, and
+  // setMarksData resets all locally-edited marks back to DB values.
+  const isInitialized = useRef(false);
+
   useEffect(() => {
     if (classStudents.length === 0) return;
+    if (isInitialized.current) return; // Only initialize once
+    isInitialized.current = true;
+
     const initialMarks: MarksData = {};
     const initialAttendance: AttendanceData = {};
     classStudents.forEach(student => {
@@ -133,12 +137,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else if (grade === Grade.IX && examId === 'terminal3') {
-            // SA: prefer saMarks, fall back to examMarks (pre-SA/FA data stored this way), then marks
             initialMarks[student.id][subjectDef.name + '_sa'] = result?.saMarks ?? result?.examMarks ?? result?.marks ?? null;
-            // FA: prefer faMarks, fall back to activityMarks (safe fallback)
             initialMarks[student.id][subjectDef.name + '_fa'] = result?.faMarks ?? result?.activityMarks ?? null;
         } else {
-            // Robust check: even if activities are disabled for class, check both marks and examMarks field
             initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;
         }
       });
@@ -208,7 +209,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         let currentSubjFMValue: number = 0;
         
         if (hasActivities) {
-            // Fix: Simplified to avoid redundant Number wrapping while ensuring types are correct for arithmetic
             const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
             
@@ -223,7 +223,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
             currentSubjMarkValue = saMark + faMark;
             localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = 100; // SA 80 + FA 20
+            currentSubjFMValue = 100;
             if (currentSubjMarkValue < 33) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
@@ -245,7 +245,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 
-
       let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
       let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
       
@@ -262,7 +261,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      // Explicitly construct the object to match ProcessedStudent interface
       const processed: ProcessedStudent = {
           ...student,
           grandTotal: localGrandTotal,
@@ -273,7 +271,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           division,
           academicGrade,
           remark,
-          rank: 0 // Placeholder, updated below
+          rank: 0
       };
       return processed;
     });
@@ -300,10 +298,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         sortedData.sort((a, b) => {
             const aIsFail = a.result === 'FAIL';
             const bIsFail = b.result === 'FAIL';
-
             if (aIsFail && !bIsFail) return 1;
             if (!aIsFail && bIsFail) return -1;
-            
             return Number(b.grandTotal) - Number(a.grandTotal);
         });
     } else {
@@ -336,7 +332,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             } else if (grade === Grade.IX && examId === 'terminal3') {
                 if (studentMarks[sd.name + '_sa'] !== undefined) newResult.saMarks = studentMarks[sd.name + '_sa'] as number;
                 if (studentMarks[sd.name + '_fa'] !== undefined) newResult.faMarks = studentMarks[sd.name + '_fa'] as number;
-                // also set marks = sa + fa for backward compat
                 newResult.marks = (Number(studentMarks[sd.name + '_sa'] || 0) + Number(studentMarks[sd.name + '_fa'] || 0)) || undefined;
             } else {
                 if (studentMarks[sd.name] !== undefined) newResult.marks = studentMarks[sd.name] as number;
@@ -459,8 +454,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map((student, studentIndex) => {
-                        // Build flat ordered column keys for this class/exam type
-                        // so every input gets a stable data-col index for keyboard nav
                         let colIndex = 0;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>

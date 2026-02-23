@@ -8,7 +8,14 @@ import { BackIcon, HomeIcon, PlusIcon, TrashIcon, SpinnerIcon, CheckIcon, XIcon 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
 interface GalleryManagerPageProps { user: User; }
-interface GalleryImage { id: string; title: string; caption: string; imageSrc: string; }
+interface GalleryItem {
+    id: string;
+    title: string;
+    caption: string;
+    imageSrc?: string;
+    type?: 'image' | 'video';
+    videoUrl?: string;
+}
 interface GalleryFolder { name: string; subfolders?: GalleryFolder[]; }
 interface UploadItem { file: File; preview: string; title: string; caption: string; status: 'pending' | 'uploading' | 'done' | 'error'; }
 
@@ -39,7 +46,6 @@ const DEFAULT_FOLDERS: GalleryFolder[] = [
     ]}
 ];
 
-// Flatten folder tree into a list with depth info
 const getFlatPaths = (folders: GalleryFolder[], parent: string[] = []): { path: string[]; depth: number }[] => {
     const result: { path: string[]; depth: number }[] = [];
     for (const f of folders) {
@@ -53,7 +59,6 @@ const getFlatPaths = (folders: GalleryFolder[], parent: string[] = []): { path: 
 const pathToId = (path: string[]) =>
     `gallery_${path.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, '_')).join('_')}`;
 
-// Add a new folder at the given parent path in the tree
 const addFolderToTree = (folders: GalleryFolder[], parentPath: string[], newName: string): GalleryFolder[] => {
     if (parentPath.length === 0) return [...folders, { name: newName, subfolders: [] }];
     return folders.map(f => f.name === parentPath[0]
@@ -61,7 +66,6 @@ const addFolderToTree = (folders: GalleryFolder[], parentPath: string[], newName
         : f);
 };
 
-// Remove a folder at the given path from the tree
 const deleteFolderFromTree = (folders: GalleryFolder[], path: string[]): GalleryFolder[] => {
     if (path.length === 1) return folders.filter(f => f.name !== path[0]);
     return folders.map(f => f.name === path[0]
@@ -69,7 +73,22 @@ const deleteFolderFromTree = (folders: GalleryFolder[], path: string[]): Gallery
         : f);
 };
 
-// Inline folder icon component with explicit fixed size - avoids CSS class issues
+// Extract YouTube video ID from various URL formats
+const getYouTubeId = (url: string): string | null => {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+};
+
+const getYouTubeThumbnail = (videoId: string) =>
+    `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
 const FolderIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
         className={className} width="16" height="16" style={{ minWidth: 'auto', maxWidth: 'none' }}>
@@ -80,21 +99,26 @@ const FolderIcon = ({ className }: { className?: string }) => (
 const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
     const navigate = useNavigate();
 
-    // Folder tree state - starts with defaults, then syncs from Firestore
     const [folderTree, setFolderTree] = useState<GalleryFolder[]>(DEFAULT_FOLDERS);
     const [folderTreeLoaded, setFolderTreeLoaded] = useState(false);
-
-    // Selection & image state
     const [selectedPath, setSelectedPath] = useState<string[]>([]);
-    const [images, setImages] = useState<GalleryImage[]>([]);
+    const [images, setImages] = useState<GalleryItem[]>([]);
     const [isLoadingImages, setIsLoadingImages] = useState(false);
 
     // Upload state
     const [isAdding, setIsAdding] = useState(false);
+    const [addMode, setAddMode] = useState<'image' | 'video'>('image');
     const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Video add state
+    const [videoUrl, setVideoUrl] = useState('');
+    const [videoTitle, setVideoTitle] = useState('');
+    const [videoCaption, setVideoCaption] = useState('');
+    const [isSavingVideo, setIsSavingVideo] = useState(false);
+    const [videoPreviewId, setVideoPreviewId] = useState<string | null>(null);
 
     // Folder creation state
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -105,21 +129,17 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
     const allEntries = getFlatPaths(folderTree);
     const selectedId = selectedPath.length ? pathToId(selectedPath) : '';
 
-    // Load folder structure from Firestore (if saved), fallback to defaults
     useEffect(() => {
         const unsub = db.collection('website_content').doc(FOLDERS_DOC_ID).onSnapshot(
             doc => {
-                if (doc.exists && doc.data()?.folders) {
-                    setFolderTree(doc.data()!.folders);
-                }
+                if (doc.exists && doc.data()?.folders) setFolderTree(doc.data()!.folders);
                 setFolderTreeLoaded(true);
             },
-            () => setFolderTreeLoaded(true) // on error, still show defaults
+            () => setFolderTreeLoaded(true)
         );
         return () => unsub();
     }, []);
 
-    // Load images for selected folder
     useEffect(() => {
         if (!selectedId) return;
         setIsLoadingImages(true);
@@ -143,7 +163,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
             await saveFolderTree(newTree);
             setNewFolderName('');
             setIsCreatingFolder(false);
-        } catch { alert('Failed to save folder. Check Firestore permissions.'); }
+        } catch { alert('Failed to save folder.'); }
         finally { setIsSavingFolder(false); }
     };
 
@@ -153,10 +173,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
         const newTree = deleteFolderFromTree(folderTree, path);
         setFolderTree(newTree);
         await saveFolderTree(newTree);
-        // Deselect if we deleted the selected folder or a parent of it
-        if (selectedPath.slice(0, path.length).join('/') === path.join('/')) {
-            setSelectedPath([]);
-        }
+        if (selectedPath.slice(0, path.length).join('/') === path.join('/')) setSelectedPath([]);
     };
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,8 +181,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
         const items: UploadItem[] = files.map(file => ({
             file, preview: URL.createObjectURL(file),
             title: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
-            caption: '',
-            status: 'pending',
+            caption: '', status: 'pending',
         }));
         setUploadItems(prev => [...prev, ...items]);
     };
@@ -186,6 +202,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                     title: uploadItems[i].title || 'Untitled',
                     caption: uploadItems[i].caption || '',
                     imageSrc: url,
+                    type: 'image',
                 });
                 setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'done' } : it));
             } catch {
@@ -202,8 +219,39 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    // Handle YouTube URL preview
+    const handleVideoUrlChange = (url: string) => {
+        setVideoUrl(url);
+        const id = getYouTubeId(url);
+        setVideoPreviewId(id);
+    };
+
+    const handleAddVideo = async () => {
+        if (!videoPreviewId) return alert('Please enter a valid YouTube URL.');
+        if (!videoTitle.trim()) return alert('Please enter a title for the video.');
+        setIsSavingVideo(true);
+        try {
+            const newItem: GalleryItem = {
+                id: `video_${Date.now()}`,
+                title: videoTitle.trim(),
+                caption: videoCaption.trim(),
+                type: 'video',
+                videoUrl: `https://www.youtube.com/watch?v=${videoPreviewId}`,
+                imageSrc: getYouTubeThumbnail(videoPreviewId),
+            };
+            const newItems = [...images, newItem];
+            await db.collection('website_content').doc(selectedId).set({ items: newItems }, { merge: true });
+            setVideoUrl('');
+            setVideoTitle('');
+            setVideoCaption('');
+            setVideoPreviewId(null);
+            setIsAdding(false);
+        } catch { alert('Failed to save video.'); }
+        finally { setIsSavingVideo(false); }
+    };
+
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Delete this image from the gallery?')) return;
+        if (!window.confirm('Delete this item from the gallery?')) return;
         const updated = images.filter(i => i.id !== id);
         await db.collection('website_content').doc(selectedId).set({ items: updated }, { merge: true });
     };
@@ -216,7 +264,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
     const [editCaption, setEditCaption] = useState('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-    const handleStartEdit = (img: GalleryImage) => {
+    const handleStartEdit = (img: GalleryItem) => {
         setEditingId(img.id);
         setEditTitle(img.title);
         setEditCaption(img.caption);
@@ -248,7 +296,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
             </div>
 
             <h1 className="text-2xl font-bold text-slate-800 mb-1">Gallery Manager</h1>
-            <p className="text-slate-500 text-sm mb-6">Select a folder · Upload multiple images at once · Images go to ImgBB · URLs saved to Firebase</p>
+            <p className="text-slate-500 text-sm mb-6">Select a folder · Upload images or add YouTube videos · Saved to Firebase</p>
 
             <div className="flex flex-col lg:flex-row gap-6">
 
@@ -266,7 +314,6 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                             </button>
                         </div>
 
-                        {/* Folder list */}
                         <div className="overflow-y-auto max-h-[480px]">
                             {allEntries.map(({ path, depth }) => {
                                 const isSelected = JSON.stringify(selectedPath) === JSON.stringify(path);
@@ -285,7 +332,6 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                             </span>
                                             <span className="truncate">{label}</span>
                                         </button>
-                                        {/* Hover actions */}
                                         <div className="flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
                                             <button
                                                 onClick={() => { setIsCreatingFolder(true); setNewFolderParentPath(path); setNewFolderName(''); }}
@@ -307,7 +353,6 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                             })}
                         </div>
 
-                        {/* Create folder form */}
                         {isCreatingFolder && (
                             <div className="p-3 border-t border-slate-200 bg-white">
                                 <p className="text-xs font-semibold text-slate-500 mb-2">
@@ -325,18 +370,13 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                     onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
                                 />
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={handleCreateFolder}
-                                        disabled={isSavingFolder}
-                                        className="flex items-center gap-1 bg-sky-600 text-white text-xs px-3 py-1.5 rounded font-semibold hover:bg-sky-700 disabled:opacity-50"
-                                    >
+                                    <button onClick={handleCreateFolder} disabled={isSavingFolder}
+                                        className="flex items-center gap-1 bg-sky-600 text-white text-xs px-3 py-1.5 rounded font-semibold hover:bg-sky-700 disabled:opacity-50">
                                         {isSavingFolder ? <SpinnerIcon className="w-3 h-3" /> : <CheckIcon className="w-3 h-3" />}
                                         Create
                                     </button>
-                                    <button
-                                        onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); }}
-                                        className="text-xs px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-100"
-                                    >
+                                    <button onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); }}
+                                        className="text-xs px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-100">
                                         Cancel
                                     </button>
                                 </div>
@@ -345,7 +385,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                     </div>
                 </div>
 
-                {/* ===== RIGHT: Image Panel ===== */}
+                {/* ===== RIGHT: Content Panel ===== */}
                 <div className="flex-1 min-w-0">
                     {!selectedPath.length ? (
                         <div className="h-64 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 gap-3">
@@ -362,119 +402,208 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                     <h2 className="text-lg font-bold text-slate-800">{selectedPath[selectedPath.length - 1]}</h2>
                                     <p className="text-xs text-slate-400">{selectedPath.join(' › ')}</p>
                                 </div>
-                                <button
-                                    onClick={() => { setIsAdding(!isAdding); setUploadItems([]); }}
-                                    className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 transition-colors"
-                                >
-                                    <PlusIcon className="w-4 h-4" /> Add Images
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => { setIsAdding(true); setAddMode('image'); setUploadItems([]); }}
+                                        className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 transition-colors"
+                                    >
+                                        <PlusIcon className="w-4 h-4" /> Add Images
+                                    </button>
+                                    <button
+                                        onClick={() => { setIsAdding(true); setAddMode('video'); setVideoUrl(''); setVideoTitle(''); setVideoCaption(''); setVideoPreviewId(null); }}
+                                        className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+                                    >
+                                        {/* YouTube play icon */}
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                        </svg>
+                                        Add YouTube Video
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* Upload panel */}
+                            {/* Add panel */}
                             {isAdding && (
                                 <div className="bg-sky-50 border border-sky-200 rounded-xl p-5 mb-5">
-                                    <h3 className="font-bold text-slate-800 mb-3 text-sm">
-                                        Upload to "{selectedPath[selectedPath.length - 1]}"
-                                    </h3>
 
-                                    {/* Drop zone */}
-                                    <div
-                                        className="border-2 border-dashed border-sky-300 rounded-lg p-5 text-center cursor-pointer hover:bg-sky-100 transition-colors mb-4"
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
-                                        <p className="text-sky-700 font-semibold text-sm">Click to select images</p>
-                                        <p className="text-slate-400 text-xs mt-1">Hold Ctrl or Shift to select multiple files at once</p>
-                                        <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFilesChange} className="hidden" />
-                                    </div>
+                                    {/* IMAGE UPLOAD MODE */}
+                                    {addMode === 'image' && (
+                                        <>
+                                            <h3 className="font-bold text-slate-800 mb-3 text-sm">
+                                                Upload Images to "{selectedPath[selectedPath.length - 1]}"
+                                            </h3>
+                                            <div
+                                                className="border-2 border-dashed border-sky-300 rounded-lg p-5 text-center cursor-pointer hover:bg-sky-100 transition-colors mb-4"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <p className="text-sky-700 font-semibold text-sm">Click to select images</p>
+                                                <p className="text-slate-400 text-xs mt-1">Hold Ctrl or Shift to select multiple files</p>
+                                                <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFilesChange} className="hidden" />
+                                            </div>
 
-                                    {/* Upload queue */}
-                                    {uploadItems.length > 0 && (
-                                        <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
-                                            {uploadItems.map((item, i) => (
-                                                <div key={i} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${
-                                                    item.status === 'done' ? 'bg-green-50 border-green-200' :
-                                                    item.status === 'error' ? 'bg-red-50 border-red-200' :
-                                                    item.status === 'uploading' ? 'bg-sky-50 border-sky-300' : 'bg-white border-slate-200'
-                                                }`}>
-                                                    <img src={item.preview} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
-                                                    <div className="flex-1 flex flex-col gap-1 min-w-0">
-                                                        <input
-                                                            type="text"
-                                                            value={item.title}
-                                                            onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, title: e.target.value } : it))}
-                                                            className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
-                                                            disabled={item.status !== 'pending'}
-                                                            placeholder="Title"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            value={item.caption}
-                                                            onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, caption: e.target.value } : it))}
-                                                            className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
-                                                            disabled={item.status !== 'pending'}
-                                                            placeholder="Caption (optional)"
-                                                        />
-                                                    </div>
-                                                    <div className="w-16 text-center flex-shrink-0 text-xs font-semibold">
-                                                        {item.status === 'pending' && <span className="text-slate-400">Ready</span>}
-                                                        {item.status === 'uploading' && <SpinnerIcon className="w-4 h-4 text-sky-600 mx-auto" />}
-                                                        {item.status === 'done' && <span className="text-green-600">✓ Done</span>}
-                                                        {item.status === 'error' && <span className="text-red-600">✕ Failed</span>}
-                                                    </div>
-                                                    {item.status === 'pending' && (
-                                                        <button
-                                                            onClick={() => setUploadItems(prev => prev.filter((_, idx) => idx !== i))}
-                                                            className="text-slate-300 hover:text-red-500 flex-shrink-0"
-                                                        >
-                                                            <XIcon className="w-4 h-4" />
-                                                        </button>
-                                                    )}
+                                            {uploadItems.length > 0 && (
+                                                <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
+                                                    {uploadItems.map((item, i) => (
+                                                        <div key={i} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${
+                                                            item.status === 'done' ? 'bg-green-50 border-green-200' :
+                                                            item.status === 'error' ? 'bg-red-50 border-red-200' :
+                                                            item.status === 'uploading' ? 'bg-sky-50 border-sky-300' : 'bg-white border-slate-200'
+                                                        }`}>
+                                                            <img src={item.preview} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
+                                                            <div className="flex-1 flex flex-col gap-1 min-w-0">
+                                                                <input type="text" value={item.title}
+                                                                    onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, title: e.target.value } : it))}
+                                                                    className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
+                                                                    disabled={item.status !== 'pending'} placeholder="Title" />
+                                                                <input type="text" value={item.caption}
+                                                                    onChange={e => setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, caption: e.target.value } : it))}
+                                                                    className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-400"
+                                                                    disabled={item.status !== 'pending'} placeholder="Caption (optional)" />
+                                                            </div>
+                                                            <div className="w-16 text-center flex-shrink-0 text-xs font-semibold">
+                                                                {item.status === 'pending' && <span className="text-slate-400">Ready</span>}
+                                                                {item.status === 'uploading' && <SpinnerIcon className="w-4 h-4 text-sky-600 mx-auto" />}
+                                                                {item.status === 'done' && <span className="text-green-600">✓ Done</span>}
+                                                                {item.status === 'error' && <span className="text-red-600">✕ Failed</span>}
+                                                            </div>
+                                                            {item.status === 'pending' && (
+                                                                <button onClick={() => setUploadItems(prev => prev.filter((_, idx) => idx !== i))}
+                                                                    className="text-slate-300 hover:text-red-500 flex-shrink-0">
+                                                                    <XIcon className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            )}
+
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-slate-500">{pendingCount} image(s) ready to upload</span>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => { setIsAdding(false); setUploadItems([]); }}
+                                                        className="px-3 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg hover:bg-slate-100"
+                                                        disabled={isUploading}>Cancel</button>
+                                                    <button onClick={handleUploadAll}
+                                                        className="flex items-center gap-2 bg-sky-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50"
+                                                        disabled={isUploading || pendingCount === 0}>
+                                                        {isUploading ? <SpinnerIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
+                                                        {isUploading ? uploadProgress : `Upload ${pendingCount} image(s)`}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
 
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs text-slate-500">{pendingCount} image(s) ready to upload</span>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => { setIsAdding(false); setUploadItems([]); }}
-                                                className="px-3 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg hover:bg-slate-100"
-                                                disabled={isUploading}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={handleUploadAll}
-                                                className="flex items-center gap-2 bg-sky-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50"
-                                                disabled={isUploading || pendingCount === 0}
-                                            >
-                                                {isUploading ? <SpinnerIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
-                                                {isUploading ? uploadProgress : `Upload ${pendingCount} image(s)`}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    {/* VIDEO ADD MODE */}
+                                    {addMode === 'video' && (
+                                        <>
+                                            <h3 className="font-bold text-slate-800 mb-3 text-sm">
+                                                Add YouTube Video to "{selectedPath[selectedPath.length - 1]}"
+                                            </h3>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">YouTube URL</label>
+                                                    <input
+                                                        type="text"
+                                                        value={videoUrl}
+                                                        onChange={e => handleVideoUrlChange(e.target.value)}
+                                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                                                        placeholder="https://www.youtube.com/watch?v=..."
+                                                        autoFocus
+                                                    />
+                                                    {videoUrl && !videoPreviewId && (
+                                                        <p className="text-red-500 text-xs mt-1">⚠ Could not detect a valid YouTube video ID. Please check the URL.</p>
+                                                    )}
+                                                </div>
+
+                                                {/* Video Preview */}
+                                                {videoPreviewId && (
+                                                    <div className="flex gap-4 items-start bg-white border border-slate-200 rounded-lg p-3">
+                                                        <img
+                                                            src={getYouTubeThumbnail(videoPreviewId)}
+                                                            alt="Video thumbnail"
+                                                            className="w-32 h-20 object-cover rounded-md flex-shrink-0"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <p className="text-xs text-green-600 font-semibold mb-1">✓ Valid YouTube video detected</p>
+                                                            <p className="text-xs text-slate-500">Video ID: {videoPreviewId}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Title <span className="text-red-400">*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        value={videoTitle}
+                                                        onChange={e => setVideoTitle(e.target.value)}
+                                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                                                        placeholder="Video title"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Caption (optional)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={videoCaption}
+                                                        onChange={e => setVideoCaption(e.target.value)}
+                                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
+                                                        placeholder="Short description..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end gap-2 mt-4">
+                                                <button onClick={() => setIsAdding(false)}
+                                                    className="px-3 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg hover:bg-slate-100">
+                                                    Cancel
+                                                </button>
+                                                <button onClick={handleAddVideo} disabled={isSavingVideo || !videoPreviewId || !videoTitle.trim()}
+                                                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
+                                                    {isSavingVideo ? <SpinnerIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
+                                                    Save Video
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Image grid */}
+                            {/* Content grid */}
                             {isLoadingImages ? (
                                 <div className="flex justify-center py-10"><SpinnerIcon className="w-7 h-7 text-sky-500" /></div>
                             ) : images.length === 0 ? (
                                 <div className="text-center py-14 border-2 border-dashed border-slate-200 rounded-xl text-slate-400">
-                                    <p className="font-semibold text-sm">No images in this folder yet</p>
-                                    <p className="text-xs mt-1">Click "Add Images" above to upload</p>
+                                    <p className="font-semibold text-sm">No items in this folder yet</p>
+                                    <p className="text-xs mt-1">Click "Add Images" or "Add YouTube Video" above</p>
                                 </div>
                             ) : (
                                 <>
-                                    <p className="text-xs text-slate-400 mb-3">{images.length} image(s) in this folder</p>
+                                    <p className="text-xs text-slate-400 mb-3">
+                                        {images.length} item(s) — {images.filter(i => i.type === 'video').length} video(s), {images.filter(i => i.type !== 'video').length} image(s)
+                                    </p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                         {images.map(img => (
                                             <div key={img.id}
                                                 className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm cursor-pointer"
                                                 onClick={() => handleStartEdit(img)}
                                             >
+                                                {/* Thumbnail - both images and videos use imageSrc */}
                                                 <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" />
+
+                                                {/* Video badge */}
+                                                {img.type === 'video' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="bg-red-600/90 rounded-full p-2">
+                                                            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M8 5v14l11-7z"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
                                                     <p className="text-white text-xs font-semibold truncate">{img.title}</p>
                                                     {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
@@ -483,7 +612,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                     <button
                                                         onClick={e => { e.stopPropagation(); handleDelete(img.id); }}
                                                         className="bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 shadow"
-                                                        title="Delete image"
+                                                        title="Delete"
                                                     >
                                                         <TrashIcon className="w-3 h-3" />
                                                     </button>
@@ -491,43 +620,46 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                             </div>
                                         ))}
 
-                                        {/* Lightbox / Edit Modal */}
+                                        {/* Edit Modal */}
                                         {editingId && (() => {
                                             const img = images.find(i => i.id === editingId);
                                             if (!img) return null;
+                                            const ytId = img.type === 'video' && img.videoUrl ? getYouTubeId(img.videoUrl) : null;
                                             return (
                                                 <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4"
                                                     onClick={() => setEditingId(null)}>
                                                     <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
                                                         onClick={e => e.stopPropagation()}>
-                                                        {/* Image */}
+                                                        {/* Preview */}
                                                         <div className="flex-1 bg-black flex items-center justify-center min-h-0" style={{maxHeight: '60vh'}}>
-                                                            <img src={img.imageSrc} alt={img.title}
-                                                                className="max-w-full max-h-full object-contain" />
+                                                            {ytId ? (
+                                                                <iframe
+                                                                    src={`https://www.youtube.com/embed/${ytId}`}
+                                                                    className="w-full h-full"
+                                                                    style={{minHeight: '300px'}}
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowFullScreen
+                                                                    title={img.title}
+                                                                />
+                                                            ) : (
+                                                                <img src={img.imageSrc} alt={img.title}
+                                                                    className="max-w-full max-h-full object-contain" />
+                                                            )}
                                                         </div>
                                                         {/* Edit fields */}
                                                         <div className="p-5 space-y-3 border-t border-slate-200">
                                                             <h3 className="font-bold text-slate-800 text-sm">Edit Details</h3>
                                                             <div>
                                                                 <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>
-                                                                <input
-                                                                    type="text"
-                                                                    value={editTitle}
-                                                                    onChange={e => setEditTitle(e.target.value)}
+                                                                <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)}
                                                                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400"
-                                                                    placeholder="Image title"
-                                                                    autoFocus
-                                                                />
+                                                                    placeholder="Title" autoFocus />
                                                             </div>
                                                             <div>
                                                                 <label className="block text-xs font-semibold text-slate-600 mb-1">Caption</label>
-                                                                <textarea
-                                                                    value={editCaption}
-                                                                    onChange={e => setEditCaption(e.target.value)}
+                                                                <textarea value={editCaption} onChange={e => setEditCaption(e.target.value)}
                                                                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 resize-none"
-                                                                    placeholder="Add a caption (optional)"
-                                                                    rows={2}
-                                                                />
+                                                                    placeholder="Add a caption (optional)" rows={2} />
                                                             </div>
                                                             <div className="flex justify-end gap-3 pt-1">
                                                                 <button onClick={() => setEditingId(null)}

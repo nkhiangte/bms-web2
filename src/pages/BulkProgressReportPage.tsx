@@ -206,17 +206,25 @@ const MultiTermReportCard: React.FC<{
         return '-';
     };
 
-    const finalRemark = useMemo(() => {
+  const finalRemark = useMemo(() => {
         const summary3 = summaries.terminal3;
         const exam3 = exams.terminal3;
         const nextGrade = getNextGrade(student.grade);
 
+        const gradeLabel: Record<string, string> = {
+            'Nursery': 'Nursery', 'Kindergarten': 'Kindergarten',
+            'Class I': 'Class I', 'Class II': 'Class II', 'Class III': 'Class III',
+            'Class IV': 'Class IV', 'Class V': 'Class V', 'Class VI': 'Class VI',
+            'Class VII': 'Class VII', 'Class VIII': 'Class VIII', 'Class IX': 'Class IX',
+        };
+        const nextGradeLabel = nextGrade ? (gradeLabel[nextGrade] ?? nextGrade) : null;
+
         if (summary3?.result === 'PASS' || summary3?.result === 'SIMPLE PASS') {
             if (student.grade === Grade.X) {
-                return `Passed. School reopens on April 1, 2026`;
+                return `Passed Class X. School reopens on April 1, 2026`;
             }
-            if (nextGrade) {
-                return `Promoted to ${nextGrade}. School reopens on April 7, 2026`;
+            if (nextGradeLabel) {
+                return `Promoted to ${nextGradeLabel}. School reopens on April 1, 2026`;
             }
             return `Promoted. School reopens on April 1, 2026`;
         } else if (summary3?.result === 'FAIL') {
@@ -224,7 +232,6 @@ const MultiTermReportCard: React.FC<{
         }
         return exam3?.teacherRemarks || summary3?.remark || "Awaiting final results.";
     }, [summaries.terminal3, exams.terminal3, student.grade]);
-
     return (
         <div>
             <table className="w-full border-collapse border border-slate-400 text-sm">

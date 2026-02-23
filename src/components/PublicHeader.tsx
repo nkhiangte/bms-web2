@@ -25,10 +25,11 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     };
 
-    // FIX: Added missing handleMobileDropdown function
     const handleMobileDropdown = (id: string) => {
         setOpenDropdown(prev => prev === id ? null : id);
     };
+
+    const isExternalLink = (path: string) => path?.startsWith('http') || path?.endsWith('.pdf');
 
     const activeLinkStyle = { color: 'var(--primary)' };
 
@@ -85,24 +86,25 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                 </button>
                                 <div className="dropdown-content">
                                     {children.map(child => (
-                                        {child.path?.startsWith('http') || child.path?.endsWith('.pdf') ? (
-    
-        key={child.id}
-        href={child.path}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block px-4 py-2 text-sm transition-colors uppercase text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-    >
-        {child.label}
-    </a>
-) : (
-    <NavLink key={child.id} to={child.path} end className="block">
-        {({ isActive }: any) => (
-            <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
-                {child.label}
-            </span>
-        )}
-    </NavLink>
+                                        isExternalLink(child.path) ? (
+                                            <a
+                                                key={child.id}
+                                                href={child.path}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block px-4 py-2 text-sm transition-colors uppercase text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                                            >
+                                                {child.label}
+                                            </a>
+                                        ) : (
+                                            <NavLink key={child.id} to={child.path} end className="block">
+                                                {({ isActive }: any) => (
+                                                    <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
+                                                        {child.label}
+                                                    </span>
+                                                )}
+                                            </NavLink>
+                                        )
                                     ))}
                                 </div>
                             </div>
@@ -142,28 +144,29 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                     {openDropdown === link.id && (
                                         <div className="pl-6 pt-1 pb-2 space-y-1 bg-slate-50 rounded-b-md">
                                             {children.map(child => (
-                                                {child.path?.startsWith('http') || child.path?.endsWith('.pdf') ? (
-    
-        key={child.id}
-        href={child.path}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => setIsMobileMenuOpen(false)}
-        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
-    >
-        {child.label}
-    </a>
-) : (
-    <NavLink
-        key={child.id}
-        to={child.path}
-        end
-        onClick={() => setIsMobileMenuOpen(false)}
-        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
-        style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
-    >
-        {child.label}
-    </NavLink>
+                                                isExternalLink(child.path) ? (
+                                                    <a
+                                                        key={child.id}
+                                                        href={child.path}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+                                                    >
+                                                        {child.label}
+                                                    </a>
+                                                ) : (
+                                                    <NavLink
+                                                        key={child.id}
+                                                        to={child.path}
+                                                        end
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+                                                        style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
+                                                    >
+                                                        {child.label}
+                                                    </NavLink>
+                                                )
                                             ))}
                                         </div>
                                     )}

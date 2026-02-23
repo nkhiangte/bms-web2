@@ -739,8 +739,8 @@ const App: React.FC = () => {
                   ? { ...currentPerformance[existingExamIndex], name: currentPerformance[existingExamIndex].name }
                   : { id: update.examId, name: update.examId, results: [] };
               
-              const existingResultIndex = newExam.results.findIndex(r => r.subject === update.subjectName);
-              const newResult: SubjectMark = {
+const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subject, update.subjectName));
+            const newResult: SubjectMark = {
                   subject: update.subjectName,
                   activityLog: update.activityLog,
                   activityMarks: update.activityMarks

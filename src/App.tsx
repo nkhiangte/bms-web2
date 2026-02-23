@@ -52,8 +52,7 @@ import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
 import GalleryManagerPage from '@/pages/GalleryManagerPage';
-import GalleryPage from './pages/public/GalleryPage';
-// Inside the public <Route path="/"> block:
+import DocumentsManagerPage from '@/pages/portal/DocumentsManagerPage';
 import WebsiteMediaManagerPage from '@/pages/WebsiteMediaManagerPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
@@ -121,7 +120,7 @@ import FeeManagementPage from '@/pages/FeeManagementPage';
 import FeesPage from '@/pages/public/FeesPage';
 import InsightsPage from '@/pages/InsightsPage';
 import ManageNavigationPage from '@/pages/ManageNavigationPage';
-import DocumentsManagerPage from '@/pages/portal/DocumentsManagerPage';
+
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -1290,7 +1289,7 @@ const App: React.FC = () => {
       
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
+        <Route path="/" element={<PublicLayout user={user} />}>
           <Route index element={<PublicHomePage news={news} user={user} />} />
           <Route path="about" element={<AboutPage user={user} />} />
           <Route path="history" element={<HistoryPage user={user} />} />
@@ -1299,9 +1298,7 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
-     <Route path="documents" element={<DocumentsManagerPage user={user} />} />
-  
-      const sanitizedData = Object.fromEntries(
+              const sanitizedData = Object.fromEntries(
                 Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
               );
 
@@ -1340,7 +1337,7 @@ const App: React.FC = () => {
           <Route path="facilities" element={<FacilitiesPage user={user} />} />
           <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
           <Route path="hostel" element={<HostelPage user={user} />} /> 
-       <Route path="gallery/*" element={<GalleryPage user={user} />} />
+          <Route path="gallery/*" element={<GalleryPage user={user} />} />
           <Route path="contact" element={<ContactPage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
@@ -1411,6 +1408,7 @@ const App: React.FC = () => {
            <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
            <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
            <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />
+           <Route path="documents" element={user ? <DocumentsManagerPage user={user} /> : <Navigate to="/login" replace />} />
            <Route path="media-manager" element={<WebsiteMediaManagerPage user={user!} />} />
            <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
            <Route path="parents" element={<ParentsManagementPage allUsers={users} students={students} academicYear={academicYear} currentUser={user!} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateParentUser} />} />

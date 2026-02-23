@@ -65,11 +65,11 @@ const calculateTermSummary = (
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
-            } else if (isClassIXorX && examId === 'terminal3') {
-                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-                const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-                if (totalMark < 33) fSubjects++;
+           } else if (isClassIXorX && examId === 'terminal3') {
+    const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+    const faMark = Number(r?.faMarks ?? 0);
+    totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+    if (saMark < 27) fSubjects++;  // ← match ClassMarkStatementPage logic
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;

@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
@@ -16,15 +15,11 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-// --- Reusable Logic and Components ---
-
-// Fix: Use robust subjectsMatch utility for subject lookup
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
     return results.find(r => subjectsMatch(r.subject, subjectDef.name));
 };
 
-// Fix: Centralized logic for term summary calculation
 const calculateTermSummary = (
     student: Student,
     exam: Exam | undefined,
@@ -42,8 +37,8 @@ const calculateTermSummary = (
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
-    // Calculate ranking based on grand total of all students in the class
-    const studentData = allStudents.map(s => {
+    // FIX: Use classmates (active, same grade) for ranking — matches Mark Entry page
+    const studentData = classmates.map(s => {
         const sExam = s.academicPerformance?.find((e) => {
             if (e.id === examId) return true;
             if (!e.name) return false;
@@ -100,7 +95,6 @@ const calculateTermSummary = (
     const passedStudents = studentData.filter(s => s.result === 'PASS');
     const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
     
-    // Find current student's stats
     const currentStudentStats = studentData.find(s => s.id === student.id);
     if (!currentStudentStats) return null;
 
@@ -110,7 +104,6 @@ const calculateTermSummary = (
         rank = rankIndex !== -1 ? rankIndex + 1 : '-';
     }
 
-    // Recalculate details for current student to return full summary object
     let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
     const failedSubjects: string[] = [];
     let gradedSubjectsPassed = 0;
@@ -232,6 +225,7 @@ const MultiTermReportCard: React.FC<{
         }
         return exam3?.teacherRemarks || summary3?.remark || "Awaiting final results.";
     }, [summaries.terminal3, exams.terminal3, student.grade]);
+
     return (
         <div>
             <table className="w-full border-collapse border border-slate-400 text-sm">
@@ -353,11 +347,12 @@ const MultiTermReportCard: React.FC<{
                         <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
                         <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
                     </tr>
+                    {/* FIX: Show 'Division' for Class IX/X, 'Grade' for all other classes */}
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Grade</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.academicGrade ?? '-'}</td>
+                        <td className="p-1 border border-slate-400 text-left">{isIXorX ? 'Division' : 'Grade'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Attendance %</td>
@@ -434,7 +429,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                 <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
                             </tr>
                         </>
-                    ) : ( // IX & X
+                    ) : (
                          <tr className="border-b border-slate-400">
                             <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
                             <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
@@ -469,7 +464,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                             <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )
-                                ) : ( // IX & X
+                                ) : (
                                     <>
                                         <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
                                         <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
@@ -576,7 +571,6 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
     if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
 
-    // Pre-calculate summaries for MultiTerm reports if needed
     const allSummaries = useMemo(() => {
         if (examId !== 'terminal3') return null;
         
@@ -596,7 +590,6 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         return summariesMap;
     }, [classStudents, gradeDef, examId]);
 
-
     return (
         <div className="bg-slate-100 print:bg-white min-h-screen">
             <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm">
@@ -609,11 +602,10 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             </div>
 
             <div className="container mx-auto print:w-full print:max-w-none">
-                {classStudents.map((student, index) => {
+                {classStudents.map((student) => {
                     const studentExams = student.academicPerformance || [];
                     const singleExam = studentExams.find(e => e.id === examId);
                     
-                    // Multi-term data
                     const exams = {
                         terminal1: studentExams.find(e => e.id === 'terminal1'),
                         terminal2: studentExams.find(e => e.id === 'terminal2'),

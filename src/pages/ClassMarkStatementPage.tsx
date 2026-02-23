@@ -70,6 +70,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const isClassIXorX = useMemo(() => grade === Grade.IX || grade === Grade.X, [grade]);
   const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
+  // SA/FA split only applies to Class IX Terminal 3
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -107,9 +108,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
 
   // FIX: Prevents Firestore real-time listener from wiping unsaved marks.
-  // Without this, whenever App.tsx's onSnapshot fires (e.g. another student
-  // record updates), classStudents changes, this useEffect re-runs, and
-  // setMarksData resets all locally-edited marks back to DB values.
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -223,9 +221,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
             currentSubjMarkValue = saMark + faMark;
             localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = 100;
-            if (currentSubjMarkValue < 33) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+            currentSubjFMValue = 100; // SA 80 + FA 20
+            // FIX: SA pass mark is 27 out of 80. FA has no separate pass mark.
+            if (saMark < 27) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
+            // Class IX Terminal 1 & 2 (and all other classes): regular marks, pass mark 33
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);

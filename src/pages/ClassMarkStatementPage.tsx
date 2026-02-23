@@ -306,7 +306,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
         const newResults = subjectDefinitions.map(sd => {
             const originalResult = originalExam?.results.find(r => subjectsMatch(r.subject, sd.name));
-            const newResult: SubjectMark = { subject: sd.name, ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) };
+
+            // FIX: Spread ALL existing fields from Firebase first (preserves activityLog,
+            // activityMarks, and any other fields), then overwrite subject name and mark fields.
+            const newResult: SubjectMark = {
+                ...(originalResult ? { ...originalResult } : {}),
+                subject: sd.name,
+            };
 
             if (sd.gradingSystem === 'OABC') {
                 if (studentMarks[sd.name]) newResult.grade = studentMarks[sd.name] as any;
@@ -321,20 +327,21 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 if (studentMarks[sd.name] !== undefined) newResult.marks = studentMarks[sd.name] as number;
             }
             return newResult;
-        }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.saMarks != null || r.faMarks != null || r.grade != null);
+        }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.saMarks != null || r.faMarks != null || r.grade != null || r.activityLog != null);
 
-const studentProcessed = processedData.find(p => p.id === studentId);
+        const studentProcessed = processedData.find(p => p.id === studentId);
 
-const newExamData: Exam = { 
-    id: examId as any, 
-    name: examDetails.name, 
-    results: newResults,
-    rank: studentProcessed?.rank ?? null,
-    total: studentProcessed?.grandTotal ?? null,
-    percentage: Number(studentProcessed?.percentage.toFixed(1)) ?? null,
-    result: studentProcessed?.result ?? null,
-    division: studentProcessed?.division ?? null,
-};        
+        const newExamData: Exam = {
+            id: examId as any,
+            name: examDetails.name,
+            results: newResults,
+            rank: studentProcessed?.rank ?? null,
+            total: studentProcessed?.grandTotal ?? null,
+            percentage: Number(studentProcessed?.percentage.toFixed(1)) ?? null,
+            result: studentProcessed?.result ?? null,
+            division: studentProcessed?.division ?? null,
+        };
+
         if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
             newExamData.attendance = { totalWorkingDays: attendanceData[studentId].totalWorkingDays!, daysPresent: attendanceData[studentId].daysPresent! };
         }
@@ -381,23 +388,13 @@ const newExamData: Exam = {
         
         {/* ── TABLE ── */}
         <div className="mt-2 overflow-x-auto overflow-y-auto border rounded-lg" style={{ maxHeight: '70vh' }} ref={tableRef}>
-            {/* 
-                KEY FIXES:
-                1. w-auto (not w-full or min-w-[1600px]) so columns size to content
-                2. whitespace-nowrap on table prevents text wrapping in cells
-                3. No column: w-10 min-w-[40px] for consistent sticky offset
-                4. Name column: sticky left-10 (offset = No column width = 40px)
-                5. Remark: max-w-[160px] with break-words to keep it compact
-            */}
             <table id="mark-statement-table" className="w-auto text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-slate-100 sticky top-0 z-20">
                     <tr>
-                        {/* No — sticky left-0, fixed width 40px */}
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
                             className="px-2 py-2 text-center font-bold text-slate-800 sticky left-0 bg-slate-100 z-30 border-b border-r w-10 min-w-[40px] align-middle text-xs">
                             No
                         </th>
-                        {/* Name — sticky left-10 (40px offset) */}
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
                             className="px-2 py-2 text-left font-bold text-slate-800 sticky left-10 bg-slate-100 z-30 border-b border-r min-w-[130px] align-middle text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.2)]">
                             Student Name
@@ -447,11 +444,9 @@ const newExamData: Exam = {
                         let colIndex = 0;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            {/* No — sticky, fixed 40px */}
                             <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-white z-10 text-xs w-10 min-w-[40px]">
                                 {student.rollNo}
                             </td>
-                            {/* Name — sticky at left-10 with shadow separator */}
                             <td className="px-2 py-1 font-medium border-r sticky left-10 bg-white z-10 text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
                                 {student.name}
                             </td>

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
@@ -246,6 +245,7 @@ const MultiTermReportCard: React.FC<{
         }
         return exam3?.teacherRemarks || summary3?.remark || "Awaiting final results.";
     }, [summaries.terminal3, exams.terminal3, student.grade]);
+
     return (
         <div>
             <table className="w-full border-collapse border border-slate-400 text-sm">
@@ -373,11 +373,12 @@ const MultiTermReportCard: React.FC<{
                         <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
                         <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
                     </tr>
+                    {/* FIX: Show 'Division' for Class IX/X, 'Grade' for all other classes */}
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Grade</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.academicGrade ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.academicGrade ?? '-'}</td>
+                        <td className="p-1 border border-slate-400 text-left">{isIXorX ? 'Division' : 'Grade'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
                     </tr>
                     <tr className="font-bold text-center">
                         <td className="p-1 border border-slate-400 text-left">Attendance %</td>

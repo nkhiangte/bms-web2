@@ -121,7 +121,7 @@ import FeeManagementPage from '@/pages/FeeManagementPage';
 import FeesPage from '@/pages/public/FeesPage';
 import InsightsPage from '@/pages/InsightsPage';
 import ManageNavigationPage from '@/pages/ManageNavigationPage';
-import DocumentsManagerPage from './pages/portal/DocumentsManagerPage';
+import DocumentsManagerPage from '@/pages/portal/DocumentsManagerPage';
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -1299,7 +1299,7 @@ const App: React.FC = () => {
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
-      <Route path="documents" element={<DocumentsManagerPage user={user} />} />
+     <Route path="documents" element={<DocumentsManagerPage user={user} />} />
   
       const sanitizedData = Object.fromEntries(
                 Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])

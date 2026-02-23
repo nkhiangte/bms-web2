@@ -142,16 +142,28 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                     {openDropdown === link.id && (
                                         <div className="pl-6 pt-1 pb-2 space-y-1 bg-slate-50 rounded-b-md">
                                             {children.map(child => (
-                                                <NavLink
-                                                    key={child.id}
-                                                    to={child.path}
-                                                    end
-                                                    onClick={() => setIsMobileMenuOpen(false)}
-                                                    className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
-                                                    style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
-                                                >
-                                                    {child.label}
-                                                </NavLink>
+                                                {child.path?.startsWith('http') || child.path?.endsWith('.pdf') ? (
+    
+        key={child.id}
+        href={child.path}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => setIsMobileMenuOpen(false)}
+        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+    >
+        {child.label}
+    </a>
+) : (
+    <NavLink
+        key={child.id}
+        to={child.path}
+        end
+        onClick={() => setIsMobileMenuOpen(false)}
+        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+        style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
+    >
+        {child.label}
+    </NavLink>
                                             ))}
                                         </div>
                                     )}

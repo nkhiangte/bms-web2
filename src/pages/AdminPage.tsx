@@ -16,6 +16,13 @@ import { Student } from '@/types';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
+// Inline document icon (avoids needing a new icon export)
+const DocIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+);
+
 const AdminCard: React.FC<{
   title: string;
   description: string;
@@ -69,7 +76,6 @@ const AdminPage: React.FC<AdminPageProps> = ({
             snapshot.docs.forEach(doc => {
                 const s = doc.data() as Student;
                 const updates: Record<string, any> = {};
-                // Compute correct studentId for this student using current academicYear
                 const correctId = formatStudentId({ ...s, studentId: undefined }, academicYear);
                 if (!s.studentId || s.studentId !== correctId) {
                     updates.studentId = correctId;
@@ -100,6 +106,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
         { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
         { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
         { title: "School Settings", description: "Update school info, payment QR codes, etc.", icon: <CogIcon className="w-7 h-7" />, link: "/portal/settings" },
+        { title: "Manage Documents", description: "Upload and manage downloadable PDF documents for the website.", icon: <DocIcon />, link: "/portal/documents" },
     ];
 
     return (

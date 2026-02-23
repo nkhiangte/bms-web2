@@ -70,7 +70,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const isClassIXorX = useMemo(() => grade === Grade.IX || grade === Grade.X, [grade]);
   const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
-  // SA/FA split only applies to Class IX Terminal 3
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -107,12 +106,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
   const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
 
-  // FIX: Prevents Firestore real-time listener from wiping unsaved marks.
   const isInitialized = useRef(false);
 
   useEffect(() => {
     if (classStudents.length === 0) return;
-    if (isInitialized.current) return; // Only initialize once
+    if (isInitialized.current) return;
     isInitialized.current = true;
 
     const initialMarks: MarksData = {};
@@ -188,7 +186,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     setChangedStudents(prev => new Set([...prev, ...Object.keys(importedMarks)]));
   };
 
-  // Helper: returns true if a subject mark is a fail for red highlight
   const isMarkFailed = useCallback((studentId: string, sd: SubjectDefinition): boolean => {
     const studentMarks = marksData[studentId] || {};
     if (sd.gradingSystem === 'OABC') return false;
@@ -226,23 +223,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         if (hasActivities) {
             const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
-            
             localExamTotal += examMark;
             localActivityTotal += activityMark;
             currentSubjMarkValue = examMark + activityMark;
             currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
-            
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else if (isIXTerminal3) {
             const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
             const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
             currentSubjMarkValue = saMark + faMark;
             localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = 100; // SA 80 + FA 20
-            // SA pass mark is 27 out of 80. FA has no separate pass mark.
+            currentSubjFMValue = 100;
             if (saMark < 27) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         } else {
-            // Class IX Terminal 1 & 2 (and all other classes): regular marks, pass mark 33
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);
@@ -274,23 +267,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           if (percentage >= 90) remark = "Outstanding performance!";
           else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
           else if (percentage >= 60) remark = "Good progress. Well done.";
-          else if (percentage >= 45) remark = "Satisfactory performance. Consistent effort will lead to better results.";
-          else remark = "Passed. Consistent effort is needed to improve scores.";
+          else if (percentage >= 45) remark = "Satisfactory. Consistent effort will lead to better results.";
+          else remark = "Passed. Consistent effort needed to improve.";
       }
 
-      const processed: ProcessedStudent = {
-          ...student,
-          grandTotal: localGrandTotal,
-          examTotal: localExamTotal,
-          activityTotal: localActivityTotal,
-          percentage,
-          result,
-          division,
-          academicGrade,
-          remark,
-          rank: 0
-      };
-      return processed;
+      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark, rank: 0 } as ProcessedStudent;
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
@@ -298,32 +279,18 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     
     const finalData = studentData.map(s => {
         let rank: number | '-' = '-';
-        if (s.result === 'FAIL' || s.result === 'SIMPLE PASS') {
-            rank = '-';
-        } else {
+        if (s.result !== 'FAIL' && s.result !== 'SIMPLE PASS') {
             const rankIndex = uniqueScores.indexOf(s.grandTotal);
             rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
         }
         return { ...s, rank };
     });
     
-    let sortedData = finalData;
-
-    if (sortCriteria === 'name') {
-        sortedData.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortCriteria === 'totalMarks') {
-        sortedData.sort((a, b) => {
-            const aIsFail = a.result === 'FAIL';
-            const bIsFail = b.result === 'FAIL';
-            if (aIsFail && !bIsFail) return 1;
-            if (!aIsFail && bIsFail) return -1;
-            return Number(b.grandTotal) - Number(a.grandTotal);
-        });
-    } else {
-        sortedData.sort((a, b) => a.rollNo - b.rollNo);
-    }
+    if (sortCriteria === 'name') finalData.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortCriteria === 'totalMarks') finalData.sort((a, b) => { const aF = a.result === 'FAIL'; const bF = b.result === 'FAIL'; if (aF && !bF) return 1; if (!aF && bF) return -1; return Number(b.grandTotal) - Number(a.grandTotal); });
+    else finalData.sort((a, b) => a.rollNo - b.rollNo);
     
-    return sortedData as ProcessedStudent[];
+    return finalData as ProcessedStudent[];
   }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, isIXTerminal3, sortCriteria]);
 
   const handleConfirmSave = async () => {
@@ -356,17 +323,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             return newResult;
         }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.saMarks != null || r.faMarks != null || r.grade != null);
 
-        const newExamData: Exam = {
-            id: examId as any,
-            name: examDetails.name,
-            results: newResults,
-        };
+        const newExamData: Exam = { id: examId as any, name: examDetails.name, results: newResults };
         
         if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
-            newExamData.attendance = { 
-                totalWorkingDays: attendanceData[studentId].totalWorkingDays!, 
-                daysPresent: attendanceData[studentId].daysPresent! 
-            };
+            newExamData.attendance = { totalWorkingDays: attendanceData[studentId].totalWorkingDays!, daysPresent: attendanceData[studentId].daysPresent! };
         }
 
         const newPerformance: Exam[] = [...(student.academicPerformance?.filter(e => e.id !== examId) || []), newExamData];
@@ -380,10 +340,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   };
 
   const handleSaveSubjects = async (newDef: GradeDefinition) => {
-        if(grade) {
-            await onUpdateGradeDefinition(grade, newDef);
-            setIsEditSubjectsModalOpen(false);
-        }
+        if(grade) { await onUpdateGradeDefinition(grade, newDef); setIsEditSubjectsModalOpen(false); }
   }
 
   if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
@@ -403,54 +360,59 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>
             <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
-                <button 
-                    onClick={() => setSortCriteria('rollNo')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >
-                    Roll No
-                </button>
-                <button
-                    onClick={() => setSortCriteria('name')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >
-                    Name
-                </button>
-                <button
-                    onClick={() => setSortCriteria('totalMarks')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >
-                    Total Marks
-                </button>
+                {(['rollNo', 'name', 'totalMarks'] as SortCriteria[]).map(c => (
+                    <button key={c} onClick={() => setSortCriteria(c)}
+                        className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === c ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>
+                        {c === 'rollNo' ? 'Roll No' : c === 'name' ? 'Name' : 'Total Marks'}
+                    </button>
+                ))}
             </div>
         </div>
         
+        {/* ── TABLE ── */}
         <div className="mt-2 overflow-x-auto overflow-y-auto border rounded-lg" style={{ maxHeight: '70vh' }} ref={tableRef}>
-            <table id="mark-statement-table" className="min-w-[1600px] text-xs w-full border-collapse">
+            {/* 
+                KEY FIXES:
+                1. w-auto (not w-full or min-w-[1600px]) so columns size to content
+                2. whitespace-nowrap on table prevents text wrapping in cells
+                3. No column: w-10 min-w-[40px] for consistent sticky offset
+                4. Name column: sticky left-10 (offset = No column width = 40px)
+                5. Remark: max-w-[160px] with break-words to keep it compact
+            */}
+            <table id="mark-statement-table" className="w-auto text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-slate-100 sticky top-0 z-20">
                     <tr>
-                        {/* STICKY: No column — left-0 */}
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-30 border-b border-r w-10 align-middle text-xs">No</th>
-                        {/* STICKY: Student Name column — left-10 (offset by width of No column) */}
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-left font-bold text-slate-800 sticky left-10 bg-slate-100 z-30 border-b border-r min-w-[140px] align-middle text-xs">Student Name</th>
+                        {/* No — sticky left-0, fixed width 40px */}
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
+                            className="px-2 py-2 text-center font-bold text-slate-800 sticky left-0 bg-slate-100 z-30 border-b border-r w-10 min-w-[40px] align-middle text-xs">
+                            No
+                        </th>
+                        {/* Name — sticky left-10 (40px offset) */}
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
+                            className="px-2 py-2 text-left font-bold text-slate-800 sticky left-10 bg-slate-100 z-30 border-b border-r min-w-[130px] align-middle text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.2)]">
+                            Student Name
+                        </th>
                         
                         {subjectDefinitions.map(sd => {
-                            if (hasActivities && sd.gradingSystem !== 'OABC') {
+                            if ((hasActivities || isIXTerminal3) && sd.gradingSystem !== 'OABC') {
                                 return <th key={sd.name} colSpan={2} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l text-xs">{sd.name}</th>;
-                            } else if (isIXTerminal3 && sd.gradingSystem !== 'OABC') {
-                                return <th key={sd.name} colSpan={2} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l text-xs">{sd.name}</th>;
-                            } else {
-                                return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{sd.name}</th>;
                             }
+                            return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{sd.name}</th>;
                         })}
                         
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-12">Total</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-14">%</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-10">Rank</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-14">{isClassIXorX ? 'Div' : '-'}</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-16">Result</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-left font-bold text-slate-800 border-b border-l min-w-[120px] align-middle text-xs">Remark</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-14">W.Days</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs w-14">Present</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Total</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">%</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Rank</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{isClassIXorX ? 'Div' : '-'}</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Result</th>
+                        {/* Remark: fixed max width, wraps text */}
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
+                            className="px-2 py-2 text-left font-bold text-slate-800 border-b border-l align-middle text-xs"
+                            style={{ minWidth: 100, maxWidth: 160 }}>
+                            Remark
+                        </th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">W.Days</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Present</th>
                     </tr>
                     {(hasActivities || isIXTerminal3) && (
                         <tr>
@@ -476,23 +438,23 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         let colIndex = 0;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            {/* STICKY: No cell — left-0, bg-inherit so row highlight color shows through */}
-                            <td className="px-1 py-1 font-bold text-center border-r sticky left-0 bg-white z-10 whitespace-nowrap text-xs">{student.rollNo}</td>
-                            {/* STICKY: Student Name cell — left-10, matching No column width */}
-                            <td className="px-2 py-1 font-medium border-r sticky left-10 bg-white z-10 whitespace-nowrap text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.1)]">{student.name}</td>
+                            {/* No — sticky, fixed 40px */}
+                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-white z-10 text-xs w-10 min-w-[40px]">
+                                {student.rollNo}
+                            </td>
+                            {/* Name — sticky at left-10 with shadow separator */}
+                            <td className="px-2 py-1 font-medium border-r sticky left-10 bg-white z-10 text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
+                                {student.name}
+                            </td>
                             
                             {subjectDefinitions.map(sd => {
                                 const isOABC = sd.gradingSystem === 'OABC';
 
                                 if (isOABC) {
-                                    const col = colIndex++;
+                                    colIndex++;
                                     return (
-                                        <td key={sd.name} colSpan={1} className="px-0 py-1 border-l text-center">
-                                            <select
-                                                value={marksData[student.id]?.[sd.name] as string ?? ''}
-                                                onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
-                                                className="form-select w-12 text-center text-xs"
-                                            >
+                                        <td key={sd.name} className="px-0 py-1 border-l text-center">
+                                            <select value={marksData[student.id]?.[sd.name] as string ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')} className="form-select w-12 text-center text-xs">
                                                 <option value="">-</option>
                                                 {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                                             </select>
@@ -508,30 +470,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={saMark ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={saCol}
-                                                    className={`form-input w-12 text-center text-xs ${saFailed ? 'text-red-600 font-bold' : ''}`}
-                                                    placeholder="-"
-                                                    max={80}
-                                                />
+                                                <input type="number" value={saMark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={saCol} className={`form-input w-12 text-center text-xs ${saFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" max={80} />
                                             </td>
                                             <td className="px-0 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_fa'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={faCol}
-                                                    className="form-input w-12 text-center text-xs"
-                                                    placeholder="-"
-                                                    max={20}
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_fa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={faCol} className="form-input w-12 text-center text-xs" placeholder="-" max={20} />
                                             </td>
                                         </React.Fragment>
                                     );
@@ -545,28 +487,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={examMark ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={examCol}
-                                                    className={`form-input w-12 text-center text-xs ${examFailed ? 'text-red-600 font-bold' : ''}`}
-                                                    placeholder="-"
-                                                />
+                                                <input type="number" value={examMark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={examCol} className={`form-input w-12 text-center text-xs ${examFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" />
                                             </td>
                                             <td className="px-0 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_activity'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={actCol}
-                                                    className="form-input w-12 text-center text-xs"
-                                                    placeholder="-"
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={actCol} className="form-input w-12 text-center text-xs" placeholder="-" />
                                             </td>
                                         </React.Fragment>
                                     );
@@ -578,26 +502,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 const markFailed = mark !== null && mark !== undefined && mark !== '' && Number(mark) < failLimit;
                                 return (
                                     <td key={sd.name} className="px-0 py-1 border-l text-center">
-                                        <input
-                                            type="number"
-                                            value={mark ?? ''}
-                                            onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')}
-                                            onKeyDown={handleKeyDown}
-                                            data-row={studentIndex}
-                                            data-col={totalCol}
-                                            className={`form-input w-12 text-center text-xs ${markFailed ? 'text-red-600 font-bold' : ''}`}
-                                            placeholder="-"
-                                        />
+                                        <input type="number" value={mark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={totalCol} className={`form-input w-12 text-center text-xs ${markFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" />
                                     </td>
                                 );
                             })}
 
-                            <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap text-xs">{student.grandTotal}</td>
-                            <td className="px-1 py-1 text-center border-l whitespace-nowrap text-xs">{student.percentage.toFixed(1)}</td>
-                            <td className="px-1 py-1 text-center font-bold border-l whitespace-nowrap text-xs">{student.rank}</td>
-                            <td className="px-1 py-1 text-center border-l whitespace-nowrap text-xs">{isClassIXorX ? student.division : '-'}</td>
-                            <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap text-xs ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
-                            <td className="px-1 py-1 text-xs border-l">{student.remark}</td>
+                            <td className="px-2 py-1 text-center font-bold text-sky-700 border-l text-xs">{student.grandTotal}</td>
+                            <td className="px-2 py-1 text-center border-l text-xs">{student.percentage.toFixed(1)}</td>
+                            <td className="px-2 py-1 text-center font-bold border-l text-xs">{student.rank}</td>
+                            <td className="px-2 py-1 text-center border-l text-xs">{isClassIXorX ? student.division : '-'}</td>
+                            <td className={`px-2 py-1 text-center font-bold border-l text-xs ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
+                            {/* Remark — constrained width, wraps */}
+                            <td className="px-2 py-1 text-xs border-l" style={{ minWidth: 100, maxWidth: 160, whiteSpace: 'normal' }}>
+                                {student.remark}
+                            </td>
                             <td className="px-1 py-1 border-l">
                                 <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-12 text-center text-xs" />
                             </td>
@@ -616,11 +534,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 <CogIcon className="w-5 h-5" />
                 <span>Manage Subjects</span>
             </button>
-            <Link
-                to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
-                target="_blank"
-                className="btn btn-secondary flex items-center gap-2"
-            >
+            <Link to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`} target="_blank" className="btn btn-secondary flex items-center gap-2">
                 <PrinterIcon className="w-5 h-5" />
                 <span>Bulk Print Reports</span>
             </Link>
@@ -628,45 +542,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span>Import Marks</span>
             </button>
-            <button
-                onClick={() => setIsConfirmSaveModalOpen(true)}
-                disabled={isSaving || changedStudents.size === 0}
-                className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400"
-            >
+            <button onClick={() => setIsConfirmSaveModalOpen(true)} disabled={isSaving || changedStudents.size === 0} className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400">
                 {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
                 <span>Save Changes ({changedStudents.size})</span>
             </button>
         </div>
     </div>
     
-    <ConfirmationModal
-        isOpen={isConfirmSaveModalOpen}
-        onClose={() => setIsConfirmSaveModalOpen(false)}
-        onConfirm={handleConfirmSave}
-        title="Save Changes"
-        confirmDisabled={isSaving}
-    >
+    <ConfirmationModal isOpen={isConfirmSaveModalOpen} onClose={() => setIsConfirmSaveModalOpen(false)} onConfirm={handleConfirmSave} title="Save Changes" confirmDisabled={isSaving}>
         <p>Save marks for {changedStudents.size} student(s)?</p>
     </ConfirmationModal>
 
-    {examDetails && <ImportMarksModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onApplyImport={handleApplyImport}
-        classStudents={classStudents}
-        subjectDefinitions={subjectDefinitions}
-        examName={examDetails.name}
-        hasActivities={hasActivities}
-        isSaving={isSaving}
-    />}
+    {examDetails && <ImportMarksModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} onApplyImport={handleApplyImport} classStudents={classStudents} subjectDefinitions={subjectDefinitions} examName={examDetails.name} hasActivities={hasActivities} isSaving={isSaving} />}
     
-    {grade && gradeDefinitions[grade] && <EditSubjectsModal
-        isOpen={isEditSubjectsModalOpen}
-        onClose={() => setIsEditSubjectsModalOpen(false)}
-        onSave={handleSaveSubjects}
-        grade={grade}
-        initialGradeDefinition={gradeDefinitions[grade]}
-    />}
+    {grade && gradeDefinitions[grade] && <EditSubjectsModal isOpen={isEditSubjectsModalOpen} onClose={() => setIsEditSubjectsModalOpen(false)} onSave={handleSaveSubjects} grade={grade} initialGradeDefinition={gradeDefinitions[grade]} />}
     </>
   );
 };

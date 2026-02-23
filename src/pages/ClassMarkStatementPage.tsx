@@ -323,8 +323,18 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             return newResult;
         }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.saMarks != null || r.faMarks != null || r.grade != null);
 
-        const newExamData: Exam = { id: examId as any, name: examDetails.name, results: newResults };
-        
+const studentProcessed = processedData.find(p => p.id === studentId);
+
+const newExamData: Exam = { 
+    id: examId as any, 
+    name: examDetails.name, 
+    results: newResults,
+    rank: studentProcessed?.rank ?? null,
+    total: studentProcessed?.grandTotal ?? null,
+    percentage: Number(studentProcessed?.percentage.toFixed(1)) ?? null,
+    result: studentProcessed?.result ?? null,
+    division: studentProcessed?.division ?? null,
+};        
         if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
             newExamData.attendance = { totalWorkingDays: attendanceData[studentId].totalWorkingDays!, daysPresent: attendanceData[studentId].daysPresent! };
         }

@@ -27,14 +27,14 @@ const AboutPage: React.FC<AboutPageProps> = ({ user }) => {
     const [docsLoading, setDocsLoading] = useState(true);
 
     useEffect(() => {
-        const unsub = db.collection('website_content').doc('about_documents').onSnapshot(
-            doc => {
+        // Use get() instead of onSnapshot to avoid permission errors
+        // crashing other Firestore listeners on the page
+        db.collection('website_content').doc('about_documents').get()
+            .then(doc => {
                 setDocuments(doc.exists ? (doc.data()?.items || []) : []);
                 setDocsLoading(false);
-            },
-            () => setDocsLoading(false)
-        );
-        return () => unsub();
+            })
+            .catch(() => setDocsLoading(false));
     }, []);
 
     // Group documents by category

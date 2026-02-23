@@ -405,10 +405,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Rank</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{isClassIXorX ? 'Div' : '-'}</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Result</th>
-                        {/* Remark: fixed max width, wraps text */}
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
                             className="px-2 py-2 text-left font-bold text-slate-800 border-b border-l align-middle text-xs"
-                            style={{ minWidth: 100, maxWidth: 160 }}>
+                            style={{ minWidth: 420 }}>
                             Remark
                         </th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">W.Days</th>
@@ -512,8 +511,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             <td className="px-2 py-1 text-center font-bold border-l text-xs">{student.rank}</td>
                             <td className="px-2 py-1 text-center border-l text-xs">{isClassIXorX ? student.division : '-'}</td>
                             <td className={`px-2 py-1 text-center font-bold border-l text-xs ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
-                            {/* Remark — constrained width, wraps */}
-                            <td className="px-2 py-1 text-xs border-l" style={{ minWidth: 100, maxWidth: 160, whiteSpace: 'normal' }}>
+                            <td className="px-2 py-1 text-xs border-l" style={{ minWidth: 420 }}>
                                 {student.remark}
                             </td>
                             <td className="px-1 py-1 border-l">

@@ -85,13 +85,24 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                 </button>
                                 <div className="dropdown-content">
                                     {children.map(child => (
-                                        <NavLink key={child.id} to={child.path} end className="block">
-                                            {({ isActive }: any) => (
-                                                <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
-                                                    {child.label}
-                                                </span>
-                                            )}
-                                        </NavLink>
+                                        {child.path?.startsWith('http') || child.path?.endsWith('.pdf') ? (
+    
+        key={child.id}
+        href={child.path}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block px-4 py-2 text-sm transition-colors uppercase text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+    >
+        {child.label}
+    </a>
+) : (
+    <NavLink key={child.id} to={child.path} end className="block">
+        {({ isActive }: any) => (
+            <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
+                {child.label}
+            </span>
+        )}
+    </NavLink>
                                     ))}
                                 </div>
                             </div>

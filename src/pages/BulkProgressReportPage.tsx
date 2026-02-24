@@ -233,7 +233,7 @@ const MultiTermReportCard: React.FC<{
 
     return (
         <div>
-            <table className="w-full border-collapse border border-slate-400 text-sm">
+<table className="w-full border-collapse border border-slate-400" style={{ fontSize: 13 }}>
                 <thead>
                     <tr className="bg-slate-100">
                         <th rowSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>

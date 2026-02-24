@@ -22,9 +22,8 @@ export default defineConfig({
 
   plugins: [react()],
 
-  build: {
+build: {
     rollupOptions: {
-      external: ['jspdf', 'html2canvas'],
     },
   },
 

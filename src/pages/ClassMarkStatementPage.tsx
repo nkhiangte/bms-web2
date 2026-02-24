@@ -8,6 +8,9 @@ import { ImportMarksModal } from '@/components/ImportMarksModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EditSubjectsModal from '@/components/EditSubjectsModal';
 import { db } from '@/firebaseConfig';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
@@ -293,6 +296,121 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     return finalData as ProcessedStudent[];
   }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, isIXTerminal3, sortCriteria]);
 
+  // ── SHARED EXPORT HELPERS ─────────────────────────────────────────────────
+  const getExportColumns = () =>
+    subjectDefinitions.flatMap(sd => {
+      if (sd.gradingSystem === 'OABC') return [sd.name];
+      if (isIXTerminal3) return [`${sd.name} (SA/80)`, `${sd.name} (FA/20)`];
+      if (hasActivities) return [`${sd.name} (Exam)`, `${sd.name} (Act)`];
+      return [sd.name];
+    });
+
+  const getStudentMarkCells = (student: ProcessedStudent) =>
+    subjectDefinitions.flatMap(sd => {
+      if (sd.gradingSystem === 'OABC') return [marksData[student.id]?.[sd.name] ?? ''];
+      if (isIXTerminal3) return [
+        marksData[student.id]?.[sd.name + '_sa'] ?? '',
+        marksData[student.id]?.[sd.name + '_fa'] ?? '',
+      ];
+      if (hasActivities) return [
+        marksData[student.id]?.[sd.name + '_exam'] ?? '',
+        marksData[student.id]?.[sd.name + '_activity'] ?? '',
+      ];
+      return [marksData[student.id]?.[sd.name] ?? ''];
+    });
+
+  // ── EXCEL EXPORT ──────────────────────────────────────────────────────────
+  const handleExportExcel = () => {
+    const subjectCols = getExportColumns();
+    const headers = [
+      'Roll No', 'Student Name',
+      ...subjectCols,
+      'Total', '%', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present',
+    ];
+    const rows = processedData.map(student => [
+      student.rollNo, student.name,
+      ...getStudentMarkCells(student),
+      student.grandTotal,
+      Number(student.percentage.toFixed(1)),
+      student.rank,
+      student.division,
+      student.result,
+      student.remark,
+      attendanceData[student.id]?.totalWorkingDays ?? '',
+      attendanceData[student.id]?.daysPresent ?? '',
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = [
+      { wch: 8 }, { wch: 24 },
+      ...subjectCols.map(() => ({ wch: 10 })),
+      { wch: 8 }, { wch: 7 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 50 }, { wch: 12 }, { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mark Statement');
+    XLSX.writeFile(wb, `${grade}_${examDetails?.name}_marks.xlsx`);
+  };
+
+  // ── PDF EXPORT ────────────────────────────────────────────────────────────
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+    const pageW = doc.internal.pageSize.width;
+
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BETHEL MISSION SCHOOL', pageW / 2, 14, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Class: ${grade}  |  Exam: ${examDetails?.name}  |  Academic Year: ${academicYear}`, pageW / 2, 21, { align: 'center' });
+
+    const subjectCols = getExportColumns();
+    const headers = ['No', 'Name', ...subjectCols, 'Total', '%', 'Rank', 'Div', 'Result'];
+    const rows = processedData.map(student => [
+      student.rollNo, student.name,
+      ...getStudentMarkCells(student),
+      student.grandTotal,
+      student.percentage.toFixed(1),
+      student.rank,
+      student.division,
+      student.result,
+    ]);
+
+    autoTable(doc, {
+      head: [headers],
+      body: rows as any,
+      startY: 27,
+      styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica' },
+      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold', halign: 'center' },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { cellWidth: 32 },
+        [headers.length - 5]: { halign: 'center', cellWidth: 12 },
+        [headers.length - 4]: { halign: 'center', cellWidth: 10 },
+        [headers.length - 3]: { halign: 'center', cellWidth: 10 },
+        [headers.length - 2]: { halign: 'center', cellWidth: 14 },
+        [headers.length - 1]: { halign: 'center', cellWidth: 18 },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          const val = String(data.cell.raw ?? '');
+          if (val === 'FAIL') { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = 'bold'; }
+          else if (val === 'PASS') { data.cell.styles.textColor = [5, 150, 105]; data.cell.styles.fontStyle = 'bold'; }
+          else if (val === 'SIMPLE PASS') { data.cell.styles.textColor = [5, 150, 105]; }
+        }
+      },
+    });
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.text(`Page ${i} of ${pageCount}`, pageW / 2, doc.internal.pageSize.height - 5, { align: 'center' });
+    }
+
+    doc.save(`${grade}_${examDetails?.name}_marks.pdf`);
+  };
+
   const handleConfirmSave = async () => {
     if (!examDetails || changedStudents.size === 0) return;
     setIsSaving(true);
@@ -307,8 +425,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const newResults = subjectDefinitions.map(sd => {
             const originalResult = originalExam?.results.find(r => subjectsMatch(r.subject, sd.name));
 
-            // FIX: Spread ALL existing fields from Firebase first (preserves activityLog,
-            // activityMarks, and any other fields), then overwrite subject name and mark fields.
             const newResult: SubjectMark = {
                 ...(originalResult ? { ...originalResult } : {}),
                 subject: sd.name,
@@ -541,6 +657,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 <PrinterIcon className="w-5 h-5" />
                 <span>Bulk Print Reports</span>
             </Link>
+            {/* ── EXPORT BUTTONS ── */}
+            <button onClick={handleExportExcel} className="btn btn-secondary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Export Excel</span>
+            </button>
+            <button onClick={handleExportPDF} className="btn btn-secondary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                <span>Export PDF</span>
+            </button>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary flex items-center gap-2">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span>Import Marks</span>

@@ -184,7 +184,7 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
         <div className="mt-8 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
             <strong>Final Remarks:</strong> {finalRemark}
         </div>
-        <div className="mt-16 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
+        <div className="mt-6 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
             <div className="flex justify-between items-end">
                 <div className="text-center">
                    <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">

@@ -689,15 +689,31 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         const styleId = 'progress-report-print-style';
         let style = document.getElementById(styleId) as HTMLStyleElement | null;
         if (!style) { style = document.createElement('style'); style.id = styleId; document.head.appendChild(style); }
-        style.textContent = `
-            @media print {
-                @page { size: A4 portrait; margin-top: 9.5cm; margin-bottom: 1.5cm; margin-left: 0.6cm; margin-right: 0.6cm; }
-                .progress-report-page { page-break-after: always; break-after: page; }
-                .progress-report-page .report-inner { zoom: 0.72; }
-                .report-banner-placeholder { display: none !important; }
-                .report-signatures { break-inside: avoid !important; page-break-inside: avoid !important; }
-            }
-        `;
+   style.textContent = `
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin-top: 9.5cm;
+            margin-bottom: 1.5cm;
+            margin-left: 0.6cm;
+            margin-right: 0.6cm;
+        }
+        .progress-report-page {
+            page-break-after: always;
+            break-after: page;
+        }
+        .progress-report-page .report-inner {
+            zoom: 1.44;
+        }
+        .report-banner-placeholder {
+            display: none !important;
+        }
+        .report-signatures {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+    }
+`;
         return () => { if (style) style.textContent = ''; };
     }, []);
 

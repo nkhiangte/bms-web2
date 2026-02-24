@@ -112,7 +112,7 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({
     if (selectedSubject) {
         studentsInClass.forEach(student => {
             const exam = student.academicPerformance?.find(e => e.id === selectedExamId);
-            const result = exam?.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(selectedSubject));
+            const result = Array.isArray(exam?.results) ? exam.results.find(r => normalizeSubjectName(r.subject) === normalizeSubjectName(selectedSubject)) : undefined;
             const log = result?.activityLog;
             
             const tests = log?.classTest?.assessments?.map(a => a.marksObtained) || [];

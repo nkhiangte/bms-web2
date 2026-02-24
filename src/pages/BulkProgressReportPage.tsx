@@ -271,13 +271,23 @@ const MultiTermReportCard: React.FC<{
             <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 15 }}>
                 <thead>
                     <tr className="bg-slate-100">
-                        <th className={TH}>SUBJECT</th>
-                        <th className={TH}>Full Marks</th>
-                        <th className={TH}>Pass Marks</th>
-                        <th className={TH}>I Terminal Examination</th>
-                        <th className={TH}>II Terminal Examination</th>
-                        <th className={TH}>III Terminal Examination</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>SUBJECT</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>Full Marks</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>Pass Marks</th>
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>I Terminal Examination</th>
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>II Terminal Examination</th>
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>III Terminal Examination</th>
                     </tr>
+                    {hasActivities && (
+                        <tr className="bg-slate-100 text-xs">
+                            <th className={`${TH} font-semibold`}>Summative</th>
+                            <th className={`${TH} font-semibold`}>Activity</th>
+                            <th className={`${TH} font-semibold`}>Summative</th>
+                            <th className={`${TH} font-semibold`}>Activity</th>
+                            <th className={`${TH} font-semibold`}>Summative</th>
+                            <th className={`${TH} font-semibold`}>Activity</th>
+                        </tr>
+                    )}
                 </thead>
                 <tbody>
                     {(() => {
@@ -304,11 +314,30 @@ const MultiTermReportCard: React.FC<{
                         return (
                             <tr key={sd.name} className="border-t border-slate-300">
                                 <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-                                <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : 100}</td>
+                                <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : (sd.examFullMarks ?? 100)}</td>
                                 <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
-                                <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
-                                <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
+                                {hasActivities && !isGraded ? (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.examMarks ?? 0}</td>
+                                        <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{result1?.activityMarks ?? 0}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result2?.examMarks ?? 0}</td>
+                                        <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{result2?.activityMarks ?? 0}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.examMarks ?? 0}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{result3?.activityMarks ?? 0}</td>
+                                    </>
+                                ) : hasActivities && isGraded ? (
+                                    <>
+                                        <td colSpan={2} className="px-2 py-1 text-center font-bold border-r border-slate-300">{result1?.grade || '-'}</td>
+                                        <td colSpan={2} className="px-2 py-1 text-center font-bold border-r border-slate-300">{result2?.grade || '-'}</td>
+                                        <td colSpan={2} className="px-2 py-1 text-center font-bold">{result3?.grade || '-'}</td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
+                                        <td className="px-2 py-1 text-center font-bold border-r border-slate-300">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
+                                    </>
+                                )}
                             </tr>
                         );
                     })}
@@ -318,49 +347,112 @@ const MultiTermReportCard: React.FC<{
                         <td className={`${TD} text-left`}>Grand Total</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{summaries.terminal1?.grandTotal ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.grandTotal ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal3?.grandTotal ?? '-'}</td>
+                        {hasActivities ? (
+                            <>
+                                <td className={TD}>{summaries.terminal1?.examTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal1?.activityTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.examTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.activityTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.examTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.activityTotal ?? '-'}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{summaries.terminal1?.grandTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.grandTotal ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.grandTotal ?? '-'}</td>
+                            </>
+                        )}
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Result</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{summaries.terminal1?.result ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.result ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal3?.result ?? '-'}</td>
+                        {hasActivities ? (
+                            <>
+                                <td colSpan={2} className={TD}>{summaries.terminal1?.result ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal2?.result ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal3?.result ?? '-'}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{summaries.terminal1?.result ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.result ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.result ?? '-'}</td>
+                            </>
+                        )}
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Rank</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.rank ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal3?.rank ?? '-'}</td>
+                        {hasActivities ? (
+                            <>
+                                <td colSpan={2} className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal2?.rank ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal3?.rank ?? '-'}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.rank ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.rank ?? '-'}</td>
+                            </>
+                        )}
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Percentage</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                        {hasActivities ? (
+                            <>
+                                <td colSpan={2} className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                                <td colSpan={2} className={TD}>{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                                <td className={TD}>{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                            </>
+                        )}
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>{isIXorX ? 'Division' : 'Grade'}</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
-                        <td className={TD}>{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
-                        <td className={TD}>{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                        {hasActivities ? (
+                            <>
+                                <td colSpan={2} className={TD}>{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                                <td colSpan={2} className={TD}>{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                                <td colSpan={2} className={TD}>{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                                <td className={TD}>{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                                <td className={TD}>{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                            </>
+                        )}
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Attendance %</td>
                         <td className={TD}></td>
                         <td className={TD}></td>
-                        <td className={TD}>{getAttendancePercent(exams.terminal1?.attendance)}</td>
-                        <td className={TD}>{getAttendancePercent(exams.terminal2?.attendance)}</td>
-                        <td className={TD}>{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                        {hasActivities ? (
+                            <>
+                                <td colSpan={2} className={TD}>{getAttendancePercent(exams.terminal1?.attendance)}</td>
+                                <td colSpan={2} className={TD}>{getAttendancePercent(exams.terminal2?.attendance)}</td>
+                                <td colSpan={2} className={TD}>{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                            </>
+                        ) : (
+                            <>
+                                <td className={TD}>{getAttendancePercent(exams.terminal1?.attendance)}</td>
+                                <td className={TD}>{getAttendancePercent(exams.terminal2?.attendance)}</td>
+                                <td className={TD}>{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                            </>
+                        )}
                     </tr>
                 </tfoot>
             </table>

@@ -314,8 +314,8 @@ const MultiTermReportCard: React.FC<{
             });
         }
     });
-    return Array.from(subjectsMap.values());
- .map((sd: any) => {
+return Array.from(subjectsMap.values());
+})().map((sd: any) => {  // ✅ Properly closed IIFE
     const isGraded = sd.gradingSystem === 'OABC';
     const result1 = findResultWithAliases(exams.terminal1?.results, sd);
     const result2 = findResultWithAliases(exams.terminal2?.results, sd);

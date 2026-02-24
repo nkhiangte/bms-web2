@@ -181,7 +181,7 @@ const FS = 13;
 // ─── Shared footer (Final Remarks + Signatures) ───────────────────────────────
 const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({ finalRemark, classTeacher }) => (
     <>
-        <div className="mt-8 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
+        <div className="mt-6 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
             <strong>Final Remarks:</strong> {finalRemark}
         </div>
         <div className="mt-6 break-inside-avoid report-signatures" style={{ fontSize: FS }}>

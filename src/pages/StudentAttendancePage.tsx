@@ -24,11 +24,11 @@ const Toast: React.FC<{ message: string; onDismiss: () => void; }> = ({ message,
     useEffect(() => {
         const timer = setTimeout(() => {
             onDismiss();
-        }, 3000);
+        }, 2500);
         return () => clearTimeout(timer);
     }, [onDismiss]);
     return (
-        <div className="fixed bottom-6 right-6 bg-emerald-500 text-white shadow-lg rounded-lg p-4 flex items-center gap-3 z-40 animate-fade-in max-w-sm">
+        <div className="fixed bottom-6 right-6 bg-emerald-500 text-white shadow-lg rounded-lg p-4 flex items-center gap-3 z-40 animate-fade-in max-w-sm pointer-events-auto">
             <CheckCircleIcon className="w-6 h-6 flex-shrink-0" />
             <p className="text-sm font-semibold">{message}</p>
         </div>
@@ -217,11 +217,15 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
         setRecords(newRecords);
     };
 
+    const [toastKey, setToastKey] = useState<number>(0);
+
     const handleSave = async () => {
         if (!grade || !isToday) return;
         setIsSaving(true);
         await onUpdateAttendance(grade, selectedDate, records);
         setIsSaving(false);
+        // Force new toast instance with unique key
+        setToastKey(prev => prev + 1);
         setShowSuccessToast(true);
     };
 
@@ -278,7 +282,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
 
     return (
         <>
-            {showSuccessToast && <Toast message="Attendance saved successfully!" onDismiss={() => setShowSuccessToast(false)} />}
+            {showSuccessToast && <Toast key={`toast-${toastKey}`} message="Attendance saved successfully!" onDismiss={() => setShowSuccessToast(false)} />}
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
                 <div className="mb-6 flex justify-between items-center">
                     <button onClick={() => navigate(`/portal/classes/${encodedGrade}`)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800">
@@ -407,7 +411,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
 
                          {isClassTeacher && isToday && (
                             <div className="mt-6 flex justify-end">
-                                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary text-base px-6 py-3 disabled:bg-slate-400">
+                                <button onClick={handleSave} disabled={isSaving} className="btn btn-primary text-base px-6 py-3 disabled:bg-slate-400 disabled:cursor-not-allowed">
                                     {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5" />}
                                     <span>{isSaving ? 'Saving...' : 'Save Today\'s Attendance'}</span>
                                 </button>

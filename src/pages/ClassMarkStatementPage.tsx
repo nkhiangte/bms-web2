@@ -104,6 +104,27 @@ const subjectDefinitions = useMemo(() => {
   // Class IX terminal3 uses SA (max 80) + FA (max 20) split columns
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
 
+  // Pre-compute the total number of subject input columns so we can assign
+  // stable data-col indices to the attendance inputs that follow.
+  const totalSubjectInputCols = useMemo(() => {
+    let count = 0;
+    for (const sd of subjectDefinitions) {
+      if (sd.gradingSystem === 'OABC') {
+        // OABC uses a <select>, not tracked for keyboard nav, so skip
+        count++;
+      } else if (isIXTerminal3 || hasActivities) {
+        count += 2; // two inputs per subject (SA+FA or Exam+Activity)
+      } else {
+        count += 1;
+      }
+    }
+    return count;
+  }, [subjectDefinitions, hasActivities, isIXTerminal3]);
+
+  // Column indices for the two attendance inputs (always the last two input columns)
+  const workingDaysColIndex = totalSubjectInputCols;
+  const daysPresentColIndex = totalSubjectInputCols + 1;
+
   // Keyboard navigation: Enter moves to next student's same column
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -838,10 +859,26 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
                             <td className="px-1 py-1 text-sm border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
+                                <input
+                                    type="number"
+                                    value={attendanceData[student.id]?.totalWorkingDays ?? ''}
+                                    onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    data-row={studentIndex}
+                                    data-col={workingDaysColIndex}
+                                    className="form-input w-20 text-center"
+                                />
                             </td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
+                                <input
+                                    type="number"
+                                    value={attendanceData[student.id]?.daysPresent ?? ''}
+                                    onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    data-row={studentIndex}
+                                    data-col={daysPresentColIndex}
+                                    className="form-input w-20 text-center"
+                                />
                             </td>
                         </tr>
                         );

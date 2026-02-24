@@ -555,10 +555,10 @@ const exportToCSV = () => {
     
     return row.join(',');
   });
-const handleSaveSubjects = async (newDef: GradeDefinition) => {
   // Create CSV content
   const csvContent = [headers.join(','), ...rows].join('\n');
-  
+  const handleSaveSubjects = async (newDef: GradeDefinition) => {
+
   // Download
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');

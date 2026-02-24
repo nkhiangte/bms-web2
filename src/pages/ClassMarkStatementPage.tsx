@@ -9,7 +9,6 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import EditSubjectsModal from '@/components/EditSubjectsModal';
 import { db } from '@/firebaseConfig';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
@@ -436,16 +435,7 @@ const handleExportExcel = () => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: 'xlsx',
-    type: 'array'
-  });
-
-  const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
-  });
-
-  saveAs(blob, `${grade}_${examDetails?.name}_Statement.xlsx`);
+XLSX.writeFile(workbook, `${grade}_${examDetails?.name}_Statement.xlsx`);
 };
 
 // ================= EXPORT TO PDF =================

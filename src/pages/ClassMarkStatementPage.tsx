@@ -156,6 +156,7 @@ const subjectDefinitions = useMemo(() => {
   const [marksData, setMarksData] = useState<MarksData>({});
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
   const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
   // Keep a ref in sync with changedStudents so the useEffect below can read the
   // latest value without having it in the dependency array. This prevents the
@@ -442,10 +443,13 @@ const subjectDefinitions = useMemo(() => {
             results: newResults,
         };
         
-        if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
-            newExamData.attendance = { 
-                totalWorkingDays: attendanceData[studentId].totalWorkingDays!, 
-                daysPresent: attendanceData[studentId].daysPresent! 
+        // Save attendance if either field has a value (don't require both to be filled)
+        const totalWorkingDays = attendanceData[studentId]?.totalWorkingDays;
+        const daysPresent = attendanceData[studentId]?.daysPresent;
+        if (totalWorkingDays != null || daysPresent != null) {
+            newExamData.attendance = {
+                totalWorkingDays: totalWorkingDays ?? 0,
+                daysPresent: daysPresent ?? 0,
             };
         }
 
@@ -457,6 +461,8 @@ const subjectDefinitions = useMemo(() => {
     setChangedStudents(new Set());
     setIsSaving(false);
     setIsConfirmSaveModalOpen(false);
+    setIsSaveSuccess(true);
+    setTimeout(() => setIsSaveSuccess(false), 3000);
   };
 
       // ================= EXPORT TO EXCEL =================
@@ -953,6 +959,15 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
         grade={grade}
         initialGradeDefinition={gradeDefinitions[grade]}
     />}
+
+    {/* Success toast */}
+    {isSaveSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg animate-fade-in">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <span className="font-semibold">Changes saved successfully!</span>
+            <button onClick={() => setIsSaveSuccess(false)} className="ml-2 text-white/80 hover:text-white text-lg leading-none">&times;</button>
+        </div>
+    )}
     </>
   );
 };

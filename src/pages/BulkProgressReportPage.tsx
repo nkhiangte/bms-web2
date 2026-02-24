@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
@@ -42,7 +41,6 @@ const calculateTermSummary = (
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
-    // FIX: Use classmates (active, same grade) for ranking — matches Mark Entry page
     const studentData = classmates.map(s => {
         const sExam = s.academicPerformance?.find((e) => {
             if (e.id === examId) return true;
@@ -155,7 +153,11 @@ const calculateTermSummary = (
     let academicGrade = '-';
     if (currentStudentStats.result === 'FAIL') academicGrade = 'E';
     else {
-        if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+        if (percentage > 89) academicGrade = 'O';
+        else if (percentage > 79) academicGrade = 'A';
+        else if (percentage > 69) academicGrade = 'B';
+        else if (percentage > 59) academicGrade = 'C';
+        else academicGrade = 'D';
     }
 
     let remark = '';
@@ -185,6 +187,10 @@ const calculateTermSummary = (
     };
 };
 
+// ─── CELL STYLE CONSTANTS ────────────────────────────────────────────────────
+const TD = "p-2 border border-slate-400";
+const TH = "p-2 border border-slate-400";
+
 const MultiTermReportCard: React.FC<{
     student: Student;
     gradeDef: GradeDefinition;
@@ -204,7 +210,7 @@ const MultiTermReportCard: React.FC<{
         return '-';
     };
 
-  const finalRemark = useMemo(() => {
+    const finalRemark = useMemo(() => {
         const summary3 = summaries.terminal3;
         const exam3 = exams.terminal3;
         const nextGrade = getNextGrade(student.grade);
@@ -233,31 +239,32 @@ const MultiTermReportCard: React.FC<{
 
     return (
         <div>
-<table className="w-full border-collapse border border-slate-400" style={{ fontSize: 13 }}>
+            {/* fontSize 13 on the whole table for better readability */}
+            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 13 }}>
                 <thead>
                     <tr className="bg-slate-100">
-                        <th rowSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>
-                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">I Terminal Examination</th>
-                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">II Terminal Examination</th>
-                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">III Terminal Examination</th>
+                        <th rowSpan={hasActivities || isIXorX ? 2 : 1} className={`${TH} align-middle`}>SUBJECT</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className={TH}>I Terminal Examination</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className={TH}>II Terminal Examination</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className={TH}>III Terminal Examination</th>
                     </tr>
                     {(hasActivities || isIXorX) && (
                         <tr className="bg-slate-100 text-xs">
                             {hasActivities ? (
                                 <>
-                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                    <th className={`${TH} font-semibold`}>Summative</th>
+                                    <th className={`${TH} font-semibold`}>Activity</th>
+                                    <th className={`${TH} font-semibold`}>Summative</th>
+                                    <th className={`${TH} font-semibold`}>Activity</th>
+                                    <th className={`${TH} font-semibold`}>Summative</th>
+                                    <th className={`${TH} font-semibold`}>Activity</th>
                                 </>
                             ) : isIXorX ? (
                                 <>
-                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
-                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
-                                    <th className="p-1 border border-slate-400 font-semibold">SA <span className="font-normal text-slate-400">/80</span></th>
-                                    <th className="p-1 border border-slate-400 font-semibold">FA <span className="font-normal text-slate-400">/20</span></th>
+                                    <th colSpan={2} className={`${TH} font-semibold text-slate-500`}>Marks</th>
+                                    <th colSpan={2} className={`${TH} font-semibold text-slate-500`}>Marks</th>
+                                    <th className={`${TH} font-semibold`}>SA <span className="font-normal text-slate-400">/80</span></th>
+                                    <th className={`${TH} font-semibold`}>FA <span className="font-normal text-slate-400">/20</span></th>
                                 </>
                             ) : null}
                         </tr>
@@ -272,44 +279,44 @@ const MultiTermReportCard: React.FC<{
 
                         return (
                             <tr key={sd.name} className="text-center">
-                                <td className="p-1 border border-slate-400 text-left font-semibold">{sd.name}</td>
+                                <td className={`${TD} text-left font-semibold`}>{sd.name}</td>
                                 {hasActivities ? (
                                     isGraded ? (
                                         <>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term3Result?.grade ?? '-'}</td>
                                         </>
                                     ) : (
                                         <>
-                                            <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
+                                            <td className={TD}>{term1Result?.examMarks ?? '-'}</td>
+                                            <td className={TD}>{term1Result?.activityMarks ?? '-'}</td>
+                                            <td className={TD}>{term2Result?.examMarks ?? '-'}</td>
+                                            <td className={TD}>{term2Result?.activityMarks ?? '-'}</td>
+                                            <td className={TD}>{term3Result?.examMarks ?? '-'}</td>
+                                            <td className={TD}>{term3Result?.activityMarks ?? '-'}</td>
                                         </>
                                     )
                                 ) : isIXTerminal3Report ? (
                                     isGraded ? (
                                         <>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term3Result?.grade ?? '-'}</td>
                                         </>
                                     ) : (
                                         <>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.marks ?? '-'}</td>
-                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.marks ?? '-'}</td>
-                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.saMarks ?? (term3Result?.marks != null ? term3Result.marks : '-')}</td>
-                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.faMarks ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.marks ?? '-'}</td>
+                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.marks ?? '-'}</td>
+                                            <td className={`${TD} font-bold`}>{term3Result?.saMarks ?? (term3Result?.marks != null ? term3Result.marks : '-')}</td>
+                                            <td className={`${TD} font-bold`}>{term3Result?.faMarks ?? '-'}</td>
                                         </>
                                     )
                                 ) : (
                                     <>
-                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
-                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
-                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
+                                        <td className={`${TD} font-bold`}>{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
+                                        <td className={`${TD} font-bold`}>{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
+                                        <td className={`${TD} font-bold`}>{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
                                     </>
                                 )}
                             </tr>
@@ -319,69 +326,77 @@ const MultiTermReportCard: React.FC<{
                 <tfoot>
                     {hasActivities && (
                         <tr className="font-bold text-center">
-                            <td className="p-1 border border-slate-400 text-left">Total</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal1?.examTotal ?? '-'}</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal1?.activityTotal ?? '-'}</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal2?.examTotal ?? '-'}</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal2?.activityTotal ?? '-'}</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal3?.examTotal ?? '-'}</td>
-                            <td className="p-1 border border-slate-400">{summaries.terminal3?.activityTotal ?? '-'}</td>
+                            <td className={`${TD} text-left`}>Total</td>
+                            <td className={TD}>{summaries.terminal1?.examTotal ?? '-'}</td>
+                            <td className={TD}>{summaries.terminal1?.activityTotal ?? '-'}</td>
+                            <td className={TD}>{summaries.terminal2?.examTotal ?? '-'}</td>
+                            <td className={TD}>{summaries.terminal2?.activityTotal ?? '-'}</td>
+                            <td className={TD}>{summaries.terminal3?.examTotal ?? '-'}</td>
+                            <td className={TD}>{summaries.terminal3?.activityTotal ?? '-'}</td>
                         </tr>
                     )}
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Grand Total</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.grandTotal ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.grandTotal ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.grandTotal ?? '-'}</td>
+                        <td className={`${TD} text-left`}>Grand Total</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal1?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal2?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal3?.grandTotal ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Result</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.result ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.result ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.result ?? '-'}</td>
+                        <td className={`${TD} text-left`}>Result</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal1?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal2?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal3?.result ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Rank</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.rank ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.rank ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.rank ?? '-'}</td>
+                        <td className={`${TD} text-left`}>Rank</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal2?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal3?.rank ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Percentage</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
-                    </tr>
-                    {/* FIX: Show 'Division' for Class IX/X, 'Grade' for all other classes */}
-                    <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">{isIXorX ? 'Division' : 'Grade'}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
-                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                        <td className={`${TD} text-left`}>Percentage</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
                     </tr>
                     <tr className="font-bold text-center">
-                        <td className="p-1 border border-slate-400 text-left">Attendance %</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal1?.attendance)}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal2?.attendance)}</td>
-                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                        <td className={`${TD} text-left`}>{isIXorX ? 'Division' : 'Grade'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className={TD}>{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className={`${TD} text-left`}>Attendance %</td>
+                        <td colSpan={hasActivities ? 2 : 1} className={TD}>{getAttendancePercent(exams.terminal1?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className={TD}>{getAttendancePercent(exams.terminal2?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className={TD}>{getAttendancePercent(exams.terminal3?.attendance)}</td>
                     </tr>
                 </tfoot>
             </table>
 
-            <div className="mt-4 border border-slate-400 rounded-lg p-2 text-sm break-inside-avoid">
+            {/* Increased spacing and font size on Final Remarks */}
+            <div className="mt-8 border border-slate-400 rounded-lg p-3 break-inside-avoid" style={{ fontSize: 13 }}>
                 <strong>Final Remarks:</strong> {finalRemark}
             </div>
-            
-            <div className="mt-4 text-sm break-inside-avoid report-signatures">
+
+            {/* Large top margin to push signatures well below Final Remarks */}
+            <div className="mt-16 text-sm break-inside-avoid report-signatures">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        {/* Taller signature space */}
+                        <div className="h-20 flex flex-col justify-end pb-1 min-w-[150px]">
+                            {classTeacher ? (
+                                <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">
+                                    {classTeacher.firstName} {classTeacher.lastName}
+                                </p>
+                            ) : (
+                                <div className="h-4"></div>
+                            )}
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
-                        <div className="h-12 min-w-[150px]"></div>
+                        <div className="h-20 min-w-[150px]"></div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
@@ -435,7 +450,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                             </tr>
                         </>
                     ) : (
-                         <tr className="border-b border-slate-400">
+                        <tr className="border-b border-slate-400">
                             <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
                             <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
                             <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
@@ -444,12 +459,11 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     )}
                 </thead>
                 <tbody>
-                     {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
+                    {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
                         const result = findResultWithAliases(exam?.results, sd);
                         const isGraded = sd.gradingSystem === 'OABC';
-                        
                         return (
-                             <tr key={sd.name} className="border-t border-slate-300">
+                            <tr key={sd.name} className="border-t border-slate-300">
                                 <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
                                 {isNurseryToII ? (
                                     <>
@@ -493,10 +507,8 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     )}
                     <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
                     <div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
-                    
                     <div className="font-semibold text-slate-600 text-right">Percentage:</div>
                     <div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
-
                     {!isClassIXorX && (
                         <>
                             <div className="font-semibold text-slate-600 text-right">Grade:</div>
@@ -504,15 +516,13 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                         </>
                     )}
                     {isClassIXorX && (
-                         <>
+                        <>
                             <div className="font-semibold text-slate-600 text-right">Division:</div>
                             <div className="font-bold text-slate-800">{processedReportData?.division}</div>
                         </>
                     )}
-
                     <div className="font-semibold text-slate-600 text-right">Result:</div>
                     <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
-                    
                     <div className="font-semibold text-slate-600 text-right">Rank:</div>
                     <div className="font-bold text-slate-800">{processedReportData?.rank}</div>
                     <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
@@ -522,17 +532,20 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                             : 'N/A'}
                     </div>
                 </div>
-                
                 <div className="pt-1.5 mt-1.5 border-t">
                     <span className="font-semibold">Teacher's Remarks: </span>
                     <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
                 </div>
             </div>
-             <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
+            <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
-                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
-                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                            {classTeacher ? (
+                                <p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>
+                            ) : (
+                                <div className="h-4"></div>
+                            )}
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
@@ -574,7 +587,6 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
     const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
 
-    // Inject portrait @page style for this print view — overrides global landscape setting
     useEffect(() => {
         const styleId = 'progress-report-print-style';
         let style = document.getElementById(styleId) as HTMLStyleElement | null;
@@ -596,7 +608,6 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                     page-break-after: always;
                     break-after: page;
                 }
-                /* Zoom the inner content to fit in the available space below letterhead */
                 .progress-report-page .report-inner {
                     zoom: 0.72;
                 }
@@ -606,18 +617,15 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             }
         `;
         return () => {
-            // Restore landscape for mark statement pages
             if (style) style.textContent = '';
         };
     }, []);
 
-    // allSummaries must be before any early return (Rules of Hooks)
     const allSummaries = useMemo(() => {
         if (examId !== 'terminal3' || !gradeDef) return null;
-        
         const summariesMap: Record<string, any> = {};
         classStudents.forEach(student => {
-             const exams = {
+            const exams = {
                 terminal1: student?.academicPerformance?.find(e => e.id === 'terminal1'),
                 terminal2: student?.academicPerformance?.find(e => e.id === 'terminal2'),
                 terminal3: student?.academicPerformance?.find(e => e.id === 'terminal3'),
@@ -648,7 +656,6 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                 {classStudents.map((student) => {
                     const studentExams = student.academicPerformance || [];
                     const singleExam = studentExams.find(e => e.id === examId);
-                    
                     const exams = {
                         terminal1: studentExams.find(e => e.id === 'terminal1'),
                         terminal2: studentExams.find(e => e.id === 'terminal2'),
@@ -658,7 +665,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
                     return (
                         <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page">
-                             <div className="font-serif print:text-xs report-inner">
+                            <div className="font-serif print:text-xs report-inner">
                                 <header className="text-center mb-2">
                                     {examId !== 'terminal3' ? (
                                         <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
@@ -696,7 +703,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
                                 <section className="mt-4 print:mt-2">
                                     {examId === 'terminal3' && summaries ? (
-                                        <MultiTermReportCard 
+                                        <MultiTermReportCard
                                             student={student}
                                             gradeDef={gradeDef}
                                             exams={exams}
@@ -704,11 +711,11 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                                             staff={staff}
                                         />
                                     ) : (
-                                        <ReportCard 
-                                            student={student} 
-                                            gradeDef={gradeDef} 
-                                            exam={singleExam} 
-                                            examTemplate={examTemplate} 
+                                        <ReportCard
+                                            student={student}
+                                            gradeDef={gradeDef}
+                                            exam={singleExam}
+                                            examTemplate={examTemplate}
                                             allStudents={classStudents}
                                             academicYear={academicYear}
                                             staff={staff}

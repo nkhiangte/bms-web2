@@ -174,20 +174,20 @@ const calculateTermSummary = (
 };
 
 // ─── Shared UI constants ──────────────────────────────────────────────────────
-const TD = "p-2 border border-slate-400 text-center";
-const TH = "p-2 border border-slate-400 text-center";
+const TD = "px-1 py-0.5 border border-slate-400";
+const TH = "px-1 py-0.5 border border-slate-400";
 const FS = 13;
 
 // ─── Shared footer (Final Remarks + Signatures) ───────────────────────────────
 const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({ finalRemark, classTeacher }) => (
     <>
-        <div className="mt-8 border border-slate-400 rounded-lg p-3 break-inside-avoid" style={{ fontSize: FS }}>
+        <div className="mt-2 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
             <strong>Final Remarks:</strong> {finalRemark}
         </div>
-        <div className="mt-16 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
+        <div className="mt-4 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
             <div className="flex justify-between items-end">
                 <div className="text-center">
-                    <div className="h-20 flex flex-col justify-end pb-1 min-w-[150px]">
+                   <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
                         {classTeacher
                             ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p>
                             : <div className="h-4" />}
@@ -195,7 +195,7 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
                     <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                 </div>
                 <div className="text-center">
-                    <div className="h-20 flex flex-col justify-end pb-1 min-w-[150px]">
+                    <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
                         <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
                     </div>
                     <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
@@ -553,39 +553,39 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
 
     return (
         <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-0.5 print:text-base print:border-b print:border-slate-400">
                 {examTemplate.name}
             </h3>
             <table className="min-w-full border-collapse" style={{ fontSize: FS }}>
                 <thead className="bg-slate-50 print:bg-transparent">
                     {isNurseryToII ? (
                         <tr className="border-b border-slate-400">
-                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                            <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600">Marks Obtained</th>
                         </tr>
                     ) : hasActivities ? (
                         <>
                             <tr className="border-b border-slate-400">
-                                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
-                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
-                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
-                                <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total</th>
+                                <th rowSpan={2} className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
+                                <th colSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
+                                <th colSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
+                                <th rowSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 align-middle">Total</th>
                             </tr>
                             <tr className="border-b border-slate-400">
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
-                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
+                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
+                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
+                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
+                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
                             </tr>
                         </>
                     ) : (
                         <tr className="border-b border-slate-400">
-                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                            <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600">Marks Obtained</th>
                         </tr>
                     )}
                 </thead>
@@ -595,31 +595,31 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                         const isGraded = sd.gradingSystem === 'OABC';
                         return (
                             <tr key={sd.name} className="border-t border-slate-300">
-                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                <td className="px-1 py-0.5 font-medium border-r border-slate-300">{sd.name}</td>
                                 {isNurseryToII ? (<>
-                                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                    <td className="px-1 py-0.5 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
                                 </>) : hasActivities ? (isGraded
-                                    ? <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
+                                    ? <td colSpan={5} className="px-1 py-0.5 text-center font-bold">{result?.grade || '-'}</td>
                                     : (<>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                        <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
+                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                        <td className="px-1 py-0.5 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                     </>)
                                 ) : (<>
-                                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : (isClassIXorX ? 100 : sd.examFullMarks)}</td>
-                                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? 'Graded' : (isClassIXorX ? 100 : sd.examFullMarks)}</td>
+                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                    <td className="px-1 py-0.5 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
                                 </>)}
                             </tr>
                         );
                     })}
                 </tbody>
             </table>
-            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: FS }}>
+            <div className="p-1 bg-slate-50 border-t border-slate-400 space-y-0 print:py-0.5 print:bg-transparent" style={{ fontSize: FS }}>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                     {hasActivities && (<>
                         <div className="font-semibold text-slate-600 text-right">Summative Total:</div><div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>

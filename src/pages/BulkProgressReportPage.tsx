@@ -271,16 +271,16 @@ const MultiTermReportCard: React.FC<{
             <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 15 }}>
                 <thead>
                     <tr className="bg-slate-100">
-                        <th className={TH}>SUBJECT</th>
+                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>SUBJECT</th>
                         {!hasActivities && (
                             <>
                                 <th className={TH}>Full Marks</th>
                                 <th className={TH}>Pass Marks</th>
                             </>
                         )}
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>I Entry</th>
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>II Entry</th>
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>III Entry</th>
+                        <th colSpan={2} className={TH}>I Entry</th>
+                        <th colSpan={2} className={TH}>II Entry</th>
+                        <th colSpan={2} className={TH}>III Entry</th>
                     </tr>
                     {hasActivities && (
                         <tr className="bg-slate-100 text-xs">

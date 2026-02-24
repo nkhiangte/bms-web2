@@ -114,7 +114,7 @@ const ImageLightbox: React.FC<{
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative max-w-5xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
-                <img src={img.imageSrc} alt={img.title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" />
+               <img src={img.imageSrc} alt={img.title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" referrerPolicy="no-referrer" />
                 {(img.title || img.caption) && (
                     <div className="mt-4 text-center">
                         {img.title && <p className="text-white font-semibold text-lg">{img.title}</p>}
@@ -349,11 +349,11 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
 
                                             {/* Thumbnail */}
                                             <img
-                                                src={item.imageSrc}
-                                                alt={item.title}
-                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                            />
-
+    src={item.imageSrc}
+    alt={item.title}
+    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+    referrerPolicy="no-referrer"
+/>
                                             {/* Video play button overlay */}
                                             {item.type === 'video' ? (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-300">

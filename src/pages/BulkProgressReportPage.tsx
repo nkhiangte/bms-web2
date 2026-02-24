@@ -239,8 +239,15 @@ const MultiTermReportCard: React.FC<{
 
     return (
         <div>
-            {/* fontSize 13 on the whole table for better readability */}
-            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 13 }}>
+            <style>
+                {`@media print { 
+                    body { font-size: 15px !important; } 
+                    table { font-size: 15px !important; }
+                    .report-signatures { margin-top: 3rem !important; }
+                }`}
+            </style>
+            {/* fontSize 15 on the whole table for better readability */}
+            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 15 }}>
                 <thead>
                     <tr className="bg-slate-100">
                         <th rowSpan={hasActivities || isIXorX ? 2 : 1} className={`${TH} align-middle`}>SUBJECT</th>
@@ -374,13 +381,13 @@ const MultiTermReportCard: React.FC<{
                 </tfoot>
             </table>
 
-            {/* Increased spacing and font size on Final Remarks */}
-            <div className="mt-8 border border-slate-400 rounded-lg p-3 break-inside-avoid" style={{ fontSize: 13 }}>
+          {/* Increased spacing and font size on Final Remarks */}
+            <div className="mt-8 border border-slate-400 rounded-lg p-3 break-inside-avoid" style={{ fontSize: 15 }}>
                 <strong>Final Remarks:</strong> {finalRemark}
             </div>
 
             {/* Large top margin to push signatures well below Final Remarks */}
-            <div className="mt-16 text-sm break-inside-avoid report-signatures">
+            <div className="mt-16 break-inside-avoid report-signatures" style={{ fontSize: 15 }}>
                 <div className="flex justify-between items-end">
                     <div className="text-center">
                         {/* Taller signature space */}
@@ -424,8 +431,8 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
 
     return (
         <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
-            <table className="min-w-full text-sm border-collapse">
+          <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
+            <table className="min-w-full border-collapse" style={{ fontSize: 15 }}>
                 <thead className="bg-slate-50 print:bg-transparent">
                     {isNurseryToII ? (
                         <tr className="border-b border-slate-400">
@@ -495,8 +502,8 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     })}
                 </tbody>
             </table>
-            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 text-sm print:py-1 print:bg-transparent">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+<div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: 15 }}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                     {hasActivities && (
                         <>
                             <div className="font-semibold text-slate-600 text-right">Summative Total:</div>

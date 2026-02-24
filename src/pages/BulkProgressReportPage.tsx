@@ -31,13 +31,34 @@ const calculateTermSummary = (
     gradeDef: GradeDefinition,
     allStudents: Student[]
 ) => {
-    if (!gradeDef || !gradeDef.subjects) return null;
+    if (!gradeDef) return null;
+
+    // Fix: Dynamically find all subjects present in the Firestore results
+    const subjectsMap = new Map<string, SubjectDefinition>();
+    (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+
+    if (exam?.results) {
+        exam.results.forEach(res => {
+            const normalized = normalizeSubjectName(res.subject);
+            if (!subjectsMap.has(normalized)) {
+                subjectsMap.set(normalized, {
+                    name: res.subject,
+                    examFullMarks: 100,
+                    activityFullMarks: 0,
+                    gradingSystem: res.grade ? 'OABC' : 'Numerical'
+                });
+            }
+        });
+    }
+    const activeSubjects = Array.from(subjectsMap.values());
 
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
     const classmates = allStudents.filter(s => s.grade === student.grade && s.status === StudentStatus.ACTIVE);
+    const numericSubjects = activeSubjects.filter(sd => sd.gradingSystem !== 'OABC');
+    const gradedSubjects = activeSubjects.filter(sd => sd.gradingSystem === 'OABC');
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -277,53 +298,50 @@ const MultiTermReportCard: React.FC<{
                         </tr>
                     )}
                 </thead>
-                <tbody>
-                    {(gradeDef.subjects ?? []).filter(Boolean).map(sd => {
-                        const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
-                        const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
-                        const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
+             <tbody>
+                    {/* Fix: Use the student's actual results to determine rows */}
+                    {(() => {
+                        const subjectsMap = new Map<string, SubjectDefinition>();
+                        (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+                        exam?.results?.forEach(res => {
+                            const normalized = normalizeSubjectName(res.subject);
+                            if (!subjectsMap.has(normalized)) {
+                                subjectsMap.set(normalized, {
+                                    name: res.subject, examFullMarks: 100, activityFullMarks: 0,
+                                    gradingSystem: res.grade ? 'OABC' : 'Numerical'
+                                });
+                            }
+                        });
+                        return Array.from(subjectsMap.values());
+                    })().map((sd: any) => {
+                        const result = findResultWithAliases(exam?.results, sd);
                         const isGraded = sd.gradingSystem === 'OABC';
-
                         return (
-                            <tr key={sd.name} className="text-center">
-                                <td className={`${TD} text-left font-semibold`}>{sd.name}</td>
-                                {hasActivities ? (
+                            <tr key={sd.name} className="border-t border-slate-300">
+                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                {isNurseryToII ? (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                ) : hasActivities ? (
                                     isGraded ? (
-                                        <>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term3Result?.grade ?? '-'}</td>
-                                        </>
+                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
                                     ) : (
                                         <>
-                                            <td className={TD}>{term1Result?.examMarks ?? '-'}</td>
-                                            <td className={TD}>{term1Result?.activityMarks ?? '-'}</td>
-                                            <td className={TD}>{term2Result?.examMarks ?? '-'}</td>
-                                            <td className={TD}>{term2Result?.activityMarks ?? '-'}</td>
-                                            <td className={TD}>{term3Result?.examMarks ?? '-'}</td>
-                                            <td className={TD}>{term3Result?.activityMarks ?? '-'}</td>
-                                        </>
-                                    )
-                                ) : isIXTerminal3Report ? (
-                                    isGraded ? (
-                                        <>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.grade ?? '-'}</td>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term3Result?.grade ?? '-'}</td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term1Result?.marks ?? '-'}</td>
-                                            <td colSpan={2} className={`${TD} font-bold`}>{term2Result?.marks ?? '-'}</td>
-                                            <td className={`${TD} font-bold`}>{term3Result?.saMarks ?? (term3Result?.marks != null ? term3Result.marks : '-')}</td>
-                                            <td className={`${TD} font-bold`}>{term3Result?.faMarks ?? '-'}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
                                         </>
                                     )
                                 ) : (
                                     <>
-                                        <td className={`${TD} font-bold`}>{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
-                                        <td className={`${TD} font-bold`}>{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
-                                        <td className={`${TD} font-bold`}>{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
                                     </>
                                 )}
                             </tr>

@@ -221,7 +221,8 @@ const MultiTermReportCard: React.FC<{
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isIXTerminal3Report = student.grade === Grade.IX;
-    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
+ const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
+  const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
         if (attendance && attendance.totalWorkingDays > 0) {

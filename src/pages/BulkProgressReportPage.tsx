@@ -65,11 +65,11 @@ const calculateTermSummary = (
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
-           } else if (isClassIXorX && examId === 'terminal3') {
-    const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-    const faMark = Number(r?.faMarks ?? 0);
-    totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-    if (saMark < 27) fSubjects++;  // ← match ClassMarkStatementPage logic
+            } else if (isClassIXorX && examId === 'terminal3') {
+                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+                const faMark = Number(r?.faMarks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+                if (totalMark < 33) fSubjects++;
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
@@ -367,7 +367,7 @@ const MultiTermReportCard: React.FC<{
                 <strong>Final Remarks:</strong> {finalRemark}
             </div>
             
-            <div className="mt-8 text-sm break-inside-avoid">
+            <div className="mt-4 text-sm break-inside-avoid report-signatures">
                 <div className="flex justify-between items-end">
                     <div className="text-center">
                          <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
@@ -614,13 +614,13 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                     const summaries = allSummaries ? allSummaries[student.id] : null;
 
                     return (
-                        <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 print:break-after-page page-break">
-                             <div className="font-serif print:text-sm">
+                        <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page">
+                             <div className="font-serif print:text-xs">
                                 <header className="text-center mb-2">
                                     {examId !== 'terminal3' ? (
                                         <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
                                     ) : (
-                                        <div className="h-32 md:h-40 print:h-48" aria-hidden="true"></div>
+                                        <div className="h-32 md:h-40 report-banner-placeholder" aria-hidden="true"></div>
                                     )}
                                     <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
                                         STUDENT'S PROGRESS REPORT

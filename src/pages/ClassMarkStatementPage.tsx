@@ -57,14 +57,42 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   }, [students, grade]);
 
   // Added explicit type cast to SubjectDefinition[] to resolve arithmetic operation errors in useMemo below
-  const subjectDefinitions = useMemo(() => {
+const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
-    let subjects = gradeDefinitions[grade]?.subjects || [];
+    
+    // Start with subjects from the global grade settings
+    const baseSubjects = [...(gradeDefinitions[grade]?.subjects || [])];
+    const subjectsMap = new Map<string, SubjectDefinition>();
+    
+    // Add base subjects to map
+    baseSubjects.forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+
+    // Scan current students' exam results for this specific term to find additional subjects
+    classStudents.forEach(student => {
+      const studentExam = student.academicPerformance?.find(e => e.id === examId);
+      if (studentExam?.results) {
+        studentExam.results.forEach(res => {
+          const normalized = normalizeSubjectName(res.subject);
+          if (!subjectsMap.has(normalized)) {
+            // Subject exists in Firestore but not in Grade Settings
+            subjectsMap.set(normalized, {
+              name: res.subject,
+              examFullMarks: 100,
+              activityFullMarks: 0,
+              gradingSystem: res.grade ? 'OABC' : 'Numerical'
+            });
+          }
+        });
+      }
+    });
+
+    let finalSubjects = Array.from(subjectsMap.values());
+
     if (grade === Grade.IX || grade === Grade.X) {
-        subjects = subjects.map(sub => ({ ...sub, examFullMarks: 100, activityFullMarks: 0 }));
+        finalSubjects = finalSubjects.map(sub => ({ ...sub, examFullMarks: 100, activityFullMarks: 0 }));
     }
-    return subjects;
-  }, [grade, gradeDefinitions]) as SubjectDefinition[];
+    return finalSubjects;
+  }, [grade, gradeDefinitions, classStudents, examId]) as SubjectDefinition[];
   
   const hasActivities = useMemo(() => {
     if (!grade) return false;

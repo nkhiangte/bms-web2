@@ -113,8 +113,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
                     attendanceData = defaultRecords;
                     // Save this default to Firestore so all views are consistent.
                     // This is a fire-and-forget; the real-time listener will handle UI updates.
-                    onUpdateAttendance(grade, todayStr, defaultRecords);
-                }
+              
             } else {
                 // Fetching historical data
                 const [year, month] = dateStr.split('-').map(Number);
@@ -220,14 +219,14 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
     const [toastKey, setToastKey] = useState<number>(0);
 
     const handleSave = async () => {
-        if (!grade || !isToday) return;
-        setIsSaving(true);
-        await onUpdateAttendance(grade, selectedDate, records);
-        setIsSaving(false);
-        // Force new toast instance with unique key
-        setToastKey(prev => prev + 1);
-        setShowSuccessToast(true);
-    };
+    if (!grade || !isToday) return;
+    setShowSuccessToast(false); // Add this line to reset any existing toast
+    setIsSaving(true);
+    await onUpdateAttendance(grade, selectedDate, records);
+    setIsSaving(false);
+    setToastKey(prev => prev + 1);
+    setShowSuccessToast(true);
+};
 
     const handleRangeExport = async (startDate: string, endDate: string) => {
         if (!grade) return;

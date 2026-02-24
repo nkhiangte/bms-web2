@@ -300,7 +300,7 @@ const App: React.FC = () => {
   const handleUpdateAcademic = async (studentId: string, performance: Exam[]) => {
       try {
           await db.collection('students').doc(studentId).update({ academicPerformance: performance });
-          addNotification('Academic performance updated successfully!', 'success');
+         
       } catch (error: any) {
           console.error("Error updating academic performance:", error);
           addNotification('Failed to update academic performance.', 'error');

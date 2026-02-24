@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
@@ -561,7 +561,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         if (grade === Grade.IX || grade === Grade.X) {
             return {
                 ...def,
-                subjects: def.subjects.map(s => ({ ...s, examFullMarks: 100, activityFullMarks: 0 }))
+                subjects: (def.subjects ?? []).map(s => ({ ...s, examFullMarks: 100, activityFullMarks: 0 }))
             };
         }
         return def;
@@ -569,10 +569,51 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
     const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
 
-    if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
+    // Inject portrait @page style for this print view — overrides global landscape setting
+    useEffect(() => {
+        const styleId = 'progress-report-print-style';
+        let style = document.getElementById(styleId) as HTMLStyleElement | null;
+        if (!style) {
+            style = document.createElement('style');
+            style.id = styleId;
+            document.head.appendChild(style);
+        }
+        style.textContent = `
+            @media print {
+                @page {
+                    size: A4 portrait;
+                    margin-top: 8cm;
+                    margin-bottom: 1cm;
+                    margin-left: 0.8cm;
+                    margin-right: 0.8cm;
+                }
+                .report-banner-placeholder {
+                    display: none !important;
+                }
+                .progress-report-page {
+                    break-after: page;
+                    page-break-after: always;
+                }
+                .progress-report-page table th,
+                .progress-report-page table td {
+                    padding: 1px 3px !important;
+                    font-size: 7.5pt !important;
+                    line-height: 1.2 !important;
+                }
+                .report-signatures {
+                    margin-top: 6px !important;
+                }
+            }
+        `;
+        return () => {
+            // Restore landscape for mark statement pages
+            if (style) style.textContent = '';
+        };
+    }, []);
 
+    // allSummaries must be before any early return (Rules of Hooks)
     const allSummaries = useMemo(() => {
-        if (examId !== 'terminal3') return null;
+        if (examId !== 'terminal3' || !gradeDef) return null;
         
         const summariesMap: Record<string, any> = {};
         classStudents.forEach(student => {
@@ -589,6 +630,8 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         });
         return summariesMap;
     }, [classStudents, gradeDef, examId]);
+
+    if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
 
     return (
         <div className="bg-slate-100 print:bg-white min-h-screen">

@@ -590,8 +590,8 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             @media print {
                 @page {
                     size: A4 portrait;
-                    margin-top: 8.5cm;
-                    margin-bottom: 0.8cm;
+                    margin-top: 9.5cm;
+                    margin-bottom: 1.5cm;
                     margin-left: 0.6cm;
                     margin-right: 0.6cm;
                 }
@@ -604,6 +604,10 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                 }
                 .report-banner-placeholder {
                     display: none !important;
+                }
+                .report-signatures {
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
                 }
             }
         `;

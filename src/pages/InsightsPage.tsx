@@ -91,7 +91,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
 
         const academicData = (studentToAnalyze.academicPerformance || []).map(exam => ({
             name: exam.name,
-            results: exam.results.map(r => ({
+            results: (Array.isArray(exam.results) ? exam.results : []).map(r => ({
                 subject: r.subject,
                 marks: r.marks,
                 examMarks: r.examMarks,

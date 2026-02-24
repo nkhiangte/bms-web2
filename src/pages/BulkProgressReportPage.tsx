@@ -315,19 +315,55 @@ const MultiTermReportCard: React.FC<{
         }
     });
     return Array.from(subjectsMap.values());
-})().map((sd: any) => {
-    const result = findResultWithAliases(exams.terminal3?.results, sd);  // ✅ FIXED: use exams.terminal3?.results
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        return (
-                            <tr key={sd.name} className="border-t border-slate-300">
-                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-                                {isNurseryToII ? (
-                                    <>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                    </>
-                                ) : hasActivities ? (
+ .map((sd: any) => {
+    const isGraded = sd.gradingSystem === 'OABC';
+    const result1 = findResultWithAliases(exams.terminal1?.results, sd);
+    const result2 = findResultWithAliases(exams.terminal2?.results, sd);
+    const result3 = findResultWithAliases(exams.terminal3?.results, sd);
+    
+    return (
+        <tr key={sd.name} className="border-t border-slate-300">
+            <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+            {isNurseryToII ? (
+                <>
+                    {/* Terminal 1 */}
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
+                    
+                    {/* Terminal 2 */}
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
+                    
+                    {/* Terminal 3 */}
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
+                </>
+            ) : hasActivities ? (
+                isGraded ? (
+                    <td colSpan={5} className="px-2 py-1 text-center font-bold">{result3?.grade || '-'}</td>
+                ) : (
+                    <>
+                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.examMarks ?? 0}</td>
+                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.activityMarks ?? 0}</td>
+                        <td className="px-2 py-1 text-center font-bold">{(Number(result3?.examMarks ?? 0) + Number(result3?.activityMarks ?? 0))}</td>
+                    </>
+                )
+            ) : (
+                <>
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
+                </>
+            )}
+        </tr>
+    );
+})
+          : hasActivities ? (
                                     isGraded ? (
                                         <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
                                     ) : (

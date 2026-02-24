@@ -299,21 +299,23 @@ const MultiTermReportCard: React.FC<{
                 </thead>
              <tbody>
                     {/* Fix: Use the student's actual results to determine rows */}
-                    {(() => {
-                        const subjectsMap = new Map<string, SubjectDefinition>();
-                        (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
-                        exam?.results?.forEach(res => {
-                            const normalized = normalizeSubjectName(res.subject);
-                            if (!subjectsMap.has(normalized)) {
-                                subjectsMap.set(normalized, {
-                                    name: res.subject, examFullMarks: 100, activityFullMarks: 0,
-                                    gradingSystem: res.grade ? 'OABC' : 'Numerical'
-                                });
-                            }
-                        });
-                        return Array.from(subjectsMap.values());
-                    })().map((sd: any) => {
-                        const result = findResultWithAliases(exam?.results, sd);
+         {(() => {
+    const subjectsMap = new Map<string, SubjectDefinition>();
+    (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+    
+    // Add any subjects from exam results that aren't in gradeDef
+    exams.terminal3?.results?.forEach(res => {
+        const normalized = normalizeSubjectName(res.subject);
+        if (!subjectsMap.has(normalized)) {
+            subjectsMap.set(normalized, {
+                name: res.subject, examFullMarks: 100, activityFullMarks: 0,
+                gradingSystem: res.grade ? 'OABC' : 'Numerical'
+            });
+        }
+    });
+    return Array.from(subjectsMap.values());
+})().map((sd: any) => {
+    const result = findResultWithAliases(exams.terminal3?.results, sd);  // ✅ FIXED: use exams.terminal3?.results
                         const isGraded = sd.gradingSystem === 'OABC';
                         return (
                             <tr key={sd.name} className="border-t border-slate-300">

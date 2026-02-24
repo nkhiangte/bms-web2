@@ -59,8 +59,7 @@ const calculateTermSummary = (
     const classmates = allStudents.filter(s => s.grade === student.grade && s.status === StudentStatus.ACTIVE);
     const numericSubjects = activeSubjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = activeSubjects.filter(sd => sd.gradingSystem === 'OABC');
-    const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
-    const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
+   
 
     const studentData = classmates.map(s => {
         const sExam = s.academicPerformance?.find((e) => {

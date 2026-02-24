@@ -157,6 +157,13 @@ const subjectDefinitions = useMemo(() => {
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
   const [isSaving, setIsSaving] = useState(false);
   const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
+  // Keep a ref in sync with changedStudents so the useEffect below can read the
+  // latest value without having it in the dependency array. This prevents the
+  // effect from re-running (and wiping local edits) when changedStudents is
+  // cleared after a successful save.
+  const changedStudentsRef = useRef<Set<string>>(new Set());
+  useEffect(() => { changedStudentsRef.current = changedStudents; }, [changedStudents]);
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
@@ -206,28 +213,31 @@ const subjectDefinitions = useMemo(() => {
       });
     });
     
-    // Only update marks for students that haven't been modified
+    // Only update marks/attendance for students that haven't been locally modified.
+    // Read from the ref so this effect doesn't re-run when changedStudents changes.
     setMarksData(prev => {
       const updated = { ...prev };
       Object.keys(initialMarks).forEach(studentId => {
-        if (!changedStudents.has(studentId)) {
+        if (!changedStudentsRef.current.has(studentId)) {
           updated[studentId] = initialMarks[studentId];
         }
       });
       return updated;
     });
     
-    // Only update attendance for students that haven't been modified
     setAttendanceData(prev => {
       const updated = { ...prev };
       Object.keys(initialAttendance).forEach(studentId => {
-        if (!changedStudents.has(studentId)) {
+        if (!changedStudentsRef.current.has(studentId)) {
           updated[studentId] = initialAttendance[studentId];
         }
       });
       return updated;
     });
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents]);
+  // changedStudents intentionally excluded — we use changedStudentsRef instead
+  // so saving (which clears changedStudents) doesn't trigger this effect and
+  // overwrite the just-saved values before Firebase syncs back.
+  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
     const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);

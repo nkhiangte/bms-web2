@@ -379,6 +379,70 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   };
 
   const handleSaveSubjects = async (newDef: GradeDefinition) => {
+    // Add this function inside your ClassMarkStatementPage component
+const exportToCSV = () => {
+  // Prepare headers
+  const headers = ['Roll No', 'Name'];
+  
+  subjectDefinitions.forEach(sd => {
+    if (sd.gradingSystem === 'OABC') {
+      headers.push(sd.name);
+    } else if (isIXTerminal3) {
+      headers.push(`${sd.name} SA`, `${sd.name} FA`);
+    } else if (hasActivities) {
+      headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
+    } else {
+      headers.push(sd.name);
+    }
+  });
+  
+  headers.push('Grand Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present');
+
+  // Prepare data rows
+  const rows = processedData.map(student => {
+    const row = [
+      student.rollNo,
+      student.name,
+    ];
+    
+    subjectDefinitions.forEach(sd => {
+      if (sd.gradingSystem === 'OABC') {
+        row.push(marksData[student.id]?.[sd.name] || '-');
+      } else if (isIXTerminal3) {
+        row.push(marksData[student.id]?.[sd.name + '_sa'] || '-');
+        row.push(marksData[student.id]?.[sd.name + '_fa'] || '-');
+      } else if (hasActivities) {
+        row.push(marksData[student.id]?.[sd.name + '_exam'] || '-');
+        row.push(marksData[student.id]?.[sd.name + '_activity'] || '-');
+      } else {
+        row.push(marksData[student.id]?.[sd.name] || '-');
+      }
+    });
+    
+    row.push(
+      student.grandTotal,
+      student.percentage.toFixed(2) + '%',
+      student.rank,
+      student.division,
+      student.result,
+      student.remark,
+      attendanceData[student.id]?.totalWorkingDays || '-',
+      attendanceData[student.id]?.daysPresent || '-'
+    );
+    
+    return row.join(',');
+  });
+
+  // Create CSV content
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  
+  // Download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${grade}_${examDetails.name}_Marks_Statement.csv`;
+  link.click();
+};
         if(grade) {
             await onUpdateGradeDefinition(grade, newDef);
             setIsEditSubjectsModalOpen(false);

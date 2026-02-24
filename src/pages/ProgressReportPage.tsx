@@ -18,7 +18,7 @@ interface ProgressReportPageProps {
 // --- Reusable Logic and Components ---
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
-    if (!results) return undefined;
+    if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
     const normSubjDefName = normalizeSubjectName(subjectDef.name);
     
     return results.find(r => {
@@ -85,11 +85,11 @@ const calculateTermSummary = (
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
-       } else if (isClassIXorX && examId === 'terminal3') {
-    const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-    const faMark = Number(r?.faMarks ?? 0);
-    totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-    if (saMark < 27) fSubjects++;  // ← match ClassMarkStatementPage logic
+            } else if (isClassIXorX && examId === 'terminal3') {
+                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+                const faMark = Number(r?.faMarks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+                if (totalMark < 33) fSubjects++;
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
@@ -282,7 +282,7 @@ const MultiTermReportCard: React.FC<{
                     )}
                 </thead>
                 <tbody>
-                    {gradeDef.subjects.map(sd => {
+                    {(gradeDef.subjects ?? []).filter(Boolean).map(sd => {
                         const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
                         const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
                         const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
@@ -465,7 +465,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     )}
                 </thead>
                 <tbody>
-                     {gradeDef.subjects.map((sd: any) => {
+                     {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
                         const result = findResultWithAliases(exam?.results, sd);
                         const isGraded = sd.gradingSystem === 'OABC';
                         

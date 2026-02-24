@@ -1,695 +1,726 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
-import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
+import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
-import { ImportMarksModal } from '@/components/ImportMarksModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import EditSubjectsModal from '@/components/EditSubjectsModal';
-import { db } from '@/firebaseConfig';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
-const { useParams, useNavigate, Link } = ReactRouterDOM as any;
+const { useParams, useNavigate } = ReactRouterDOM as any;
 
-interface ClassMarkStatementPageProps {
+interface ProgressReportPageProps {
   students: Student[];
-  academicYear: string;
-  user: User;
+  staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
-  onUpdateAcademic: (studentId: string, performance: Exam[]) => Promise<void>;
-  onUpdateGradeDefinition: (grade: Grade, newDefinition: GradeDefinition) => Promise<void>;
+  academicYear: string;
 }
-
-type MarksData = Record<string, Record<string, number | string | null>>;
-type AttendanceData = Record<string, { totalWorkingDays: number | null, daysPresent: number | null }>;
-
-interface ProcessedStudent extends Student {
-    grandTotal: number;
-    examTotal: number;
-    activityTotal: number;
-    percentage: number;
-    result: string;
-    division: string;
-    academicGrade: string;
-    remark: string;
-    rank: number | '-';
-}
-
-type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results) return undefined;
     return results.find(r => subjectsMatch(r.subject, subjectDef.name));
 };
 
-const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
-  const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
-  const navigate = useNavigate();
-  
-  const grade = useMemo(() => encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined, [encodedGrade]);
-  const examDetails = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
+const calculateTermSummary = (
+    student: Student,
+    exam: Exam | undefined,
+    examId: 'terminal1' | 'terminal2' | 'terminal3',
+    gradeDef: GradeDefinition,
+    allStudents: Student[]
+) => {
+    if (!gradeDef || !gradeDef.subjects) return null;
 
-  const classStudents = useMemo(() => {
-    if (!grade) return [];
-    return students.filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade]);
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
-  const subjectDefinitions = useMemo(() => {
-    if (!grade) return [];
-    let subjects = gradeDefinitions[grade]?.subjects || [];
-    if (grade === Grade.IX || grade === Grade.X) {
-        subjects = subjects.map(sub => ({ ...sub, examFullMarks: 100, activityFullMarks: 0 }));
-    }
-    return subjects;
-  }, [grade, gradeDefinitions]) as SubjectDefinition[];
-  
-  const hasActivities = useMemo(() => {
-    if (!grade) return false;
-    return !GRADES_WITH_NO_ACTIVITIES.includes(grade);
-  }, [grade]);
+    const classmates = allStudents.filter(s => s.grade === student.grade && s.status === StudentStatus.ACTIVE);
+    const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
+    const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
-  const isClassIXorX = useMemo(() => grade === Grade.IX || grade === Grade.X, [grade]);
-  const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
-  const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
-
-  const tableRef = useRef<HTMLDivElement>(null);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const current = e.currentTarget;
-    const row = parseInt(current.getAttribute('data-row') || '0', 10);
-    const col = parseInt(current.getAttribute('data-col') || '0', 10);
-    const next = tableRef.current?.querySelector<HTMLInputElement>(
-      `input[data-row="${row + 1}"][data-col="${col}"]`
-    );
-    if (next) {
-      next.focus();
-      next.select();
-    } else {
-      const nextColFirst = tableRef.current?.querySelector<HTMLInputElement>(
-        `input[data-col="${col + 1}"][data-row="0"]`
-      );
-      if (nextColFirst) {
-        nextColFirst.focus();
-        nextColFirst.select();
-      }
-    }
-  }, []);
-
-  const [marksData, setMarksData] = useState<MarksData>({});
-  const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
-  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
-  const [isEditSubjectsModalOpen, setIsEditSubjectsModalOpen] = useState(false);
-
-  const isInitialized = useRef(false);
-
-  useEffect(() => {
-    if (classStudents.length === 0) return;
-    if (isInitialized.current) return;
-    isInitialized.current = true;
-
-    const initialMarks: MarksData = {};
-    const initialAttendance: AttendanceData = {};
-    classStudents.forEach(student => {
-      initialMarks[student.id] = {};
-      const studentExam = student.academicPerformance?.find(e => 
-          e.id === examId || (e.name && examDetails && e.name.trim().toLowerCase() === examDetails.name.trim().toLowerCase())
-      );
-      initialAttendance[student.id] = {
-          totalWorkingDays: studentExam?.attendance?.totalWorkingDays ?? null,
-          daysPresent: studentExam?.attendance?.daysPresent ?? null,
-      };
-      subjectDefinitions.forEach(subjectDef => {
-        const result = findResultWithAliases(studentExam?.results, subjectDef);
+    // FIX: Use classmates (active, same grade) for ranking — matches Mark Entry page
+    const studentData = classmates.map(s => {
+        const sExam = s.academicPerformance?.find((e) => {
+            if (e.id === examId) return true;
+            if (!e.name) return false;
+            const eName = e.name.trim().toLowerCase();
+            const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
+            if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
+            const legacyNames: Record<string, string[]> = {
+                terminal1: ['first terminal examination', 'i terminal examination'],
+                terminal2: ['second terminal examination', 'ii terminal examination'],
+                terminal3: ['third terminal examination', 'iii terminal examination'],
+            };
+            return (legacyNames[examId] || []).includes(eName);
+        });
         
-        if (subjectDef.gradingSystem === 'OABC') {
-            initialMarks[student.id][subjectDef.name] = result?.grade ?? null;
-        } else if (hasActivities) {
-            initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
-            initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
-        } else if (grade === Grade.IX && examId === 'terminal3') {
-            initialMarks[student.id][subjectDef.name + '_sa'] = result?.saMarks ?? result?.examMarks ?? result?.marks ?? null;
-            initialMarks[student.id][subjectDef.name + '_fa'] = result?.faMarks ?? result?.activityMarks ?? null;
-        } else {
-            initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;
-        }
-      });
-    });
-    setMarksData(initialMarks);
-    setAttendanceData(initialAttendance);
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
-  
-  const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
-    const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
-    if (!subjectDef) return;
+        let gTotal = 0;
+        let fSubjects = 0;
+        let gSubjectsPassed = 0;
 
-    let key = subjectName;
-    if (type === 'grade') {
-        setMarksData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [key]: value }}));
-        setChangedStudents(prev => new Set(prev).add(studentId));
-        return;
-    }
+        numericSubjects.forEach(sd => {
+            const r = findResultWithAliases(sExam?.results, sd);
+            let totalMark = 0;
+            if (hasActivities) {
+                const eMark = Number(r?.examMarks ?? 0);
+                const aMark = Number(r?.activityMarks ?? 0);
+                totalMark = eMark + aMark;
+                if (eMark < 20) fSubjects++;
+            } else if (isClassIXorX && examId === 'terminal3') {
+                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+                const faMark = Number(r?.faMarks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+                if (totalMark < 33) fSubjects++;
+            } else {
+                totalMark = Number(r?.marks ?? 0);
+                const limit = isClassIXorX ? 33 : 35;
+                if (totalMark < limit) fSubjects++;
+            }
+            gTotal += totalMark;
+        });
 
-    let fullMarks = type === 'exam' ? subjectDef.examFullMarks : type === 'activity' ? subjectDef.activityFullMarks : type === 'sa' ? 80 : type === 'fa' ? 20 : subjectDef.examFullMarks;
-    if (type === 'exam') key = subjectName + '_exam';
-    else if (type === 'activity') key = subjectName + '_activity';
-    else if (type === 'sa') key = subjectName + '_sa';
-    else if (type === 'fa') key = subjectName + '_fa';
+        gradedSubjects.forEach(sd => {
+            const r = findResultWithAliases(sExam?.results, sd);
+            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gSubjectsPassed++;
+        });
 
-    if (!/^\d*$/.test(value)) return;
-    const numericValue = value === '' ? null : Math.max(0, Math.min(parseInt(value, 10), fullMarks));
+        let res = 'PASS';
+        if (gSubjectsPassed < gradedSubjects.length) res = 'FAIL';
+        else if (fSubjects > 1) res = 'FAIL';
+        else if (fSubjects === 1) res = 'SIMPLE PASS';
+        if (isNurseryToII && fSubjects > 0) res = 'FAIL';
 
-    setMarksData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [key]: numericValue }}));
-    setChangedStudents(prev => new Set(prev).add(studentId));
-  };
-  
-  const handleAttendanceChange = (studentId: string, field: 'totalWorkingDays' | 'daysPresent', value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const numericValue = value === '' ? null : Math.max(0, parseInt(value, 10));
-    setAttendanceData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: numericValue }}));
-    setChangedStudents(prev => new Set(prev).add(studentId));
-  };
-  
-  const handleApplyImport = (importedMarks: MarksData) => {
-    setMarksData(prev => {
-        const newMarksData = { ...prev };
-        for (const studentId in importedMarks) {
-            newMarksData[studentId] = { ...newMarksData[studentId], ...importedMarks[studentId] };
-        }
-        return newMarksData;
-    });
-    setChangedStudents(prev => new Set([...prev, ...Object.keys(importedMarks)]));
-  };
-
-  const isMarkFailed = useCallback((studentId: string, sd: SubjectDefinition): boolean => {
-    const studentMarks = marksData[studentId] || {};
-    if (sd.gradingSystem === 'OABC') return false;
-    if (isIXTerminal3) {
-        const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
-        return saMark < 27;
-    }
-    if (hasActivities) {
-        const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
-        return examMark < 20;
-    }
-    const mark = Number(studentMarks[sd.name] || 0);
-    const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-    return mark < failLimit;
-  }, [marksData, isIXTerminal3, hasActivities, isClassIXorX, isNurseryToII]);
-
-  const processedData: ProcessedStudent[] = useMemo(() => {
-    const numericSubjects = subjectDefinitions.filter(sd => sd.gradingSystem !== 'OABC');
-    const gradedSubjects = subjectDefinitions.filter(sd => sd.gradingSystem === 'OABC');
-
-    const studentData = classStudents.map(student => {
-      let localGrandTotal: number = 0;
-      let localExamTotal: number = 0;
-      let localActivityTotal: number = 0;
-      let localFullMarksTotal: number = 0;
-      let failedSubjectsCount: number = 0;
-      let gradedSubjectsPassed: number = 0;
-      const studentMarks = marksData[student.id] || {};
-      const failedSubjectsList: string[] = [];
-
-      for (const sd of numericSubjects) {
-        let currentSubjMarkValue: number = 0;
-        let currentSubjFMValue: number = 0;
-        
-        if (hasActivities) {
-            const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
-            const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
-            localExamTotal += examMark;
-            localActivityTotal += activityMark;
-            currentSubjMarkValue = examMark + activityMark;
-            currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
-            if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-        } else if (isIXTerminal3) {
-            const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
-            const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
-            currentSubjMarkValue = saMark + faMark;
-            localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = 100;
-            if (saMark < 27) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-        } else {
-            currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
-            localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = Number(sd.examFullMarks || 0);
-            const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-            if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-        }
-        localGrandTotal += currentSubjMarkValue;
-        localFullMarksTotal += currentSubjFMValue;
-      }
-
-      gradedSubjects.forEach(sd => {
-        const gradeValue = studentMarks[sd.name];
-        if (gradeValue && typeof gradeValue === 'string' && OABC_GRADES.includes(gradeValue)) gradedSubjectsPassed++;
-      });
-      
-      const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
-      let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
-      if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
-
-      let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
-      let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
-      
-      let remark = '';
-      if (result === 'FAIL') {
-          remark = `Needs improvement in ${failedSubjectsList.join(', ')}`;
-      } else if (result === 'SIMPLE PASS') {
-          remark = `Focus on ${failedSubjectsList.join(', ')}`;
-      } else {
-          if (percentage >= 90) remark = "Outstanding performance!";
-          else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
-          else if (percentage >= 60) remark = "Good progress. Well done.";
-          else if (percentage >= 45) remark = "Satisfactory. Consistent effort will lead to better results.";
-          else remark = "Passed. Consistent effort needed to improve.";
-      }
-
-      return { ...student, grandTotal: localGrandTotal, examTotal: localExamTotal, activityTotal: localActivityTotal, percentage, result, division, academicGrade, remark, rank: 0 } as ProcessedStudent;
+        return { id: s.id, grandTotal: gTotal, result: res };
     });
 
     const passedStudents = studentData.filter(s => s.result === 'PASS');
-    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => Number(b) - Number(a));
+    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a,b) => b-a);
     
-    const finalData = studentData.map(s => {
-        let rank: number | '-' = '-';
-        if (s.result !== 'FAIL' && s.result !== 'SIMPLE PASS') {
-            const rankIndex = uniqueScores.indexOf(s.grandTotal);
-            rank = rankIndex !== -1 ? (rankIndex + 1) : '-';
-        }
-        return { ...s, rank };
-    });
-    
-    if (sortCriteria === 'name') finalData.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sortCriteria === 'totalMarks') finalData.sort((a, b) => { const aF = a.result === 'FAIL'; const bF = b.result === 'FAIL'; if (aF && !bF) return 1; if (!aF && bF) return -1; return Number(b.grandTotal) - Number(a.grandTotal); });
-    else finalData.sort((a, b) => a.rollNo - b.rollNo);
-    
-    return finalData as ProcessedStudent[];
-  }, [marksData, classStudents, subjectDefinitions, hasActivities, isClassIXorX, isNurseryToII, isIXTerminal3, sortCriteria]);
+    const currentStudentStats = studentData.find(s => s.id === student.id);
+    if (!currentStudentStats) return null;
 
-  // ── SHARED EXPORT HELPERS ─────────────────────────────────────────────────
-  const getExportColumns = () =>
-    subjectDefinitions.flatMap(sd => {
-      if (sd.gradingSystem === 'OABC') return [sd.name];
-      if (isIXTerminal3) return [`${sd.name} (SA/80)`, `${sd.name} (FA/20)`];
-      if (hasActivities) return [`${sd.name} (Exam)`, `${sd.name} (Act)`];
-      return [sd.name];
-    });
-
-  const getStudentMarkCells = (student: ProcessedStudent) =>
-    subjectDefinitions.flatMap(sd => {
-      if (sd.gradingSystem === 'OABC') return [marksData[student.id]?.[sd.name] ?? ''];
-      if (isIXTerminal3) return [
-        marksData[student.id]?.[sd.name + '_sa'] ?? '',
-        marksData[student.id]?.[sd.name + '_fa'] ?? '',
-      ];
-      if (hasActivities) return [
-        marksData[student.id]?.[sd.name + '_exam'] ?? '',
-        marksData[student.id]?.[sd.name + '_activity'] ?? '',
-      ];
-      return [marksData[student.id]?.[sd.name] ?? ''];
-    });
-
-  // ── EXCEL EXPORT ──────────────────────────────────────────────────────────
-  const handleExportExcel = () => {
-    const subjectCols = getExportColumns();
-    const headers = [
-      'Roll No', 'Student Name',
-      ...subjectCols,
-      'Total', '%', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present',
-    ];
-    const rows = processedData.map(student => [
-      student.rollNo, student.name,
-      ...getStudentMarkCells(student),
-      student.grandTotal,
-      Number(student.percentage.toFixed(1)),
-      student.rank,
-      student.division,
-      student.result,
-      student.remark,
-      attendanceData[student.id]?.totalWorkingDays ?? '',
-      attendanceData[student.id]?.daysPresent ?? '',
-    ]);
-
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws['!cols'] = [
-      { wch: 8 }, { wch: 24 },
-      ...subjectCols.map(() => ({ wch: 10 })),
-      { wch: 8 }, { wch: 7 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 50 }, { wch: 12 }, { wch: 12 },
-    ];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Mark Statement');
-    XLSX.writeFile(wb, `${grade}_${examDetails?.name}_marks.xlsx`);
-  };
-
-  // ── PDF EXPORT ────────────────────────────────────────────────────────────
-  const handleExportPDF = () => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-    const pageW = doc.internal.pageSize.width;
-
-    doc.setFontSize(15);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BETHEL MISSION SCHOOL', pageW / 2, 14, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Class: ${grade}  |  Exam: ${examDetails?.name}  |  Academic Year: ${academicYear}`, pageW / 2, 21, { align: 'center' });
-
-    const subjectCols = getExportColumns();
-    const headers = ['No', 'Name', ...subjectCols, 'Total', '%', 'Rank', 'Div', 'Result'];
-    const rows = processedData.map(student => [
-      student.rollNo, student.name,
-      ...getStudentMarkCells(student),
-      student.grandTotal,
-      student.percentage.toFixed(1),
-      student.rank,
-      student.division,
-      student.result,
-    ]);
-
-    autoTable(doc, {
-      head: [headers],
-      body: rows as any,
-      startY: 27,
-      styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica' },
-      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold', halign: 'center' },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 8 },
-        1: { cellWidth: 32 },
-        [headers.length - 5]: { halign: 'center', cellWidth: 12 },
-        [headers.length - 4]: { halign: 'center', cellWidth: 10 },
-        [headers.length - 3]: { halign: 'center', cellWidth: 10 },
-        [headers.length - 2]: { halign: 'center', cellWidth: 14 },
-        [headers.length - 1]: { halign: 'center', cellWidth: 18 },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body') {
-          const val = String(data.cell.raw ?? '');
-          if (val === 'FAIL') { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = 'bold'; }
-          else if (val === 'PASS') { data.cell.styles.textColor = [5, 150, 105]; data.cell.styles.fontStyle = 'bold'; }
-          else if (val === 'SIMPLE PASS') { data.cell.styles.textColor = [5, 150, 105]; }
-        }
-      },
-    });
-
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.setTextColor(150);
-      doc.text(`Page ${i} of ${pageCount}`, pageW / 2, doc.internal.pageSize.height - 5, { align: 'center' });
+    let rank: number | '-' = '-';
+    if (currentStudentStats.result === 'PASS') {
+        const rankIndex = uniqueScores.indexOf(currentStudentStats.grandTotal);
+        rank = rankIndex !== -1 ? rankIndex + 1 : '-';
     }
 
-    doc.save(`${grade}_${examDetails?.name}_marks.pdf`);
-  };
+    let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
+    const failedSubjects: string[] = [];
+    let gradedSubjectsPassed = 0;
 
-  const handleConfirmSave = async () => {
-    if (!examDetails || changedStudents.size === 0) return;
-    setIsSaving(true);
+    numericSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        let totalSubjectMark = 0;
+        let subjectFullMarks = 0;
 
-    const updatePromises = Array.from(changedStudents).map(studentId => {
-        const student = classStudents.find(s => s.id === studentId);
-        if (!student) return Promise.resolve();
-
-        const studentMarks = marksData[studentId] || {};
-        const originalExam = student.academicPerformance?.find(e => e.id === examId);
-
-        const newResults = subjectDefinitions.map(sd => {
-            const originalResult = originalExam?.results.find(r => subjectsMatch(r.subject, sd.name));
-
-            const newResult: SubjectMark = {
-                ...(originalResult ? { ...originalResult } : {}),
-                subject: sd.name,
-            };
-
-            if (sd.gradingSystem === 'OABC') {
-                if (studentMarks[sd.name]) newResult.grade = studentMarks[sd.name] as any;
-            } else if (hasActivities) {
-                if (studentMarks[sd.name + '_exam'] !== undefined) newResult.examMarks = studentMarks[sd.name + '_exam'] as number;
-                if (studentMarks[sd.name + '_activity'] !== undefined) newResult.activityMarks = studentMarks[sd.name + '_activity'] as number;
-            } else if (grade === Grade.IX && examId === 'terminal3') {
-                if (studentMarks[sd.name + '_sa'] !== undefined) newResult.saMarks = studentMarks[sd.name + '_sa'] as number;
-                if (studentMarks[sd.name + '_fa'] !== undefined) newResult.faMarks = studentMarks[sd.name + '_fa'] as number;
-                newResult.marks = (Number(studentMarks[sd.name + '_sa'] || 0) + Number(studentMarks[sd.name + '_fa'] || 0)) || undefined;
-            } else {
-                if (studentMarks[sd.name] !== undefined) newResult.marks = studentMarks[sd.name] as number;
-            }
-            return newResult;
-        }).filter(r => r.marks != null || r.examMarks != null || r.activityMarks != null || r.saMarks != null || r.faMarks != null || r.grade != null || r.activityLog != null);
-
-        const studentProcessed = processedData.find(p => p.id === studentId);
-
-        const newExamData: Exam = {
-            id: examId as any,
-            name: examDetails.name,
-            results: newResults,
-            rank: studentProcessed?.rank ?? null,
-            total: studentProcessed?.grandTotal ?? null,
-            percentage: Number(studentProcessed?.percentage.toFixed(1)) ?? null,
-            result: studentProcessed?.result ?? null,
-            division: studentProcessed?.division ?? null,
-        };
-
-        if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
-            newExamData.attendance = { totalWorkingDays: attendanceData[studentId].totalWorkingDays!, daysPresent: attendanceData[studentId].daysPresent! };
+        if (hasActivities) {
+            const examMark = Number(result?.examMarks ?? 0);
+            const activityMark = Number(result?.activityMarks ?? 0);
+            examTotal += examMark;
+            activityTotal += activityMark;
+            totalSubjectMark = examMark + activityMark;
+            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
+            if (examMark < 20) failedSubjects.push(sd.name);
+        } else {
+            totalSubjectMark = Number(result?.marks ?? 0);
+            examTotal += totalSubjectMark;
+            subjectFullMarks = sd.examFullMarks;
+            const failLimit = isClassIXorX ? 33 : 35;
+            if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }
-
-        const newPerformance: Exam[] = [...(student.academicPerformance?.filter(e => e.id !== examId) || []), newExamData];
-        return onUpdateAcademic(studentId, newPerformance);
+        grandTotal += totalSubjectMark;
+        fullMarksTotal += subjectFullMarks;
     });
 
-    await Promise.all(updatePromises);
-    setChangedStudents(new Set());
-    setIsSaving(false);
-    setIsConfirmSaveModalOpen(false);
-  };
+    gradedSubjects.forEach(sd => {
+        const result = findResultWithAliases(exam?.results, sd);
+        if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
+    });
 
-  const handleSaveSubjects = async (newDef: GradeDefinition) => {
-        if(grade) { await onUpdateGradeDefinition(grade, newDef); setIsEditSubjectsModalOpen(false); }
-  }
+    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
+    
+    let division = '-';
+    if (isClassIXorX && currentStudentStats.result === 'PASS') {
+        if (percentage >= 75) division = 'Distinction';
+        else if (percentage >= 60) division = 'I Div';
+        else if (percentage >= 45) division = 'II Div';
+        else if (percentage >= 35) division = 'III Div';
+    }
 
-  if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
+    let academicGrade = '-';
+    if (currentStudentStats.result === 'FAIL') academicGrade = 'E';
+    else {
+        if (percentage > 89) academicGrade = 'O'; else if (percentage > 79) academicGrade = 'A'; else if (percentage > 69) academicGrade = 'B'; else if (percentage > 59) academicGrade = 'C'; else academicGrade = 'D';
+    }
 
-  return (
-    <>
-    <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 flex justify-between items-center print-hidden">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
-            <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
-        </div>
-        <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
-            <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
-        </div>
+    let remark = '';
+    if (currentStudentStats.result === 'FAIL') {
+        remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
+    } else if (currentStudentStats.result === 'SIMPLE PASS') {
+        remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
+    } else if (currentStudentStats.result === 'PASS') {
+        if (percentage >= 90) remark = "Outstanding performance!";
+        else if (percentage >= 75) remark = "Excellent performance.";
+        else if (percentage >= 60) remark = "Good performance.";
+        else if (percentage >= 45) remark = "Satisfactory performance.";
+        else remark = "Passed. Needs to work harder.";
+    }
 
-        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
-            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
-            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
-                {(['rollNo', 'name', 'totalMarks'] as SortCriteria[]).map(c => (
-                    <button key={c} onClick={() => setSortCriteria(c)}
-                        className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === c ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>
-                        {c === 'rollNo' ? 'Roll No' : c === 'name' ? 'Name' : 'Total Marks'}
-                    </button>
-                ))}
-            </div>
-        </div>
-        
-        {/* ── TABLE ── */}
-        <div className="mt-2 overflow-x-auto overflow-y-auto border rounded-lg" style={{ maxHeight: '70vh' }} ref={tableRef}>
-            <table id="mark-statement-table" className="w-auto text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-slate-100 sticky top-0 z-20">
-                    <tr>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
-                            className="px-2 py-2 text-center font-bold text-slate-800 sticky left-0 bg-slate-100 z-30 border-b border-r w-10 min-w-[40px] align-middle text-xs">
-                            No
-                        </th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
-                            className="px-2 py-2 text-left font-bold text-slate-800 sticky left-10 bg-slate-100 z-30 border-b border-r min-w-[130px] align-middle text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.2)]">
-                            Student Name
-                        </th>
-                        
-                        {subjectDefinitions.map(sd => {
-                            if ((hasActivities || isIXTerminal3) && sd.gradingSystem !== 'OABC') {
-                                return <th key={sd.name} colSpan={2} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l text-xs">{sd.name}</th>;
-                            }
-                            return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{sd.name}</th>;
-                        })}
-                        
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Total</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">%</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Rank</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">{isClassIXorX ? 'Div' : '-'}</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Result</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1}
-                            className="px-2 py-2 text-left font-bold text-slate-800 border-b border-l align-middle text-xs"
-                            style={{ minWidth: 420 }}>
-                            Remark
-                        </th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">W.Days</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle text-xs">Present</th>
+    return { 
+        id: student.id, 
+        grandTotal, 
+        examTotal, 
+        activityTotal, 
+        percentage, 
+        result: currentStudentStats.result, 
+        division, 
+        academicGrade, 
+        remark, 
+        rank 
+    };
+};
+
+const MultiTermReportCard: React.FC<{
+    student: Student;
+    gradeDef: GradeDefinition;
+    exams: Record<'terminal1' | 'terminal2' | 'terminal3', Exam | undefined>;
+    summaries: Record<'terminal1' | 'terminal2' | 'terminal3', ReturnType<typeof calculateTermSummary>>;
+    staff: Staff[];
+}> = ({ student, gradeDef, exams, summaries, staff }) => {
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isIXTerminal3Report = student.grade === Grade.IX;
+    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
+
+    const getAttendancePercent = (attendance?: Attendance) => {
+        if (attendance && attendance.totalWorkingDays > 0) {
+            return `${((attendance.daysPresent / attendance.totalWorkingDays) * 100).toFixed(0)}%`;
+        }
+        return '-';
+    };
+
+  const finalRemark = useMemo(() => {
+        const summary3 = summaries.terminal3;
+        const exam3 = exams.terminal3;
+        const nextGrade = getNextGrade(student.grade);
+
+        const gradeLabel: Record<string, string> = {
+            'Nursery': 'Nursery', 'Kindergarten': 'Kindergarten',
+            'Class I': 'Class I', 'Class II': 'Class II', 'Class III': 'Class III',
+            'Class IV': 'Class IV', 'Class V': 'Class V', 'Class VI': 'Class VI',
+            'Class VII': 'Class VII', 'Class VIII': 'Class VIII', 'Class IX': 'Class IX',
+        };
+        const nextGradeLabel = nextGrade ? (gradeLabel[nextGrade] ?? nextGrade) : null;
+
+        if (summary3?.result === 'PASS' || summary3?.result === 'SIMPLE PASS') {
+            if (student.grade === Grade.X) {
+                return `Passed Class X. School reopens on April 1, 2026`;
+            }
+            if (nextGradeLabel) {
+                return `Promoted to ${nextGradeLabel}. School reopens on April 1, 2026`;
+            }
+            return `Promoted. School reopens on April 1, 2026`;
+        } else if (summary3?.result === 'FAIL') {
+            return "Detained";
+        }
+        return exam3?.teacherRemarks || summary3?.remark || "Awaiting final results.";
+    }, [summaries.terminal3, exams.terminal3, student.grade]);
+
+    return (
+        <div>
+            <table className="w-full border-collapse border border-slate-400 text-sm">
+                <thead>
+                    <tr className="bg-slate-100">
+                        <th rowSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400 align-middle">SUBJECT</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">I Terminal Examination</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">II Terminal Examination</th>
+                        <th colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">III Terminal Examination</th>
                     </tr>
-                    {(hasActivities || isIXTerminal3) && (
-                        <tr>
-                            {isIXTerminal3
-                                ? subjectDefinitions.flatMap(sd =>
-                                    sd.gradingSystem !== 'OABC' ? [
-                                        <th key={`${sd.name}-sa`} className="px-0 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l bg-slate-100">SA<br/><span className="font-normal text-slate-400">/80</span></th>,
-                                        <th key={`${sd.name}-fa`} className="px-0 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l bg-slate-100">FA<br/><span className="font-normal text-slate-400">/20</span></th>
-                                    ] : []
-                                )
-                                : subjectDefinitions.flatMap(sd =>
-                                    sd.gradingSystem !== 'OABC' ? [
-                                        <th key={`${sd.name}-exam`} className="px-0 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l bg-slate-100">Exam</th>,
-                                        <th key={`${sd.name}-activity`} className="px-0 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l bg-slate-100">Act.</th>
-                                    ] : []
-                                )
-                            }
+                    {(hasActivities || isIXorX) && (
+                        <tr className="bg-slate-100 text-xs">
+                            {hasActivities ? (
+                                <>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Summative</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">Activity</th>
+                                </>
+                            ) : isIXorX ? (
+                                <>
+                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
+                                    <th colSpan={2} className="p-1 border border-slate-400 font-semibold text-slate-500">Marks</th>
+                                    <th className="p-1 border border-slate-400 font-semibold">SA <span className="font-normal text-slate-400">/80</span></th>
+                                    <th className="p-1 border border-slate-400 font-semibold">FA <span className="font-normal text-slate-400">/20</span></th>
+                                </>
+                            ) : null}
                         </tr>
                     )}
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                    {processedData.map((student, studentIndex) => {
-                        let colIndex = 0;
+                <tbody>
+                    {gradeDef.subjects.map(sd => {
+                        const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
+                        const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
+                        const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
+                        const isGraded = sd.gradingSystem === 'OABC';
+
                         return (
-                        <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-white z-10 text-xs w-10 min-w-[40px]">
-                                {student.rollNo}
-                            </td>
-                            <td className="px-2 py-1 font-medium border-r sticky left-10 bg-white z-10 text-xs shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
-                                {student.name}
-                            </td>
-                            
-                            {subjectDefinitions.map(sd => {
-                                const isOABC = sd.gradingSystem === 'OABC';
-
-                                if (isOABC) {
-                                    colIndex++;
-                                    return (
-                                        <td key={sd.name} className="px-0 py-1 border-l text-center">
-                                            <select value={marksData[student.id]?.[sd.name] as string ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')} className="form-select w-12 text-center text-xs">
-                                                <option value="">-</option>
-                                                {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                                            </select>
-                                        </td>
-                                    );
-                                }
-
-                                if (isIXTerminal3) {
-                                    const saCol = colIndex++;
-                                    const faCol = colIndex++;
-                                    const saMark = marksData[student.id]?.[sd.name + '_sa'];
-                                    const saFailed = saMark !== null && saMark !== undefined && saMark !== '' && Number(saMark) < 27;
-                                    return (
-                                        <React.Fragment key={sd.name}>
-                                            <td className="px-0 py-1 border-l text-center">
-                                                <input type="number" value={saMark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={saCol} className={`form-input w-12 text-center text-xs ${saFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" max={80} />
-                                            </td>
-                                            <td className="px-0 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_fa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={faCol} className="form-input w-12 text-center text-xs" placeholder="-" max={20} />
-                                            </td>
-                                        </React.Fragment>
-                                    );
-                                }
-
-                                if (hasActivities) {
-                                    const examCol = colIndex++;
-                                    const actCol = colIndex++;
-                                    const examMark = marksData[student.id]?.[sd.name + '_exam'];
-                                    const examFailed = examMark !== null && examMark !== undefined && examMark !== '' && Number(examMark) < 20;
-                                    return (
-                                        <React.Fragment key={sd.name}>
-                                            <td className="px-0 py-1 border-l text-center">
-                                                <input type="number" value={examMark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={examCol} className={`form-input w-12 text-center text-xs ${examFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" />
-                                            </td>
-                                            <td className="px-0 py-1 border-l text-center">
-                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={actCol} className="form-input w-12 text-center text-xs" placeholder="-" />
-                                            </td>
-                                        </React.Fragment>
-                                    );
-                                }
-                                
-                                const totalCol = colIndex++;
-                                const mark = marksData[student.id]?.[sd.name];
-                                const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
-                                const markFailed = mark !== null && mark !== undefined && mark !== '' && Number(mark) < failLimit;
-                                return (
-                                    <td key={sd.name} className="px-0 py-1 border-l text-center">
-                                        <input type="number" value={mark ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={totalCol} className={`form-input w-12 text-center text-xs ${markFailed ? 'text-red-600 font-bold' : ''}`} placeholder="-" />
-                                    </td>
-                                );
-                            })}
-
-                            <td className="px-2 py-1 text-center font-bold text-sky-700 border-l text-xs">{student.grandTotal}</td>
-                            <td className="px-2 py-1 text-center border-l text-xs">{student.percentage.toFixed(1)}</td>
-                            <td className="px-2 py-1 text-center font-bold border-l text-xs">{student.rank}</td>
-                            <td className="px-2 py-1 text-center border-l text-xs">{isClassIXorX ? student.division : '-'}</td>
-                            <td className={`px-2 py-1 text-center font-bold border-l text-xs ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
-                            <td className="px-2 py-1 text-xs border-l" style={{ minWidth: 420 }}>
-                                {student.remark}
-                            </td>
-                            <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-12 text-center text-xs" />
-                            </td>
-                            <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-12 text-center text-xs" />
-                            </td>
+                            <tr key={sd.name} className="text-center">
+                                <td className="p-1 border border-slate-400 text-left font-semibold">{sd.name}</td>
+                                {hasActivities ? (
+                                    isGraded ? (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td className="p-1 border border-slate-400">{term1Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term1Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term2Result?.activityMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.examMarks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400">{term3Result?.activityMarks ?? '-'}</td>
+                                        </>
+                                    )
+                                ) : isIXTerminal3Report ? (
+                                    isGraded ? (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.grade ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term3Result?.grade ?? '-'}</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term1Result?.marks ?? '-'}</td>
+                                            <td colSpan={2} className="p-1 border border-slate-400 font-bold">{term2Result?.marks ?? '-'}</td>
+                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.saMarks ?? (term3Result?.marks != null ? term3Result.marks : '-')}</td>
+                                            <td className="p-1 border border-slate-400 font-bold">{term3Result?.faMarks ?? '-'}</td>
+                                        </>
+                                    )
+                                ) : (
+                                    <>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term1Result?.grade ?? '-') : (term1Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term2Result?.grade ?? '-') : (term2Result?.marks ?? '-')}</td>
+                                        <td className="p-1 border border-slate-400 font-bold">{isGraded ? (term3Result?.grade ?? '-') : (term3Result?.marks ?? '-')}</td>
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+                <tfoot>
+                    {hasActivities && (
+                        <tr className="font-bold text-center">
+                            <td className="p-1 border border-slate-400 text-left">Total</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal1?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal1?.activityTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal2?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal2?.activityTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal3?.examTotal ?? '-'}</td>
+                            <td className="p-1 border border-slate-400">{summaries.terminal3?.activityTotal ?? '-'}</td>
                         </tr>
+                    )}
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Grand Total</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.grandTotal ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.grandTotal ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Result</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.result ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.result ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Rank</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.rank ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.rank ?? '-'}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Percentage</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
+                    </tr>
+                    {/* FIX: Show 'Division' for Class IX/X, 'Grade' for all other classes */}
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">{isIXorX ? 'Division' : 'Grade'}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal2?.division ?? '-') : (summaries.terminal2?.academicGrade ?? '-')}</td>
+                        <td colSpan={hasActivities || isIXorX ? 2 : 1} className="p-1 border border-slate-400">{isIXorX ? (summaries.terminal3?.division ?? '-') : (summaries.terminal3?.academicGrade ?? '-')}</td>
+                    </tr>
+                    <tr className="font-bold text-center">
+                        <td className="p-1 border border-slate-400 text-left">Attendance %</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal1?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal2?.attendance)}</td>
+                        <td colSpan={hasActivities ? 2 : 1} className="p-1 border border-slate-400">{getAttendancePercent(exams.terminal3?.attendance)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div className="mt-4 border border-slate-400 rounded-lg p-2 text-sm break-inside-avoid">
+                <strong>Final Remarks:</strong> {finalRemark}
+            </div>
+            
+            <div className="mt-4 text-sm break-inside-avoid report-signatures">
+                <div className="flex justify-between items-end">
+                    <div className="text-center">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        </div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="h-12 min-w-[150px]"></div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                    </div>
+                </div>
+                <div className="flex justify-between mt-4 text-xs text-slate-500">
+                    <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
+    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
+    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
+
+    const processedReportData = useMemo(() => {
+        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents);
+    }, [student, exam, examTemplate.id, gradeDef, allStudents]);
+
+    const classTeacher = useMemo(() => {
+        if (!staff || !gradeDef?.classTeacherId) return null;
+        return staff.find((s: Staff) => s.id === gradeDef.classTeacherId);
+    }, [staff, gradeDef]);
+
+    return (
+        <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
+            <table className="min-w-full text-sm border-collapse">
+                <thead className="bg-slate-50 print:bg-transparent">
+                    {isNurseryToII ? (
+                        <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    ) : hasActivities ? (
+                        <>
+                            <tr className="border-b border-slate-400">
+                                <th rowSpan={2} className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
+                                <th colSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
+                                <th rowSpan={2} className="px-2 py-1 text-center font-semibold text-slate-600 align-middle">Total Obtained</th>
+                            </tr>
+                            <tr className="border-b border-slate-400">
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Marks Obt.</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                                <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            </tr>
+                        </>
+                    ) : (
+                         <tr className="border-b border-slate-400">
+                            <th className="px-2 py-1 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
+                            <th className="px-2 py-1 text-center font-semibold text-slate-600">Marks Obtained</th>
+                        </tr>
+                    )}
+                </thead>
+                <tbody>
+                     {gradeDef.subjects.map((sd: any) => {
+                        const result = findResultWithAliases(exam?.results, sd);
+                        const isGraded = sd.gradingSystem === 'OABC';
+                        
+                        return (
+                             <tr key={sd.name} className="border-t border-slate-300">
+                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                {isNurseryToII ? (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                ) : hasActivities ? (
+                                    isGraded ? (
+                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
+                                    ) : (
+                                        <>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
+                                        </>
+                                    )
+                                ) : (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                    </>
+                                )}
+                            </tr>
                         );
                     })}
                 </tbody>
             </table>
-        </div>
+            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 text-sm print:py-1 print:bg-transparent">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {hasActivities && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Summative Total:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>
+                            <div className="font-semibold text-slate-600 text-right">Activity Total:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.activityTotal}</div>
+                        </>
+                    )}
+                    <div className="font-semibold text-slate-600 text-right">Grand Total:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
+                    
+                    <div className="font-semibold text-slate-600 text-right">Percentage:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
 
-        <div className="mt-8 flex flex-wrap justify-end gap-3 print-hidden border-t pt-6">
-            <button onClick={() => setIsEditSubjectsModalOpen(true)} className="btn btn-secondary flex items-center gap-2">
-                <CogIcon className="w-5 h-5" />
-                <span>Manage Subjects</span>
-            </button>
-            <Link to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`} target="_blank" className="btn btn-secondary flex items-center gap-2">
-                <PrinterIcon className="w-5 h-5" />
-                <span>Bulk Print Reports</span>
-            </Link>
-            {/* ── EXPORT BUTTONS ── */}
-            <button onClick={handleExportExcel} className="btn btn-secondary flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span>Export Excel</span>
-            </button>
-            <button onClick={handleExportPDF} className="btn btn-secondary flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-                <span>Export PDF</span>
-            </button>
-            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary flex items-center gap-2">
-                <InboxArrowDownIcon className="w-5 h-5" />
-                <span>Import Marks</span>
-            </button>
-            <button onClick={() => setIsConfirmSaveModalOpen(true)} disabled={isSaving || changedStudents.size === 0} className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400">
-                {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
-                <span>Save Changes ({changedStudents.size})</span>
-            </button>
-        </div>
-    </div>
-    
-    <ConfirmationModal isOpen={isConfirmSaveModalOpen} onClose={() => setIsConfirmSaveModalOpen(false)} onConfirm={handleConfirmSave} title="Save Changes" confirmDisabled={isSaving}>
-        <p>Save marks for {changedStudents.size} student(s)?</p>
-    </ConfirmationModal>
+                    {!isClassIXorX && (
+                        <>
+                            <div className="font-semibold text-slate-600 text-right">Grade:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.academicGrade}</div>
+                        </>
+                    )}
+                    {isClassIXorX && (
+                         <>
+                            <div className="font-semibold text-slate-600 text-right">Division:</div>
+                            <div className="font-bold text-slate-800">{processedReportData?.division}</div>
+                        </>
+                    )}
 
-    {examDetails && <ImportMarksModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} onApplyImport={handleApplyImport} classStudents={classStudents} subjectDefinitions={subjectDefinitions} examName={examDetails.name} hasActivities={hasActivities} isSaving={isSaving} />}
-    
-    {grade && gradeDefinitions[grade] && <EditSubjectsModal isOpen={isEditSubjectsModalOpen} onClose={() => setIsEditSubjectsModalOpen(false)} onSave={handleSaveSubjects} grade={grade} initialGradeDefinition={gradeDefinitions[grade]} />}
-    </>
-  );
+                    <div className="font-semibold text-slate-600 text-right">Result:</div>
+                    <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
+                    
+                    <div className="font-semibold text-slate-600 text-right">Rank:</div>
+                    <div className="font-bold text-slate-800">{processedReportData?.rank}</div>
+                    <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
+                    <div className="font-bold text-slate-800">
+                        {(exam?.attendance && exam.attendance.totalWorkingDays > 0)
+                            ? `${((exam.attendance.daysPresent / exam.attendance.totalWorkingDays) * 100).toFixed(0)}%`
+                            : 'N/A'}
+                    </div>
+                </div>
+                
+                <div className="pt-1.5 mt-1.5 border-t">
+                    <span className="font-semibold">Teacher's Remarks: </span>
+                    <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
+                </div>
+            </div>
+             <div className="mt-4 text-sm break-inside-avoid p-3 print:mt-2 print:pt-0">
+                <div className="flex justify-between items-end">
+                    <div className="text-center">
+                         <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+                             {classTeacher ? (<p className="font-bold uppercase text-slate-900 text-xs border-b border-transparent">{classTeacher.firstName} {classTeacher.lastName}</p>) : (<div className="h-4"></div>)}
+                        </div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="h-12 min-w-[150px]"></div>
+                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                    </div>
+                </div>
+                <div className="flex justify-between mt-4 print:mt-1">
+                    <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default ClassMarkStatementPage;
+const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
+    const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
+    const navigate = useNavigate();
+    const grade = decodeURIComponent(encodedGrade) as Grade;
+
+    const classStudents = useMemo(() => {
+        return students
+            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE)
+            .sort((a, b) => a.rollNo - b.rollNo);
+    }, [students, grade]);
+
+    const gradeDef = useMemo(() => {
+        if (!gradeDefinitions[grade]) return null;
+        const def = gradeDefinitions[grade];
+        if (grade === Grade.IX || grade === Grade.X) {
+            return {
+                ...def,
+                subjects: def.subjects.map(s => ({ ...s, examFullMarks: 100, activityFullMarks: 0 }))
+            };
+        }
+        return def;
+    }, [grade, gradeDefinitions]);
+
+    const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
+
+    // Inject portrait @page style for this print view — overrides global landscape setting
+    useEffect(() => {
+        const styleId = 'progress-report-print-style';
+        let style = document.getElementById(styleId) as HTMLStyleElement | null;
+        if (!style) {
+            style = document.createElement('style');
+            style.id = styleId;
+            document.head.appendChild(style);
+        }
+        style.textContent = `
+            @media print {
+                @page {
+                    size: A4 portrait;
+                    margin-top: 8cm;
+                    margin-bottom: 1cm;
+                    margin-left: 0.8cm;
+                    margin-right: 0.8cm;
+                }
+                .report-banner-placeholder {
+                    display: none !important;
+                }
+                .progress-report-page {
+                    break-after: page;
+                    page-break-after: always;
+                }
+                .progress-report-page table th,
+                .progress-report-page table td {
+                    padding: 1px 3px !important;
+                    font-size: 7.5pt !important;
+                    line-height: 1.2 !important;
+                }
+                .report-signatures {
+                    margin-top: 6px !important;
+                }
+            }
+        `;
+        return () => {
+            // Restore landscape for mark statement pages
+            if (style) style.textContent = '';
+        };
+    }, []);
+
+    if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
+
+    const allSummaries = useMemo(() => {
+        if (examId !== 'terminal3') return null;
+        
+        const summariesMap: Record<string, any> = {};
+        classStudents.forEach(student => {
+             const exams = {
+                terminal1: student?.academicPerformance?.find(e => e.id === 'terminal1'),
+                terminal2: student?.academicPerformance?.find(e => e.id === 'terminal2'),
+                terminal3: student?.academicPerformance?.find(e => e.id === 'terminal3'),
+            };
+            summariesMap[student.id] = {
+                terminal1: calculateTermSummary(student, exams.terminal1, 'terminal1', gradeDef, classStudents),
+                terminal2: calculateTermSummary(student, exams.terminal2, 'terminal2', gradeDef, classStudents),
+                terminal3: calculateTermSummary(student, exams.terminal3, 'terminal3', gradeDef, classStudents),
+            };
+        });
+        return summariesMap;
+    }, [classStudents, gradeDef, examId]);
+
+    return (
+        <div className="bg-slate-100 print:bg-white min-h-screen">
+            <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm">
+                <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
+                <div className="text-center">
+                    <h2 className="text-xl font-bold">Bulk Print Reports</h2>
+                    <p className="text-sm text-slate-600">{grade} - {examTemplate.name} ({classStudents.length} students)</p>
+                </div>
+                <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print All</button>
+            </div>
+
+            <div className="container mx-auto print:w-full print:max-w-none">
+                {classStudents.map((student) => {
+                    const studentExams = student.academicPerformance || [];
+                    const singleExam = studentExams.find(e => e.id === examId);
+                    
+                    const exams = {
+                        terminal1: studentExams.find(e => e.id === 'terminal1'),
+                        terminal2: studentExams.find(e => e.id === 'terminal2'),
+                        terminal3: studentExams.find(e => e.id === 'terminal3'),
+                    };
+                    const summaries = allSummaries ? allSummaries[student.id] : null;
+
+                    return (
+                        <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page">
+                             <div className="font-serif print:text-xs">
+                                <header className="text-center mb-2">
+                                    {examId !== 'terminal3' ? (
+                                        <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
+                                    ) : (
+                                        <div className="h-32 md:h-40 report-banner-placeholder" aria-hidden="true"></div>
+                                    )}
+                                    <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
+                                        STUDENT'S PROGRESS REPORT
+                                    </h2>
+                                    <p className="font-semibold mt-1 print:text-sm">Academic Session: {academicYear}</p>
+                                </header>
+
+                                <section className="mb-2 border-2 border-slate-400 rounded-lg text-sm print:mb-1 flex items-stretch">
+                                    <div className="flex-1 p-2 print:p-1 grid grid-cols-3 gap-x-2 gap-y-1 print:gap-y-0.5 content-start">
+                                        <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold text-base">{student.name}</span></div>
+                                        <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold text-base">{student.fatherName}</span></div>
+                                        <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold text-base">{formatDateForDisplay(student.dateOfBirth)}</span></div>
+                                        <div><strong className="block text-slate-600">Class:</strong><span className="font-bold text-base">{student.grade}</span></div>
+                                        <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold text-base">{student.rollNo}</span></div>
+                                        <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
+                                    </div>
+                                    <div className="border-l-2 border-slate-400 flex-shrink-0 w-24 print:w-20 flex items-center justify-center p-1">
+                                        {student.photographUrl ? (
+                                            <img
+                                                src={student.photographUrl}
+                                                alt={student.name}
+                                                className="w-full h-24 print:h-20 object-cover rounded"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-24 print:h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs text-center">No Photo</div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                <section className="mt-4 print:mt-2">
+                                    {examId === 'terminal3' && summaries ? (
+                                        <MultiTermReportCard 
+                                            student={student}
+                                            gradeDef={gradeDef}
+                                            exams={exams}
+                                            summaries={summaries}
+                                            staff={staff}
+                                        />
+                                    ) : (
+                                        <ReportCard 
+                                            student={student} 
+                                            gradeDef={gradeDef} 
+                                            exam={singleExam} 
+                                            examTemplate={examTemplate} 
+                                            allStudents={classStudents}
+                                            academicYear={academicYear}
+                                            staff={staff}
+                                        />
+                                    )}
+                                </section>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default BulkProgressReportPage;

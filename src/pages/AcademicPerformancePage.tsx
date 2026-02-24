@@ -66,7 +66,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
           e.id === examTemplate.id || (e.name && e.name.trim().toLowerCase() === examTemplate.name.trim().toLowerCase())
       );
       const results: SubjectMark[] = subjects.map(sd => {
-        const existingResult = existingExam?.results.find(r => subjectsMatch(r.subject, sd.name));
+        const existingResult = Array.isArray(existingExam?.results) ? existingExam.results.find(r => subjectsMatch(r.subject, sd.name)) : undefined;
         
         return {
           subject: sd.name,
@@ -145,7 +145,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                     if (student && editingActivityLogFor) {
                         const newPerformanceData = performanceData.map(exam => {
                             if (exam.id === editingActivityLogFor.examId) {
-                                const newResults = exam.results.map(result => {
+                                const newResults = (Array.isArray(exam.results) ? exam.results : []).map(result => {
                                     if (result.subject === editingActivityLogFor.subjectName) {
                                         const totalActivityMarks = Math.round(
                                             (log.classTest.scaledMarks || 0) + 
@@ -167,7 +167,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                 studentName={student?.name || ''}
                 examName={editingActivityLogFor.examId}
                 subjectName={editingActivityLogFor.subjectName}
-                initialLog={performanceData.find(e => e.id === editingActivityLogFor.examId)?.results.find(r => r.subject === editingActivityLogFor.subjectName)?.activityLog}
+                initialLog={performanceData.find(e => e.id === editingActivityLogFor.examId)?.results?.find?.(r => r.subject === editingActivityLogFor.subjectName)?.activityLog}
                 // Placeholder navigation handlers for now
                 onNavigate={() => {}}
                 canNavigatePrev={false}

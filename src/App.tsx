@@ -52,7 +52,6 @@ import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
 import GalleryManagerPage from '@/pages/GalleryManagerPage';
-import DocumentsManagerPage from '@/pages/portal/DocumentsManagerPage';
 import WebsiteMediaManagerPage from '@/pages/WebsiteMediaManagerPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
@@ -739,8 +738,8 @@ const App: React.FC = () => {
                   ? { ...currentPerformance[existingExamIndex], name: currentPerformance[existingExamIndex].name }
                   : { id: update.examId, name: update.examId, results: [] };
               
-const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subject, update.subjectName));
-            const newResult: SubjectMark = {
+              const existingResultIndex = newExam.results.findIndex(r => r.subject === update.subjectName);
+              const newResult: SubjectMark = {
                   subject: update.subjectName,
                   activityLog: update.activityLog,
                   activityMarks: update.activityMarks
@@ -1253,7 +1252,19 @@ const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subje
   // Fetch Protected Data
   useEffect(() => {
     if (user) {
-        db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => ({ id: d.id, ...d.data() } as Student))));
+        db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => {
+            const data = d.data();
+            // Normalize: results may be stored as object {} instead of array [] in legacy records
+            if (Array.isArray(data.academicPerformance)) {
+                data.academicPerformance = data.academicPerformance.map((exam: any) => ({
+                    ...exam,
+                    results: Array.isArray(exam.results)
+                        ? exam.results
+                        : Object.values(exam.results || {}),
+                }));
+            }
+            return { id: d.id, ...data } as Student;
+        })));
         db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
         db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))));
         db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))));
@@ -1289,7 +1300,7 @@ const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subje
       
       <Routes>
         {/* Public Routes */}
-<Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
+        <Route path="/" element={<PublicLayout user={user} />}>
           <Route index element={<PublicHomePage news={news} user={user} />} />
           <Route path="about" element={<AboutPage user={user} />} />
           <Route path="history" element={<HistoryPage user={user} />} />
@@ -1337,7 +1348,7 @@ const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subje
           <Route path="facilities" element={<FacilitiesPage user={user} />} />
           <Route path="infrastructure" element={<InfrastructurePage user={user} />} />
           <Route path="hostel" element={<HostelPage user={user} />} /> 
-          <Route path="gallery/*" element={<GalleryPage user={user} />} />
+          <Route path="gallery" element={<GalleryPage user={user} />} />
           <Route path="contact" element={<ContactPage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
@@ -1408,7 +1419,6 @@ const existingResultIndex = newExam.results.findIndex(r => subjectsMatch(r.subje
            <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
            <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
            <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />
-           <Route path="documents" element={user ? <DocumentsManagerPage user={user} /> : <Navigate to="/login" replace />} />
            <Route path="media-manager" element={<WebsiteMediaManagerPage user={user!} />} />
            <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
            <Route path="parents" element={<ParentsManagementPage allUsers={users} students={students} academicYear={academicYear} currentUser={user!} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateParentUser} />} />

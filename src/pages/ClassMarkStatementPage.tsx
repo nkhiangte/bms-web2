@@ -468,8 +468,18 @@ const subjectDefinitions = useMemo(() => {
       // ================= EXPORT TO EXCEL =================
 const handleExportExcel = () => {
   if (!processedData.length) return;
-
-  const headers = [
+const headers = [
+    `Academic Year: ${academicYear}`,
+    `Class: ${grade}`,
+    `Exam: ${examDetails?.name}`,
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ];
+  const subjectHeaders = [
     'Roll No',
     'Name',
     ...subjectDefinitions.map(sd => sd.name),
@@ -515,7 +525,7 @@ const handleExportExcel = () => {
     ];
   });
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, subjectHeaders, ...data]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
 
@@ -528,10 +538,10 @@ const handleExportPDF = () => {
 
   const doc = new jsPDF('landscape');
 
-  doc.setFontSize(14);
+ doc.setFontSize(14);
   doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
   doc.setFontSize(11);
-  doc.text(`Exam: ${examDetails?.name}`, 14, 22);
+  doc.text(`Exam: ${examDetails?.name}   |   Academic Year: ${academicYear}`, 14, 22);
 
   const tableColumn = [
     'Roll No',
@@ -669,7 +679,7 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
         </div>
         <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
-            <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
+            <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name} | <span className="font-semibold">Academic Year:</span> {academicYear}</p>
         </div>
 
         <div className="mt-6 flex justify-end items-center gap-2 print-hidden">

@@ -556,21 +556,22 @@ const exportToCSV = () => {
     return row.join(',');
   });
   // Create CSV content
-  const csvContent = [headers.join(','), ...rows].join('\n');
-  const handleSaveSubjects = async (newDef: GradeDefinition) => {
+ const csvContent = [headers.join(','), ...rows].join('\n');
 
   // Download
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `${grade}_${examDetails.name}_Marks_Statement.csv`;
+  link.download = `${grade}_${examDetails?.name}_Marks_Statement.csv`;
   link.click();
+}; // End of exportToCSV
+
+const handleSaveSubjects = async (newDef: GradeDefinition) => {
+    if(grade) {
+        await onUpdateGradeDefinition(grade, newDef);
+        setIsEditSubjectsModalOpen(false);
+    }
 };
-        if(grade) {
-            await onUpdateGradeDefinition(grade, newDef);
-            setIsEditSubjectsModalOpen(false);
-        }
-  }
 
   if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
 

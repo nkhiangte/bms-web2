@@ -380,8 +380,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     setIsConfirmSaveModalOpen(false);
   };
 
-  const handleSaveSubjects = async (newDef: GradeDefinition) => {
-    // ================= EXPORT TO EXCEL =================
+      // ================= EXPORT TO EXCEL =================
 const handleExportExcel = () => {
   if (!processedData.length) return;
 
@@ -556,7 +555,7 @@ const exportToCSV = () => {
     
     return row.join(',');
   });
-
+const handleSaveSubjects = async (newDef: GradeDefinition) => {
   // Create CSV content
   const csvContent = [headers.join(','), ...rows].join('\n');
   

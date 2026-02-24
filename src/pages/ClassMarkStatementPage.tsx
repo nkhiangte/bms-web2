@@ -184,9 +184,29 @@ const subjectDefinitions = useMemo(() => {
         }
       });
     });
-    setMarksData(initialMarks);
-    setAttendanceData(initialAttendance);
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
+    
+    // Only update marks for students that haven't been modified
+    setMarksData(prev => {
+      const updated = { ...prev };
+      Object.keys(initialMarks).forEach(studentId => {
+        if (!changedStudents.has(studentId)) {
+          updated[studentId] = initialMarks[studentId];
+        }
+      });
+      return updated;
+    });
+    
+    // Only update attendance for students that haven't been modified
+    setAttendanceData(prev => {
+      const updated = { ...prev };
+      Object.keys(initialAttendance).forEach(studentId => {
+        if (!changedStudents.has(studentId)) {
+          updated[studentId] = initialAttendance[studentId];
+        }
+      });
+      return updated;
+    });
+  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
     const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);

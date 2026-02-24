@@ -181,13 +181,13 @@ const FS = 13;
 // ─── Shared footer (Final Remarks + Signatures) ───────────────────────────────
 const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({ finalRemark, classTeacher }) => (
     <>
-        <div className="mt-2 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
+        <div className="mt-8 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
             <strong>Final Remarks:</strong> {finalRemark}
         </div>
-        <div className="mt-4 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
+        <div className="mt-16 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
             <div className="flex justify-between items-end">
                 <div className="text-center">
-                   <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
+                   <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
                         {classTeacher
                             ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p>
                             : <div className="h-4" />}
@@ -195,7 +195,7 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
                     <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                 </div>
                 <div className="text-center">
-                    <div className="h-8 flex flex-col justify-end pb-1 min-w-[150px]">
+                    <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
                         <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
                     </div>
                     <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
@@ -619,7 +619,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     })}
                 </tbody>
             </table>
-            <div className="p-1 bg-slate-50 border-t border-slate-400 space-y-0 print:py-0.5 print:bg-transparent" style={{ fontSize: FS }}>
+           <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: FS }}>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                     {hasActivities && (<>
                         <div className="font-semibold text-slate-600 text-right">Summative Total:</div><div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>

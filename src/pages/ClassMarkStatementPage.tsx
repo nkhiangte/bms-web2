@@ -8,7 +8,10 @@ import { ImportMarksModal } from '@/components/ImportMarksModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EditSubjectsModal from '@/components/EditSubjectsModal';
 import { db } from '@/firebaseConfig';
-
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
 interface ClassMarkStatementPageProps {
@@ -379,6 +382,137 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   };
 
   const handleSaveSubjects = async (newDef: GradeDefinition) => {
+    // ================= EXPORT TO EXCEL =================
+const handleExportExcel = () => {
+  if (!processedData.length) return;
+
+  const headers = [
+    'Roll No',
+    'Name',
+    ...subjectDefinitions.map(sd => sd.name),
+    'Total',
+    'Percentage',
+    'Rank',
+    'Division',
+    'Result',
+    'Remark'
+  ];
+
+  const data = processedData.map(student => {
+    const subjectMarks = subjectDefinitions.map(sd => {
+      if (sd.gradingSystem === 'OABC') {
+        return marksData[student.id]?.[sd.name] ?? '-';
+      }
+
+      if (isIXTerminal3) {
+        const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
+        const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
+        return Number(sa) + Number(fa);
+      }
+
+      if (hasActivities) {
+        const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
+        const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
+        return Number(exam) + Number(act);
+      }
+
+      return marksData[student.id]?.[sd.name] ?? 0;
+    });
+
+    return [
+      student.rollNo,
+      student.name,
+      ...subjectMarks,
+      student.grandTotal,
+      student.percentage.toFixed(2),
+      student.rank,
+      student.division,
+      student.result,
+      student.remark
+    ];
+  });
+
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+  });
+
+  saveAs(blob, `${grade}_${examDetails?.name}_Statement.xlsx`);
+};
+
+// ================= EXPORT TO PDF =================
+const handleExportPDF = () => {
+  if (!processedData.length) return;
+
+  const doc = new jsPDF('landscape');
+
+  doc.setFontSize(14);
+  doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
+  doc.setFontSize(11);
+  doc.text(`Exam: ${examDetails?.name}`, 14, 22);
+
+  const tableColumn = [
+    'Roll No',
+    'Name',
+    ...subjectDefinitions.map(sd => sd.name),
+    'Total',
+    'Percentage',
+    'Rank',
+    'Division',
+    'Result'
+  ];
+
+  const tableRows = processedData.map(student => {
+    const subjectMarks = subjectDefinitions.map(sd => {
+      if (sd.gradingSystem === 'OABC') {
+        return marksData[student.id]?.[sd.name] ?? '-';
+      }
+
+      if (isIXTerminal3) {
+        const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
+        const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
+        return Number(sa) + Number(fa);
+      }
+
+      if (hasActivities) {
+        const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
+        const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
+        return Number(exam) + Number(act);
+      }
+
+      return marksData[student.id]?.[sd.name] ?? 0;
+    });
+
+    return [
+      student.rollNo,
+      student.name,
+      ...subjectMarks,
+      student.grandTotal,
+      student.percentage.toFixed(2),
+      student.rank,
+      student.division,
+      student.result
+    ];
+  });
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 30,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [41, 128, 185] }
+  });
+
+  doc.save(`${grade}_${examDetails?.name}_Statement.pdf`);
+};
     // Add this function inside your ClassMarkStatementPage component
 const exportToCSV = () => {
   // Prepare headers
@@ -484,6 +618,19 @@ const exportToCSV = () => {
                 >
                     Total Marks
                 </button>
+              <button
+  onClick={handleExportExcel}
+  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+>
+  Export Excel
+</button>
+
+<button
+  onClick={handleExportPDF}
+  className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition"
+>
+  Export PDF
+</button>
             </div>
         </div>
         

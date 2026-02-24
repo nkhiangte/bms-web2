@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '@/types';
-import { db } from '@/firebaseConfig';
-import { uploadToImgBB, resizeImage } from '@/utils';
+import { db, storage } from '@/firebaseConfig';
+import { resizeImage } from '@/utils';
 import { BackIcon, HomeIcon, PlusIcon, TrashIcon, SpinnerIcon, CheckIcon, XIcon } from '@/components/Icons';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
@@ -71,6 +71,15 @@ const deleteFolderFromTree = (folders: GalleryFolder[], path: string[]): Gallery
     return folders.map(f => f.name === path[0]
         ? { ...f, subfolders: deleteFolderFromTree(f.subfolders || [], path.slice(1)) }
         : f);
+};
+
+// Upload image to Firebase Storage and return a permanent download URL
+const uploadToFirebaseStorage = async (file: File, folderPath: string[]): Promise<string> => {
+    const folder = folderPath.map(p => p.toLowerCase().replace(/[^a-z0-9]/g, '_')).join('/');
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const storageRef = storage.ref(`gallery/${folder}/${fileName}`);
+    await storageRef.put(file);
+    return await storageRef.getDownloadURL();
 };
 
 // Extract YouTube video ID from various URL formats
@@ -169,7 +178,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
 
     const handleDeleteFolder = async (path: string[]) => {
         const name = path[path.length - 1];
-        if (!window.confirm(`Delete folder "${name}"? Images inside will NOT be deleted from ImgBB.`)) return;
+        if (!window.confirm(`Delete folder "${name}"? Images inside will NOT be deleted from Firebase Storage.`)) return;
         const newTree = deleteFolderFromTree(folderTree, path);
         setFolderTree(newTree);
         await saveFolderTree(newTree);
@@ -196,7 +205,12 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
             setUploadItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'uploading' } : it));
             try {
                 const resized = await resizeImage(uploadItems[i].file, 1200, 1200, 0.9);
-                const url = await uploadToImgBB(resized);
+                // Convert base64 data URL back to a File for Firebase Storage
+                const fetchRes = await fetch(resized);
+                const blob = await fetchRes.blob();
+                const resizedFile = new File([blob], uploadItems[i].file.name, { type: blob.type || 'image/jpeg' });
+                // Upload to Firebase Storage — permanent, reliable, no hotlink issues
+                const url = await uploadToFirebaseStorage(resizedFile, selectedPath);
                 newImages.push({
                     id: `${Date.now()}_${i}`,
                     title: uploadItems[i].title || 'Untitled',
@@ -296,7 +310,7 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
             </div>
 
             <h1 className="text-2xl font-bold text-slate-800 mb-1">Gallery Manager</h1>
-            <p className="text-slate-500 text-sm mb-6">Select a folder · Upload images or add YouTube videos · Saved to Firebase</p>
+            <p className="text-slate-500 text-sm mb-6">Select a folder · Upload images or add YouTube videos · Saved to Firebase Storage</p>
 
             <div className="flex flex-col lg:flex-row gap-6">
 
@@ -590,8 +604,8 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                 className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-sm cursor-pointer"
                                                 onClick={() => handleStartEdit(img)}
                                             >
-                                                {/* Thumbnail - both images and videos use imageSrc */}
-                                                <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" />
+                                                {/* Thumbnail - referrerPolicy fixes ImgBB hotlink for any legacy images */}
+                                                <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
 
                                                 {/* Video badge */}
                                                 {img.type === 'video' && (
@@ -643,7 +657,8 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                                 />
                                                             ) : (
                                                                 <img src={img.imageSrc} alt={img.title}
-                                                                    className="max-w-full max-h-full object-contain" />
+                                                                    className="max-w-full max-h-full object-contain"
+                                                                    referrerPolicy="no-referrer" />
                                                             )}
                                                         </div>
                                                         {/* Edit fields */}

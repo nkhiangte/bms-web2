@@ -271,21 +271,25 @@ const MultiTermReportCard: React.FC<{
             <table className="w-full border-collapse border border-slate-400" style={{ fontSize: 15 }}>
                 <thead>
                     <tr className="bg-slate-100">
-                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>SUBJECT</th>
-                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>Full Marks</th>
-                        <th rowSpan={hasActivities ? 2 : 1} className={`${TH} align-middle`}>Pass Marks</th>
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>I Terminal Examination</th>
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>II Terminal Examination</th>
-                        <th colSpan={hasActivities ? 2 : 1} className={TH}>III Terminal Examination</th>
+                        <th className={TH}>SUBJECT</th>
+                        {!hasActivities && (
+                            <>
+                                <th className={TH}>Full Marks</th>
+                                <th className={TH}>Pass Marks</th>
+                            </>
+                        )}
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>I Entry</th>
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>II Entry</th>
+                        <th colSpan={hasActivities ? 2 : 1} className={TH}>III Entry</th>
                     </tr>
                     {hasActivities && (
                         <tr className="bg-slate-100 text-xs">
-                            <th className={`${TH} font-semibold`}>Summative</th>
-                            <th className={`${TH} font-semibold`}>Activity</th>
-                            <th className={`${TH} font-semibold`}>Summative</th>
-                            <th className={`${TH} font-semibold`}>Activity</th>
-                            <th className={`${TH} font-semibold`}>Summative</th>
-                            <th className={`${TH} font-semibold`}>Activity</th>
+                            <th className={`${TH} font-semibold`}>Summative<br/>60</th>
+                            <th className={`${TH} font-semibold`}>Activity<br/>40</th>
+                            <th className={`${TH} font-semibold`}>Summative<br/>60</th>
+                            <th className={`${TH} font-semibold`}>Activity<br/>40</th>
+                            <th className={`${TH} font-semibold`}>Summative<br/>60</th>
+                            <th className={`${TH} font-semibold`}>Activity<br/>40</th>
                         </tr>
                     )}
                 </thead>
@@ -314,8 +318,12 @@ const MultiTermReportCard: React.FC<{
                         return (
                             <tr key={sd.name} className="border-t border-slate-300">
                                 <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-                                <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : (sd.examFullMarks ?? 100)}</td>
-                                <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                {!hasActivities && (
+                                    <>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : (sd.examFullMarks ?? 100)}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                    </>
+                                )}
                                 {hasActivities && !isGraded ? (
                                     <>
                                         <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.examMarks ?? 0}</td>
@@ -327,9 +335,12 @@ const MultiTermReportCard: React.FC<{
                                     </>
                                 ) : hasActivities && isGraded ? (
                                     <>
-                                        <td colSpan={2} className="px-2 py-1 text-center font-bold border-r border-slate-300">{result1?.grade || '-'}</td>
-                                        <td colSpan={2} className="px-2 py-1 text-center font-bold border-r border-slate-300">{result2?.grade || '-'}</td>
-                                        <td colSpan={2} className="px-2 py-1 text-center font-bold">{result3?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result2?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result2?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.grade || '-'}</td>
+                                        <td className="px-2 py-1 text-center">{result3?.grade || '-'}</td>
                                     </>
                                 ) : (
                                     <>
@@ -345,8 +356,12 @@ const MultiTermReportCard: React.FC<{
                 <tfoot>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Grand Total</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td className={TD}>{summaries.terminal1?.examTotal ?? '-'}</td>
@@ -366,8 +381,12 @@ const MultiTermReportCard: React.FC<{
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Result</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td colSpan={2} className={TD}>{summaries.terminal1?.result ?? '-'}</td>
@@ -384,8 +403,12 @@ const MultiTermReportCard: React.FC<{
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Rank</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td colSpan={2} className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
@@ -402,8 +425,12 @@ const MultiTermReportCard: React.FC<{
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Percentage</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td colSpan={2} className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
@@ -420,8 +447,12 @@ const MultiTermReportCard: React.FC<{
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>{isIXorX ? 'Division' : 'Grade'}</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td colSpan={2} className={TD}>{isIXorX ? (summaries.terminal1?.division ?? '-') : (summaries.terminal1?.academicGrade ?? '-')}</td>
@@ -438,8 +469,12 @@ const MultiTermReportCard: React.FC<{
                     </tr>
                     <tr className="font-bold text-center">
                         <td className={`${TD} text-left`}>Attendance %</td>
-                        <td className={TD}></td>
-                        <td className={TD}></td>
+                        {!hasActivities && (
+                            <>
+                                <td className={TD}></td>
+                                <td className={TD}></td>
+                            </>
+                        )}
                         {hasActivities ? (
                             <>
                                 <td colSpan={2} className={TD}>{getAttendancePercent(exams.terminal1?.attendance)}</td>

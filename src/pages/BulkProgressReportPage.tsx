@@ -221,8 +221,8 @@ const MultiTermReportCard: React.FC<{
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isIXTerminal3Report = student.grade === Grade.IX;
- const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
-  const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
+    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
+    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
         if (attendance && attendance.totalWorkingDays > 0) {
@@ -298,88 +298,78 @@ const MultiTermReportCard: React.FC<{
                         </tr>
                     )}
                 </thead>
-             <tbody>
-                    {/* Fix: Use the student's actual results to determine rows */}
-         {(() => {
-    const subjectsMap = new Map<string, SubjectDefinition>();
-    (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
-    
-    // Add any subjects from exam results that aren't in gradeDef
-    exams.terminal3?.results?.forEach(res => {
-        const normalized = normalizeSubjectName(res.subject);
-        if (!subjectsMap.has(normalized)) {
-            subjectsMap.set(normalized, {
-                name: res.subject, examFullMarks: 100, activityFullMarks: 0,
-                gradingSystem: res.grade ? 'OABC' : 'Numerical'
-            });
-        }
-    });
-return Array.from(subjectsMap.values());
-})().map((sd: any) => {  // ✅ Properly closed IIFE
-    const isGraded = sd.gradingSystem === 'OABC';
-    const result1 = findResultWithAliases(exams.terminal1?.results, sd);
-    const result2 = findResultWithAliases(exams.terminal2?.results, sd);
-    const result3 = findResultWithAliases(exams.terminal3?.results, sd);
-    
-    return (
-        <tr key={sd.name} className="border-t border-slate-300">
-            <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
-            {isNurseryToII ? (
-                <>
-                    {/* Terminal 1 */}
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
-                    
-                    {/* Terminal 2 */}
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
-                    
-                    {/* Terminal 3 */}
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
-                </>
-            ) : hasActivities ? (
-                isGraded ? (
-                    <td colSpan={5} className="px-2 py-1 text-center font-bold">{result3?.grade || '-'}</td>
-                ) : (
-                    <>
-                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.examMarks ?? 0}</td>
-                        <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                        <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.activityMarks ?? 0}</td>
-                        <td className="px-2 py-1 text-center font-bold">{(Number(result3?.examMarks ?? 0) + Number(result3?.activityMarks ?? 0))}</td>
-                    </>
-                )
-            ) : (
-                <>
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                    <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                    <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
-                </>
-            )}
-        </tr>
-    );
-})
-          : hasActivities ? (
+                <tbody>
+                    {(() => {
+                        const subjectsMap = new Map<string, SubjectDefinition>();
+                        (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+                        
+                        // Add any subjects from exam results that aren't in gradeDef
+                        exams.terminal3?.results?.forEach(res => {
+                            const normalized = normalizeSubjectName(res.subject);
+                            if (!subjectsMap.has(normalized)) {
+                                subjectsMap.set(normalized, {
+                                    name: res.subject, examFullMarks: 100, activityFullMarks: 0,
+                                    gradingSystem: res.grade ? 'OABC' : 'Numerical'
+                                });
+                            }
+                        });
+                        return Array.from(subjectsMap.values());
+                    })().map((sd: any) => {
+                        const isGraded = sd.gradingSystem === 'OABC';
+                        const result1 = findResultWithAliases(exams.terminal1?.results, sd);
+                        const result2 = findResultWithAliases(exams.terminal2?.results, sd);
+                        const result3 = findResultWithAliases(exams.terminal3?.results, sd);
+                        
+                        return (
+                            <tr key={sd.name} className="border-t border-slate-300">
+                                <td className="px-2 py-1 font-medium border-r border-slate-300">{sd.name}</td>
+                                {isNurseryToII ? (
+                                    <>
+                                        {/* Terminal 1 */}
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
+                                        
+                                        {/* Terminal 2 */}
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
+                                        
+                                        {/* Terminal 3 */}
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
+                                    </>
+                                ) : hasActivities ? (
                                     isGraded ? (
-                                        <td colSpan={5} className="px-2 py-1 text-center font-bold">{result?.grade || '-'}</td>
+                                        <td colSpan={6} className="px-2 py-1 text-center font-bold">{result3?.grade || '-'}</td>
                                     ) : (
                                         <>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.examMarks ?? 0}</td>
                                             <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                            <td className="px-2 py-1 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result1?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result2?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result2?.activityMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.examFullMarks}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{result3?.examMarks ?? 0}</td>
+                                            <td className="px-2 py-1 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
+                                            <td className="px-2 py-1 text-center font-bold">{(Number(result3?.examMarks ?? 0) + Number(result3?.activityMarks ?? 0))}</td>
                                         </>
                                     )
                                 ) : (
                                     <>
                                         <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
                                         <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result1?.grade || '-') : (result1?.marks ?? 0)}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result2?.grade || '-') : (result2?.marks ?? 0)}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
+                                        <td className="px-2 py-1 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
+                                        <td className="px-2 py-1 text-center font-bold">{isGraded ? (result3?.grade || '-') : (result3?.marks ?? 0)}</td>
                                     </>
                                 )}
                             </tr>
@@ -437,7 +427,7 @@ return Array.from(subjectsMap.values());
                 </tfoot>
             </table>
 
-          {/* Increased spacing and font size on Final Remarks */}
+            {/* Increased spacing and font size on Final Remarks */}
             <div className="mt-8 border border-slate-400 rounded-lg p-3 break-inside-avoid" style={{ fontSize: 15 }}>
                 <strong>Final Remarks:</strong> {finalRemark}
             </div>
@@ -487,7 +477,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
 
     return (
         <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-          <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
+            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-1 print:text-base print:border-b print:border-slate-400">{examTemplate.name}</h3>
             <table className="min-w-full border-collapse" style={{ fontSize: 15 }}>
                 <thead className="bg-slate-50 print:bg-transparent">
                     {isNurseryToII ? (
@@ -558,8 +548,8 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     })}
                 </tbody>
             </table>
-<div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: 15 }}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+            <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: 15 }}>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                     {hasActivities && (
                         <>
                             <div className="font-semibold text-slate-600 text-right">Summative Total:</div>

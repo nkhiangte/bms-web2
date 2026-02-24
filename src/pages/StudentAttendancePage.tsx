@@ -92,30 +92,24 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
 
     const isToday = selectedDate === todayStr;
 
-    useEffect(() => {
+useEffect(() => {
         const fetchDataForDate = async (dateStr: string) => {
             if (!grade) return;
             setIsLoading(true);
 
             let attendanceData: StudentAttendanceRecord = {};
             const isFetchingToday = dateStr === todayStr;
-            // Access the specific date record from the daily attendance map
             const todayDataFromProp = allAttendance?.[grade]?.[dateStr];
 
             if (isFetchingToday) {
                 if (todayDataFromProp) {
-                    // Data exists for today, use it from the real-time listener.
                     attendanceData = todayDataFromProp;
                 } else if (classStudents.length > 0) {
-                    // No data exists for today yet. Create a default "all present" record.
                     const defaultRecords: StudentAttendanceRecord = {};
                     classStudents.forEach(s => { defaultRecords[s.id] = StudentAttendanceStatus.PRESENT; });
                     attendanceData = defaultRecords;
-                    // Save this default to Firestore so all views are consistent.
-                    // This is a fire-and-forget; the real-time listener will handle UI updates.
-              
+                }
             } else {
-                // Fetching historical data
                 const [year, month] = dateStr.split('-').map(Number);
                 try {
                     const monthlyData = await fetchStudentAttendanceForMonth(grade, year, month);
@@ -130,7 +124,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
         };
 
         fetchDataForDate(selectedDate);
-    }, [selectedDate, allAttendance, classStudents, grade, onUpdateAttendance, fetchStudentAttendanceForMonth, todayStr]);
+    }, [selectedDate, grade, classStudents.length, fetchStudentAttendanceForMonth, todayStr]);
 
     useEffect(() => {
         const getPreviousWorkingDays = (count: number): Date[] => {

@@ -8,12 +8,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
- "dependencies": {
-    ...existing packages...,
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2",
-    "xlsx": "^0.18.5"
-}
+  "dependencies": {
     "react-dom": "^19.1.1",
     "react": "^19.1.1",
     "react-router-dom": "6.25.1",
@@ -21,6 +16,7 @@
     "xlsx": "0.18.5",
     "firebase": "12.2.0",
     "jspdf": "2.5.1",
+    "jspdf-autotable": "3.8.2",
     "html2canvas": "1.4.1"
   },
   "devDependencies": {

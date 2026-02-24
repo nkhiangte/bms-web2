@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '@/types';
@@ -23,12 +22,14 @@ interface StudentAttendancePageProps {
 
 const Toast: React.FC<{ message: string; onDismiss: () => void; }> = ({ message, onDismiss }) => {
     useEffect(() => {
-        const timer = setTimeout(onDismiss, 3000);
+        const timer = setTimeout(() => {
+            onDismiss();
+        }, 3000);
         return () => clearTimeout(timer);
     }, [onDismiss]);
     return (
-        <div className="fixed top-20 right-5 bg-emerald-500 text-white shadow-lg rounded-lg p-4 flex items-center gap-3 z-50 animate-fade-in">
-            <CheckCircleIcon className="w-6 h-6" />
+        <div className="fixed bottom-6 right-6 bg-emerald-500 text-white shadow-lg rounded-lg p-4 flex items-center gap-3 z-40 animate-fade-in max-w-sm">
+            <CheckCircleIcon className="w-6 h-6 flex-shrink-0" />
             <p className="text-sm font-semibold">{message}</p>
         </div>
     );

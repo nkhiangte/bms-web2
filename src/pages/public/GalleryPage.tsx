@@ -216,19 +216,34 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
         return () => unsub();
     }, [isLeafNode, currentPath.join('/')]);
 
-    useEffect(() => {
-        currentSubfolders.forEach(async folder => {
-            const path = [...currentPath, folder.name];
-            const id = pathToId(path);
-            try {
-                const doc = await db.collection('website_content').doc(id).get();
-                const folderItems: GalleryItem[] = doc.exists ? (doc.data()?.items || []) : [];
-                if (folderItems.length > 0 && folderItems[0].imageSrc) {
-                    setFolderThumbs(prev => ({ ...prev, [folder.name]: folderItems[0].imageSrc! }));
-                }
-            } catch {}
-        });
-    }, [currentSubfolders]);
+   useEffect(() => {
+    // Recursively search a folder tree for the first available image thumbnail
+    const findThumbRecursive = async (path: string[], subfolders: GalleryFolder[]): Promise<string | null> => {
+        // First check if this folder itself has images
+        const id = pathToId(path);
+        try {
+            const doc = await db.collection('website_content').doc(id).get();
+            const folderItems: GalleryItem[] = doc.exists ? (doc.data()?.items || []) : [];
+            const imageItem = folderItems.find(i => i.type !== 'video' && i.imageSrc);
+            if (imageItem?.imageSrc) return imageItem.imageSrc;
+        } catch {}
+
+        // If no images here, recurse into subfolders
+        for (const sub of subfolders) {
+            const result = await findThumbRecursive([...path, sub.name], sub.subfolders || []);
+            if (result) return result;
+        }
+        return null;
+    };
+
+    currentSubfolders.forEach(async folder => {
+        const path = [...currentPath, folder.name];
+        const thumb = await findThumbRecursive(path, folder.subfolders || []);
+        if (thumb) {
+            setFolderThumbs(prev => ({ ...prev, [folder.name]: thumb }));
+        }
+    });
+}, [currentSubfolders]);
 
     // Only image items go into the lightbox (videos open in VideoModal)
     const imageItems = items.filter(i => i.type !== 'video');

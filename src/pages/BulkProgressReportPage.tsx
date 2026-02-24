@@ -16,8 +16,13 @@ interface ProgressReportPageProps {
 }
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
+    if (!subjectDef?.name) return undefined;
     if (!results) return undefined;
-    return results.find(r => subjectsMatch(r.subject, subjectDef.name));
+    if (!Array.isArray(results)) {
+        console.warn('[BulkReport] results is not an array:', typeof results, results);
+        return undefined;
+    }
+    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
 };
 
 const calculateTermSummary = (
@@ -259,7 +264,7 @@ const MultiTermReportCard: React.FC<{
                     )}
                 </thead>
                 <tbody>
-                    {gradeDef.subjects.map(sd => {
+                    {(gradeDef.subjects ?? []).filter(Boolean).map(sd => {
                         const term1Result = findResultWithAliases(exams.terminal1?.results, sd);
                         const term2Result = findResultWithAliases(exams.terminal2?.results, sd);
                         const term3Result = findResultWithAliases(exams.terminal3?.results, sd);
@@ -439,7 +444,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                     )}
                 </thead>
                 <tbody>
-                     {gradeDef.subjects.map((sd: any) => {
+                     {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
                         const result = findResultWithAliases(exam?.results, sd);
                         const isGraded = sd.gradingSystem === 'OABC';
                         

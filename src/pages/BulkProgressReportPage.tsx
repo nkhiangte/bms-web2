@@ -582,26 +582,21 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             @media print {
                 @page {
                     size: A4 portrait;
-                    margin-top: 8cm;
-                    margin-bottom: 1cm;
-                    margin-left: 0.8cm;
-                    margin-right: 0.8cm;
+                    margin-top: 8.5cm;
+                    margin-bottom: 0.8cm;
+                    margin-left: 0.6cm;
+                    margin-right: 0.6cm;
+                }
+                .progress-report-page {
+                    page-break-after: always;
+                    break-after: page;
+                }
+                /* Zoom the inner content to fit in the available space below letterhead */
+                .progress-report-page .report-inner {
+                    zoom: 0.72;
                 }
                 .report-banner-placeholder {
                     display: none !important;
-                }
-                .progress-report-page {
-                    break-after: page;
-                    page-break-after: always;
-                }
-                .progress-report-page table th,
-                .progress-report-page table td {
-                    padding: 1px 3px !important;
-                    font-size: 7.5pt !important;
-                    line-height: 1.2 !important;
-                }
-                .report-signatures {
-                    margin-top: 6px !important;
                 }
             }
         `;
@@ -658,7 +653,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
                     return (
                         <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page">
-                             <div className="font-serif print:text-xs">
+                             <div className="font-serif print:text-xs report-inner">
                                 <header className="text-center mb-2">
                                     {examId !== 'terminal3' ? (
                                         <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>

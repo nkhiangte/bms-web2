@@ -401,10 +401,18 @@ const MultiTermReportCard: React.FC<{
                         </div>
                         <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
-                    <div className="text-center">
-                        <div className="h-12 min-w-[150px]"></div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
-                    </div>
+                    {/* ... inside the flex justify-between items-end container ... */}
+
+<div className="text-center">
+    {/* This is the container for the name above the signature line */}
+    <div className="h-12 flex flex-col justify-end pb-1 min-w-[150px]">
+        <p className="font-bold uppercase text-slate-900 text-xs">
+            K Malsawmdawngi
+        </p>
+    </div>
+    {/* This is the signature line itself */}
+    <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+</div>
                 </div>
                 <div className="flex justify-between mt-4 text-xs text-slate-500">
                     <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>

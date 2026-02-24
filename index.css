@@ -211,24 +211,36 @@ input[type=number] {
     display: inline !important;
   }
 
+  /* Mark statement pages: landscape */
   @page {
     size: A4 landscape;
     margin: 1cm;
   }
 
-  /* Progress report pages: portrait, tight margins */
-  @page progress-report {
+  /* Progress report pages: portrait, top margin = letterhead height */
+  @page progress-report-portrait {
     size: A4 portrait;
-    margin: 0.6cm 0.7cm;
+    margin-top: 8cm;   /* Space for pre-printed letterhead — adjust to match your paper */
+    margin-bottom: 1cm;
+    margin-left: 0.8cm;
+    margin-right: 0.8cm;
   }
 
-  /* Apply named page to each student's report wrapper */
   .progress-report-page {
-    page: progress-report;
+    page: progress-report-portrait;
     break-after: page;
+    page-break-after: always;
   }
 
-  /* Compact table cells for report printing */
+  /* Hide the placeholder div — letterhead space is now the page margin above */
+  .progress-report-page .report-banner-placeholder {
+    display: none !important;
+  }
+
+  /* Also hide the "STUDENT'S PROGRESS REPORT" title + academic year — they're in the letterhead area now */
+  /* Remove if you want them below the letterhead */
+
+  /* Compact table cells */
   .progress-report-page table th,
   .progress-report-page table td {
     padding: 1px 3px !important;
@@ -236,12 +248,7 @@ input[type=number] {
     line-height: 1.2 !important;
   }
 
-  /* Match pre-printed letterhead height (~8cm from top edge) — adjust per actual paper */
-  .progress-report-page .report-banner-placeholder {
-    height: 8cm !important;
-  }
-
-  /* Tighten signature section */
+  /* Tighten spacing */
   .progress-report-page .report-signatures {
     margin-top: 6px !important;
   }

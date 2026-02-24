@@ -703,7 +703,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             break-after: page;
         }
         .progress-report-page .report-inner {
-            zoom: 1.44;
+            zoom: 1.0;
         }
         .report-banner-placeholder {
             display: none !important;

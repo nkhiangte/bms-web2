@@ -79,12 +79,13 @@ const calculateTermSummary = (
                 const aMark = Number(r?.activityMarks ?? 0);
                 totalMark = eMark + aMark;
                 if (eMark < 20) fSubjects++;
-            } else if (isClassIXorX && examId === 'terminal3') {
-                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-                const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-                if (totalMark < 33) fSubjects++;
-            } else {
+      } else if (isClassIXorX && examId === 'terminal3') {
+    const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
+    const faMark = Number(r?.faMarks ?? 0);
+    totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+    // Pass rule: SA must be >= 27. FA has no pass mark.
+    if (saMark < 27) fSubjects++;
+} else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
                 if (totalMark < limit) fSubjects++;
@@ -127,6 +128,14 @@ const calculateTermSummary = (
             totalSubjectMark = examMark + activityMark;
             subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
             if (examMark < 20) failedSubjects.push(sd.name);
+        } else if (isClassIXorX && examId === 'terminal3') {
+            const saMark = Number(result?.saMarks ?? result?.marks ?? 0);
+            const faMark = Number(result?.faMarks ?? 0);
+            totalSubjectMark = result?.saMarks != null ? saMark + faMark : Number(result?.marks ?? 0);
+            examTotal += totalSubjectMark;
+            subjectFullMarks = 100; // SA 80 + FA 20
+            // Pass rule: SA must be >= 27. FA has no pass mark.
+            if (saMark < 27) failedSubjects.push(sd.name);
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;

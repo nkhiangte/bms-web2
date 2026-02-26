@@ -67,6 +67,7 @@ const DistinctionHoldersPage: React.FC = () => {
                     setHolders(holderData);
                 } else {
                     // Fallback to Firestore (2013–2018)
+                    console.log('Fetching from Firestore:', `gallery_by_category_achievements_distinguished_hslc_graduate_${year}`);
                     const docRef = db
                         .collection('website_content')
                         .doc(`gallery_by_category_achievements_distinguished_hslc_graduate_${year}`);

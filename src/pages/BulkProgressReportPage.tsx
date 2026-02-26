@@ -88,7 +88,6 @@ const calculateTermSummary = (
     totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
     // Pass rule: SA must be >= 27. FA has no pass mark.
     if (saMark < 27) fSubjects++;
-}
             } else {
                 totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;

@@ -30,6 +30,10 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => (
     </div>
 );
 
+// Small helper to show an error message below a field
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+    message ? <p className="text-red-500 text-xs mt-1">{message}</p> : null;
+
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
@@ -37,6 +41,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // FIX: Scroll to top whenever step changes (fixes landing at bottom of page)
     useEffect(() => {
@@ -65,6 +70,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear the error for the field being edited
+        if (errors[name]) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof OnlineAdmission) => {
@@ -75,6 +88,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 const resized = await resizeImage(file, 1024, 1024, 0.8);
                 const url = await uploadToImgBB(resized);
                 setFormData(prev => ({ ...prev, [field]: url }));
+                // Clear any doc-related error
+                if (errors[String(field)]) {
+                    setErrors(prev => {
+                        const next = { ...prev };
+                        delete next[String(field)];
+                        return next;
+                    });
+                }
             } catch (error) {
                 console.error(`Error uploading ${String(field)}:`, error);
                 alert("Failed to upload document. Please try again.");
@@ -82,6 +103,40 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 setUploadingDoc(null);
             }
         }
+    };
+
+    const validateStep = (currentStep: number): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (currentStep === 1) {
+            if (!formData.studentName?.trim()) newErrors.studentName = "Student name is required.";
+            if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
+            if (!formData.gender) newErrors.gender = "Gender is required.";
+            if (!formData.studentAadhaar?.trim()) newErrors.studentAadhaar = "Aadhaar number is required.";
+            if (!formData.category) newErrors.category = "Category is required.";
+            if (!formData.religion?.trim()) newErrors.religion = "Religion is required.";
+        }
+
+        if (currentStep === 2) {
+            if (!formData.fatherName?.trim()) newErrors.fatherName = "Father's name is required.";
+            if (!formData.motherName?.trim()) newErrors.motherName = "Mother's name is required.";
+            if (!formData.contactNumber?.trim()) newErrors.contactNumber = "Contact number is required.";
+            if (!formData.permanentAddress?.trim()) newErrors.permanentAddress = "Permanent address is required.";
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            // Scroll to the first error
+            setTimeout(() => {
+                const firstErrorEl = document.querySelector('.field-error');
+                if (firstErrorEl) {
+                    firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 50);
+            return false;
+        }
+        return true;
     };
     
     const handleFetchStudent = async (e: React.FormEvent) => {
@@ -203,12 +258,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         const isNewStudent = formData.studentType === 'Newcomer';
         const isNursery = formData.admissionGrade === Grade.NURSERY;
 
+        const docErrors: Record<string, string> = {};
         if (isNewStudent && !formData.birthCertificateUrl) {
-            alert("For new students, the Birth Certificate is mandatory. Please upload it to proceed.");
-            return;
+            docErrors.birthCertificateUrl = "Birth Certificate is mandatory for new students.";
         }
         if (isNewStudent && !isNursery && !formData.reportCardUrl) {
-            alert("For new students applying to classes other than Nursery, the Last Report Card is mandatory. Please upload it to proceed.");
+            docErrors.reportCardUrl = "Last Report Card is mandatory for new students (except Nursery).";
+        }
+        if (Object.keys(docErrors).length > 0) {
+            setErrors(docErrors);
+            setTimeout(() => {
+                const firstErrorEl = document.querySelector('.field-error');
+                if (firstErrorEl) firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
             return;
         }
 
@@ -330,7 +392,10 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                     )}
                     <div className="mb-6">
                         <button
-                            onClick={() => step > 1 ? setStep(step - 1) : setStep(0)}
+                            onClick={() => {
+                                setErrors({});
+                                step > 1 ? setStep(step - 1) : setStep(0);
+                            }}
                             className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
                         >
                             <BackIcon className="w-5 h-5" />
@@ -350,17 +415,71 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">1. Student Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     <div><label className="block text-sm font-bold">Class Applying For*</label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>{GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                     <CustomDatePicker label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} required={true} minYear={1960} maxYear={new Date().getFullYear()} />
-                                     <div><label className="block text-sm font-bold">Gender*</label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                     <div><label className="block text-sm font-bold">PEN No. (Optional)</label><input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                     <div><label className="block text-sm font-bold">Mother Tongue (Optional)</label><input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                     <div><label className="block text-sm font-bold">Blood Group (Optional)</label><select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1"><option value="">-- Select --</option>{BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">CWSN*</label><select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1"><option value="No">No</option><option value="Yes">Yes</option></select></div>
-                                     <div><label className="block text-sm font-bold">Category*</label><select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>{CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                     <div><label className="block text-sm font-bold">Religion*</label><input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Class Applying For*</label>
+                                        <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>
+                                            {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Full Name*</label>
+                                        <input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.studentName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.studentName} />
+                                        {errors.studentName && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <CustomDatePicker label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} required={false} minYear={1960} maxYear={new Date().getFullYear()} />
+                                        <FieldError message={errors.dateOfBirth} />
+                                        {errors.dateOfBirth && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Gender*</label>
+                                        <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1">
+                                            {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Aadhaar No.*</label>
+                                        <input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.studentAadhaar ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.studentAadhaar} />
+                                        {errors.studentAadhaar && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">PEN No. (Optional)</label>
+                                        <input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Mother Tongue (Optional)</label>
+                                        <input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Blood Group (Optional)</label>
+                                        <select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1">
+                                            <option value="">-- Select --</option>
+                                            {BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">CWSN*</label>
+                                        <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1">
+                                            <option value="No">No</option>
+                                            <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Category*</label>
+                                        <select name="category" value={formData.category} onChange={handleChange} className={`form-select w-full mt-1 ${errors.category ? 'border-red-400' : ''}`}>
+                                            {CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                        <FieldError message={errors.category} />
+                                        {errors.category && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Religion*</label>
+                                        <input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.religion ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.religion} />
+                                        {errors.religion && <span className="field-error" />}
+                                    </div>
                                 </div>
                             </section>
                         )}
@@ -369,16 +488,54 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                              <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">2. Parent/Guardian Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Father's Name*</label><input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Mother's Name*</label><input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Father's Occupation</label><input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Mother's Occupation</label><input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label><input type="text" name="parentAadhaar" value={formData.parentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Guardian's Name (if any)</label><input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Relationship with Guardian</label><input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Contact No.*</label><input type="tel" name="contactNumber" value={formData.contactNumber || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address*</label><textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Father's Name*</label>
+                                        <input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.fatherName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.fatherName} />
+                                        {errors.fatherName && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Mother's Name*</label>
+                                        <input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.motherName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.motherName} />
+                                        {errors.motherName && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Father's Occupation</label>
+                                        <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Mother's Occupation</label>
+                                        <input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label>
+                                        <input type="text" name="parentAadhaar" value={formData.parentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Guardian's Name (if any)</label>
+                                        <input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Relationship with Guardian</label>
+                                        <input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Contact No.*</label>
+                                        <input type="tel" name="contactNumber" value={formData.contactNumber || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.contactNumber ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                        <FieldError message={errors.contactNumber} />
+                                        {errors.contactNumber && <span className="field-error" />}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Email</label>
+                                        <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold">Permanent Address*</label>
+                                        <textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className={`form-textarea w-full mt-1 ${errors.permanentAddress ? 'border-red-400 focus:ring-red-300' : ''}`} rows={2}></textarea>
+                                        <FieldError message={errors.permanentAddress} />
+                                        {errors.permanentAddress && <span className="field-error" />}
+                                    </div>
                                 </div>
                             </section>
                         )}
@@ -388,8 +545,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents & Other Info</h2>
                                 
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Last School Attended</label><input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Division in which he/she passed</label><input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Last School Attended</label>
+                                        <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Division in which he/she passed</label>
+                                        <input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-bold">General Behaviour</label>
                                         <select name="generalBehaviour" value={formData.generalBehaviour || 'Normal'} onChange={handleChange} className="form-select w-full mt-1">
@@ -423,23 +586,39 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <div>
                                         <label className="block text-sm font-bold">Birth Certificate{isNewStudent && <span className="text-red-500">*</span>}</label>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            <label className="btn btn-secondary cursor-pointer">
+                                                {uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
+                                                <input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" />
+                                                Upload
+                                            </label>
                                             {formData.birthCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
                                         </div>
+                                        <FieldError message={errors.birthCertificateUrl} />
+                                        {errors.birthCertificateUrl && <span className="field-error" />}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold">Transfer Certificate (if applicable)</label>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            <label className="btn btn-secondary cursor-pointer">
+                                                {uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
+                                                <input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" />
+                                                Upload
+                                            </label>
                                             {formData.transferCertificateUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold">Last Report Card{isNewStudent && !isNursery && <span className="text-red-500">*</span>}</label>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <label className="btn btn-secondary cursor-pointer">{uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}<input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" /> Upload</label>
+                                            <label className="btn btn-secondary cursor-pointer">
+                                                {uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5"/> : <UploadIcon className="w-5 h-5"/>}
+                                                <input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" />
+                                                Upload
+                                            </label>
                                             {formData.reportCardUrl && <CheckIcon className="w-5 h-5 text-emerald-600"/>}
                                         </div>
+                                        <FieldError message={errors.reportCardUrl} />
+                                        {errors.reportCardUrl && <span className="field-error" />}
                                     </div>
                                 </div>
                             </section>
@@ -447,7 +626,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                         <div className="flex justify-between items-center pt-6 border-t">
                             {step > 1 ? (
-                                <button type="button" onClick={() => setStep(s => s - 1)} className="btn btn-secondary">Back</button>
+                                <button type="button" onClick={() => { setErrors({}); setStep(s => s - 1); }} className="btn btn-secondary">Back</button>
                             ) : <div></div>}
 
                             <div className="flex items-center gap-4">
@@ -455,7 +634,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     {isSaving ? <><SpinnerIcon className="w-5 h-5"/> Saving...</> : <><SaveIcon className="w-5 h-5"/> Save for Later</>}
                                 </button>
                                 {step < 3 ? (
-                                    <button type="button" onClick={() => setStep(s => s + 1)} className="btn btn-primary">Next <ArrowRightIcon className="w-5 h-5"/></button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { if (validateStep(step)) setStep(s => s + 1); }}
+                                        className="btn btn-primary"
+                                    >
+                                        Next <ArrowRightIcon className="w-5 h-5"/>
+                                    </button>
                                 ) : (
                                     <button type="submit" disabled={isSubmitting || isSaving} className="btn btn-primary px-8 py-3 text-lg">
                                         {isSubmitting ? <><SpinnerIcon className="w-6 h-6"/> Submitting...</> : 'Submit Application'}

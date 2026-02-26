@@ -110,6 +110,8 @@ const ResultChart: React.FC<ResultChartProps> = ({ results }) => {
 
 
 const AcademicAchievementsPage: React.FC = () => {
+    // Only show years that have distinction holders (distinction > 0)
+    const distinctionYears = hslcResults.filter(r => r.distinction > 0);
 
     return (
         <div className="relative py-16 overflow-hidden bg-slate-50">
@@ -137,6 +139,31 @@ const AcademicAchievementsPage: React.FC = () => {
                     </section>
 
                     <ResultChart results={hslcResults} />
+
+                    {/* ── DISTINGUISHED HSLC GRADUATES ── */}
+                    <section className="bg-white p-8 rounded-xl shadow-lg border mb-12">
+                        <h2 className="text-3xl font-bold text-slate-800 text-center mb-2">Distinguished HSLC Graduates</h2>
+                        <p className="text-center text-slate-500 mb-8">Students who achieved Distinction in the MBSE HSLC Board Examination</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {distinctionYears.map(result => (
+                                <Link
+                                    key={result.year}
+                                    to={`/achievements/academic/distinction-holders/${result.year}`}
+                                    className="group flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-slate-100 hover:from-sky-100 hover:to-sky-200 border border-slate-200 hover:border-sky-400 rounded-xl p-5 transition-all transform hover:-translate-y-1 hover:shadow-md text-center"
+                                >
+                                    <span className="text-2xl font-extrabold text-slate-800 group-hover:text-sky-700 transition-colors">
+                                        {result.year}
+                                    </span>
+                                    <span className="mt-1 text-sm font-semibold text-amber-600">
+                                        {result.distinction} {result.distinction === 1 ? 'student' : 'students'}
+                                    </span>
+                                    <span className="mt-2 text-xs text-sky-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                        View →
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
 
                     <div className="bg-white p-8 rounded-xl shadow-lg border">
                         <h2 className="text-3xl font-bold text-slate-800 text-center mb-8">Detailed HSLC Results by Year</h2>

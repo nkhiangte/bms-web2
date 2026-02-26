@@ -1,35 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { BackIcon, UserIcon, SpinnerIcon } from '@/components/Icons';
-import { db } from '@/firebaseConfig';
+import { BackIcon, UserIcon } from '@/components/Icons';
+import { storage } from '@/firebaseConfig';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
-interface GalleryItem {
-    id: string;
-    title: string;
-    caption: string;
-    imageSrc?: string;
-    type?: 'image' | 'video';
-    year?: number | string;
+// ─── Parse a student name from a Firebase Storage filename ────────────────────
+// Filenames follow the pattern: {timestamp}_{Name_With_Underscores}.jpg
+// e.g. "1771960102037_J_Malsawmzual.jpg" → "J Malsawmzual"
+const parseNameFromFilename = (filename: string): string => {
+    // Remove extension
+    const withoutExt = filename.replace(/\.[^/.]+$/, '');
+    // Remove leading timestamp (digits followed by underscore)
+    const withoutTimestamp = withoutExt.replace(/^\d+_/, '');
+    // Replace remaining underscores with spaces
+    return withoutTimestamp.replace(/_/g, ' ');
+};
+
+interface HolderImage {
+    name: string;
+    imageUrl: string;
 }
 
-// Firestore doc ID for the Distinguished HSLC Graduate gallery folder
-const GALLERY_DOC_ID = 'gallery_by_category_achievements_distinguished_hslc_graduate';
-
-const HolderCard: React.FC<{ holder: GalleryItem }> = ({ holder }) => (
+const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
     <div className="bg-white rounded-lg shadow-md overflow-hidden text-center transition-transform transform hover:-translate-y-2">
-        <div className="w-full bg-slate-200 flex items-center justify-center" style={{ height: '220px' }}>
+        <div className="w-full h-72 bg-slate-100 flex items-center justify-center overflow-hidden">
             <img
-                src={holder.imageSrc}
-                alt={holder.title}
-                className="w-full h-full object-contain"
-                referrerPolicy="no-referrer"
+                src={holder.imageUrl}
+                alt={holder.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                }}
             />
         </div>
         <div className="p-4">
-            <h3 className="font-bold text-lg text-slate-800">{holder.title}</h3>
-            {holder.caption && <p className="text-sm text-slate-600 mt-1">{holder.caption}</p>}
+            <h3 className="font-bold text-lg text-slate-800">{holder.name}</h3>
+            <p className="text-sm text-slate-500 mt-1">Distinguished HSLC Graduate</p>
         </div>
     </div>
 );
@@ -38,37 +45,55 @@ const DistinctionHoldersPage: React.FC = () => {
     const { year } = useParams() as { year: string };
     const navigate = useNavigate();
 
-    const [allItems, setAllItems] = useState<GalleryItem[]>([]);
+    const [holders, setHolders] = useState<HolderImage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setLoading(true);
-        const unsub = db.collection('website_content').doc(GALLERY_DOC_ID).onSnapshot(
-            doc => {
-                const items: GalleryItem[] = doc.exists ? (doc.data()?.items || []) : [];
-                setAllItems(items);
-                setLoading(false);
-            },
-            () => setLoading(false)
-        );
-        return () => unsub();
-    }, []);
+        if (!year) return;
 
-    // Filter items by year — match item.year field, or year in title/caption as fallback
-    const holders = allItems.filter(item => {
-        if (item.year !== undefined && item.year !== null && item.year !== '') {
-            return String(item.year) === String(year);
-        }
-        // Fallback: check if year appears in title or caption
-        const yearStr = String(year);
-        return (item.title && item.title.includes(yearStr)) ||
-               (item.caption && item.caption.includes(yearStr));
-    });
+        const fetchHolders = async () => {
+            setLoading(true);
+            setError(null);
+            setHolders([]);
+
+            try {
+                const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
+                const folderRef = storage.ref(folderPath);
+                const result = await folderRef.listAll();
+
+                if (result.items.length === 0) {
+                    setHolders([]);
+                    setLoading(false);
+                    return;
+                }
+
+                const holderData: HolderImage[] = await Promise.all(
+                    result.items.map(async (itemRef) => {
+                        const url = await itemRef.getDownloadURL();
+                        const name = parseNameFromFilename(itemRef.name);
+                        return { name, imageUrl: url };
+                    })
+                );
+
+                // Sort alphabetically by name
+                holderData.sort((a, b) => a.name.localeCompare(b.name));
+                setHolders(holderData);
+            } catch (err: any) {
+                console.error('Failed to load distinction holders:', err);
+                setError('Could not load images. Please try again later.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHolders();
+    }, [year]);
 
     return (
         <div className="bg-slate-50 py-16 min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-5xl mx-auto">
                     <div className="mb-8">
                         <button
                             onClick={() => navigate('/achievements/academic')}
@@ -89,20 +114,22 @@ const DistinctionHoldersPage: React.FC = () => {
                     </div>
 
                     {loading ? (
-                        <div className="flex justify-center py-20">
-                            <SpinnerIcon className="w-10 h-10 text-sky-500" />
+                        <div className="flex flex-col items-center justify-center py-24 gap-4">
+                            <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-slate-500 text-sm">Loading distinction holders...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-white py-16 text-center rounded-lg shadow-md">
+                            <UserIcon className="w-16 h-16 mx-auto text-slate-400" />
+                            <h2 className="text-2xl font-bold text-slate-800 mt-4">Something went wrong</h2>
+                            <p className="text-slate-600 mt-2">{error}</p>
                         </div>
                     ) : holders.length > 0 ? (
-                        <>
-                            <p className="text-center text-slate-500 mb-8">
-                                {holders.length} distinction holder{holders.length !== 1 ? 's' : ''} in {year}
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {holders.map((holder, index) => (
-                                    <HolderCard key={holder.id || index} holder={holder} />
-                                ))}
-                            </div>
-                        </>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {holders.map((holder, index) => (
+                                <HolderCard key={index} holder={holder} />
+                            ))}
+                        </div>
                     ) : (
                         <div className="bg-white py-16 text-center rounded-lg shadow-md">
                             <UserIcon className="w-16 h-16 mx-auto text-slate-400" />
@@ -110,12 +137,8 @@ const DistinctionHoldersPage: React.FC = () => {
                             <p className="text-slate-600 mt-2">
                                 Details for the distinction holders of {year} are not yet available.
                             </p>
-                            <p className="text-slate-400 text-sm mt-2">
-                                To show photos here, upload them in the Gallery Manager under<br />
-                                <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
-                                    By Category → Achievements → Distinguished HSLC Graduate
-                                </span>
-                                <br />and set the <strong>Year</strong> field to <strong>{year}</strong>.
+                            <p className="text-slate-400 mt-1 text-sm">
+                                Add images to the gallery under <code className="bg-slate-100 px-1 rounded">achievements → distinguished-hslc-graduate → {year}</code>
                             </p>
                         </div>
                     )}

@@ -34,10 +34,7 @@ const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
                 }}
             />
         </div>
-        <div className="p-4">
-            <h3 className="font-bold text-lg text-slate-800">{holder.name}</h3>
-            <p className="text-sm text-slate-500 mt-1">Distinguished HSLC Graduate</p>
-        </div>
+
     </div>
 );
 

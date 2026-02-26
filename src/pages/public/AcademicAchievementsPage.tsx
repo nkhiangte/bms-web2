@@ -148,7 +148,7 @@ const AcademicAchievementsPage: React.FC = () => {
                             {distinctionYears.map(result => (
                                 <Link
                                     key={result.year}
-                                    to={`/achievements/academic/distinction-holders/${result.year}`}
+                                    to="/gallery/by-category/achievements/distinguished-hslc-graduate"
                                     className="group flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-slate-100 hover:from-sky-100 hover:to-sky-200 border border-slate-200 hover:border-sky-400 rounded-xl p-5 transition-all transform hover:-translate-y-1 hover:shadow-md text-center"
                                 >
                                     <span className="text-2xl font-extrabold text-slate-800 group-hover:text-sky-700 transition-colors">
@@ -185,13 +185,17 @@ const AcademicAchievementsPage: React.FC = () => {
                                     {hslcResults.map(result => (
                                         <tr key={result.year} className="hover:bg-slate-50">
                                             <td className="px-6 py-4">
-                                                <Link 
-                                                    to={`/achievements/academic/distinction-holders/${result.year}`}
-                                                    className="font-bold text-sky-700 hover:underline"
-                                                    title={`View distinction holders for ${result.year}`}
-                                                >
-                                                    {result.year}
-                                                </Link>
+                                                {result.distinction > 0 ? (
+                                                    <Link 
+                                                        to="/gallery/by-category/achievements/distinguished-hslc-graduate"
+                                                        className="font-bold text-sky-700 hover:underline"
+                                                        title={`View distinction holders for ${result.year}`}
+                                                    >
+                                                        {result.year}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="font-bold text-slate-700">{result.year}</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-center">{result.appeared}</td>
                                             <td className="px-6 py-4 text-center">{result.passed}</td>

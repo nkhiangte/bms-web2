@@ -748,7 +748,7 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Days Present</th>
                     </tr>
 {(hasActivities || isIXTerminal3) && (
-    <tr className="sticky top-[37px] z-20">                        <tr>
+    <tr className="sticky top-[41px] z-20">
                             {isIXTerminal3
                                 ? subjectDefinitions.flatMap(sd =>
                                     sd.gradingSystem !== 'OABC' ? [
@@ -763,8 +763,9 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                     ] : []
                                 )
                             }
-                                </tr>
-                            </thead>
+                    </tr>
+                )}
+                </thead>
                             <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map((student, studentIndex) => {
                         // Build flat ordered column keys for this class/exam type

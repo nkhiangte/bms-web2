@@ -311,14 +311,16 @@ const subjectDefinitions = useMemo(() => {
             currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-        } else if (isIXTerminal3) {
-            const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
-            const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
-            currentSubjMarkValue = saMark + faMark;
-            localExamTotal += currentSubjMarkValue;
-            currentSubjFMValue = 100; // SA 80 + FA 20
-            if (currentSubjMarkValue < 33) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-        } else {
+         } else if (isIXTerminal3) {
+    const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
+    const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
+    currentSubjMarkValue = saMark + faMark;
+    localExamTotal += currentSubjMarkValue;
+    currentSubjFMValue = 100; // SA 80 + FA 20
+    // Pass rule: SA must be >= 27. FA has no pass mark.
+    if (saMark < 27) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+}
+            else {
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);

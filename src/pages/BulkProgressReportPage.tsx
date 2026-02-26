@@ -138,9 +138,18 @@ const calculateTermSummary = (
             totalSubjectMark = result?.saMarks != null ? saMark + faMark : Number(result?.marks ?? 0);
             examTotal += totalSubjectMark; subjectFullMarks = 100;
             if (totalSubjectMark < 33) failedSubjects.push(sd.name);
+       } else if (isClassIXorX && examId === 'terminal3') {
+            const saMark = Number(result?.saMarks ?? result?.marks ?? 0);
+            const faMark = Number(result?.faMarks ?? 0);
+            totalSubjectMark = result?.saMarks != null ? saMark + faMark : Number(result?.marks ?? 0);
+            examTotal += totalSubjectMark;
+            subjectFullMarks = 100; // SA 80 + FA 20
+            // Pass rule: SA must be >= 27. FA has no pass mark.
+            if (saMark < 27) failedSubjects.push(sd.name);
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
-            examTotal += totalSubjectMark; subjectFullMarks = sd.examFullMarks;
+            examTotal += totalSubjectMark;
+            subjectFullMarks = sd.examFullMarks;
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }

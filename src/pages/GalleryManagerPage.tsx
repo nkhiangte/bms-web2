@@ -645,11 +645,11 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                         onClick={() => setEditingId(null)}>
                                         <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
                                             onClick={e => e.stopPropagation()}>
-                                            {/* Preview */}
-                                            <div className="flex-1 bg-black flex items-center justify-center min-h-0" style={{maxHeight: '55vh'}}>
+                                            {/* Preview — fixed height, does not scroll */}
+                                            <div className="flex-shrink-0 bg-black flex items-center justify-center" style={{height: '40vh'}}>
                                                 {ytId ? (
                                                     <iframe src={`https://www.youtube.com/embed/${ytId}`}
-                                                        className="w-full h-full" style={{minHeight: '280px'}}
+                                                        className="w-full h-full"
                                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                         allowFullScreen title={img.title} />
                                                 ) : (
@@ -658,8 +658,8 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
                                                         referrerPolicy="no-referrer" />
                                                 )}
                                             </div>
-                                            {/* Edit fields */}
-                                            <div className="p-5 space-y-3 border-t border-slate-200">
+                                            {/* Edit fields — scrollable */}
+                                            <div className="p-5 space-y-3 border-t border-slate-200 overflow-y-auto flex-1">
                                                 <h3 className="font-bold text-slate-800 text-sm">Edit Details</h3>
                                                 <div>
                                                     <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>

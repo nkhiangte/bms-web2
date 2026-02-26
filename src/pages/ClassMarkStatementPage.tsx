@@ -763,9 +763,9 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                     ] : []
                                 )
                             }
-                        </tr>
-                                    </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map((student, studentIndex) => {
                         // Build flat ordered column keys for this class/exam type
                         // so every input gets a stable data-col index for keyboard nav

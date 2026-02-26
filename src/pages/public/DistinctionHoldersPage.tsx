@@ -41,7 +41,9 @@ const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
 const DistinctionHoldersPage: React.FC = () => {
     const { year } = useParams() as { year: string };
     const navigate = useNavigate();
-
+React.useEffect(() => {
+    window.scrollTo(0, 0);
+}, []);
     const [holders, setHolders] = useState<HolderImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

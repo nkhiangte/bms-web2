@@ -77,8 +77,30 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ students, staff, tcRecords, s
         console.error("Error resolving breadcrumb name:", e);
     }
     
-    // The "Student" part of a URL like /student/:id should not be a link
+   // Segments that are part of a deep route and have no standalone page
+    // should not be clickable links
     if (value.toLowerCase() === 'student' && pathnames[index + 1]) {
+        isLink = false;
+    }
+
+    // bulk-print/:grade/:examId — only the full path is a valid route
+    // so grade and examId segments must not be links
+    if (prevSegment === 'bulk-print') {
+        isLink = false; // grade segment
+    }
+    if (pathnames.includes('bulk-print') && index > pathnames.indexOf('bulk-print') + 1) {
+        isLink = false; // examId segment
+    }
+    // The 'bulk-print' segment itself has no standalone page either
+    if (value === 'bulk-print') {
+        isLink = false;
+    }
+
+    // mark-statement/:grade/:examId — same issue
+    if (prevSegment === 'mark-statement') {
+        isLink = false;
+    }
+    if (pathnames.includes('mark-statement') && index > pathnames.indexOf('mark-statement') + 1) {
         isLink = false;
     }
 

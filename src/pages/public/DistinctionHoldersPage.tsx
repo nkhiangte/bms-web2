@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, UserIcon } from '@/components/Icons';
-import { storage } from '@/firebaseConfig';
 import { storage, db } from '@/firebaseConfig';
+
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
-// ─── Parse a student name from a Firebase Storage filename ────────────────────
-// Filenames follow the pattern: {timestamp}_{Name_With_Underscores}.jpg
-// e.g. "1771960102037_J_Malsawmzual.jpg" → "J Malsawmzual"
 const parseNameFromFilename = (filename: string): string => {
-    // Remove extension
     const withoutExt = filename.replace(/\.[^/.]+$/, '');
-    // Remove leading timestamp (digits followed by underscore)
     const withoutTimestamp = withoutExt.replace(/^\d+_/, '');
-    // Replace remaining underscores with spaces
     return withoutTimestamp.replace(/_/g, ' ');
 };
 
@@ -29,72 +23,71 @@ const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
                 src={holder.imageUrl}
                 alt={holder.name}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
         </div>
-
     </div>
 );
 
 const DistinctionHoldersPage: React.FC = () => {
     const { year } = useParams() as { year: string };
     const navigate = useNavigate();
-React.useEffect(() => {
-    window.scrollTo(0, 0);
-}, []);
+
     const [holders, setHolders] = useState<HolderImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
         if (!year) return;
 
-const fetchHolders = async () => {
-    setLoading(true);
-    setError(null);
-    setHolders([]);
+        const fetchHolders = async () => {
+            setLoading(true);
+            setError(null);
+            setHolders([]);
 
-    try {
-        // Try Firebase Storage first (2019–2025)
-        const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
-        const folderRef = storage.ref(folderPath);
-        const result = await folderRef.listAll();
+            try {
+                // Try Firebase Storage first (2019–2025)
+                const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
+                const folderRef = storage.ref(folderPath);
+                const result = await folderRef.listAll();
 
-        if (result.items.length > 0) {
-            const holderData: HolderImage[] = await Promise.all(
-                result.items.map(async (itemRef) => {
-                    const url = await itemRef.getDownloadURL();
-                    const name = parseNameFromFilename(itemRef.name);
-                    return { name, imageUrl: url };
-                })
-            );
-            holderData.sort((a, b) => a.name.localeCompare(b.name));
-            setHolders(holderData);
-        } else {
-            // Fallback to Firestore (2009–2018)
-            const docRef = db
-                .collection('website_content')
-                .doc(`gallery_by_category_achievements_distinguished_hslc_graduate_${year}`);
-            const doc = await docRef.get();
-            if (doc.exists) {
-                const data = doc.data();
-                const items = Object.values(data || {})
-                    .filter((item: any) => item.type === 'image')
-                    .map((item: any) => ({ name: item.title, imageUrl: item.imageSrc }));
-                setHolders(items);
-            } else {
-                setHolders([]);
+                if (result.items.length > 0) {
+                    const holderData: HolderImage[] = await Promise.all(
+                        result.items.map(async (itemRef) => {
+                            const url = await itemRef.getDownloadURL();
+                            const name = parseNameFromFilename(itemRef.name);
+                            return { name, imageUrl: url };
+                        })
+                    );
+                    holderData.sort((a, b) => a.name.localeCompare(b.name));
+                    setHolders(holderData);
+                } else {
+                    // Fallback to Firestore (2013–2018)
+                    const docRef = db
+                        .collection('website_content')
+                        .doc(`gallery_by_category_achievements_distinguished_hslc_graduate_${year}`);
+                    const doc = await docRef.get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const items: HolderImage[] = Object.values(data || {})
+                            .filter((item: any) => item.type === 'image')
+                            .map((item: any) => ({ name: item.title, imageUrl: item.imageSrc }));
+                        setHolders(items);
+                    } else {
+                        setHolders([]);
+                    }
+                }
+            } catch (err: any) {
+                console.error('Failed to load distinction holders:', err);
+                setError('Could not load images. Please try again later.');
+            } finally {
+                setLoading(false);
             }
-        }
-    } catch (err: any) {
-        console.error('Failed to load distinction holders:', err);
-        setError('Could not load images. Please try again later.');
-    } finally {
-        setLoading(false);
-    }
-};
+        };
 
         fetchHolders();
     }, [year]);
@@ -145,9 +138,6 @@ const fetchHolders = async () => {
                             <h2 className="text-2xl font-bold text-slate-800 mt-4">Information Coming Soon</h2>
                             <p className="text-slate-600 mt-2">
                                 Details for the distinction holders of {year} are not yet available.
-                            </p>
-                            <p className="text-slate-400 mt-1 text-sm">
-                                Add images to the gallery under <code className="bg-slate-100 px-1 rounded">achievements → distinguished-hslc-graduate → {year}</code>
                             </p>
                         </div>
                     )}

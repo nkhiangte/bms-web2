@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, UserIcon } from '@/components/Icons';
 import { storage } from '@/firebaseConfig';
-
+import { storage, db } from '@/firebaseConfig';
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
 // ─── Parse a student name from a Firebase Storage filename ────────────────────
@@ -51,40 +51,50 @@ React.useEffect(() => {
     useEffect(() => {
         if (!year) return;
 
-        const fetchHolders = async () => {
-            setLoading(true);
-            setError(null);
-            setHolders([]);
+const fetchHolders = async () => {
+    setLoading(true);
+    setError(null);
+    setHolders([]);
 
-            try {
-                const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
-                const folderRef = storage.ref(folderPath);
-                const result = await folderRef.listAll();
+    try {
+        // Try Firebase Storage first (2019–2025)
+        const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
+        const folderRef = storage.ref(folderPath);
+        const result = await folderRef.listAll();
 
-                if (result.items.length === 0) {
-                    setHolders([]);
-                    setLoading(false);
-                    return;
-                }
-
-                const holderData: HolderImage[] = await Promise.all(
-                    result.items.map(async (itemRef) => {
-                        const url = await itemRef.getDownloadURL();
-                        const name = parseNameFromFilename(itemRef.name);
-                        return { name, imageUrl: url };
-                    })
-                );
-
-                // Sort alphabetically by name
-                holderData.sort((a, b) => a.name.localeCompare(b.name));
-                setHolders(holderData);
-            } catch (err: any) {
-                console.error('Failed to load distinction holders:', err);
-                setError('Could not load images. Please try again later.');
-            } finally {
-                setLoading(false);
+        if (result.items.length > 0) {
+            const holderData: HolderImage[] = await Promise.all(
+                result.items.map(async (itemRef) => {
+                    const url = await itemRef.getDownloadURL();
+                    const name = parseNameFromFilename(itemRef.name);
+                    return { name, imageUrl: url };
+                })
+            );
+            holderData.sort((a, b) => a.name.localeCompare(b.name));
+            setHolders(holderData);
+        } else {
+            // Fallback to Firestore (2009–2018)
+            const docRef = db
+                .collection('website_content')
+                .doc(`gallery_by_category_achievements_distinguished_hslc_graduate_${year}`);
+            const doc = await docRef.get();
+            if (doc.exists) {
+                const data = doc.data();
+                const items = Object.values(data || {})
+                    .filter((item: any) => item.type === 'image')
+                    .map((item: any) => ({ name: item.title, imageUrl: item.imageSrc }));
+                setHolders(items);
+            } else {
+                setHolders([]);
             }
-        };
+        }
+    } catch (err: any) {
+        console.error('Failed to load distinction holders:', err);
+        setError('Could not load images. Please try again later.');
+    } finally {
+        setLoading(false);
+    }
+};
 
         fetchHolders();
     }, [year]);

@@ -8,7 +8,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import { resizeImage, uploadToImgBB, getNextGrade } from '@/utils';
 import { db } from '@/firebaseConfig';
 
-const { useNavigate } = ReactRouterDOM as any;
+const { useNavigate, Link } = ReactRouterDOM as any;
 
 interface OnlineAdmissionPageProps {
     user: User | null;
@@ -30,31 +30,28 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => (
     </div>
 );
 
-// Small helper to show an error message below a field
 const FieldError: React.FC<{ message?: string }> = ({ message }) =>
     message ? <p className="text-red-500 text-xs mt-1">{message}</p> : null;
 
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(0); // 0: initial selection, 1: Student, 2: Parent, 3: Docs
+    const [step, setStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // FIX: Scroll to top whenever step changes (fixes landing at bottom of page)
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
-    
-    // Selection State
-    const [showIdInput, setShowIdInput] = useState<'existing' | 'continue' | null>(null);
+
+    // 'existing' | 'continue' | 'resubmit' | null
+    const [showIdInput, setShowIdInput] = useState<'existing' | 'continue' | 'resubmit' | null>(null);
     const [existingId, setExistingId] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [fetchError, setFetchError] = useState('');
     const [savedApplicationId, setSavedApplicationId] = useState<string | null>(null);
-
 
     const [formData, setFormData] = useState<Partial<OnlineAdmission>>({
         admissionGrade: GRADES_LIST[0],
@@ -70,7 +67,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear the error for the field being edited
         if (errors[name]) {
             setErrors(prev => {
                 const next = { ...prev };
@@ -88,7 +84,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 const resized = await resizeImage(file, 1024, 1024, 0.8);
                 const url = await uploadToImgBB(resized);
                 setFormData(prev => ({ ...prev, [field]: url }));
-                // Clear any doc-related error
                 if (errors[String(field)]) {
                     setErrors(prev => {
                         const next = { ...prev };
@@ -107,7 +102,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     const validateStep = (currentStep: number): boolean => {
         const newErrors: Record<string, string> = {};
-
         if (currentStep === 1) {
             if (!formData.studentName?.trim()) newErrors.studentName = "Student name is required.";
             if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
@@ -116,115 +110,128 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             if (!formData.category) newErrors.category = "Category is required.";
             if (!formData.religion?.trim()) newErrors.religion = "Religion is required.";
         }
-
         if (currentStep === 2) {
             if (!formData.fatherName?.trim()) newErrors.fatherName = "Father's name is required.";
             if (!formData.motherName?.trim()) newErrors.motherName = "Mother's name is required.";
             if (!formData.contactNumber?.trim()) newErrors.contactNumber = "Contact number is required.";
             if (!formData.permanentAddress?.trim()) newErrors.permanentAddress = "Permanent address is required.";
         }
-
         setErrors(newErrors);
-
         if (Object.keys(newErrors).length > 0) {
-            // Scroll to the first error
             setTimeout(() => {
                 const firstErrorEl = document.querySelector('.field-error');
-                if (firstErrorEl) {
-                    firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                if (firstErrorEl) firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 50);
             return false;
         }
         return true;
     };
-    
+
     const handleFetchStudent = async (e: React.FormEvent) => {
         e.preventDefault();
         const idInput = existingId.trim().toUpperCase();
-        if(!idInput) return;
-        
+        if (!idInput) return;
+
         setIsFetching(true);
         setFetchError('');
 
+        // Handle resubmit: just navigate to payment page
+        if (showIdInput === 'resubmit') {
+            try {
+                const docRef = db.collection('online_admissions').doc(idInput);
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    navigate(`/admissions/payment/${idInput}`);
+                } else {
+                    setFetchError('Reference ID not found. Please check and try again.');
+                }
+            } catch (error) {
+                setFetchError('An error occurred. Please try again.');
+            } finally {
+                setIsFetching(false);
+            }
+            return;
+        }
+
         const fillFormWithStudent = (data: Student | OnlineAdmission, isAdmissionDraft = false) => {
-             const studentData = data as Student;
-             const admissionData = data as OnlineAdmission;
-             
-             const nextGrade = isAdmissionDraft ? admissionData.admissionGrade : getNextGrade(studentData.grade);
-             
-             setFormData(prev => ({
-                 ...(isAdmissionDraft ? admissionData : prev),
-                 studentType: 'Existing',
-                 previousStudentId: studentData.studentId || idInput,
-                 admissionGrade: nextGrade || studentData.grade, 
-                 studentName: studentData.name || admissionData.studentName,
-                 dateOfBirth: studentData.dateOfBirth || admissionData.dateOfBirth,
-                 gender: studentData.gender || admissionData.gender,
-                 studentAadhaar: studentData.aadhaarNumber || admissionData.studentAadhaar,
-                 fatherName: studentData.fatherName || admissionData.fatherName,
-                 motherName: studentData.motherName || admissionData.motherName,
-                 fatherOccupation: studentData.fatherOccupation || admissionData.fatherOccupation,
-                 motherOccupation: studentData.motherOccupation || admissionData.motherOccupation,
-                 parentAadhaar: studentData.fatherAadhaar || admissionData.parentAadhaar,
-                 guardianName: studentData.guardianName || admissionData.guardianName,
-                 guardianRelationship: studentData.guardianRelationship || admissionData.guardianRelationship,
-                 permanentAddress: studentData.address || admissionData.permanentAddress,
-                 presentAddress: studentData.address || admissionData.presentAddress, 
-                 contactNumber: studentData.contact || admissionData.contactNumber,
-                 religion: studentData.religion || admissionData.religion,
-                 category: (studentData.category as string) || (admissionData.category as string),
-                 cwsn: studentData.cwsn || admissionData.cwsn,
-                 bloodGroup: studentData.bloodGroup || admissionData.bloodGroup,
-                 penNumber: studentData.pen || admissionData.penNumber,
-                 achievements: studentData.achievements || admissionData.achievements,
-                 healthIssues: studentData.healthConditions || admissionData.healthIssues,
-                 lastSchoolAttended: isAdmissionDraft ? admissionData.lastSchoolAttended : 'Bethel Mission School',
-             }));
-             setStep(1);
+            const studentData = data as Student;
+            const admissionData = data as OnlineAdmission;
+            const nextGrade = isAdmissionDraft ? admissionData.admissionGrade : getNextGrade(studentData.grade);
+            setFormData(prev => ({
+                ...(isAdmissionDraft ? admissionData : prev),
+                studentType: 'Existing',
+                previousStudentId: studentData.studentId || idInput,
+                admissionGrade: nextGrade || studentData.grade,
+                studentName: studentData.name || admissionData.studentName,
+                dateOfBirth: studentData.dateOfBirth || admissionData.dateOfBirth,
+                gender: studentData.gender || admissionData.gender,
+                studentAadhaar: studentData.aadhaarNumber || admissionData.studentAadhaar,
+                fatherName: studentData.fatherName || admissionData.fatherName,
+                motherName: studentData.motherName || admissionData.motherName,
+                fatherOccupation: studentData.fatherOccupation || admissionData.fatherOccupation,
+                motherOccupation: studentData.motherOccupation || admissionData.motherOccupation,
+                parentAadhaar: studentData.fatherAadhaar || admissionData.parentAadhaar,
+                guardianName: studentData.guardianName || admissionData.guardianName,
+                guardianRelationship: studentData.guardianRelationship || admissionData.guardianRelationship,
+                permanentAddress: studentData.address || admissionData.permanentAddress,
+                presentAddress: studentData.address || admissionData.presentAddress,
+                contactNumber: studentData.contact || admissionData.contactNumber,
+                religion: studentData.religion || admissionData.religion,
+                category: (studentData.category as string) || (admissionData.category as string),
+                cwsn: studentData.cwsn || admissionData.cwsn,
+                bloodGroup: studentData.bloodGroup || admissionData.bloodGroup,
+                penNumber: studentData.pen || admissionData.penNumber,
+                achievements: studentData.achievements || admissionData.achievements,
+                healthIssues: studentData.healthConditions || admissionData.healthIssues,
+                lastSchoolAttended: isAdmissionDraft ? admissionData.lastSchoolAttended : 'Bethel Mission School',
+            }));
+            setStep(1);
         };
 
         try {
             if (showIdInput === 'continue') {
                 const docRef = db.collection('online_admissions').doc(idInput);
                 const doc = await docRef.get();
-                if (doc.exists && doc.data()?.status === 'draft') {
-                    fillFormWithStudent({ id: doc.id, ...doc.data() } as OnlineAdmission, true);
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data?.status === 'rejected') {
+                        setFetchError('This application has been rejected and cannot be edited.');
+                        return;
+                    }
+                    fillFormWithStudent({ id: doc.id, ...data } as OnlineAdmission, true);
                 } else {
-                     setFetchError('Draft application not found or already submitted. Please check the ID.');
+                    setFetchError('Application not found. Please check the ID.');
                 }
                 return;
             }
 
-             let snapshot = await db.collection('students').where('studentId', '==', idInput).limit(1).get();
+            let snapshot = await db.collection('students').where('studentId', '==', idInput).limit(1).get();
+            if (!snapshot.empty) {
+                fillFormWithStudent(snapshot.docs[0].data() as Student);
+                return;
+            }
 
-             if (!snapshot.empty) {
-                 fillFormWithStudent(snapshot.docs[0].data() as Student);
-                 return;
-             }
-
-             const idPattern = /^BMS(\d{2})([A-Z0-9]{2})(\d+)$/;
-             const match = idInput.match(idPattern);
-
-             if (match) {
-                 const [_, yearShort, gradeCode, rollStr] = match;
-                 const rollNo = parseInt(rollStr, 10);
-                 const targetYearStart = `20${yearShort}`;
-                 const gradeMap: Record<string, string> = { 'NU': 'Nursery', 'KG': 'Kindergarten', '01': 'Class I', '02': 'Class II', '03': 'Class III', '04': 'Class IV', '05': 'Class V', '06': 'Class VI', '07': 'Class VII', '08': 'Class VIII', '09': 'Class IX', '10': 'Class X' };
-                 const grade = gradeMap[gradeCode];
-                 if (grade) {
-                     const fallbackSnapshot = await db.collection('students').where('grade', '==', grade).where('rollNo', '==', rollNo).get();
-                     const foundDoc = fallbackSnapshot.docs.find(doc => {
-                         const s = doc.data() as Student;
-                         return s.academicYear && s.academicYear.startsWith(targetYearStart);
-                     });
-                     if (foundDoc) {
-                         fillFormWithStudent(foundDoc.data() as Student);
-                         return;
-                     }
-                 }
-             }
-             setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
+            const idPattern = /^BMS(\d{2})([A-Z0-9]{2})(\d+)$/;
+            const match = idInput.match(idPattern);
+            if (match) {
+                const [_, yearShort, gradeCode, rollStr] = match;
+                const rollNo = parseInt(rollStr, 10);
+                const targetYearStart = `20${yearShort}`;
+                const gradeMap: Record<string, string> = { 'NU': 'Nursery', 'KG': 'Kindergarten', '01': 'Class I', '02': 'Class II', '03': 'Class III', '04': 'Class IV', '05': 'Class V', '06': 'Class VI', '07': 'Class VII', '08': 'Class VIII', '09': 'Class IX', '10': 'Class X' };
+                const grade = gradeMap[gradeCode];
+                if (grade) {
+                    const fallbackSnapshot = await db.collection('students').where('grade', '==', grade).where('rollNo', '==', rollNo).get();
+                    const foundDoc = fallbackSnapshot.docs.find(doc => {
+                        const s = doc.data() as Student;
+                        return s.academicYear && s.academicYear.startsWith(targetYearStart);
+                    });
+                    if (foundDoc) {
+                        fillFormWithStudent(foundDoc.data() as Student);
+                        return;
+                    }
+                }
+            }
+            setFetchError('Student ID not found. Please check the ID or choose "Skip" to fill manually.');
         } catch (error) {
             console.error("Error fetching student/application:", error);
             setFetchError('An error occurred while fetching details.');
@@ -254,10 +261,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-
         const isNewStudent = formData.studentType === 'Newcomer';
         const isNursery = formData.admissionGrade === Grade.NURSERY;
-
         const docErrors: Record<string, string> = {};
         if (isNewStudent && !formData.birthCertificateUrl) {
             docErrors.birthCertificateUrl = "Birth Certificate is mandatory for new students.";
@@ -273,7 +278,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             }, 50);
             return;
         }
-
         setIsSubmitting(true);
         try {
             const admissionData = {
@@ -290,13 +294,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             setIsSubmitting(false);
         }
     };
-    
+
     const isNewStudent = formData.studentType === 'Newcomer';
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
+    // ─── STEP 0: Selection screen ────────────────────────────────────────────
     if (step === 0) {
         return (
-             <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+            <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="bg-white p-8 rounded-2xl shadow-xl">
                         <div className="mb-6">
@@ -308,6 +313,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 Back to Admission Guidelines
                             </button>
                         </div>
+
                         {!showIdInput ? (
                             <>
                                 <div className="text-center mb-10">
@@ -316,57 +322,93 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     </h1>
                                     <p className="text-lg text-slate-600">Please select an option to begin.</p>
                                 </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                                    <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
+                                    <button
+                                        onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }}
+                                        className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left"
+                                    >
                                         <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><PlusIcon className="w-8 h-8 text-sky-600" /></div>
                                         <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
                                         <p className="text-slate-600">For children seeking admission for the first time.</p>
                                     </button>
-                                    <button onClick={() => setShowIdInput('existing')} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left">
+                                    <button
+                                        onClick={() => setShowIdInput('existing')}
+                                        className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left"
+                                    >
                                         <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><UserIcon className="w-8 h-8 text-emerald-600" /></div>
                                         <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
                                         <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
                                     </button>
                                 </div>
-                               <div className="text-center mt-10 flex flex-col items-center gap-4">
-    <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
-        Continue a Saved Application &rarr;
-    </button>
-    <Link to="/admissions/status" className="font-semibold text-emerald-700 hover:underline">
-        Check Application Status &rarr;
-    </Link>
-</div>
+
+                                {/* Bottom links */}
+                                <div className="text-center mt-10 flex flex-col items-center gap-3">
+                                    <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
+                                        Continue a Saved Application &rarr;
+                                    </button>
+                                    <button onClick={() => setShowIdInput('resubmit')} className="font-semibold text-amber-600 hover:underline">
+                                        Resubmit Payment Screenshot &rarr;
+                                    </button>
+                                    <Link to="/admissions/status" className="font-semibold text-emerald-700 hover:underline">
+                                        Check Application Status &rarr;
+                                    </Link>
+                                </div>
                             </>
                         ) : (
                             <div className="max-w-lg mx-auto">
                                 <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
-                                    {showIdInput === 'existing' ? 'Existing Student' : 'Continue Application'}
+                                    {showIdInput === 'existing' ? 'Existing Student'
+                                    : showIdInput === 'resubmit' ? 'Resubmit Payment'
+                                    : 'Continue Application'}
                                 </h2>
                                 <p className="text-slate-600 text-center mb-6">
-                                    {showIdInput === 'existing' ? 'Enter your Student ID to auto-fill the form.' : 'Enter your Application ID to resume.'}
+                                    {showIdInput === 'existing'
+                                        ? 'Enter your Student ID to auto-fill the form.'
+                                        : showIdInput === 'resubmit'
+                                        ? 'Enter your Reference ID to go back to the payment page and upload a new screenshot.'
+                                        : 'Enter your Application ID to resume or edit your submission.'}
                                 </p>
+
                                 <form onSubmit={handleFetchStudent}>
                                     <div className="mb-4">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">
-                                            {showIdInput === 'existing' ? 'Student ID' : 'Application ID'}
+                                            {showIdInput === 'existing' ? 'Student ID' : 'Reference / Application ID'}
                                         </label>
-                                        <input type="text" value={existingId} onChange={(e) => setExistingId(e.target.value.toUpperCase())} className="form-input w-full uppercase" placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."} autoFocus/>
+                                        <input
+                                            type="text"
+                                            value={existingId}
+                                            onChange={(e) => setExistingId(e.target.value.toUpperCase())}
+                                            className="form-input w-full uppercase"
+                                            placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."}
+                                            autoFocus
+                                        />
                                         {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
                                     </div>
-                                    <button type="submit" disabled={isFetching || !existingId} className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4">
+                                    <button
+                                        type="submit"
+                                        disabled={isFetching || !existingId}
+                                        className="w-full btn btn-primary flex items-center justify-center gap-2 mb-4"
+                                    >
                                         {isFetching ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
-                                        {isFetching ? 'Fetching...' : 'Continue'}
+                                        {isFetching ? 'Fetching...' : showIdInput === 'resubmit' ? 'Go to Payment Page' : 'Continue'}
                                     </button>
                                 </form>
+
                                 {showIdInput === 'existing' && (
                                     <>
                                         <hr className="my-4"/>
-                                        <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' })); setStep(1); }} className="w-full btn btn-secondary">
+                                        <button
+                                            onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' })); setStep(1); }}
+                                            className="w-full btn btn-secondary"
+                                        >
                                             Skip & Fill Manually
                                         </button>
                                     </>
                                 )}
-                                <button onClick={() => setShowIdInput(null)} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">&larr; Back to Selection</button>
+                                <button onClick={() => { setShowIdInput(null); setFetchError(''); setExistingId(''); }} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">
+                                    &larr; Back to Selection
+                                </button>
                             </div>
                         )}
                     </div>
@@ -374,8 +416,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             </div>
         );
     }
-    
 
+    // ─── STEPS 1-3: Form ─────────────────────────────────────────────────────
     return (
         <div className="bg-slate-50 py-12">
             <div className="container mx-auto px-4">
@@ -393,12 +435,10 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             </div>
                         </div>
                     )}
+
                     <div className="mb-6">
                         <button
-                            onClick={() => {
-                                setErrors({});
-                                step > 1 ? setStep(step - 1) : setStep(0);
-                            }}
+                            onClick={() => { setErrors({}); step > 1 ? setStep(step - 1) : setStep(0); }}
                             className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
                         >
                             <BackIcon className="w-5 h-5" />
@@ -486,9 +526,10 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 </div>
                             </section>
                         )}
+
                         {/* Step 2: Parent/Guardian Information */}
                         {step === 2 && (
-                             <section className="animate-fade-in">
+                            <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">2. Parent/Guardian Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -542,12 +583,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 </div>
                             </section>
                         )}
+
                         {/* Step 3: Documents Upload */}
                         {step === 3 && (
-                             <section className="animate-fade-in">
+                            <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents & Other Info</h2>
-                                
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold">Last School Attended</label>
                                         <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" />
@@ -581,7 +622,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <h3 className="text-lg font-semibold text-slate-700 border-t pt-4 mt-6">Documents Upload</h3>
                                 {isNewStudent && (
                                     <p className="text-sm text-slate-600 my-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                        <span className="font-bold">Important:</span> For new students, the Birth Certificate is mandatory. 
+                                        <span className="font-bold">Important:</span> For new students, the Birth Certificate is mandatory.
                                         {!isNursery && " The Last Report Card is also mandatory."}
                                     </p>
                                 )}
@@ -633,7 +674,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             ) : <div></div>}
 
                             <div className="flex items-center gap-4">
-                               <button type="button" onClick={handleSaveForLater} disabled={isSubmitting || isSaving} className="btn btn-secondary">
+                                <button type="button" onClick={handleSaveForLater} disabled={isSubmitting || isSaving} className="btn btn-secondary">
                                     {isSaving ? <><SpinnerIcon className="w-5 h-5"/> Saving...</> : <><SaveIcon className="w-5 h-5"/> Save for Later</>}
                                 </button>
                                 {step < 3 ? (

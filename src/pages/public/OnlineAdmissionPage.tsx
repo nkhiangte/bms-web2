@@ -328,11 +328,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
                                     </button>
                                 </div>
-                                <div className="text-center mt-10">
-                                    <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
-                                        Continue a Saved Application &rarr;
-                                    </button>
-                                </div>
+                               <div className="text-center mt-10 flex flex-col items-center gap-4">
+    <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
+        Continue a Saved Application &rarr;
+    </button>
+    <Link to="/admissions/status" className="font-semibold text-emerald-700 hover:underline">
+        Check Application Status &rarr;
+    </Link>
+</div>
                             </>
                         ) : (
                             <div className="max-w-lg mx-auto">

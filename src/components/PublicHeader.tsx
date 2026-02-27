@@ -103,30 +103,30 @@ const isExternal = (path: string) =>
     path?.startsWith('http') || path?.endsWith('.pdf');
 
 // ─── Desktop Dropdown ─────────────────────────────────────────────────────────
-const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
+const DesktopDropdown: React.FC<{
+    item: MenuItem;
+    open: boolean;
+    onOpen: () => void;
+    onClose: () => void;
+}> = ({ item, open, onOpen, onClose }) => {
     const location = useLocation();
-    const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     // close on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
-    }, []);
-
-    // close on route change
-    useEffect(() => { setOpen(false); }, [location.pathname]);
+    }, [onClose]);
 
     const isAnyChildActive = item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'));
 
     return (
         <div ref={ref} className="relative">
             <button
-                onClick={() => setOpen(o => !o)}
-                onMouseEnter={() => setOpen(true)}
+                onMouseEnter={onOpen}
                 className={`px-4 py-3.5 flex items-center gap-1 text-sm font-semibold transition-colors uppercase tracking-wide
                     ${isAnyChildActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}
             >
@@ -136,8 +136,8 @@ const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
 
             {open && (
                 <div
-                    onMouseLeave={() => setOpen(false)}
-                    className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[200px] py-1.5 z-50 animate-fade-in"
+                    onMouseLeave={onClose}
+                    className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50 animate-fade-in"
                 >
                     {item.children?.map(child =>
                         isExternal(child.path) ? (
@@ -146,7 +146,7 @@ const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
                                 href={child.path}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
+                                className="block px-5 py-3.5 text-base text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
                             >
                                 {child.label}
                             </a>
@@ -156,7 +156,7 @@ const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
                                 to={child.path}
                                 end
                                 className={({ isActive }: any) =>
-                                    `block px-4 py-2.5 text-sm uppercase tracking-wide font-medium transition-colors
+                                    `block px-5 py-3.5 text-base uppercase tracking-wide font-medium transition-colors
                                     ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`
                                 }
                             >
@@ -174,12 +174,14 @@ const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
 const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const location = useLocation();
 
-    // Close mobile menu on route change
+    // Close all menus on route change
     useEffect(() => {
         setMobileOpen(false);
         setMobileDropdown(null);
+        setOpenDropdown(null);
     }, [location.pathname]);
 
     const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
@@ -236,7 +238,13 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center flex-wrap">
                     {MENU.map(item =>
                         item.children?.length ? (
-                            <DesktopDropdown key={item.path} item={item} />
+                            <DesktopDropdown
+                                key={item.path}
+                                item={item}
+                                open={openDropdown === item.path}
+                                onOpen={() => setOpenDropdown(item.path)}
+                                onClose={() => setOpenDropdown(null)}
+                            />
                         ) : (
                             <NavLink
                                 key={item.path}

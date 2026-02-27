@@ -11,10 +11,6 @@ import { db } from '@/firebaseConfig';
 const { useNavigate, Link } = ReactRouterDOM as any;
 
 // ── School Constants ──────────────────────────────────────────────────────────
-const SCHOOL_NAME = 'Bethel Mission School';
-const SCHOOL_LOGO = 'https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png';
-const UDISE_ELEMENTARY = '15040100705';
-const UDISE_SECONDARY = '15040100708';
 const ADMISSION_DEADLINE = new Date('2026-04-01').toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
 const DRAFT_KEY = 'bms_admission_draft_v1';
 
@@ -465,16 +461,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 {showDraftPrompt && <DraftPrompt />}
                 <div className="bg-slate-50 py-12 min-h-screen">
                     <div className="container mx-auto px-4 max-w-3xl">
-
-                        {/* School banner */}
-                        <div className="bg-gradient-to-r from-sky-900 to-sky-700 rounded-2xl px-6 py-4 mb-6 text-white flex items-center gap-4">
-                            <img src={SCHOOL_LOGO} alt="BMS Logo" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover flex-shrink-0" />
-                            <div>
-                                <h1 className="font-extrabold text-base leading-tight">{SCHOOL_NAME}</h1>
-                                <p className="text-sky-200 text-xs mt-0.5">Online Admission — Academic Session 2026-27</p>
-                            </div>
-                        </div>
-
+                       
                         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                             <div className="bg-slate-800 px-8 py-5 text-white">
                                 <h2 className="text-xl font-bold">Review Your Application</h2>
@@ -577,23 +564,10 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             {!showIdInput ? (
                                 <>
                                     {/* ── School banner ── */}
-                                    <div className="bg-gradient-to-br from-sky-900 to-sky-600 rounded-2xl p-5 mb-5 text-white text-center shadow-xl"
->
-                                        <img
-                                            src={SCHOOL_LOGO}
-                                            alt="Bethel Mission School Logo"
-className="w-14 h-14 rounded-full mx-auto mb-3 border-4 border-white/30 object-cover shadow-lg"                                        />
-                                        <h1 className="text-2xl font-extrabold tracking-tight">{SCHOOL_NAME}</h1>
-                                        <div className="flex justify-center gap-3 mt-2 flex-wrap">
-                                            <span className="bg-white/15 border border-white/25 rounded-full px-3 py-0.5 text-xs font-mono text-sky-100">
-                                                Elementary UDISE: {UDISE_ELEMENTARY}
-                                            </span>
-                                            <span className="bg-white/15 border border-white/25 rounded-full px-3 py-0.5 text-xs font-mono text-sky-100">
-                                                Secondary UDISE: {UDISE_SECONDARY}
-                                            </span>
-                                        </div>
-                                        <p className="text-sky-100 text-sm mt-3">Online Admission Portal — Academic Session 2026-27</p>
-                                    </div>
+                                    <div className="text-center mb-6">
+    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Online Admission Portal</h1>
+    <p className="text-slate-500 text-sm">Academic Session 2026-27</p>
+</div>
 
                                     {/* ── Deadline banner ── */}
                                     <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-8 text-amber-800">
@@ -646,13 +620,7 @@ className="w-14 h-14 rounded-full mx-auto mb-3 border-4 border-white/30 object-c
                             ) : (
                                 <div className="max-w-lg mx-auto">
                                     {/* Compact school banner on ID input screen */}
-                                    <div className="flex items-center gap-3 mb-6 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
-                                        <img src={SCHOOL_LOGO} alt="BMS" className="w-10 h-10 rounded-full object-cover border border-sky-200 flex-shrink-0" />
-                                        <div>
-                                            <p className="font-bold text-sky-900 text-sm">{SCHOOL_NAME}</p>
-                                            <p className="text-sky-500 text-xs">Online Admission Portal</p>
-                                        </div>
-                                    </div>
+                                  
 
                                     <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
                                         {showIdInput === 'existing' ? 'Existing Student'
@@ -763,21 +731,11 @@ className="w-14 h-14 rounded-full mx-auto mb-3 border-4 border-white/30 object-c
                         </div>
 
                         {/* Compact school header */}
-                        <div className="flex items-center gap-3 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 mb-6">
-                            <img src={SCHOOL_LOGO} alt="BMS" className="w-10 h-10 rounded-full object-cover border border-sky-200 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sky-900 text-sm">{SCHOOL_NAME}</p>
-                                <div className="flex gap-2 flex-wrap mt-0.5">
-                                    <span className="text-[10px] font-mono bg-sky-100 text-sky-600 rounded px-1.5 py-0.5">Elem: {UDISE_ELEMENTARY}</span>
-                                    <span className="text-[10px] font-mono bg-sky-100 text-sky-600 rounded px-1.5 py-0.5">Sec: {UDISE_SECONDARY}</span>
-                                </div>
-                            </div>
-                            <div className="text-right hidden sm:block">
-                                <p className="text-xs text-slate-500">Deadline</p>
-                                <p className="text-xs font-bold text-amber-600">{ADMISSION_DEADLINE}</p>
-                            </div>
-                        </div>
-
+                        {/* Deadline note */}
+<div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6 text-amber-800">
+    <span className="flex-shrink-0">⏰</span>
+    <p className="text-xs font-semibold">Applications open until <strong>{ADMISSION_DEADLINE}</strong></p>
+</div>
                         {/* Title */}
                         <div className="text-center mb-6">
                             <h1 className="text-3xl font-bold text-slate-800">Online Admission Form</h1>

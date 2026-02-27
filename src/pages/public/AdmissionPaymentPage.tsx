@@ -167,18 +167,23 @@ if (!admissionId) return;
             const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if(item.hasSize && details.size && item.priceBySize) {
-                    price = item.priceBySize[details.size] ?? item.price;
-                }
-                return { name: itemName, price, quantity: details.quantity, size: details.size };
+               if(item.hasSize && details.size && item.priceBySize) {
+    price = item.priceBySize[details.size] ?? item.price;
+}
+return { 
+    name: itemName, 
+    price: price ?? 0, 
+    quantity: details.quantity ?? 1, 
+    ...(details.size ? { size: details.size } : {}) // only include size if defined
+};
             });
 
-            await db.collection('online_admissions').doc(admissionId).update({
-                paymentStatus: 'pending',
-                paymentAmount: grandTotal,
-                paymentScreenshotUrl: url,
-                purchasedItems: itemsToPurchase
-            });
+await db.collection('online_admissions').doc(admissionId).update({
+    paymentStatus: 'pending',
+    paymentAmount: grandTotal ?? 0,
+    paymentScreenshotUrl: url,
+    purchasedItems: itemsToPurchase
+});
             setPaymentSubmitted(true);
         } catch (error) {
             console.error("Payment submission failed:", error);

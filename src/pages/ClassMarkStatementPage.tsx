@@ -720,6 +720,13 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
 >
   Export PDF
 </button>
+
+<button
+  onClick={() => window.print()}
+  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition"
+>
+  🖨️ Print
+</button>
             </div>
         </div>
         

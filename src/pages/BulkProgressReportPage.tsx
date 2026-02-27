@@ -43,15 +43,17 @@ const calculateTermSummary = (
 
     const subjectsMap = new Map<string, SubjectDefinition>();
     (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
-    if (exam?.results) {
+  if (exam?.results) {
         exam.results.forEach(res => {
-            const normalized = normalizeSubjectName(res.subject);
-            if (!subjectsMap.has(normalized)) {
-                subjectsMap.set(normalized, { name: res.subject, examFullMarks: 100, activityFullMarks: 0, gradingSystem: res.grade ? 'OABC' : 'Numerical' });
+            const alreadyExists = Array.from(subjectsMap.keys()).some(existingKey =>
+                subjectsMatch(existingKey, res.subject)
+            );
+            if (!alreadyExists) {
+                subjectsMap.set(normalizeSubjectName(res.subject), { name: res.subject, examFullMarks: 100, activityFullMarks: 0, gradingSystem: res.grade ? 'OABC' : 'Numerical' });
             }
         });
     }
-    const activeSubjects = Array.from(subjectsMap.values());
+  const activeSubjects = Array.from(subjectsMap.values());
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
     const isNurseryToII = NURSERY_TO_II.includes(student.grade);

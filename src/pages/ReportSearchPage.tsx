@@ -101,16 +101,30 @@ const ReportSearchPage: React.FC<ReportSearchPageProps> = ({ students, academicY
                         {TERMINAL_EXAMS.map(exam => <option key={exam.id} value={exam.id}>{exam.name}</option>)}
                     </select>
                 </div>
-                <div className="flex flex-col gap-3">
-                    <button 
-                        onClick={handleClassReportView}
-                        disabled={!selectedGrade || !selectedExam}
-                        className="w-full btn btn-primary disabled:bg-slate-400"
-                    >
-                        View Mark Statement
-                    </button>
-                    <Link
-                        to={selectedGrade && selectedExam ? `/portal/reports/bulk-print/${encodeURIComponent(selectedGrade)}/${selectedExam}` : '#'}
+              <div className="flex flex-col gap-3">
+    <button 
+        onClick={handleClassReportView}
+        disabled={!selectedGrade || !selectedExam}
+        className="w-full btn btn-primary disabled:bg-slate-400"
+    >
+        View Mark Statement
+    </button>
+    <button
+        onClick={() => {
+            if (selectedGrade && selectedExam) {
+                const url = `/portal/reports/class/${encodeURIComponent(selectedGrade)}/${selectedExam}`;
+                const win = window.open(url, '_blank');
+                win?.addEventListener('load', () => win.print());
+            }
+        }}
+        disabled={!selectedGrade || !selectedExam}
+        className="w-full btn btn-secondary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+        <PrinterIcon className="w-5 h-5"/>
+        Print Class Mark Statement
+    </button>
+    <Link
+        to={selectedGrade && selectedExam ? `/portal/reports/bulk-print/${encodeURIComponent(selectedGrade)}/${selectedExam}` : '#'}
                         target={selectedGrade && selectedExam ? "_blank" : undefined}
                         className={`w-full btn btn-secondary flex items-center justify-center gap-2 ${(!selectedGrade || !selectedExam) ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                     >

@@ -639,8 +639,20 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
   if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
 
   return (
-    <>
-    <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
+   <>
+<style>{`
+  @media print {
+    .print-hidden { display: none !important; }
+    #mark-statement-table input,
+    #mark-statement-table select {
+      all: unset;
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+  }
+`}</style>
+<div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center print-hidden">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
             <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>

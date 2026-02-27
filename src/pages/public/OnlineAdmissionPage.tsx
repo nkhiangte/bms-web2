@@ -108,9 +108,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const [showReviewPage, setShowReviewPage] = useState(false);
 
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [step, showReviewPage]);
-
+    document.querySelector('.max-w-4xl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [step, showReviewPage]);
     // ── Draft persistence: check on mount ────────────────────────────────────
     useEffect(() => {
         try {
@@ -577,12 +577,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             {!showIdInput ? (
                                 <>
                                     {/* ── School banner ── */}
-                                    <div className="bg-gradient-to-br from-sky-900 to-sky-600 rounded-2xl p-8 mb-8 text-white text-center shadow-xl">
+                                    <div className="bg-gradient-to-br from-sky-900 to-sky-600 rounded-2xl p-5 mb-5 text-white text-center shadow-xl"
+>
                                         <img
                                             src={SCHOOL_LOGO}
                                             alt="Bethel Mission School Logo"
-                                            className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-white/30 object-cover shadow-lg"
-                                        />
+className="w-14 h-14 rounded-full mx-auto mb-3 border-4 border-white/30 object-cover shadow-lg"                                        />
                                         <h1 className="text-2xl font-extrabold tracking-tight">{SCHOOL_NAME}</h1>
                                         <div className="flex justify-center gap-3 mt-2 flex-wrap">
                                             <span className="bg-white/15 border border-white/25 rounded-full px-3 py-0.5 text-xs font-mono text-sky-100">

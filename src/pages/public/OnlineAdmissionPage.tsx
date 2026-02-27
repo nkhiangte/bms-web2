@@ -378,8 +378,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         <input
                                             type="text"
                                             value={existingId}
-                                            onChange={(e) => setExistingId(e.target.value.toUpperCase())}
-                                            className="form-input w-full uppercase"
+onChange={(e) => setExistingId(e.target.value.toUpperCase().replace(/O/g, '0'))}                                            className="form-input w-full uppercase"
                                             placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."}
                                             autoFocus
                                         />

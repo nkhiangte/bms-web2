@@ -124,9 +124,10 @@ const DesktopDropdown: React.FC<{
     const isAnyChildActive = item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'));
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative" onMouseLeave={onClose}>
             <button
                 onMouseEnter={onOpen}
+                onClick={onOpen}
                 className={`px-4 py-3.5 flex items-center gap-1 text-sm font-semibold transition-colors uppercase tracking-wide
                     ${isAnyChildActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}
             >
@@ -135,10 +136,7 @@ const DesktopDropdown: React.FC<{
             </button>
 
             {open && (
-                <div
-                    onMouseLeave={onClose}
-                    className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50 animate-fade-in"
-                >
+                <div className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50 animate-fade-in">
                     {item.children?.map(child =>
                         isExternal(child.path) ? (
                             <a
@@ -146,6 +144,7 @@ const DesktopDropdown: React.FC<{
                                 href={child.path}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={onClose}
                                 className="block px-5 py-3.5 text-base text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
                             >
                                 {child.label}
@@ -155,6 +154,7 @@ const DesktopDropdown: React.FC<{
                                 key={child.path}
                                 to={child.path}
                                 end
+                                onClick={onClose}
                                 className={({ isActive }: any) =>
                                     `block px-5 py-3.5 text-base uppercase tracking-wide font-medium transition-colors
                                     ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`

@@ -485,8 +485,12 @@ const handleExportExcel = () => {
       headers.push(sd.name);
     }
   });
-  headers.push('Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark');
-
+if (hasActivities) {
+  headers.push('Exam Total', 'Activity Total', 'Grand Total');
+} else {
+  headers.push('Total');
+}
+headers.push('Percentage', 'Rank', 'Division', 'Result', 'Remark');
   const data = processedData.map(student => {
     const subjectMarks: any[] = [];
     subjectDefinitions.forEach(sd => {
@@ -502,7 +506,10 @@ const handleExportExcel = () => {
         subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
       }
     });
-    return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result, student.remark];
+const totals = hasActivities
+  ? [student.examTotal, student.activityTotal, student.grandTotal]
+  : [student.grandTotal];
+return [student.rollNo, student.name, ...subjectMarks, ...totals, student.percentage.toFixed(2), student.rank, student.division, student.result, student.remark];
   });
 
   const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
@@ -535,8 +542,12 @@ const handleExportPDF = () => {
       tableColumn.push(sd.name);
     }
   });
-  tableColumn.push('Total', 'Percentage', 'Rank', 'Division', 'Result');
-
+if (hasActivities) {
+  tableColumn.push('Exam\nTotal', 'Act.\nTotal', 'Grand\nTotal');
+} else {
+  tableColumn.push('Total');
+}
+tableColumn.push('Percentage', 'Rank', 'Division', 'Result');
   const tableRows = processedData.map(student => {
     const subjectMarks: any[] = [];
     subjectDefinitions.forEach(sd => {
@@ -552,7 +563,10 @@ const handleExportPDF = () => {
         subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
       }
     });
-    return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result];
+const totals = hasActivities
+  ? [student.examTotal, student.activityTotal, student.grandTotal]
+  : [student.grandTotal];
+return [student.rollNo, student.name, ...subjectMarks, ...totals, student.percentage.toFixed(2), student.rank, student.division, student.result];
   });
 
   autoTable(doc, {
@@ -722,8 +736,15 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                 return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{sd.name}</th>;
                             }
                         })}
-                        
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
+{hasActivities ? (
+  <>
+    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Exam Total</th>
+    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Activity Total</th>
+    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Grand Total</th>
+  </>
+) : (
+  <th rowSpan={isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
+)}                        
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Rank</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
@@ -865,8 +886,16 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                 );
                             })}
 
-                            <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
-                            <td className="px-1 py-1 text-center border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
+{hasActivities ? (
+  <>
+    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.examTotal}</td>
+    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.activityTotal}</td>
+    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
+  </>
+) : (
+  <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
+)}
+                          <td className="px-1 py-1 text-center border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
                             <td className="px-1 py-1 text-center font-bold border-l whitespace-nowrap">{student.rank}</td>
                             <td className="px-1 py-1 text-center border-l whitespace-nowrap">{isClassIXorX ? student.division : '-'}</td>
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>

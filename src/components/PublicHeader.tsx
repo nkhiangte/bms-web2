@@ -111,8 +111,16 @@ const DesktopDropdown: React.FC<{
 }> = ({ item, open, onOpen, onClose }) => {
     const location = useLocation();
     const ref = useRef<HTMLDivElement>(null);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // close on outside click
+    const scheduleClose = () => {
+        closeTimer.current = setTimeout(() => onClose(), 150);
+    };
+
+    const cancelClose = () => {
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -121,12 +129,18 @@ const DesktopDropdown: React.FC<{
         return () => document.removeEventListener('mousedown', handler);
     }, [onClose]);
 
-    const isAnyChildActive = item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'));
+    const isAnyChildActive = item.children?.some(c =>
+        location.pathname === c.path || location.pathname.startsWith(c.path + '/')
+    );
 
     return (
-        <div ref={ref} className="relative" onMouseLeave={onClose}>
+        <div
+            ref={ref}
+            className="relative"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+        >
             <button
-                onMouseEnter={onOpen}
                 onClick={onOpen}
                 className={`px-4 py-3.5 flex items-center gap-1 text-sm font-semibold transition-colors uppercase tracking-wide
                     ${isAnyChildActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}
@@ -139,7 +153,7 @@ const DesktopDropdown: React.FC<{
                 <div className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50 animate-fade-in">
                     {item.children?.map(child =>
                         isExternal(child.path) ? (
-                            <a
+                            
                                 key={child.path}
                                 href={child.path}
                                 target="_blank"

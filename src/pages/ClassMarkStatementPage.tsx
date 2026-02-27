@@ -472,68 +472,43 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
       // ================= EXPORT TO EXCEL =================
 const handleExportExcel = () => {
   if (!processedData.length) return;
-const headers = [
-    `Academic Year: ${academicYear}`,
-    `Class: ${grade}`,
-    `Exam: ${examDetails?.name}`,
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-  ];
-  const subjectHeaders = [
-    'Roll No',
-    'Name',
-    ...subjectDefinitions.map(sd => sd.name),
-    'Total',
-    'Percentage',
-    'Rank',
-    'Division',
-    'Result',
-    'Remark'
-  ];
+
+  const headers = ['Roll No', 'Name'];
+  subjectDefinitions.forEach(sd => {
+    if (sd.gradingSystem === 'OABC') {
+      headers.push(sd.name);
+    } else if (isIXTerminal3) {
+      headers.push(`${sd.name} SA`, `${sd.name} FA`);
+    } else if (hasActivities) {
+      headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
+    } else {
+      headers.push(sd.name);
+    }
+  });
+  headers.push('Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark');
 
   const data = processedData.map(student => {
-    const subjectMarks = subjectDefinitions.map(sd => {
+    const subjectMarks: any[] = [];
+    subjectDefinitions.forEach(sd => {
       if (sd.gradingSystem === 'OABC') {
-        return marksData[student.id]?.[sd.name] ?? '-';
+        subjectMarks.push(marksData[student.id]?.[sd.name] ?? '-');
+      } else if (isIXTerminal3) {
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_sa'] ?? 0);
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
+      } else if (hasActivities) {
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_exam'] ?? 0);
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
+      } else {
+        subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
       }
-
-      if (isIXTerminal3) {
-        const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
-        const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
-        return Number(sa) + Number(fa);
-      }
-
-      if (hasActivities) {
-        const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
-        const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
-        return Number(exam) + Number(act);
-      }
-
-      return marksData[student.id]?.[sd.name] ?? 0;
     });
-
-    return [
-      student.rollNo,
-      student.name,
-      ...subjectMarks,
-      student.grandTotal,
-      student.percentage.toFixed(2),
-      student.rank,
-      student.division,
-      student.result,
-      student.remark
-    ];
+    return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result, student.remark];
   });
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, subjectHeaders, ...data]);
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
-
-XLSX.writeFile(workbook, `${grade}_${examDetails?.name}_Statement.xlsx`);
+  XLSX.writeFile(workbook, `${grade}_${examDetails?.name}_Statement.xlsx`);
 };
 
 // ================= EXPORT TO PDF =================
@@ -541,67 +516,56 @@ const handleExportPDF = () => {
   if (!processedData.length) return;
 
   const doc = new jsPDF('landscape');
-
- doc.setFontSize(14);
+  doc.setFontSize(14);
   doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
   doc.setFontSize(11);
-  doc.text(`Exam: ${examDetails?.name}   |   Academic Year: ${academicYear}`, 14, 22);
+  doc.text(`Exam: ${examDetails?.name}`, 14, 22);
 
-  const tableColumn = [
-    'Roll No',
-    'Name',
-    ...subjectDefinitions.map(sd => sd.name),
-    'Total',
-    'Percentage',
-    'Rank',
-    'Division',
-    'Result'
-  ];
+  const tableColumn: string[] = ['Roll No', 'Name'];
+  subjectDefinitions.forEach(sd => {
+    if (sd.gradingSystem === 'OABC') {
+      tableColumn.push(sd.name);
+    } else if (isIXTerminal3) {
+      tableColumn.push(`${sd.name}\nSA`);
+      tableColumn.push(`${sd.name}\nFA`);
+    } else if (hasActivities) {
+      tableColumn.push(`${sd.name}\nExam`);
+      tableColumn.push(`${sd.name}\nActivity`);
+    } else {
+      tableColumn.push(sd.name);
+    }
+  });
+  tableColumn.push('Total', 'Percentage', 'Rank', 'Division', 'Result');
 
   const tableRows = processedData.map(student => {
-    const subjectMarks = subjectDefinitions.map(sd => {
+    const subjectMarks: any[] = [];
+    subjectDefinitions.forEach(sd => {
       if (sd.gradingSystem === 'OABC') {
-        return marksData[student.id]?.[sd.name] ?? '-';
+        subjectMarks.push(marksData[student.id]?.[sd.name] ?? '-');
+      } else if (isIXTerminal3) {
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_sa'] ?? 0);
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
+      } else if (hasActivities) {
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_exam'] ?? 0);
+        subjectMarks.push(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
+      } else {
+        subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
       }
-
-      if (isIXTerminal3) {
-        const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
-        const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
-        return Number(sa) + Number(fa);
-      }
-
-      if (hasActivities) {
-        const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
-        const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
-        return Number(exam) + Number(act);
-      }
-
-      return marksData[student.id]?.[sd.name] ?? 0;
     });
-
-    return [
-      student.rollNo,
-      student.name,
-      ...subjectMarks,
-      student.grandTotal,
-      student.percentage.toFixed(2),
-      student.rank,
-      student.division,
-      student.result
-    ];
+    return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result];
   });
 
   autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
     startY: 30,
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: [41, 128, 185] }
+    styles: { fontSize: 6, cellPadding: 2 },
+    headStyles: { fillColor: [41, 128, 185], fontSize: 6, halign: 'center' },
+    columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 30 } },
   });
 
   doc.save(`${grade}_${examDetails?.name}_Statement.pdf`);
-};
-    // Add this function inside your ClassMarkStatementPage component
+};    // Add this function inside your ClassMarkStatementPage component
 const exportToCSV = () => {
   // Prepare headers
   const headers = ['Roll No', 'Name'];

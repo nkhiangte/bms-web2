@@ -129,17 +129,20 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     const handleFetchStudent = async (e: React.FormEvent) => {
         e.preventDefault();
-        const idInput = existingId.trim().toUpperCase();
-        if (!idInput) return;
+        if (!existingId.trim()) return;
+
+        // FIX: Student IDs are uppercase — app/reference IDs are Firestore auto-IDs (case-sensitive), preserve exact case
+        const idInput = showIdInput === 'existing'
+            ? existingId.trim().toUpperCase()
+            : existingId.trim();
 
         setIsFetching(true);
         setFetchError('');
 
-        // Handle resubmit: just navigate to payment page
+        // Handle resubmit: navigate directly to payment page
         if (showIdInput === 'resubmit') {
             try {
-                const docRef = db.collection('online_admissions').doc(idInput);
-                const doc = await docRef.get();
+                const doc = await db.collection('online_admissions').doc(idInput).get();
                 if (doc.exists) {
                     navigate(`/admissions/payment/${idInput}`);
                 } else {
@@ -190,8 +193,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
         try {
             if (showIdInput === 'continue') {
-                const docRef = db.collection('online_admissions').doc(idInput);
-                const doc = await docRef.get();
+                const doc = await db.collection('online_admissions').doc(idInput).get();
                 if (doc.exists) {
                     const data = doc.data();
                     if (data?.status === 'rejected') {
@@ -205,6 +207,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 return;
             }
 
+            // Existing student lookup (uppercase)
             let snapshot = await db.collection('students').where('studentId', '==', idInput).limit(1).get();
             if (!snapshot.empty) {
                 fillFormWithStudent(snapshot.docs[0].data() as Student);
@@ -342,7 +345,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     </button>
                                 </div>
 
-                                {/* Bottom links */}
                                 <div className="text-center mt-10 flex flex-col items-center gap-3">
                                     <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
                                         Continue a Saved Application &rarr;
@@ -378,12 +380,21 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         <input
                                             type="text"
                                             value={existingId}
-onChange={(e) => setExistingId(e.target.value.toUpperCase().replace(/O/g, '0'))}                                            className="form-input w-full uppercase"
-                                            placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPP..."}
+                                            onChange={(e) => setExistingId(
+                                                // Student IDs are always uppercase.
+                                                // Firestore app/reference IDs are case-sensitive — preserve exact case.
+                                                showIdInput === 'existing'
+                                                    ? e.target.value.toUpperCase()
+                                                    : e.target.value
+                                            )}
+                                            className="form-input w-full"
+                                            placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPPxxxx..."}
                                             autoFocus
                                         />
                                         {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
-                                        <p className="text-xs text-slate-400 mt-1">Tip: The ID uses the number 0, not the letter O.</p>
+                                        {(showIdInput === 'continue' || showIdInput === 'resubmit') && (
+                                            <p className="text-xs text-slate-400 mt-1">The ID is case-sensitive. Copy and paste it for best results.</p>
+                                        )}
                                     </div>
                                     <button
                                         type="submit"
@@ -406,7 +417,10 @@ onChange={(e) => setExistingId(e.target.value.toUpperCase().replace(/O/g, '0'))}
                                         </button>
                                     </>
                                 )}
-                                <button onClick={() => { setShowIdInput(null); setFetchError(''); setExistingId(''); }} className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm">
+                                <button
+                                    onClick={() => { setShowIdInput(null); setFetchError(''); setExistingId(''); }}
+                                    className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm"
+                                >
                                     &larr; Back to Selection
                                 </button>
                             </div>

@@ -151,16 +151,16 @@ const DesktopDropdown: React.FC<{
 
             {open && (
                 <div className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50 animate-fade-in">
-                    {item.children?.map(child =>
-                        isExternal(child.path) ? (
-                            
-                                key={child.path}
-                                href={child.path}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={onClose}
-                                className="block px-5 py-3.5 text-base text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
-                            >
+                   {item.children?.map(child =>
+                        isExternal(child.path) ? (
+                            <a
+                                key={child.path}
+                                href={child.path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={onClose}
+                                className="block px-5 py-3.5 text-base text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
+                            >
                                 {child.label}
                             </a>
                         ) : (

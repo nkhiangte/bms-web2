@@ -159,6 +159,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+    useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [paymentSubmitted]);
     const [copyClicked, setCopyClicked] = useState(false);
 
     useEffect(() => {

@@ -1,56 +1,214 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { ChevronDownIcon, UserIcon } from '@/components/Icons';
-import { User, NavMenuItem } from '@/types';
+import { User } from '@/types';
 
 const { Link, NavLink, useLocation } = ReactRouterDOM as any;
 
 interface PublicHeaderProps {
     user: User | null;
-    navigation: NavMenuItem[];
 }
 
-const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+// ─── Hardcoded Menu Structure ─────────────────────────────────────────────────
+// To add/remove/reorder items: edit this array only.
+// Sub-menu items go inside the `children` array of a parent item.
+// External links: set path to full URL (https://...)
+
+interface MenuItem {
+    label: string;
+    path: string;
+    children?: MenuItem[];
+}
+
+const MENU: MenuItem[] = [
+    {
+        label: 'Home',
+        path: '/',
+    },
+    {
+        label: 'About',
+        path: '/about',
+        children: [
+            { label: 'About Us',    path: '/about' },
+            { label: 'History',     path: '/history' },
+            { label: 'Faculty',     path: '/faculty' },
+            { label: 'Rules',       path: '/rules' },
+        ],
+    },
+    {
+        label: 'Academics',
+        path: '/academics',
+        children: [
+            { label: 'Overview',    path: '/academics' },
+            { label: 'Curriculum',  path: '/academics/curriculum' },
+            { label: 'Syllabus',    path: '/portal/syllabus' },
+            { label: 'Routine',     path: '/routine' },
+        ],
+    },
+    {
+        label: 'Admissions',
+        path: '/admissions',
+        children: [
+            { label: 'Guidelines',          path: '/admissions' },
+            { label: 'Apply Online',         path: '/admissions/online' },
+            { label: 'Check Status',         path: '/admissions/status' },
+            { label: 'Fee Structure',        path: '/fees' },
+            { label: 'Supplies & Books',     path: '/supplies' },
+        ],
+    },
+    {
+        label: 'Student Life',
+        path: '/student-life',
+        children: [
+            { label: 'Overview',        path: '/student-life' },
+            { label: 'NCC',             path: '/ncc' },
+            { label: 'Arts & Culture',  path: '/arts-culture' },
+            { label: 'Eco Club',        path: '/eco-club' },
+            { label: 'Sports',          path: '/achievements/sports' },
+        ],
+    },
+    {
+        label: 'Achievements',
+        path: '/achievements',
+        children: [
+            { label: 'Overview',        path: '/achievements' },
+            { label: 'Academic',        path: '/achievements/academic' },
+            { label: 'Science',         path: '/achievements/science' },
+            { label: 'Sports',          path: '/achievements/sports' },
+            { label: 'Quiz',            path: '/achievements/quiz' },
+        ],
+    },
+    {
+        label: 'Facilities',
+        path: '/facilities',
+        children: [
+            { label: 'Overview',        path: '/facilities' },
+            { label: 'Infrastructure',  path: '/infrastructure' },
+            { label: 'Hostel',          path: '/hostel' },
+            { label: 'Gallery',         path: '/gallery' },
+        ],
+    },
+    {
+        label: 'News',
+        path: '/news',
+    },
+    {
+        label: 'Contact',
+        path: '/contact',
+    },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const isExternal = (path: string) =>
+    path?.startsWith('http') || path?.endsWith('.pdf');
+
+// ─── Desktop Dropdown ─────────────────────────────────────────────────────────
+const DesktopDropdown: React.FC<{ item: MenuItem }> = ({ item }) => {
+    const location = useLocation();
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    // close on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // close on route change
+    useEffect(() => { setOpen(false); }, [location.pathname]);
+
+    const isAnyChildActive = item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'));
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                onClick={() => setOpen(o => !o)}
+                onMouseEnter={() => setOpen(true)}
+                className={`px-4 py-3.5 flex items-center gap-1 text-sm font-semibold transition-colors uppercase tracking-wide
+                    ${isAnyChildActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}
+            >
+                {item.label}
+                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
+
+            {open && (
+                <div
+                    onMouseLeave={() => setOpen(false)}
+                    className="absolute top-full left-0 mt-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[200px] py-1.5 z-50 animate-fade-in"
+                >
+                    {item.children?.map(child =>
+                        isExternal(child.path) ? (
+                            <a
+                                key={child.path}
+                                href={child.path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-700 uppercase tracking-wide font-medium"
+                            >
+                                {child.label}
+                            </a>
+                        ) : (
+                            <NavLink
+                                key={child.path}
+                                to={child.path}
+                                end
+                                className={({ isActive }: any) =>
+                                    `block px-4 py-2.5 text-sm uppercase tracking-wide font-medium transition-colors
+                                    ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`
+                                }
+                            >
+                                {child.label}
+                            </NavLink>
+                        )
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
     const location = useLocation();
 
-    const menuItems = (navigation || [])
-        .filter(item => item.isActive && !item.parent)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-    const getChildren = (parentId: string) => {
-        return (navigation || [])
-            .filter(item => item.isActive && item.parent === parentId)
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    };
-
-    const handleMobileDropdown = (id: string) => {
-        setOpenDropdown(prev => prev === id ? null : id);
-    };
-
-    const isExternalLink = (path: string) => path?.startsWith('http') || path?.endsWith('.pdf');
-
-    const activeLinkStyle = { color: 'var(--primary)' };
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false);
+        setMobileDropdown(null);
+    }, [location.pathname]);
 
     const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-30">
-            {/* Top Row: Logo and Login */}
+
+            {/* ── Top Row ─────────────────────────────────────────────────────── */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-24 sm:h-32">
+
                     {/* Logo */}
                     <Link to="/" className="flex items-center flex-shrink-0">
-                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-20 sm:h-24" />
+                        <img
+                            src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png"
+                            alt="Bethel Mission School Logo"
+                            className="h-20 sm:h-24"
+                        />
                     </Link>
 
-                    {/* Login Button & Mobile Menu Toggle */}
+                    {/* Right side: login + mobile toggle */}
                     <div className="flex items-center gap-2">
                         {user ? (
-                            <Link to={dashboardLink} className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-700 font-semibold rounded-lg hover:bg-sky-100 transition-colors border border-sky-200">
+                            <Link
+                                to={dashboardLink}
+                                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-700 font-semibold rounded-lg hover:bg-sky-100 transition-colors border border-sky-200"
+                            >
                                 <UserIcon className="w-5 h-5" />
-                                <span>Dashboard</span>
+                                Dashboard
                             </Link>
                         ) : (
                             <Link to="/login" className="btn btn-primary hidden sm:inline-flex">
@@ -58,151 +216,119 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                             </Link>
                         )}
 
+                        {/* Hamburger */}
                         <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100"
+                            onClick={() => setMobileOpen(o => !o)}
+                            aria-label="Toggle mobile menu"
+                            className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
                             </svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Desktop Navigation Bar */}
-            <nav className="hidden lg:block border-t border-slate-200">
+            {/* ── Desktop Nav ─────────────────────────────────────────────────── */}
+            <nav className="hidden lg:block border-t border-slate-100 bg-white">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center flex-wrap">
-                    {menuItems.map(link => {
-                        const children = getChildren(link.id);
-                        const hasChildren = children.length > 0;
-                        const isDropdownActive = children.some(child => location.pathname === child.path);
-
-                        return hasChildren ? (
-                            <div key={link.id} className="relative dropdown">
-                                <button className={`px-4 py-3 flex items-center gap-1 text-base font-semibold transition-colors uppercase ${isDropdownActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}>
-                                    {link.label}
-                                    <ChevronDownIcon className="w-4 h-4" />
-                                </button>
-                                <div className="dropdown-content">
-                                    {children.map(child => (
-                                        isExternalLink(child.path) ? (
-                                            <a
-                                                key={child.id}
-                                                href={child.path}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block px-4 py-2 text-sm transition-colors uppercase text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-                                            >
-                                                {child.label}
-                                            </a>
-                                        ) : (
-                                            <NavLink key={child.id} to={child.path} end className="block">
-                                                {({ isActive }: any) => (
-                                                    <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
-                                                        {child.label}
-                                                    </span>
-                                                )}
-                                            </NavLink>
-                                        )
-                                    ))}
-                                </div>
-                            </div>
+                    {MENU.map(item =>
+                        item.children?.length ? (
+                            <DesktopDropdown key={item.path} item={item} />
                         ) : (
                             <NavLink
-                                key={link.id}
-                                to={link.path}
-                                end
-                                className="px-4 py-3 text-base font-semibold text-slate-700 hover:text-sky-600 transition-colors uppercase"
-                                style={({ isActive }: any) => isActive ? activeLinkStyle : undefined}
+                                key={item.path}
+                                to={item.path}
+                                end={item.path === '/'}
+                                className={({ isActive }: any) =>
+                                    `px-4 py-3.5 text-sm font-semibold uppercase tracking-wide transition-colors
+                                    ${isActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`
+                                }
                             >
-                                {link.label}
+                                {item.label}
                             </NavLink>
-                        );
-                    })}
+                        )
+                    )}
                 </div>
             </nav>
 
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="lg:hidden bg-white border-t">
-                    <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                        {menuItems.map(link => {
-                            const children = getChildren(link.id);
-                            const hasChildren = children.length > 0;
+            {/* ── Mobile Menu ─────────────────────────────────────────────────── */}
+            {mobileOpen && (
+                <div className="lg:hidden bg-white border-t border-slate-100 shadow-lg">
+                    <nav className="px-3 pt-2 pb-4 space-y-1">
+                        {MENU.map(item => {
+                            const hasChildren = !!item.children?.length;
+                            const isExpanded = mobileDropdown === item.path;
 
                             return hasChildren ? (
-                                <div key={link.id}>
+                                <div key={item.path}>
                                     <button
-                                        onClick={() => handleMobileDropdown(link.id)}
-                                        className="w-full flex justify-between items-center px-3 py-2 rounded-md text-lg font-medium text-slate-700 hover:bg-slate-100 hover:text-sky-600 uppercase"
+                                        onClick={() => setMobileDropdown(prev => prev === item.path ? null : item.path)}
+                                        className="w-full flex justify-between items-center px-3 py-2.5 rounded-lg text-base font-semibold text-slate-700 hover:bg-slate-50 uppercase tracking-wide"
                                     >
-                                        <span>{link.label}</span>
-                                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${openDropdown === link.id ? 'rotate-180' : ''}`} />
+                                        <span>{item.label}</span>
+                                        <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {openDropdown === link.id && (
-                                        <div className="pl-6 pt-1 pb-2 space-y-1 bg-slate-50 rounded-b-md">
-                                            {children.map(child => (
-                                                isExternalLink(child.path) ? (
+                                    {isExpanded && (
+                                        <div className="mt-1 ml-4 pl-3 border-l-2 border-sky-100 space-y-1">
+                                            {item.children?.map(child =>
+                                                isExternal(child.path) ? (
                                                     <a
-                                                        key={child.id}
+                                                        key={child.path}
                                                         href={child.path}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+                                                        className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 uppercase"
                                                     >
                                                         {child.label}
                                                     </a>
                                                 ) : (
                                                     <NavLink
-                                                        key={child.id}
+                                                        key={child.path}
                                                         to={child.path}
                                                         end
-                                                        onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
-                                                        style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
+                                                        className={({ isActive }: any) =>
+                                                            `block px-3 py-2 rounded-lg text-sm font-medium uppercase transition-colors
+                                                            ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-sky-600'}`
+                                                        }
                                                     >
                                                         {child.label}
                                                     </NavLink>
                                                 )
-                                            ))}
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <NavLink
-                                    key={link.id}
-                                    to={link.path}
-                                    end
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-3 py-2 rounded-md text-lg font-medium text-slate-700 hover:bg-slate-100 hover:text-sky-600 uppercase"
-                                    style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
+                                    key={item.path}
+                                    to={item.path}
+                                    end={item.path === '/'}
+                                    className={({ isActive }: any) =>
+                                        `block px-3 py-2.5 rounded-lg text-base font-semibold uppercase tracking-wide transition-colors
+                                        ${isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50 hover:text-sky-600'}`
+                                    }
                                 >
-                                    {link.label}
+                                    {item.label}
                                 </NavLink>
                             );
                         })}
 
-                        {/* Dashboard / Login Links */}
-                        {user ? (
-                            <Link
-                                to={dashboardLink}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="sm:hidden mt-4 mx-3 btn btn-secondary w-auto flex items-center justify-center gap-2"
-                            >
-                                <UserIcon className="w-5 h-5" /> Dashboard
-                            </Link>
-                        ) : (
-                            <Link
-                                to="/login"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="sm:hidden mt-4 mx-3 btn btn-primary w-auto"
-                            >
-                                Portal Login
-                            </Link>
-                        )}
+                        {/* Dashboard / Login on mobile */}
+                        <div className="pt-3 border-t border-slate-100 sm:hidden">
+                            {user ? (
+                                <Link to={dashboardLink} className="flex items-center justify-center gap-2 btn btn-secondary w-full">
+                                    <UserIcon className="w-5 h-5" /> Dashboard
+                                </Link>
+                            ) : (
+                                <Link to="/login" className="btn btn-primary w-full text-center">
+                                    Portal Login
+                                </Link>
+                            )}
+                        </div>
                     </nav>
                 </div>
             )}

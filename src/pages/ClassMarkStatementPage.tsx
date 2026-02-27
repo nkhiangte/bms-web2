@@ -73,8 +73,10 @@ const subjectDefinitions = useMemo(() => {
       if (studentExam?.results) {
         studentExam.results.forEach(res => {
           const normalized = normalizeSubjectName(res.subject);
-          if (!subjectsMap.has(normalized)) {
-            // Subject exists in Firestore but not in Grade Settings
+const alreadyExists = Array.from(subjectsMap.keys()).some(existingKey =>
+  subjectsMatch(existingKey, res.subject)
+);
+if (!alreadyExists) {            // Subject exists in Firestore but not in Grade Settings
             subjectsMap.set(normalized, {
               name: res.subject,
               examFullMarks: 100,

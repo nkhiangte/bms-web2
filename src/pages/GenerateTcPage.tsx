@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '@/types';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '@/components/Icons';
@@ -55,7 +55,13 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     const navigate = useNavigate();
     const { studentId: paramStudentId } = useParams() as { studentId: string };
 
-    const [studentIdInput, setStudentIdInput] = useState<string>('');
+    // --- CHANGED: name search state instead of ID input ---
+    const [nameInput, setNameInput] = useState<string>('');
+    const [suggestions, setSuggestions] = useState<Student[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    // ------------------------------------------------------
+
     const [foundStudent, setFoundStudent] = useState<Student | null>(null);
     const [searchError, setSearchError] = useState<string>('');
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -74,6 +80,70 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         anyOtherRemarks: 'None',
     });
 
+    const selectStudent = (student: Student) => {
+        setFoundStudent(null);
+        setSearchError('');
+        setExistingTc(null);
+
+        setFoundStudent(student);
+        setNameInput(student.name);
+        setSuggestions([]);
+        setShowSuggestions(false);
+
+        const tc = tcRecords.find(r => r.studentDbId === student.id);
+        if (tc) {
+            setExistingTc(tc);
+        }
+    };
+
+    // --- CHANGED: filter suggestions as user types ---
+    const handleNameInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setNameInput(value);
+        setFoundStudent(null);
+        setSearchError('');
+        setExistingTc(null);
+
+        if (value.trim().length < 2) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        const matches = students.filter(s =>
+            s.name.toLowerCase().includes(value.toLowerCase())
+        ).slice(0, 8); // limit to 8 suggestions
+
+        setSuggestions(matches);
+        setShowSuggestions(true);
+    };
+
+    const handleSearchClick = () => {
+        if (!nameInput.trim()) {
+            setSearchError('Please enter a student name.');
+            return;
+        }
+        if (suggestions.length === 1) {
+            selectStudent(suggestions[0]);
+        } else if (suggestions.length === 0) {
+            setSearchError('No student found with that name.');
+        } else {
+            setSearchError('Multiple students found. Please select one from the dropdown.');
+        }
+    };
+    // -------------------------------------------------
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const findStudentById = (id: string) => {
         setFoundStudent(null);
         setSearchError('');
@@ -83,7 +153,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         
         if (student) {
             setFoundStudent(student);
-            
+            setNameInput(student.name);
             const tc = tcRecords.find(r => r.studentDbId === student.id);
             if (tc) {
                 setExistingTc(tc);
@@ -98,29 +168,6 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             findStudentById(paramStudentId);
         }
     }, [paramStudentId, students, tcRecords]);
-
-    const handleStudentSearch = () => {
-        setFoundStudent(null);
-        setSearchError('');
-        setExistingTc(null);
-
-        if (!studentIdInput) {
-            setSearchError('Please enter a Student ID.');
-            return;
-        }
-        
-        const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
-
-        if (student) {
-            setFoundStudent(student);
-            const tc = tcRecords.find(r => r.studentDbId === student.id);
-            if(tc) {
-                setExistingTc(tc);
-            }
-        } else {
-            setSearchError('No active student found with this ID. Please check and try again.');
-        }
-    };
 
     const handleGenerateDateInWords = async () => {
         if (!foundStudent) return;
@@ -206,32 +253,52 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             </div>
 
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Generate Transfer Certificate</h1>
-            <p className="text-slate-700 mb-8">Enter a student's ID to fetch their details and generate a TC.</p>
+            <p className="text-slate-700 mb-8">Search for a student by name to fetch their details and generate a TC.</p>
             
+            {/* --- CHANGED: Name search with autocomplete dropdown --- */}
             <div className="mb-8 max-w-lg">
-                <label htmlFor="student-id-input" className="block text-sm font-bold text-slate-800 mb-2">Enter Student ID</label>
-                <div className="flex gap-2 items-start">
-                    <div className="flex-grow">
+                <label htmlFor="student-name-input" className="block text-sm font-bold text-slate-800 mb-2">Search Student by Name</label>
+                <div className="flex gap-2 items-start" ref={searchRef}>
+                    <div className="flex-grow relative">
                         <input
-                            id="student-id-input"
+                            id="student-name-input"
                             type="text"
-                            placeholder="e.g., BMS250501"
-                            value={studentIdInput}
-                            onChange={e => setStudentIdInput(e.target.value.toUpperCase())}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleStudentSearch(); }}}
+                            placeholder="e.g., John Doe"
+                            value={nameInput}
+                            onChange={handleNameInputChange}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearchClick(); }}}
+                            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                            autoComplete="off"
                         />
-                        {searchError && <p className={`${searchError.startsWith('Warning') ? 'text-amber-600' : 'text-red-500'} text-sm mt-1`}>{searchError}</p>}
+                        {searchError && <p className="text-red-500 text-sm mt-1">{searchError}</p>}
+
+                        {/* Suggestions dropdown */}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <ul className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {suggestions.map(s => (
+                                    <li
+                                        key={s.id}
+                                        onMouseDown={() => selectStudent(s)}
+                                        className="px-4 py-2.5 cursor-pointer hover:bg-sky-50 flex items-center justify-between"
+                                    >
+                                        <span className="font-medium text-slate-800">{s.name}</span>
+                                        <span className="text-xs text-slate-500 ml-2">{s.grade} · {formatStudentId(s, academicYear)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                     <button
                         type="button"
-                        onClick={handleStudentSearch}
+                        onClick={handleSearchClick}
                         className="px-6 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 h-[42px] flex items-center"
                     >
                        <SearchIcon className="w-5 h-5"/>
                     </button>
                 </div>
             </div>
+            {/* ---------------------------------------------------- */}
 
             {existingTc && (
                  <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">

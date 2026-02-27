@@ -191,7 +191,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             if (!formData.studentName?.trim()) newErrors.studentName = "Student name is required.";
             if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
             if (!formData.gender) newErrors.gender = "Gender is required.";
-            if (!formData.studentAadhaar?.trim()) newErrors.studentAadhaar = "Aadhaar number is required.";
             if (!formData.category) newErrors.category = "Category is required.";
             if (!formData.religion?.trim()) newErrors.religion = "Religion is required.";
         }
@@ -825,7 +824,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Aadhaar No.*</label>
+                                            <label className="block text-sm font-bold">Aadhaar No. (Optional)</label>
                                             {/* Masked display with real value stored */}
                                             <input
                                                 type="text"
@@ -841,8 +840,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 className={`form-input w-full mt-1 ${errors.studentAadhaar ? 'border-red-400 focus:ring-red-300' : ''}`}
                                             />
                                             <p className="text-xs text-slate-400 mt-0.5">12 digits — masked for security</p>
-                                            <FieldError message={errors.studentAadhaar} />
-                                            {errors.studentAadhaar && <span className="field-error" />}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold">PEN No. (Optional)</label>

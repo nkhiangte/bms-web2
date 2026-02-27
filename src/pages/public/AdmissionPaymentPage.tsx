@@ -222,8 +222,18 @@ await db.collection('online_admissions').doc(admissionId).update({
                     {paymentSubmitted ? (
                         <div className="text-center py-12">
                             <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
-                            <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
-                            <p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
+                           <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
+<p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
+<div className="mt-4 inline-block bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg px-6 py-3">
+    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Your Application / Reference ID</p>
+    <p className="font-mono text-xl font-bold text-sky-700 mt-1">{admissionId}</p>
+    <button 
+        onClick={() => navigator.clipboard.writeText(admissionId)} 
+        className="mt-2 text-xs text-slate-500 hover:text-sky-600 underline"
+    >
+        Copy ID
+    </button>
+</div>
                              <div className="mt-8 flex justify-center gap-4">
                                 <Link to="/" className="btn btn-secondary">Go to Homepage</Link>
                                 <Link to="/admissions/status" className="btn btn-primary">Check Status</Link>

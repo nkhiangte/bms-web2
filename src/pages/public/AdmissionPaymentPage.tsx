@@ -47,10 +47,13 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     } else {
                         addNotification("Admission record not found.", 'error');
                     }
-                } catch (error) {
-                    console.error("Error fetching admission details:", error);
-                    addNotification("Failed to load admission details.", 'error');
-                }
+               } catch (error: any) {
+    console.error("Error fetching admission details:", error);
+    const msg = error?.code === 'permission-denied'
+        ? "Permission denied. Please contact the school office."
+        : "Failed to load admission details.";
+    addNotification(msg, 'error');
+}
             }
              setIsLoadingDetails(false);
         };
@@ -154,7 +157,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             addNotification("Please upload a screenshot of your payment to confirm.", 'error');
             return;
         }
-        if (!admissionId || grandTotal <= 0) return;
+if (!admissionId) return;
 
         setIsUploading(true);
         try {
@@ -283,7 +286,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
                                 <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span >Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
-                            <button onClick={handleSubmitPayment} disabled={isUploading || grandTotal <= 0} className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
+                            <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}
+ className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}
                                 <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
                             </button>

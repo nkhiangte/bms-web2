@@ -222,16 +222,18 @@ await db.collection('online_admissions').doc(admissionId).update({
                     {paymentSubmitted ? (
                         <div className="text-center py-12">
                             <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
-                           <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
-<p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
-<div className="mt-4 inline-block bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg px-6 py-3">
-    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Your Application / Reference ID</p>
-    <p className="font-mono text-xl font-bold text-sky-700 mt-1">{admissionId}</p>
-    <button 
-        onClick={() => navigator.clipboard.writeText(admissionId)} 
-        className="mt-2 text-xs text-slate-500 hover:text-sky-600 underline"
+                      <h2 className="text-2xl font-bold text-slate-800">Application Submitted!</h2>
+<p className="text-slate-600 mt-4 max-w-lg mx-auto">
+    You have successfully submitted the admission forms. Please use this reference ID to collect merchandise from the school.
+</p>
+<div className="mt-6 inline-block bg-slate-100 border-2 border-dashed border-sky-300 rounded-lg px-8 py-4">
+    <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Reference ID</p>
+    <p className="font-mono text-2xl font-bold text-sky-700">{admissionId}</p>
+    <button
+        onClick={() => navigator.clipboard.writeText(admissionId)}
+        className="mt-3 text-xs font-semibold text-slate-500 hover:text-sky-600 underline"
     >
-        Copy ID
+        Copy to Clipboard
     </button>
 </div>
                              <div className="mt-8 flex justify-center gap-4">

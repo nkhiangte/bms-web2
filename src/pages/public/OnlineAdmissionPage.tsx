@@ -383,6 +383,7 @@ onChange={(e) => setExistingId(e.target.value.toUpperCase().replace(/O/g, '0'))}
                                             autoFocus
                                         />
                                         {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
+                                        <p className="text-xs text-slate-400 mt-1">Tip: The ID uses the number 0, not the letter O.</p>
                                     </div>
                                     <button
                                         type="submit"

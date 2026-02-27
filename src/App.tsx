@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem } from '@/types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus} from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { db, auth, firebase } from '@/firebaseConfig';
 import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade } from '@/utils';
@@ -134,7 +134,6 @@ const App: React.FC = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
-  const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
   
   // Configuration
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
@@ -1228,13 +1227,7 @@ const App: React.FC = () => {
 
 
     // Navigation menu listener (sort client-side to avoid needing a Firestore index)
-    const unsubNav = db.collection('navigation').onSnapshot(snapshot => {
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem));
-        setNavigation(items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
-    }, (error) => {
-        console.error("Navigation listener error:", error);
-        // Don't crash - just leave navigation empty
-    });
+
 
     return () => {
         unsubNews();
@@ -1245,7 +1238,6 @@ const App: React.FC = () => {
         unsubAdmSettings();
         unsubGradeDefs();
         unsubSitemap();
-        unsubNav();
     };
   }, []);
 
@@ -1300,7 +1292,8 @@ const App: React.FC = () => {
       
       <Routes>
         {/* Public Routes */}
-<Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
+<Route path="/" element={<PublicLayout user={user} />
+}>
         <Route index element={<PublicHomePage news={news} user={user} />} />
           <Route path="about" element={<AboutPage user={user} />} />
           <Route path="history" element={<HistoryPage user={user} />} />

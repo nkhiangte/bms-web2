@@ -97,23 +97,18 @@ const AdminPage: React.FC<AdminPageProps> = ({
         }
     };
 
-    const adminLinks = [
-        { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
-       { 
-    title: "Prescribed Textbooks", 
-    description: "Manage class folders and textbook links for the public page.", 
-    icon: <DocIcon />, 
-    link: "/portal/manage-textbooks" 
-},
-0        { title: "Fee Management", description: "Collect tuition/exam fees and edit fee structures.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },0
-        { title: "Online Admissions", description: "Review and process new student applications.", icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
-        { title: "Admission Settings", description: "Edit Admission & Re-admission fees for both new and existing students.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
-        { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },
-        { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
-        { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
-        { title: "School Settings", description: "Update school info, payment QR codes, etc.", icon: <CogIcon className="w-7 h-7" />, link: "/portal/settings" },
-        { title: "Manage Documents", description: "Upload and manage downloadable PDF documents for the website.", icon: <DocIcon />, link: "/portal/documents" },
-    ];
+   const adminLinks = [
+    { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
+    { title: "Prescribed Textbooks", description: "Manage class folders and textbook links for the public page.", icon: <DocIcon />, link: "/portal/manage-textbooks" },
+    { title: "Fee Management", description: "Collect tuition/exam fees and edit fee structures.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },
+    { title: "Online Admissions", description: "Review and process new student applications.", icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
+    { title: "Admission Settings", description: "Edit Admission & Re-admission fees for both new and existing students.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
+    { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },
+    { title: "Staff User Accounts", description: "Approve new user registrations for staff.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/users", count: pendingStaffCount },
+    { title: "News Management", description: "Create and manage school news.", icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
+    { title: "School Settings", description: "Update school info, payment QR codes, etc.", icon: <CogIcon className="w-7 h-7" />, link: "/portal/settings" },
+    { title: "Manage Documents", description: "Upload and manage downloadable PDF documents for the website.", icon: <DocIcon />, link: "/portal/documents" },
+];
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">

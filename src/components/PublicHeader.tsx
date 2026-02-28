@@ -25,6 +25,8 @@ const MENU: MenuItem[] = [
             { label: 'History',    path: '/history' },
             { label: 'Faculty',    path: '/faculty' },
             { label: 'Rules',      path: '/rules' },
+                    { label: 'Download Prospectus',  path: 'https://drive.google.com/file/d/1yI24FOgMJoWh-QV72qC6Z77byO8aA-fr/view?usp=sharing' },
+
         ],
     },
     {

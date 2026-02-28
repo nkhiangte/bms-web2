@@ -1168,6 +1168,19 @@ const App: React.FC = () => {
           <Route path="sitemap" element={<SitemapPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
           {/* ✅ Public syllabus route — no login required */}
+         <Route path="syllabus" element={
+    <div className="p-8">
+        <h1 className="text-2xl font-bold text-slate-800 mb-6">Select a Class</h1>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {Object.keys(gradeDefinitions).map(grade => (
+                <a key={grade} href={`/portal/syllabus/${encodeURIComponent(grade)}`}
+                   className="bg-white border rounded-xl p-5 text-center font-bold text-slate-700 hover:bg-sky-50 hover:border-sky-300 transition-all shadow-sm">
+                    {grade}
+                </a>
+            ))}
+        </div>
+    </div>
+} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
         </Route>
 

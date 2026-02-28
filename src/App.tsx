@@ -119,7 +119,8 @@ import FeeManagementPage from '@/pages/FeeManagementPage';
 import FeesPage from '@/pages/public/FeesPage';
 import InsightsPage from '@/pages/InsightsPage';
 import ManageNavigationPage from '@/pages/ManageNavigationPage';
-
+import TextbooksPage from '@/pages/public/TextbooksPage';
+import ManageTextbooksPage from '@/pages/ManageTextbooksPage';
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -1373,7 +1374,8 @@ const App: React.FC = () => {
         }>
            <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
            <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted for approval!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
-           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} />} />
+          <Route path="manage-textbooks" element={<ManageTextbooksPage />} />
+          <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} />} />
            <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />
            <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: "Password changed. Please log in again." }; } catch(err: any) { return { success: false, message: err.message }; }}} />} />
            <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />
@@ -1433,7 +1435,8 @@ const App: React.FC = () => {
            <Route path="activity-log" element={<ActivityLogPage students={students} user={user!} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={handleBulkUpdateActivityLogs} />} />
            <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveHomework} onDelete={handleDeleteHomework} allHomework={homework} />} />
            <Route path="manage-syllabus" element={<ManageSyllabusPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveSyllabus} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
-           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
+          <Route path="/portal/syllabus" element={<TextbooksPage />} />
+          <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
            <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
            <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
            <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />

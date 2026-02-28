@@ -6,34 +6,22 @@ import { db } from '@/firebaseConfig';
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface TextbookLink {
-    name: string;
-    url: string;
+interface SubjectEntry {
+    subject: string;
+    textbook: string;
 }
 
 interface TextbookFolder {
     id: string;
     label: string;
     order: number;
-    links: TextbookLink[];
+    subjects: SubjectEntry[];
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const FolderIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
         <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
-    </svg>
-);
-
-const LinkIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-    </svg>
-);
-
-const ExternalIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
     </svg>
 );
 
@@ -82,7 +70,7 @@ const TextbooksPage: React.FC = () => {
                         Prescribed Textbooks
                     </h1>
                     <p className="mt-3 text-slate-500 text-base max-w-md mx-auto">
-                        Select your class to view the list of prescribed textbooks and resources.
+                        Select your class to view the list of prescribed textbooks.
                     </p>
                 </div>
 
@@ -101,25 +89,26 @@ const TextbooksPage: React.FC = () => {
                     <div className="space-y-3">
                         {folders.map(folder => {
                             const isOpen = openFolder === folder.id;
+                            const subjectCount = folder.subjects?.length || 0;
                             return (
                                 <div
                                     key={folder.id}
-                                    className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden transition-all"
+                                    className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
                                 >
-                                    {/* Folder header — clickable */}
+                                    {/* Folder header */}
                                     <button
                                         onClick={() => toggleFolder(folder.id)}
                                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-sky-50 transition-colors group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className={`text-sky-500 transition-colors ${isOpen ? 'text-sky-700' : ''}`}>
+                                            <span className={`transition-colors ${isOpen ? 'text-sky-700' : 'text-sky-500'}`}>
                                                 <FolderIcon />
                                             </span>
-                                            <span className={`font-bold text-slate-800 text-base group-hover:text-sky-700 transition-colors ${isOpen ? 'text-sky-700' : ''}`}>
+                                            <span className={`font-bold text-base transition-colors ${isOpen ? 'text-sky-700' : 'text-slate-800 group-hover:text-sky-700'}`}>
                                                 {folder.label}
                                             </span>
                                             <span className="text-xs text-slate-400 font-normal">
-                                                {folder.links?.length || 0} item{(folder.links?.length || 0) !== 1 ? 's' : ''}
+                                                {subjectCount} subject{subjectCount !== 1 ? 's' : ''}
                                             </span>
                                         </div>
                                         <svg
@@ -130,33 +119,31 @@ const TextbooksPage: React.FC = () => {
                                         </svg>
                                     </button>
 
-                                    {/* Links list */}
+                                    {/* Subjects table */}
                                     {isOpen && (
-                                        <div className="border-t border-slate-100 divide-y divide-slate-50">
-                                            {!folder.links?.length ? (
-                                                <p className="px-6 py-4 text-sm text-slate-400 italic">No items in this folder.</p>
+                                        <div className="border-t border-slate-100">
+                                            {!subjectCount ? (
+                                                <p className="px-6 py-4 text-sm text-slate-400 italic">No subjects listed yet.</p>
                                             ) : (
-                                                folder.links.map((link, i) => (
-                                                    <a
-                                                        key={i}
-                                                        href={link.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-between px-6 py-3.5 hover:bg-sky-50 transition-colors group"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-sky-400 group-hover:text-sky-600">
-                                                                <LinkIcon />
-                                                            </span>
-                                                            <span className="text-sm font-medium text-slate-700 group-hover:text-sky-700">
-                                                                {link.name}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-slate-300 group-hover:text-sky-400">
-                                                            <ExternalIcon />
-                                                        </span>
-                                                    </a>
-                                                ))
+                                                <>
+                                                    {/* Table header */}
+                                                    <div className="grid grid-cols-2 gap-4 px-6 py-2 bg-slate-50 border-b border-slate-100">
+                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Subject</span>
+                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prescribed Textbook</span>
+                                                    </div>
+                                                    {/* Rows */}
+                                                    <div className="divide-y divide-slate-50">
+                                                        {folder.subjects.map((entry, i) => (
+                                                            <div key={i} className="grid grid-cols-2 gap-4 px-6 py-3 hover:bg-sky-50 transition-colors">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-sm">📖</span>
+                                                                    <span className="text-sm font-semibold text-slate-800">{entry.subject}</span>
+                                                                </div>
+                                                                <span className="text-sm text-slate-600">{entry.textbook}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
                                             )}
                                         </div>
                                     )}

@@ -35,7 +35,7 @@ const MENU: MenuItem[] = [
         children: [
             { label: 'Overview',   path: '/academics' },
             { label: 'Curriculum', path: '/academics/curriculum' },
-            { label: 'Syllabus',   path: '/portal/syllabus' },
+            { label: 'Syllabus',   path: '/syllabus' },
             { label: 'Routine',    path: '/routine' },
         ],
     },

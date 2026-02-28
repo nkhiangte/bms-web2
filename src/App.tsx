@@ -1179,7 +1179,8 @@ const App: React.FC = () => {
     const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
     const unsubExamRoutines = db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
     const unsubClassRoutines = db.collection('classRoutines').onSnapshot(s => {
-         const routines: Record<string, DailyRoutine> = {};
+     const unsubSyllabus = db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))));
+      const routines: Record<string, DailyRoutine> = {};
          s.docs.forEach(doc => routines[doc.id] = doc.data()?.routine as DailyRoutine);
          setClassRoutines(routines);
     });
@@ -1241,6 +1242,7 @@ const App: React.FC = () => {
         unsubAdmSettings();
         unsubGradeDefs();
         unsubSitemap();
+      unsubSyllabus()
     };
   }, []);
 
@@ -1350,6 +1352,7 @@ const App: React.FC = () => {
           <Route path="news" element={<NewsPage news={news} user={user} />} />
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
+          <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />  {/* ADD THIS */}
         </Route>
 
         <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />

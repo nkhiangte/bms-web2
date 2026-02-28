@@ -99,7 +99,13 @@ const AdminPage: React.FC<AdminPageProps> = ({
 
     const adminLinks = [
         { title: "Manage Staff", description: "Add, view, and manage all staff profiles.", icon: <BriefcaseIcon className="w-7 h-7" />, link: "/portal/staff" },
-        { title: "Fee Management", description: "Collect tuition/exam fees and edit fee structures.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },
+       { 
+    title: "Prescribed Textbooks", 
+    description: "Manage class folders and textbook links for the public page.", 
+    icon: <DocIcon />, 
+    link: "/portal/manage-textbooks" 
+},
+0        { title: "Fee Management", description: "Collect tuition/exam fees and edit fee structures.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },0
         { title: "Online Admissions", description: "Review and process new student applications.", icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
         { title: "Admission Settings", description: "Edit Admission & Re-admission fees for both new and existing students.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
         { title: "Parents Management", description: "View parent biodata and approve new accounts.", icon: <UserGroupIcon className="w-7 h-7" />, link: "/portal/parents", count: pendingParentCount },

@@ -6,16 +6,16 @@ import { db } from '@/firebaseConfig';
 const { useNavigate } = ReactRouterDOM as any;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface TextbookLink {
-    name: string;
-    url: string;
+interface SubjectEntry {
+    subject: string;
+    textbook: string;
 }
 
 interface TextbookFolder {
     id: string;
     label: string;
     order: number;
-    links: TextbookLink[];
+    subjects: SubjectEntry[];
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -43,57 +43,72 @@ const EditIcon = () => (
     </svg>
 );
 
-// ─── Add Link Modal ───────────────────────────────────────────────────────────
-const AddLinkModal: React.FC<{
-    onSave: (link: TextbookLink) => void;
+// ─── Add Subject Modal ────────────────────────────────────────────────────────
+const AddSubjectModal: React.FC<{
+    editEntry?: SubjectEntry & { index: number } | null;
+    onSave: (entry: SubjectEntry) => void;
     onClose: () => void;
     saving: boolean;
-}> = ({ onSave, onClose, saving }) => {
-    const [name, setName] = useState('');
-    const [url, setUrl] = useState('');
+}> = ({ editEntry, onSave, onClose, saving }) => {
+    const [subject, setSubject] = useState(editEntry?.subject ?? '');
+    const [textbook, setTextbook] = useState(editEntry?.textbook ?? '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name.trim() || !url.trim()) return;
-        onSave({ name: name.trim(), url: url.trim() });
+        if (!subject.trim() || !textbook.trim()) return;
+        onSave({ subject: subject.trim(), textbook: textbook.trim() });
     };
+
+    const isEdit = !!editEntry;
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
                 <div className="p-5 border-b flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 text-lg">Add New Link</h3>
+                    <h3 className="font-bold text-slate-800 text-lg">
+                        {isEdit ? 'Edit Subject & Textbook' : 'Add Subject & Prescribed Textbook'}
+                    </h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Display Name <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">
+                            Subject Name <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder="e.g. English Textbook (NCERT)"
+                            value={subject}
+                            onChange={e => setSubject(e.target.value)}
+                            placeholder="e.g. English, Mathematics, Science"
                             className="form-input w-full"
                             autoFocus
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">URL / Link <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">
+                            Prescribed Textbook <span className="text-red-500">*</span>
+                        </label>
                         <input
-                            type="url"
-                            value={url}
-                            onChange={e => setUrl(e.target.value)}
-                            placeholder="https://drive.google.com/..."
+                            type="text"
+                            value={textbook}
+                            onChange={e => setTextbook(e.target.value)}
+                            placeholder="e.g. NCERT English Marigold Part 1"
                             className="form-input w-full"
                             required
                         />
-                        <p className="text-xs text-slate-400 mt-1">Can be a Google Drive link, PDF URL, or any website.</p>
+                        <p className="text-xs text-slate-400 mt-1">Enter the full name of the prescribed textbook.</p>
                     </div>
                     <div className="flex gap-3 pt-2">
                         <button type="button" onClick={onClose} className="flex-1 btn btn-secondary">Cancel</button>
-                        <button type="submit" disabled={saving || !name.trim() || !url.trim()} className="flex-1 btn btn-primary">
-                            {saving ? <><SpinnerIcon className="w-4 h-4" /> Saving...</> : 'Add Link'}
+                        <button
+                            type="submit"
+                            disabled={saving || !subject.trim() || !textbook.trim()}
+                            className="flex-1 btn btn-primary"
+                        >
+                            {saving
+                                ? <><SpinnerIcon className="w-4 h-4" /> Saving...</>
+                                : isEdit ? 'Save Changes' : 'Add Subject'}
                         </button>
                     </div>
                 </form>
@@ -122,12 +137,12 @@ const AddFolderModal: React.FC<{
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
                 <div className="p-5 border-b flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 text-lg">Create New Folder</h3>
+                    <h3 className="font-bold text-slate-800 text-lg">Create New Class Folder</h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Folder Name <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Class Name <span className="text-red-500">*</span></label>
                         <input
                             type="text"
                             value={label}
@@ -186,7 +201,7 @@ const RenameFolderModal: React.FC<{
                 </div>
                 <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Folder Name</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Class Name</label>
                         <input type="text" value={label} onChange={e => setLabel(e.target.value)} className="form-input w-full" required />
                     </div>
                     <div>
@@ -215,7 +230,8 @@ const ManageTextbooksPage: React.FC = () => {
 
     // Modals
     const [showAddFolder, setShowAddFolder] = useState(false);
-    const [showAddLink, setShowAddLink] = useState<string | null>(null); // folderId
+    const [showAddSubject, setShowAddSubject] = useState<string | null>(null); // folderId
+    const [editSubject, setEditSubject] = useState<{ folderId: string; entry: SubjectEntry & { index: number } } | null>(null);
     const [editFolder, setEditFolder] = useState<TextbookFolder | null>(null);
 
     useEffect(() => {
@@ -232,9 +248,9 @@ const ManageTextbooksPage: React.FC = () => {
     const handleCreateFolder = async (label: string, order: number) => {
         setSaving(true);
         try {
-            await db.collection('textbooks').add({ label, order, links: [] });
+            await db.collection('textbooks').add({ label, order, subjects: [] });
             setShowAddFolder(false);
-        } catch (e) {
+        } catch {
             alert('Failed to create folder.');
         } finally {
             setSaving(false);
@@ -257,7 +273,7 @@ const ManageTextbooksPage: React.FC = () => {
 
     // ── Delete folder ──────────────────────────────────────────────────────────
     const handleDeleteFolder = async (folder: TextbookFolder) => {
-        if (!window.confirm(`Delete folder "${folder.label}" and all its links? This cannot be undone.`)) return;
+        if (!window.confirm(`Delete class "${folder.label}" and all its subjects? This cannot be undone.`)) return;
         try {
             await db.collection('textbooks').doc(folder.id).delete();
             if (expandedFolder === folder.id) setExpandedFolder(null);
@@ -266,32 +282,50 @@ const ManageTextbooksPage: React.FC = () => {
         }
     };
 
-    // ── Add link to folder ─────────────────────────────────────────────────────
-    const handleAddLink = async (folderId: string, link: TextbookLink) => {
+    // ── Add subject entry ──────────────────────────────────────────────────────
+    const handleAddSubject = async (folderId: string, entry: SubjectEntry) => {
         const folder = folders.find(f => f.id === folderId);
         if (!folder) return;
         setSaving(true);
         try {
-            const newLinks = [...(folder.links || []), link];
-            await db.collection('textbooks').doc(folderId).update({ links: newLinks });
-            setShowAddLink(null);
+            const newSubjects = [...(folder.subjects || []), entry];
+            await db.collection('textbooks').doc(folderId).update({ subjects: newSubjects });
+            setShowAddSubject(null);
         } catch {
-            alert('Failed to add link.');
+            alert('Failed to add subject.');
         } finally {
             setSaving(false);
         }
     };
 
-    // ── Delete link from folder ────────────────────────────────────────────────
-    const handleDeleteLink = async (folderId: string, linkIndex: number) => {
+    // ── Edit subject entry ─────────────────────────────────────────────────────
+    const handleEditSubject = async (entry: SubjectEntry) => {
+        if (!editSubject) return;
+        const { folderId, entry: { index } } = editSubject;
         const folder = folders.find(f => f.id === folderId);
         if (!folder) return;
-        if (!window.confirm('Remove this link?')) return;
+        setSaving(true);
         try {
-            const newLinks = folder.links.filter((_, i) => i !== linkIndex);
-            await db.collection('textbooks').doc(folderId).update({ links: newLinks });
+            const newSubjects = folder.subjects.map((s, i) => i === index ? entry : s);
+            await db.collection('textbooks').doc(folderId).update({ subjects: newSubjects });
+            setEditSubject(null);
         } catch {
-            alert('Failed to remove link.');
+            alert('Failed to update subject.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ── Delete subject entry ───────────────────────────────────────────────────
+    const handleDeleteSubject = async (folderId: string, index: number) => {
+        const folder = folders.find(f => f.id === folderId);
+        if (!folder) return;
+        if (!window.confirm('Remove this subject?')) return;
+        try {
+            const newSubjects = folder.subjects.filter((_, i) => i !== index);
+            await db.collection('textbooks').doc(folderId).update({ subjects: newSubjects });
+        } catch {
+            alert('Failed to remove subject.');
         }
     };
 
@@ -307,10 +341,18 @@ const ManageTextbooksPage: React.FC = () => {
                     saving={saving}
                 />
             )}
-            {showAddLink && (
-                <AddLinkModal
-                    onSave={link => handleAddLink(showAddLink, link)}
-                    onClose={() => setShowAddLink(null)}
+            {showAddSubject && (
+                <AddSubjectModal
+                    onSave={entry => handleAddSubject(showAddSubject, entry)}
+                    onClose={() => setShowAddSubject(null)}
+                    saving={saving}
+                />
+            )}
+            {editSubject && (
+                <AddSubjectModal
+                    editEntry={editSubject.entry}
+                    onSave={handleEditSubject}
+                    onClose={() => setEditSubject(null)}
                     saving={saving}
                 />
             )}
@@ -332,14 +374,14 @@ const ManageTextbooksPage: React.FC = () => {
                     onClick={() => setShowAddFolder(true)}
                     className="btn btn-primary flex items-center gap-2"
                 >
-                    <PlusIcon /> New Folder
+                    <PlusIcon /> New Class
                 </button>
             </div>
 
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-slate-800">📚 Manage Prescribed Textbooks</h1>
                 <p className="text-slate-500 text-sm mt-1">
-                    Create folders (one per class) and add links to textbooks, PDFs or any resource inside each.
+                    Create a folder per class, then add subjects with their prescribed textbooks.
                 </p>
             </div>
 
@@ -351,19 +393,19 @@ const ManageTextbooksPage: React.FC = () => {
             ) : folders.length === 0 ? (
                 <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
                     <span className="text-5xl">📂</span>
-                    <p className="mt-4 font-semibold text-slate-600">No folders yet.</p>
-                    <p className="text-slate-400 text-sm">Click "New Folder" to create your first class folder.</p>
+                    <p className="mt-4 font-semibold text-slate-600">No classes yet.</p>
+                    <p className="text-slate-400 text-sm">Click "New Class" to get started.</p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {folders.map(folder => {
                         const isExpanded = expandedFolder === folder.id;
+                        const subjectCount = folder.subjects?.length || 0;
                         return (
                             <div key={folder.id} className="border border-slate-200 rounded-xl overflow-hidden">
 
                                 {/* Folder row */}
                                 <div className="flex items-center gap-3 px-4 py-3.5 bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    {/* Expand toggle */}
                                     <button
                                         onClick={() => setExpandedFolder(isExpanded ? null : folder.id)}
                                         className="flex items-center gap-3 flex-1 text-left"
@@ -371,7 +413,7 @@ const ManageTextbooksPage: React.FC = () => {
                                         <span className="text-sky-500"><FolderIcon /></span>
                                         <span className="font-bold text-slate-800">{folder.label}</span>
                                         <span className="text-xs text-slate-400">
-                                            {folder.links?.length || 0} link{(folder.links?.length || 0) !== 1 ? 's' : ''}
+                                            {subjectCount} subject{subjectCount !== 1 ? 's' : ''}
                                         </span>
                                         <span className="text-xs text-slate-300">· order {folder.order}</span>
                                     </button>
@@ -379,22 +421,22 @@ const ManageTextbooksPage: React.FC = () => {
                                     {/* Actions */}
                                     <div className="flex items-center gap-1">
                                         <button
-                                            onClick={() => { setExpandedFolder(folder.id); setShowAddLink(folder.id); }}
-                                            title="Add link"
+                                            onClick={() => { setExpandedFolder(folder.id); setShowAddSubject(folder.id); }}
+                                            title="Add subject"
                                             className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
                                         >
                                             <PlusIcon />
                                         </button>
                                         <button
                                             onClick={() => setEditFolder(folder)}
-                                            title="Edit folder"
+                                            title="Edit class"
                                             className="p-1.5 rounded-lg text-sky-600 hover:bg-sky-50 transition-colors"
                                         >
                                             <EditIcon />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteFolder(folder)}
-                                            title="Delete folder"
+                                            title="Delete class"
                                             className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
                                         >
                                             <TrashIcon />
@@ -409,56 +451,67 @@ const ManageTextbooksPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Links */}
+                                {/* Subjects table */}
                                 {isExpanded && (
-                                    <div className="divide-y divide-slate-100">
-                                        {!folder.links?.length ? (
+                                    <div>
+                                        {!folder.subjects?.length ? (
                                             <div className="px-6 py-5 text-center">
-                                                <p className="text-sm text-slate-400 italic">No links yet.</p>
+                                                <p className="text-sm text-slate-400 italic">No subjects yet.</p>
                                                 <button
-                                                    onClick={() => setShowAddLink(folder.id)}
+                                                    onClick={() => setShowAddSubject(folder.id)}
                                                     className="mt-2 text-sm font-semibold text-sky-600 hover:underline"
                                                 >
-                                                    + Add first link
+                                                    + Add first subject
                                                 </button>
                                             </div>
                                         ) : (
-                                            folder.links.map((link, i) => (
-                                                <div key={i} className="flex items-center justify-between px-6 py-3 hover:bg-slate-50">
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <span className="text-sky-400 shrink-0">🔗</span>
-                                                        <div className="min-w-0">
-                                                            <p className="text-sm font-semibold text-slate-800 truncate">{link.name}</p>
-                                                            <p className="text-xs text-slate-400 truncate max-w-xs">{link.url}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        <a
-                                                            href={link.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-xs text-sky-600 hover:underline"
-                                                        >
-                                                            Open ↗
-                                                        </a>
-                                                        <button
-                                                            onClick={() => handleDeleteLink(folder.id, i)}
-                                                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                        >
-                                                            <TrashIcon />
-                                                        </button>
-                                                    </div>
+                                            <>
+                                                {/* Header */}
+                                                <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-6 py-2 bg-slate-100 border-t border-slate-200">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Subject</span>
+                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prescribed Textbook</span>
+                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</span>
                                                 </div>
-                                            ))
+
+                                                {/* Rows */}
+                                                <div className="divide-y divide-slate-100">
+                                                    {folder.subjects.map((entry, i) => (
+                                                        <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-3 items-center px-6 py-3 hover:bg-slate-50">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="text-base">📖</span>
+                                                                <span className="text-sm font-semibold text-slate-800 truncate">{entry.subject}</span>
+                                                            </div>
+                                                            <span className="text-sm text-slate-600 truncate">{entry.textbook}</span>
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <button
+                                                                    onClick={() => setEditSubject({ folderId: folder.id, entry: { ...entry, index: i } })}
+                                                                    className="p-1 text-sky-500 hover:text-sky-700 hover:bg-sky-50 rounded transition-colors"
+                                                                    title="Edit"
+                                                                >
+                                                                    <EditIcon />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteSubject(folder.id, i)}
+                                                                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                                    title="Delete"
+                                                                >
+                                                                    <TrashIcon />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </>
                                         )}
-                                        {/* Add link button at bottom when expanded and has items */}
-                                        {(folder.links?.length || 0) > 0 && (
-                                            <div className="px-6 py-2.5 bg-slate-50">
+
+                                        {/* Add button at bottom */}
+                                        {subjectCount > 0 && (
+                                            <div className="px-6 py-2.5 bg-slate-50 border-t border-slate-100">
                                                 <button
-                                                    onClick={() => setShowAddLink(folder.id)}
+                                                    onClick={() => setShowAddSubject(folder.id)}
                                                     className="text-sm font-semibold text-sky-600 hover:text-sky-800 flex items-center gap-1"
                                                 >
-                                                    <PlusIcon /> Add another link
+                                                    <PlusIcon /> Add another subject
                                                 </button>
                                             </div>
                                         )}
@@ -475,9 +528,9 @@ const ManageTextbooksPage: React.FC = () => {
                 <p className="font-bold mb-1">💡 Tips</p>
                 <ul className="space-y-1 list-disc list-inside text-blue-700">
                     <li>Create one folder per class (e.g. "Class X", "Nursery").</li>
-                    <li>Links can point to Google Drive, PDFs, NCERT website, or any URL.</li>
+                    <li>Add each subject and its prescribed textbook name inside the class folder.</li>
                     <li>Use the order number to control which class appears first.</li>
-                    <li>Changes are saved instantly and visible on the public page right away.</li>
+                    <li>Changes are saved instantly to Firebase and visible on the public page right away.</li>
                 </ul>
             </div>
         </div>

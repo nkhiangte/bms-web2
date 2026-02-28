@@ -1251,6 +1251,7 @@ const App: React.FC = () => {
           <Route path="textbooks" element={<TextbooksPage />} />
           {/* ✅ Public syllabus routes — no login required */}
           <Route path="syllabus" element={<PublicSyllabusSelectionPage />} />
+         <Route path="syllabus" element={<Navigate to="Class%20X" replace />} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
         </Route>
 

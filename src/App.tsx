@@ -1174,6 +1174,7 @@ const App: React.FC = () => {
 
   // Fetch Public Data & Real-time Config Listeners
   useEffect(() => {
+        const unsubStaff = db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
     const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
     const unsubExamRoutines = db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
     const unsubClassRoutines = db.collection('classRoutines').onSnapshot(s => {
@@ -1230,7 +1231,8 @@ const App: React.FC = () => {
 
 
     return () => {
-        unsubNews();
+          unsubStaff();
+      unsubNews();
         unsubExamRoutines();
         unsubClassRoutines();
         unsubSchoolSettings();

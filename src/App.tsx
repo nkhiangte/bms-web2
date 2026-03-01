@@ -127,6 +127,17 @@ import { SpinnerIcon } from '@/components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
+// ── Helper: generate a unique hostel admission ID ─────────────────────────────
+const generateHostelAdmissionId = (): string => {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `BMSHST${ts}${rand}`;
+};
+
+// ── Helper: resolve Firestore collection from admission ID prefix ─────────────
+const getAdmissionCollection = (id: string): string =>
+  id.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
+
 const App: React.FC = () => {
   // --- State Declarations ---
   const [user, setUser] = useState<User | null>(null);
@@ -135,6 +146,7 @@ const App: React.FC = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
+  const [hostelAdmissions, setHostelAdmissions] = useState<OnlineAdmission[]>([]);
   const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
 
   // Configuration
@@ -187,7 +199,10 @@ const App: React.FC = () => {
     return staffMember?.assignedSubjects || [];
   }, [user, staff]);
 
-  const pendingAdmissionsCount = onlineAdmissions.filter(a => a.status === 'pending').length;
+  // Include both collections in the pending badge count
+  const pendingAdmissionsCount =
+    onlineAdmissions.filter(a => a.status === 'pending').length +
+    hostelAdmissions.filter(a => a.status === 'pending').length;
   const pendingParentCount = users.filter(u => u.role === 'pending_parent').length;
   const pendingStaffCount = users.filter(u => u.role === 'pending').length;
 
@@ -343,12 +358,14 @@ const App: React.FC = () => {
     }
   };
 
+  // ── Enrollment: routes to correct collection based on ID prefix ───────────
   const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
     try {
       const batch = db.batch();
       const studentRef = db.collection('students').doc();
       batch.set(studentRef, { ...studentData, id: studentRef.id, status: StudentStatus.ACTIVE });
-      const admissionRef = db.collection('online_admissions').doc(admissionId);
+      const collection = getAdmissionCollection(admissionId);
+      const admissionRef = db.collection(collection).doc(admissionId);
       batch.update(admissionRef, { status: 'approved', isEnrolled: true, temporaryStudentId: studentData.studentId });
       await batch.commit();
       addNotification(`Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`, 'success', 'Enrollment Complete');
@@ -1008,6 +1025,89 @@ const App: React.FC = () => {
     }
   };
 
+  // ── Online Admission Submit: routes Day Scholars to online_admissions,
+  //    Boarders to hostel_admissions with a custom BMSHST… ID ─────────────────
+  const handleOnlineAdmissionSubmit = async (
+    data: Partial<OnlineAdmission>,
+    id?: string
+  ): Promise<string> => {
+    try {
+      const sanitizedData = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
+      );
+
+      if (id) {
+        // Updating an existing draft — route by ID prefix
+        const collection = getAdmissionCollection(id);
+        await db.collection(collection).doc(id).set(sanitizedData, { merge: true });
+        return id;
+      }
+
+      const isHostel = data.boardingType === 'Boarder';
+
+      if (isHostel) {
+        // New Boarder application: custom BMSHST… ID in hostel_admissions
+        const newId = generateHostelAdmissionId();
+        await db.collection('hostel_admissions').doc(newId).set({
+          ...sanitizedData,
+          id: newId,
+          submissionDate: new Date().toISOString(),
+        });
+        return newId;
+      } else {
+        // New Day Scholar application: BMSAPP… ID in online_admissions
+        const docRef = db.collection('online_admissions').doc();
+        const customId = `BMSAPP${docRef.id}`;
+        await db.collection('online_admissions').doc(customId).set({
+          ...sanitizedData,
+          id: customId,
+          temporaryStudentId: customId,
+          submissionDate: new Date().toISOString(),
+        });
+        return customId;
+      }
+    } catch (error: any) {
+      console.error('handleOnlineAdmissionSubmit error:', error);
+      addNotification('Failed to save admission. Please try again.', 'error');
+      throw error;
+    }
+  };
+
+  // ── Admission status update: routes by ID prefix or explicit isHostel flag ─
+  const handleAdmissionUpdateStatus = async (
+    id: string,
+    status: OnlineAdmission['status'],
+    isHostel?: boolean
+  ): Promise<void> => {
+    try {
+      const collection = (isHostel ?? id.startsWith('BMSHST'))
+        ? 'hostel_admissions'
+        : 'online_admissions';
+      await db.collection(collection).doc(id).update({ status });
+      addNotification('Application status updated.', 'success');
+    } catch (error: any) {
+      console.error('Error updating admission status:', error);
+      addNotification('Failed to update status.', 'error');
+    }
+  };
+
+  // ── Admission delete: routes by ID prefix or explicit isHostel flag ────────
+  const handleAdmissionDelete = async (
+    id: string,
+    isHostel?: boolean
+  ): Promise<void> => {
+    try {
+      const collection = (isHostel ?? id.startsWith('BMSHST'))
+        ? 'hostel_admissions'
+        : 'online_admissions';
+      await db.collection(collection).doc(id).delete();
+      addNotification('Application deleted.', 'success');
+    } catch (error: any) {
+      console.error('Error deleting admission:', error);
+      addNotification('Failed to delete application.', 'error');
+    }
+  };
+
   // --- Firestore Data Listeners ---
   useEffect(() => {
     const unsubAcademicYear = db.collection('config').doc('academic').onSnapshot(doc => {
@@ -1095,7 +1195,6 @@ const App: React.FC = () => {
     }, (error) => {
       console.error("Navigation listener error:", error);
     });
-    // ✅ Syllabus loaded publicly so unauthenticated users can view it
     const unsubSyllabus = db.collection('syllabus').onSnapshot(s =>
       setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)))
     );
@@ -1134,7 +1233,14 @@ const App: React.FC = () => {
       db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))));
 
       if (['admin', 'warden', 'user'].includes(user.role)) {
-        db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission))));
+        // ── Day Scholar admissions ─────────────────────────────────────────
+        db.collection('online_admissions').onSnapshot(s =>
+          setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))
+        );
+        // ── Boarder / Hostel admissions ────────────────────────────────────
+        db.collection('hostel_admissions').onSnapshot(s =>
+          setHostelAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))
+        );
         db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))));
         db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem))));
         db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord))));
@@ -1154,7 +1260,6 @@ const App: React.FC = () => {
 
   const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.netlify.app/</loc></url></urlset>`);
 
-  // ✅ Inline public syllabus class-selection page — links to /syllabus/:grade (no login)
   const PublicSyllabusSelectionPage = () => (
     <div className="bg-slate-50 min-h-screen py-14">
       <div className="container mx-auto px-4 max-w-3xl">
@@ -1206,18 +1311,7 @@ const App: React.FC = () => {
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
-          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={async (data, id) => {
-            const sanitizedData = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value]));
-            if (id) {
-              await db.collection('online_admissions').doc(id).set(sanitizedData, { merge: true });
-              return id;
-            } else {
-              const docRef = db.collection('online_admissions').doc();
-              const customId = `BMSAPP${docRef.id}`;
-              await db.collection('online_admissions').doc(customId).set({ ...sanitizedData, id: customId, temporaryStudentId: customId, submissionDate: new Date().toISOString() });
-              return customId;
-            }
-          }} />} />
+          <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} schoolConfig={schoolConfig} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />
@@ -1249,8 +1343,7 @@ const App: React.FC = () => {
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
-          {/* ✅ Public syllabus routes — no login required */}
-        <Route path="syllabus" element={<TextbooksPage />} />
+          <Route path="syllabus" element={<TextbooksPage />} />
         </Route>
 
         <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
@@ -1330,12 +1423,24 @@ const App: React.FC = () => {
           <Route path="exams" element={<ExamSelectionPage />} />
           <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />
           <Route path="admission-settings" element={<AdmissionSettingsPage admissionConfig={admissionSettings} onUpdateConfig={async (c) => { await db.collection('config').doc('admissionSettings').set(c); return true; }} />} />
-          <Route path="admissions" element={<OnlineAdmissionsListPage admissions={onlineAdmissions} onUpdateStatus={async (id, s) => { await db.collection('online_admissions').doc(id).update({ status: s }); }} onDelete={async (id) => { await db.collection('online_admissions').doc(id).delete(); }} onEnrollStudent={handleEnrollStudent} academicYear={academicYear} />} />
+
+          {/* ── Admissions list: now passes both collections + unified handlers ── */}
+          <Route path="admissions" element={
+            <OnlineAdmissionsListPage
+              admissions={onlineAdmissions}
+              hostelAdmissions={hostelAdmissions}
+              onUpdateStatus={handleAdmissionUpdateStatus}
+              onDelete={handleAdmissionDelete}
+              onEnrollStudent={handleEnrollStudent}
+              academicYear={academicYear}
+            />
+          } />
+
           <Route path="homework-scanner" element={<HomeworkScannerPage />} />
           <Route path="activity-log" element={<ActivityLogPage students={students} user={user!} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={handleBulkUpdateActivityLogs} />} />
           <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveHomework} onDelete={handleDeleteHomework} allHomework={homework} />} />
           <Route path="manage-syllabus" element={<ManageSyllabusPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveSyllabus} allSyllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
-        <Route path="syllabus" element={<TextbooksPage />} />
+          <Route path="syllabus" element={<TextbooksPage />} />
           <Route path="manage-textbooks" element={<ManageTextbooksPage />} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
           <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />

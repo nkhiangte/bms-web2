@@ -93,6 +93,11 @@ const FieldError: React.FC<{ message?: string }> = ({ message }) =>
 // ── Main Component ────────────────────────────────────────────────────────────
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
+
+    // ── NEW: boarding type selection (-1 = not selected yet, 0 = type selected, form steps 1-3) ──
+    // boardingType: null | 'Day Scholar' | 'Boarder'
+    const [boardingType, setBoardingType] = useState<'Day Scholar' | 'Boarder' | null>(null);
+
     const [step, setStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -104,9 +109,10 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const [showReviewPage, setShowReviewPage] = useState(false);
 
     useEffect(() => {
-    document.querySelector('.max-w-4xl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}, [step, showReviewPage]);
+        document.querySelector('.max-w-4xl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [step, showReviewPage, boardingType]);
+
     // ── Draft persistence: check on mount ────────────────────────────────────
     useEffect(() => {
         try {
@@ -443,6 +449,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         const rows: [string, string][] = [
             ['Student Name', formData.studentName || '—'],
             ['Class Applying For', formData.admissionGrade || '—'],
+            ['Admission Type', boardingType || '—'],
             ['Date of Birth', formData.dateOfBirth || '—'],
             ['Gender', formData.gender || '—'],
             ['Aadhaar', formData.studentAadhaar ? maskAadhaar(formData.studentAadhaar) : '—'],
@@ -543,8 +550,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         );
     }
 
-    // ─── STEP 0: Selection screen ─────────────────────────────────────────────
-    if (step === 0) {
+    // ─── SCREEN A: Boarding Type Selection (shown before everything else) ─────
+    if (boardingType === null) {
         return (
             <>
                 {showDraftPrompt && <DraftPrompt />}
@@ -561,15 +568,97 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 </button>
                             </div>
 
+                            {/* School banner */}
+                            <div className="text-center mb-6">
+                                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Online Admission Portal</h1>
+                                <p className="text-slate-500 text-sm">Academic Session 2026-27</p>
+                            </div>
+
+                            {/* Deadline banner */}
+                            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-8 text-amber-800">
+                                <span className="text-2xl flex-shrink-0">⏰</span>
+                                <p className="text-sm font-semibold">
+                                    Applications open until <strong>{ADMISSION_DEADLINE}</strong>
+                                </p>
+                            </div>
+
+                            <div className="text-center mb-8">
+                                <h2 className="text-xl font-bold text-slate-700 mb-2">Select Admission Type</h2>
+                                <p className="text-slate-500 text-sm">Please select whether you are applying as a Day Scholar or a Boarder/Residential student.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                                {/* Day Scholar */}
+                                <button
+                                    onClick={() => {
+                                        setBoardingType('Day Scholar');
+                                        setFormData(prev => ({ ...prev, boardingType: 'Day Scholar' }));
+                                    }}
+                                    className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left"
+                                >
+                                    <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
+                                        🏠
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">Day Scholar</h3>
+                                    <p className="text-slate-600">Student attends school during the day and returns home in the evening.</p>
+                                </button>
+
+                                {/* Boarder / Residential */}
+                                <button
+                                    onClick={() => {
+                                        setBoardingType('Boarder');
+                                        setFormData(prev => ({ ...prev, boardingType: 'Boarder' }));
+                                    }}
+                                    className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-violet-500 hover:shadow-2xl transition-all group text-left"
+                                >
+                                    <div className="bg-violet-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
+                                        🏫
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">Boarder / Residential</h3>
+                                    <p className="text-slate-600">Student lives on campus in the school's residential hostel.</p>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // ─── STEP 0: New / Existing Student Selection ─────────────────────────────
+    if (step === 0) {
+        return (
+            <>
+                {showDraftPrompt && <DraftPrompt />}
+                <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                    <div className="container mx-auto px-4 max-w-4xl">
+                        <div className="bg-white p-8 rounded-2xl shadow-xl">
+                            <div className="mb-6">
+                                <button
+                                    onClick={() => { setBoardingType(null); setShowIdInput(null); setFetchError(''); setExistingId(''); }}
+                                    className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                                >
+                                    <BackIcon className="w-5 h-5" />
+                                    Back to Admission Type
+                                </button>
+                            </div>
+
+                            {/* Boarding type badge */}
+                            <div className="flex justify-center mb-4">
+                                <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold ${boardingType === 'Day Scholar' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
+                                    {boardingType === 'Day Scholar' ? '🏠' : '🏫'} {boardingType}
+                                </span>
+                            </div>
+
                             {!showIdInput ? (
                                 <>
-                                    {/* ── School banner ── */}
+                                    {/* School banner */}
                                     <div className="text-center mb-6">
-    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Online Admission Portal</h1>
-    <p className="text-slate-500 text-sm">Academic Session 2026-27</p>
-</div>
+                                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Online Admission Portal</h1>
+                                        <p className="text-slate-500 text-sm">Academic Session 2026-27</p>
+                                    </div>
 
-                                    {/* ── Deadline banner ── */}
+                                    {/* Deadline banner */}
                                     <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-8 text-amber-800">
                                         <span className="text-2xl flex-shrink-0">⏰</span>
                                         <p className="text-sm font-semibold">
@@ -581,7 +670,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         <p className="text-lg text-slate-600">Please select an option to begin.</p>
                                     </div>
 
-                                    {/* ── Cards — original icons replaced with more distinct ones ── */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
                                         <button
                                             onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }}
@@ -619,9 +707,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 </>
                             ) : (
                                 <div className="max-w-lg mx-auto">
-                                    {/* Compact school banner on ID input screen */}
-                                  
-
                                     <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
                                         {showIdInput === 'existing' ? 'Existing Student'
                                         : showIdInput === 'resubmit' ? 'Resubmit Payment'
@@ -730,12 +815,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             </button>
                         </div>
 
-                        {/* Compact school header */}
+                        {/* Boarding type badge */}
+                        <div className="flex justify-end mb-2">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${boardingType === 'Day Scholar' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
+                                {boardingType === 'Day Scholar' ? '🏠' : '🏫'} {boardingType}
+                            </span>
+                        </div>
+
                         {/* Deadline note */}
-<div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6 text-amber-800">
-    <span className="flex-shrink-0">⏰</span>
-    <p className="text-xs font-semibold">Applications open until <strong>{ADMISSION_DEADLINE}</strong></p>
-</div>
+                        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6 text-amber-800">
+                            <span className="flex-shrink-0">⏰</span>
+                            <p className="text-xs font-semibold">Applications open until <strong>{ADMISSION_DEADLINE}</strong></p>
+                        </div>
+
                         {/* Title */}
                         <div className="text-center mb-6">
                             <h1 className="text-3xl font-bold text-slate-800">Online Admission Form</h1>
@@ -783,7 +875,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold">Aadhaar No. (Optional)</label>
-                                            {/* Masked display with real value stored */}
                                             <input
                                                 type="text"
                                                 name="studentAadhaar"
@@ -894,7 +985,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-bold">Contact No.*</label>
-                                            {/* +91 prefix selector */}
                                             <div className="flex mt-1">
                                                 <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-sm font-semibold select-none">
                                                     +91
@@ -973,7 +1063,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                             {!isNursery && " The Last Report Card is also mandatory."}
                                         </p>
                                     )}
-                                    {/* Single-column on mobile, 3-col on md+ */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div>
                                             <label className="block text-sm font-bold">Birth Certificate{isNewStudent && <span className="text-red-500">*</span>}</label>
@@ -1028,7 +1117,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 </section>
                             )}
 
-                            {/* ── Navigation buttons — original logic ───────────── */}
+                            {/* ── Navigation buttons ───────────── */}
                             <div className="flex justify-between items-center pt-6 border-t">
                                 {step > 1 ? (
                                     <button type="button" onClick={() => { setErrors({}); setStep(s => s - 1); }} className="btn btn-secondary">Back</button>

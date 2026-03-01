@@ -1,6 +1,5 @@
 
 
-
 export type NotificationType = 'success' | 'error' | 'info' | 'offline';
 
 export enum Grade {
@@ -86,6 +85,9 @@ export interface AdmissionItem {
 
 export interface OnlineAdmission {
     id: string;
+    // ── NEW: boarding type & collection routing ──────────────────────────────
+    boardingType?: 'Day Scholar' | 'Boarder';
+    // ────────────────────────────────────────────────────────────────────────
     studentType?: 'Newcomer' | 'Existing';
     previousStudentId?: string;
     admissionGrade: string;

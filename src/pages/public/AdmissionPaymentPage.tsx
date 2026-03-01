@@ -40,7 +40,11 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                 setAdmissionDetails(prev => ({ ...prev, ...(location.state as Partial<OnlineAdmission>) }));
             } else if (admissionId) {
                 try {
-                    const docRef = db.collection('online_admissions').doc(admissionId);
+                    // Boarder IDs start with BMSHST, day scholar IDs start with BMSAPP
+                    const collection = admissionId.startsWith('BMSHST')
+                        ? 'hostel_admissions'
+                        : 'online_admissions';
+                    const docRef = db.collection(collection).doc(admissionId);
                     const doc = await docRef.get();
                     if (doc.exists) {
                         setAdmissionDetails({ id: doc.id, ...doc.data() } as OnlineAdmission);
@@ -353,7 +357,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                 };
             });
 
-            await db.collection('online_admissions').doc(admissionId).update({
+            const collection = admissionId.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
+            await db.collection(collection).doc(admissionId).update({
                 paymentStatus: 'pending',
                 paymentAmount: grandTotal ?? 0,
                 paymentScreenshotUrl: url,

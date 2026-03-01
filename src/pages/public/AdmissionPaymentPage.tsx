@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission, FeePayments } from '@/types';
@@ -6,15 +5,9 @@ import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon 
 import { resizeImage, uploadToImgBB } from '@/utils';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '@/constants';
 import { db } from '@/firebaseConfig';
+import jsPDF from 'jspdf';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
-
-// ── Hostel admission fee is always flat ₹3,500 ───────────────────────────────
-const HOSTEL_ADMISSION_FEE = 3500;
-
-// ── Helper: determine Firestore collection from ID prefix ─────────────────────
-const getCollectionForId = (id?: string) =>
-    id?.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
 
 interface AdmissionPaymentPageProps {
     addNotification: (message: string, type: NotificationType, title?: string) => void;
@@ -47,16 +40,14 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                 setAdmissionDetails(prev => ({ ...prev, ...(location.state as Partial<OnlineAdmission>) }));
             } else if (admissionId) {
                 try {
-                    // Route to correct collection based on ID prefix
-                    const collection = getCollectionForId(admissionId);
-                    const docRef = db.collection(collection).doc(admissionId);
+                    const docRef = db.collection('online_admissions').doc(admissionId);
                     const doc = await docRef.get();
                     if (doc.exists) {
                         setAdmissionDetails({ id: doc.id, ...doc.data() } as OnlineAdmission);
                     } else {
                         addNotification("Admission record not found.", 'error');
                     }
-               } catch (error: any) {
+                } catch (error: any) {
                     console.error("Error fetching admission details:", error);
                     const msg = error?.code === 'permission-denied'
                         ? "Permission denied. Please contact the school office."
@@ -76,31 +67,23 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }
     }, [admissionDetails]);
 
-    const isHostelAdmission = admissionDetails?.boardingType === 'Boarder' || admissionId?.startsWith('BMSHST');
-
     const { admissionGrade: grade, studentType = 'Newcomer' } = admissionDetails || {};
 
     const feeStructure = useMemo(() => {
-        // Hostel admissions don't use the regular fee structure
-        if (isHostelAdmission) return null;
         const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
-    }, [admissionConfig, studentType, isHostelAdmission]);
+    }, [admissionConfig, studentType]);
     
-    // ── Fee: flat ₹3,500 for Boarders, regular fee structure for Day Scholars ──
     const baseFeeTotal = useMemo(() => {
-        if (isHostelAdmission) return HOSTEL_ADMISSION_FEE;
         if (!feeStructure) return 0;
         const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
         const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
         return oneTimeTotal + annualTotal;
-    }, [feeStructure, isHostelAdmission]);
+    }, [feeStructure]);
 
     const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
 
     const allItems = useMemo(() => {
-        // Hostel admissions only show the fixed fee — no merchandise/notebook add-ons
-        if (isHostelAdmission) return [];
         const items = [
             { name: `Notebook Set (${grade})`, price: notebookPrice, mandatory: false, checkable: true, hasSize: false, sizes: undefined, priceBySize: undefined },
         ];
@@ -112,7 +95,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             });
         });
         return items;
-    }, [grade, notebookPrice, admissionConfig, isHostelAdmission]);
+    }, [grade, notebookPrice, admissionConfig]);
 
     useEffect(() => {
         const mandatory: Record<string, { quantity: number; size?: string }> = {};
@@ -168,6 +151,182 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }
     };
 
+    // ── PDF generation ────────────────────────────────────────────────────────
+    const generateReceiptPDF = (
+        id: string,
+        details: OnlineAdmission,
+        items: AdmissionItem[],
+        baseTotal: number,
+        itemsTotal: number,
+        total: number
+    ) => {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = 210;
+        const margin = 20;
+        const contentW = pageW - margin * 2;
+        let y = 0;
+
+        // ── Header band ──────────────────────────────────────────────────────
+        doc.setFillColor(15, 40, 80);
+        doc.rect(0, 0, pageW, 38, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(17);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BETHEL MISSION SCHOOL', pageW / 2, 13, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Lungpho, Champhai District, Mizoram — 796321', pageW / 2, 20, { align: 'center' });
+        doc.text('bethelms04@gmail.com  |  bms04.com', pageW / 2, 26, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PAYMENT RECEIPT & ADMISSION ACKNOWLEDGEMENT', pageW / 2, 34, { align: 'center' });
+
+        y = 50;
+
+        // ── Status badge ─────────────────────────────────────────────────────
+        doc.setFillColor(220, 252, 231);
+        doc.setDrawColor(134, 239, 172);
+        doc.roundedRect(margin, y, contentW, 12, 3, 3, 'FD');
+        doc.setTextColor(22, 101, 52);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('✓  Payment Submitted — PENDING VERIFICATION', pageW / 2, y + 8, { align: 'center' });
+
+        y += 20;
+
+        // ── Reference ID box ─────────────────────────────────────────────────
+        doc.setFillColor(15, 40, 80);
+        doc.roundedRect(margin, y, contentW, 18, 3, 3, 'F');
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('REFERENCE ID', pageW / 2, y + 6, { align: 'center' });
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(id, pageW / 2, y + 14, { align: 'center' });
+
+        y += 24;
+
+        const submittedOn = new Date().toLocaleString('en-IN', {
+            day: '2-digit', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Date: ${submittedOn}`, pageW / 2, y, { align: 'center' });
+
+        y += 10;
+
+        // ── Student details section ───────────────────────────────────────────
+        doc.setFillColor(241, 245, 249);
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(margin, y, contentW, 8, 'FD');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('STUDENT DETAILS', margin + 3, y + 5.5);
+        y += 10;
+
+        const studentRows: [string, string][] = [
+            ['Student Name', details.studentName || '—'],
+            ['Class', details.admissionGrade || '—'],
+            ["Father's Name", details.fatherName || '—'],
+            ['Contact', details.contactNumber ? `+91 ${details.contactNumber}` : '—'],
+            ['Student Type', details.studentType || '—'],
+            ['Admission Type', (details as any).boardingType || '—'],
+        ];
+
+        const colW = contentW / 2;
+        studentRows.forEach(([label, value], i) => {
+            const col = i % 2;
+            const rx = margin + col * colW;
+            if (col === 0 && i !== 0) y += 8;
+            doc.setTextColor(100, 116, 139);
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'normal');
+            doc.text(label, rx + 2, y);
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(value.length > 28 ? value.slice(0, 26) + '…' : value, rx + 2, y + 4.5);
+        });
+        y += 14;
+
+        // ── Fee breakdown table ───────────────────────────────────────────────
+        doc.setFillColor(241, 245, 249);
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(margin, y, contentW, 8, 'FD');
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('FEE BREAKDOWN', margin + 3, y + 5.5);
+        y += 12;
+
+        // Base fees
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Base Admission Fees', margin + 2, y);
+        doc.text(`Rs. ${baseTotal}`, margin + contentW - 2, y, { align: 'right' });
+        y += 6;
+
+        // Purchased items
+        if (items.length > 0) {
+            items.forEach(item => {
+                const label = item.size ? `${item.name} (${item.size})` : item.name;
+                doc.text(label.length > 40 ? label.slice(0, 38) + '…' : label, margin + 2, y);
+                doc.text(`Rs. ${item.price * item.quantity}`, margin + contentW - 2, y, { align: 'right' });
+                y += 6;
+            });
+        }
+
+        // Divider
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y, margin + contentW, y);
+        y += 6;
+
+        // Grand total
+        doc.setFillColor(15, 40, 80);
+        doc.rect(margin, y, contentW, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL AMOUNT PAID', margin + 3, y + 7);
+        doc.text(`Rs. ${total}`, margin + contentW - 3, y + 7, { align: 'right' });
+        y += 16;
+
+        // ── Note ─────────────────────────────────────────────────────────────
+        doc.setFillColor(239, 246, 255);
+        doc.setDrawColor(191, 219, 254);
+        doc.roundedRect(margin, y, contentW, 22, 3, 3, 'FD');
+        doc.setTextColor(29, 78, 216);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('IMPORTANT', margin + 4, y + 7);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Your payment is under verification. Please bring this receipt and your Reference ID', margin + 4, y + 13);
+        doc.text('to the school office to collect your purchased items and complete enrollment.', margin + 4, y + 19);
+        y += 28;
+
+        // ── Footer ────────────────────────────────────────────────────────────
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y, margin + contentW, y);
+        y += 5;
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(
+            'This is a computer-generated receipt. For queries, contact bethelms04@gmail.com or visit the school office.',
+            pageW / 2, y, { align: 'center', maxWidth: contentW }
+        );
+        doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW / 2, y + 6, { align: 'center' });
+
+        doc.save(`BMS_Receipt_${id}.pdf`);
+    };
+
     const handleSubmitPayment = async () => {
         if (!screenshotFile) {
             addNotification("Please upload a screenshot of your payment to confirm.", 'error');
@@ -194,14 +353,28 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                 };
             });
 
-            // ── Route update to correct Firestore collection ──────────────────
-            const collection = getCollectionForId(admissionId);
-            await db.collection(collection).doc(admissionId).update({
+            await db.collection('online_admissions').doc(admissionId).update({
                 paymentStatus: 'pending',
                 paymentAmount: grandTotal ?? 0,
                 paymentScreenshotUrl: url,
                 purchasedItems: itemsToPurchase
             });
+
+            // Generate receipt PDF after successful Firestore update
+            try {
+                if (admissionDetails) {
+                    generateReceiptPDF(
+                        admissionId,
+                        admissionDetails,
+                        itemsToPurchase,
+                        baseFeeTotal,
+                        merchandiseTotal,
+                        grandTotal
+                    );
+                }
+            } catch (pdfErr) {
+                console.warn('PDF generation failed (non-critical):', pdfErr);
+            }
 
             setPaymentSubmitted(true);
         } catch (error) {
@@ -234,22 +407,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                         </button>
                     </div>
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
-                        <p className="mt-2 text-lg text-slate-600">
-                            Finalize application for <span className="font-bold">{admissionDetails.studentName}</span> ({studentType})
-                        </p>
-                        {/* Boarding type badge */}
-                        {admissionDetails.boardingType && (
-                            <div className="mt-3 flex justify-center">
-                                <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold ${
-                                    admissionDetails.boardingType === 'Day Scholar'
-                                        ? 'bg-sky-100 text-sky-700'
-                                        : 'bg-violet-100 text-violet-700'
-                                }`}>
-                                    {admissionDetails.boardingType === 'Day Scholar' ? '🏠' : '🏫'} {admissionDetails.boardingType}
-                                </span>
-                            </div>
-                        )}
+                         <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
+                         <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{admissionDetails.studentName}</span> ({studentType})</p>
                     </div>
 
                     {paymentSubmitted ? (
@@ -257,8 +416,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                             <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
                             <h2 className="text-2xl font-bold text-slate-800">Application Submitted!</h2>
                             <p className="text-slate-600 mt-4 max-w-lg mx-auto">
-                                You have successfully submitted the admission forms. Please use this reference ID to{' '}
-                                {isHostelAdmission ? 'complete your boarding registration at the school office.' : 'collect merchandise from the school.'}
+                                You have successfully submitted the admission forms. Please use this reference ID to collect merchandise from the school.
                             </p>
                             <div className="mt-6 inline-block bg-slate-100 border-2 border-dashed border-sky-300 rounded-lg px-8 py-4">
                                 <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Reference ID</p>
@@ -270,6 +428,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                     Copy to Clipboard
                                 </button>
                             </div>
+                            <p className="text-xs text-slate-400 mt-4">📄 A payment receipt has been downloaded to your device.</p>
                             <div className="mt-8 flex justify-center gap-4">
                                 <Link to="/" className="btn btn-secondary">Go to Homepage</Link>
                                 <Link to="/admissions/status" className="btn btn-primary">Check Status</Link>
@@ -280,14 +439,14 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                         {/* Right side: Instructions and Payment */}
                         <div className="lg:order-2">
-                            <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
-                                <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
-                                <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                    <li>Note the total amount payable on the left.</li>
-                                    <li>Pay using the QR Code or UPI ID below.</li>
-                                    <li>Take a screenshot of the successful payment.</li>
-                                    <li>Upload the screenshot and submit for verification.</li>
-                                </ol>
+                             <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
+                                 <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
+                                 <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
+                                     <li>Calculate your total amount on the left.</li>
+                                     <li>Pay the total amount using the QR Code or UPI ID below.</li>
+                                     <li>Take a screenshot of the successful payment.</li>
+                                     <li>Upload the screenshot and submit for verification.</li>
+                                 </ol>
                             </div>
                             <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
                                 <div className="flex flex-col items-center">
@@ -303,78 +462,42 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Left Side: Fee Summary / Item Selection */}
+                        {/* Left Side: Item Selection */}
                         <div className="lg:order-1">
-                            {isHostelAdmission ? (
-                                /* ── Hostel: show a clean fixed fee card, no items ── */
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Fee Summary</h3>
-                                    <div className="p-5 border-2 border-violet-200 bg-violet-50 rounded-xl">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <span className="text-2xl">🏫</span>
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Additional Items (Optional)</h3>
+                                {allItems.map(item => {
+                                    const currentSize = selectedItems[item.name]?.size;
+                                    const displayPrice = getItemPriceDisplay(item, currentSize);
+                                    return (
+                                    <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : 'hover:bg-slate-50 transition'}`}>
+                                        <div className="flex items-center gap-4">
+                                            {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
                                             <div>
-                                                <p className="font-bold text-slate-800">Boarding / Hostel Admission Fee</p>
-                                                <p className="text-xs text-slate-500">Flat rate — applies to all boarding students</p>
+                                                <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
+                                                <p className="text-sm text-slate-600">₹{displayPrice}</p>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center pt-3 border-t border-violet-200">
-                                            <span className="text-sm font-semibold text-slate-600">Amount Payable</span>
-                                            <span className="text-2xl font-extrabold text-violet-700">₹{HOSTEL_ADMISSION_FEE}</span>
-                                        </div>
+                                        {item.hasSize && selectedItems[item.name] && (
+                                            <select value={selectedItems[item.name]?.size} onChange={e => handleSizeChange(item.name, e.target.value)} className="form-select text-sm py-1">
+                                                {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
+                                            </select>
+                                        )}
                                     </div>
-                                    <p className="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                        ⚠️ This fee is for boarding/hostel admission only. School tuition and other fees will be collected separately.
-                                    </p>
-                                </div>
-                            ) : (
-                                /* ── Day Scholar: regular item selection ── */
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Additional Items (Optional)</h3>
-                                    {allItems.map(item => {
-                                        const currentSize = selectedItems[item.name]?.size;
-                                        const displayPrice = getItemPriceDisplay(item, currentSize);
-                                        return (
-                                        <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : 'hover:bg-slate-50 transition'}`}>
-                                            <div className="flex items-center gap-4">
-                                                {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
-                                                <div>
-                                                    <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
-                                                    <p className="text-sm text-slate-600">₹{displayPrice}</p>
-                                                </div>
-                                            </div>
-                                            {item.hasSize && selectedItems[item.name] && (
-                                                <select value={selectedItems[item.name]?.size} onChange={e => handleSizeChange(item.name, e.target.value)} className="form-select text-sm py-1">
-                                                    {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
-                                                </select>
-                                            )}
-                                        </div>
-                                    )})}
-                                </div>
-                            )}
+                                )})}
+                            </div>
                         </div>
                     </div>
 
                     <div className="mt-10 border-t pt-8">
                         <div className="max-w-md ml-auto space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                                {isHostelAdmission ? (
-                                    <div className="flex justify-between font-extrabold text-lg text-slate-900">
-                                        <span>Hostel Admission Fee</span>
-                                        <span className="text-violet-700">₹{HOSTEL_ADMISSION_FEE}</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex justify-between font-medium"><span className="text-slate-700">Base Fees</span><span>₹{baseFeeTotal}</span></div>
-                                        <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
-                                        <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
-                                    </>
-                                )}
+                                <div className="flex justify-between font-medium"><span className="text-slate-700">Base Fees</span><span>₹{baseFeeTotal}</span></div>
+                                <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
+                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
-                            <button
-                                onClick={handleSubmitPayment}
-                                disabled={isUploading || !screenshotFile}
-                                className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400"
-                            >
+                            <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}
+                                className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}
                                 <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
                             </button>

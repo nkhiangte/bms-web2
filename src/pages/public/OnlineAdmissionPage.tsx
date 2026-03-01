@@ -376,167 +376,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         setShowReviewPage(true);
     };
 
-    const generateAcknowledgementPDF = (id: string, data: Partial<OnlineAdmission>) => {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageW = 210;
-        const margin = 20;
-        const contentW = pageW - margin * 2;
-        let y = 0;
-
-        // ── Header band ──────────────────────────────────────────────────────
-        doc.setFillColor(15, 40, 80); // deep navy
-        doc.rect(0, 0, pageW, 38, 'F');
-
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(17);
-        doc.setFont('helvetica', 'bold');
-        doc.text('BETHEL MISSION SCHOOL', pageW / 2, 13, { align: 'center' });
-
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Lungpho, Champhai District, Mizoram — 796321', pageW / 2, 20, { align: 'center' });
-        doc.text('bethelms04@gmail.com  |  bms04.com', pageW / 2, 26, { align: 'center' });
-
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ADMISSION ACKNOWLEDGEMENT', pageW / 2, 34, { align: 'center' });
-
-        y = 50;
-
-        // ── Status badge ─────────────────────────────────────────────────────
-        doc.setFillColor(220, 252, 231); // light green
-        doc.setDrawColor(134, 239, 172);
-        doc.roundedRect(margin, y, contentW, 12, 3, 3, 'FD');
-        doc.setTextColor(22, 101, 52);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('✓  Application Received — PENDING REVIEW', pageW / 2, y + 8, { align: 'center' });
-
-        y += 20;
-
-        // ── Reference ID box ─────────────────────────────────────────────────
-        doc.setFillColor(15, 40, 80);
-        doc.roundedRect(margin, y, contentW, 18, 3, 3, 'F');
-        doc.setTextColor(148, 163, 184); // slate-400
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('REFERENCE ID', pageW / 2, y + 6, { align: 'center' });
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(id, pageW / 2, y + 14, { align: 'center' });
-
-        y += 24;
-
-        // Submission date
-        doc.setTextColor(100, 116, 139);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        const submittedOn = new Date().toLocaleString('en-IN', {
-            day: '2-digit', month: 'long', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-        doc.text(`Submitted on: ${submittedOn}`, pageW / 2, y, { align: 'center' });
-
-        y += 10;
-
-        // ── Two-column details ────────────────────────────────────────────────
-        const drawSection = (title: string, rows: [string, string][]) => {
-            // Section header
-            doc.setFillColor(241, 245, 249); // slate-100
-            doc.setDrawColor(226, 232, 240);
-            doc.rect(margin, y, contentW, 8, 'FD');
-            doc.setTextColor(51, 65, 85);
-            doc.setFontSize(8.5);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title.toUpperCase(), margin + 3, y + 5.5);
-            y += 10;
-
-            const colW = contentW / 2;
-            rows.forEach(([label, value], i) => {
-                const col = i % 2;
-                const rx = margin + col * colW;
-                if (col === 0 && i !== 0) y += 8;
-
-                doc.setTextColor(100, 116, 139);
-                doc.setFontSize(7.5);
-                doc.setFont('helvetica', 'normal');
-                doc.text(label, rx + 2, y);
-
-                doc.setTextColor(30, 41, 59);
-                doc.setFontSize(8.5);
-                doc.setFont('helvetica', 'bold');
-                const val = value || '—';
-                doc.text(val.length > 28 ? val.slice(0, 26) + '…' : val, rx + 2, y + 4.5);
-            });
-            // move past last row
-            const lastRowIndex = rows.length - 1;
-            if (lastRowIndex % 2 === 0) y += 8; // last row was in left col only
-            y += 10;
-        };
-
-        drawSection('Student Information', [
-            ['Full Name', data.studentName || ''],
-            ['Class Applying For', data.admissionGrade || ''],
-            ['Date of Birth', data.dateOfBirth || ''],
-            ['Gender', data.gender || ''],
-            ['Category', data.category || ''],
-            ['Religion', data.religion || ''],
-            ['Admission Type', (data as any).boardingType || boardingType || ''],
-            ['Student Type', data.studentType || ''],
-        ]);
-
-        drawSection('Parent / Guardian Information', [
-            ["Father's Name", data.fatherName || ''],
-            ["Mother's Name", data.motherName || ''],
-            ['Contact No.', data.contactNumber ? `+91 ${data.contactNumber}` : ''],
-            ['Email', data.email || ''],
-            ['Permanent Address', data.permanentAddress || ''],
-            ['Last School', data.lastSchoolAttended || ''],
-        ]);
-
-        y += 2;
-
-        // ── What happens next ─────────────────────────────────────────────────
-        doc.setFillColor(239, 246, 255); // blue-50
-        doc.setDrawColor(191, 219, 254);
-        doc.roundedRect(margin, y, contentW, 36, 3, 3, 'FD');
-
-        doc.setTextColor(29, 78, 216);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('WHAT HAPPENS NEXT?', margin + 4, y + 7);
-
-        const steps = [
-            '1.  Your application is under review by the admissions committee.',
-            '2.  You will be contacted on the provided number for an interview/test date.',
-            '3.  Complete the fee payment to confirm your seat once approved.',
-        ];
-        doc.setTextColor(30, 64, 175);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        steps.forEach((s, i) => {
-            doc.text(s, margin + 4, y + 14 + i * 7);
-        });
-
-        y += 42;
-
-        // ── Footer ────────────────────────────────────────────────────────────
-        doc.setDrawColor(226, 232, 240);
-        doc.line(margin, y, margin + contentW, y);
-        y += 5;
-        doc.setTextColor(148, 163, 184);
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.text(
-            'This is a computer-generated acknowledgement. For queries, contact bethelms04@gmail.com or call the school office.',
-            pageW / 2, y, { align: 'center', maxWidth: contentW }
-        );
-        doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW / 2, y + 6, { align: 'center' });
-
-        doc.save(`BMS_Admission_${id}.pdf`);
-    };
-
     const handleFinalSubmit = async () => {
         setIsSubmitting(true);
         try {
@@ -547,14 +386,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
             };
             const id = await onOnlineAdmissionSubmit(admissionData, formData.id);
             localStorage.removeItem(DRAFT_KEY);
-
-            // Generate PDF acknowledgement (non-blocking)
-            try {
-                generateAcknowledgementPDF(id, admissionData);
-            } catch (pdfErr) {
-                console.warn('PDF generation failed (non-critical):', pdfErr);
-            }
-
             navigate(`/admissions/payment/${id}`, {
                 state: {
                     grade: formData.admissionGrade,
@@ -691,14 +522,6 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <span className="text-xl mt-0.5 flex-shrink-0">⚠️</span>
                                     <p className="text-sm text-amber-800">
                                         Once submitted, your application status becomes <strong>Pending</strong> and you will be redirected to the payment page. Please review carefully before confirming.
-                                    </p>
-                                </div>
-
-                                {/* PDF note */}
-                                <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 mb-6">
-                                    <span className="text-lg flex-shrink-0">📄</span>
-                                    <p className="text-xs text-sky-700 font-medium">
-                                        An acknowledgement PDF will be automatically downloaded when you submit.
                                     </p>
                                 </div>
 

@@ -32,6 +32,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [upiTapped, setUpiTapped] = useState(false);
     const [paymentSubmitted, setPaymentSubmitted] = useState(false);
     
     useEffect(() => {
@@ -149,6 +150,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return item.price;
     };
     
+
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setScreenshotFile(e.target.files[0]);
@@ -458,13 +461,30 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                 {/* Mobile: UPI deep link button */}
                                 <div className="block md:hidden mb-6">
                                     <p className="text-sm font-bold text-slate-700 mb-3">Pay via UPI App</p>
-                                    <a
-                                        href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
-                                        className="flex items-center justify-center gap-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg active:scale-95 transition-all"
-                                    >
-                                        <span className="text-2xl">💸</span>
-                                        Pay ₹{grandTotal} with UPI
-                                    </a>
+                                    {!upiTapped ? (
+                                        <a
+                                            href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
+                                            onClick={() => setTimeout(() => setUpiTapped(true), 1500)}
+                                            className="flex items-center justify-center gap-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg active:scale-95 transition-all"
+                                        >
+                                            <span className="text-2xl">💸</span>
+                                            Pay ₹{grandTotal} with UPI
+                                        </a>
+                                    ) : (
+                                        <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 text-center">
+                                            <p className="text-2xl mb-2">✅</p>
+                                            <p className="font-bold text-emerald-700 text-sm">Payment app opened!</p>
+                                            <p className="text-emerald-600 text-xs mt-1">
+                                                Once your payment is successful, come back here and upload the screenshot below.
+                                            </p>
+                                            <a
+                                                href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
+                                                className="inline-block mt-3 text-xs text-emerald-600 underline font-semibold"
+                                            >
+                                                Reopen payment app
+                                            </a>
+                                        </div>
+                                    )}
                                     <p className="text-xs text-slate-400 mt-2 text-center">Opens PhonePe, GPay, Paytm or any UPI app</p>
                                     <div className="flex items-center gap-3 my-4">
                                         <div className="flex-1 h-px bg-slate-200" />
@@ -487,8 +507,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                                     </button>
                                 </div>
 
-                                <div className="mt-6">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Upload Payment Screenshot*</label>
+                                <div className={`mt-6 transition-all ${upiTapped ? 'ring-2 ring-emerald-400 rounded-xl p-3 bg-emerald-50' : ''}`}>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        {upiTapped ? '📸 Upload Payment Screenshot*' : 'Upload Payment Screenshot*'}
+                                    </label>
+                                    {upiTapped && (
+                                        <p className="text-xs text-emerald-600 font-medium mb-2">
+                                            ← Take a screenshot of your GPay/PhonePe success screen and upload it here.
+                                        </p>
+                                    )}
                                     <input type="file" onChange={handleFileChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" required/>
                                     {screenshotFile && (
                                         <p className="text-xs text-emerald-600 mt-1 font-semibold">✓ {screenshotFile.name}</p>

@@ -923,7 +923,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold">Religion*</label>
-                                            <input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.religion ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                            <select name="religion" value={formData.religion || ''} onChange={handleChange} className={`form-select w-full mt-1 ${errors.religion ? 'border-red-400 focus:ring-red-300' : ''}`}>
+                                                <option value="">-- Select --</option>
+                                                <option value="Christian">Christian</option>
+                                                <option value="Hindu">Hindu</option>
+                                                <option value="Muslim">Muslim</option>
+                                                <option value="Others">Others</option>
+                                            </select>
                                             <FieldError message={errors.religion} />
                                             {errors.religion && <span className="field-error" />}
                                         </div>

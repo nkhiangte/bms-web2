@@ -450,42 +450,43 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                              <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
                                  <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
                                  <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                     <li><span className="font-semibold">On mobile:</span> tap "Pay with UPI" to open your payment app directly.</li>
-                                     <li><span className="font-semibold">On desktop:</span> scan the QR code or enter the UPI ID manually.</li>
+                                     <li><span className="font-semibold">On mobile:</span> copy the UPI ID, open GPay or PhonePe, paste it and pay.</li>
+                                     <li><span className="font-semibold">On desktop:</span> scan the QR code with your phone.</li>
                                      <li>Pay the exact grand total shown below.</li>
                                      <li>Take a screenshot of the successful payment.</li>
-                                     <li>Upload the screenshot and submit for verification.</li>
+                                     <li>Upload the screenshot here and submit.</li>
                                  </ol>
                             </div>
                             <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
-                                {/* Mobile: UPI deep link button */}
+                                {/* Mobile: Copy UPI ID */}
                                 <div className="block md:hidden mb-6">
                                     <p className="text-sm font-bold text-slate-700 mb-3">Pay via UPI App</p>
-                                    {!upiTapped ? (
-                                        <a
-                                            href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
-                                            onClick={() => setTimeout(() => setUpiTapped(true), 1500)}
-                                            className="flex items-center justify-center gap-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg active:scale-95 transition-all"
+                                    <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
+                                        <p className="text-xs text-slate-500 text-center mb-1">UPI ID</p>
+                                        <p className="font-mono text-lg font-bold text-sky-700 text-center break-all">{schoolConfig.upiId}</p>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(schoolConfig.upiId || '');
+                                                setUpiTapped(true);
+                                            }}
+                                            className="flex items-center justify-center gap-2 w-full mt-3 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-xl text-base shadow active:scale-95 transition-all"
                                         >
-                                            <span className="text-2xl">💸</span>
-                                            Pay ₹{grandTotal} with UPI
-                                        </a>
-                                    ) : (
-                                        <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 text-center">
-                                            <p className="text-2xl mb-2">✅</p>
-                                            <p className="font-bold text-emerald-700 text-sm">Payment app opened!</p>
-                                            <p className="text-emerald-600 text-xs mt-1">
-                                                Once your payment is successful, come back here and upload the screenshot below.
-                                            </p>
-                                            <a
-                                                href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
-                                                className="inline-block mt-3 text-xs text-emerald-600 underline font-semibold"
-                                            >
-                                                Reopen payment app
-                                            </a>
-                                        </div>
-                                    )}
-                                    <p className="text-xs text-slate-400 mt-2 text-center">Opens PhonePe, GPay, Paytm or any UPI app</p>
+                                            📋 Copy UPI ID
+                                        </button>
+                                        {upiTapped && (
+                                            <p className="text-xs text-emerald-600 font-semibold text-center mt-2">✓ Copied! Open GPay / PhonePe, paste and pay ₹{grandTotal}</p>
+                                        )}
+                                    </div>
+                                    <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mt-3">
+                                        <p className="text-xs text-sky-700 font-semibold">How to pay:</p>
+                                        <ol className="text-xs text-sky-700 mt-1 space-y-1 list-decimal list-inside">
+                                            <li>Copy the UPI ID above</li>
+                                            <li>Open GPay, PhonePe or Paytm</li>
+                                            <li>Go to "Pay by UPI ID" and paste it</li>
+                                            <li>Enter ₹{grandTotal} and complete payment</li>
+                                            <li>Come back here and upload the screenshot</li>
+                                        </ol>
+                                    </div>
                                     <div className="flex items-center gap-3 my-4">
                                         <div className="flex-1 h-px bg-slate-200" />
                                         <span className="text-xs text-slate-400 font-semibold">OR SCAN QR</span>

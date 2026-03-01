@@ -447,22 +447,52 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                              <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
                                  <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
                                  <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                     <li>Calculate your total amount on the left.</li>
-                                     <li>Pay the total amount using the QR Code or UPI ID below.</li>
+                                     <li><span className="font-semibold">On mobile:</span> tap "Pay with UPI" to open your payment app directly.</li>
+                                     <li><span className="font-semibold">On desktop:</span> scan the QR code or enter the UPI ID manually.</li>
+                                     <li>Pay the exact grand total shown below.</li>
                                      <li>Take a screenshot of the successful payment.</li>
                                      <li>Upload the screenshot and submit for verification.</li>
                                  </ol>
                             </div>
                             <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
+                                {/* Mobile: UPI deep link button */}
+                                <div className="block md:hidden mb-6">
+                                    <p className="text-sm font-bold text-slate-700 mb-3">Pay via UPI App</p>
+                                    <a
+                                        href={`upi://pay?pa=${encodeURIComponent(schoolConfig.upiId || '')}&pn=${encodeURIComponent('Bethel Mission School')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent(`Admission ${admissionId}`)}`}
+                                        className="flex items-center justify-center gap-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg active:scale-95 transition-all"
+                                    >
+                                        <span className="text-2xl">💸</span>
+                                        Pay ₹{grandTotal} with UPI
+                                    </a>
+                                    <p className="text-xs text-slate-400 mt-2 text-center">Opens PhonePe, GPay, Paytm or any UPI app</p>
+                                    <div className="flex items-center gap-3 my-4">
+                                        <div className="flex-1 h-px bg-slate-200" />
+                                        <span className="text-xs text-slate-400 font-semibold">OR SCAN QR</span>
+                                        <div className="flex-1 h-px bg-slate-200" />
+                                    </div>
+                                </div>
+
+                                {/* QR code (always visible, primary on desktop) */}
                                 <div className="flex flex-col items-center">
                                     {schoolConfig.paymentQRCodeUrl ? (
                                         <img src={schoolConfig.paymentQRCodeUrl} alt="School Payment QR Code" className="w-48 h-48 border p-1 rounded-md"/>
                                     ) : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center text-slate-500 rounded-md">QR Not Set</div>}
                                     <p className="mt-4 font-semibold text-slate-700">UPI ID: <span className="font-mono text-sky-700">{schoolConfig.upiId}</span></p>
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(schoolConfig.upiId || '')}
+                                        className="mt-1 text-xs text-slate-400 hover:text-sky-600 underline"
+                                    >
+                                        Copy UPI ID
+                                    </button>
                                 </div>
+
                                 <div className="mt-6">
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Upload Payment Screenshot*</label>
                                     <input type="file" onChange={handleFileChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" required/>
+                                    {screenshotFile && (
+                                        <p className="text-xs text-emerald-600 mt-1 font-semibold">✓ {screenshotFile.name}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

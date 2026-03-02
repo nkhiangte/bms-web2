@@ -64,16 +64,25 @@ export interface AdmissionFeeStructure {
 }
 
 export interface AdmissionSettings {
-    academicYearLabel: string; // e.g. "2026-27"
-    // admissionFee is kept for legacy compatibility but the detailed structure below is preferred
-    admissionFee: number; 
-    notebookPrices: Record<string, number>; // Key is Grade string
+    academicYearLabel: string;
+    admissionFee: number; // legacy
+    notebookPrices: Record<string, number>;
     items: AdmissionItemConfig[];
     feeStructure: {
         newStudent: AdmissionFeeStructure;
         existingStudent: AdmissionFeeStructure;
     };
+    // Grade-tiered overrides
+    nurseryFeeStructure?: {
+        newStudent: AdmissionFeeStructure;
+        existingStudent: AdmissionFeeStructure;
+    };
+    kgFeeStructure?: {
+        newStudent: AdmissionFeeStructure;
+        existingStudent: AdmissionFeeStructure;
+    };
 }
+
 // -------------------------------------
 
 export interface AdmissionItem {

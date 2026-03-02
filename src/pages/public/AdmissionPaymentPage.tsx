@@ -48,7 +48,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     const docRef = db.collection(collection).doc(admissionId);
                     const doc = await docRef.get();
                     if (doc.exists) {
-                        setAdmissionDetails({ id: doc.id, ...doc.data() } as OnlineAdmission);
+                        const data = { id: doc.id, ...doc.data() } as OnlineAdmission;
+                        console.log('[AdmissionPayment] grade from Firestore:', data.admissionGrade);
+                        setAdmissionDetails(data);
                     } else {
                         addNotification("Admission record not found.", 'error');
                     }
@@ -89,14 +91,26 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }, [admissionConfig, studentType, grade]);
 
     const TEXTBOOK_FEES: Record<string, number> = {
+        // Grade enum values (e.g. "Class VI")
         'Nursery': 500, 'Kindergarten': 500,
         'Class I': 580, 'Class II': 630,
         'Class III': 640, 'Class IV': 640, 'Class V': 640,
         'Class VI': 730, 'Class VII': 730,
         'Class VIII': 780, 'Class IX': 780, 'Class X': 780,
+        // Roman-numeral-only fallbacks (e.g. "I", "VI")
+        'I': 580, 'II': 630, 'III': 640, 'IV': 640, 'V': 640,
+        'VI': 730, 'VII': 730, 'VIII': 780, 'IX': 780, 'X': 780,
+        // Short codes fallback
+        'NU': 500, 'KG': 500,
     };
 
-    const textbookFee = useMemo(() => grade ? (TEXTBOOK_FEES[grade] ?? 0) : 0, [grade]);
+    const textbookFee = useMemo(() => {
+        if (!grade) return 0;
+        // Try exact match first, then "Class X" -> "X" fallback
+        return TEXTBOOK_FEES[grade]
+            ?? TEXTBOOK_FEES[grade.replace('Class ', '').trim()]
+            ?? 0;
+    }, [grade]);
 
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;

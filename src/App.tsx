@@ -359,22 +359,41 @@ const App: React.FC = () => {
   };
 
   // ── Enrollment: routes to correct collection based on ID prefix ───────────
-  const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
+const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
     try {
-      const batch = db.batch();
-      const studentRef = db.collection('students').doc();
-      batch.set(studentRef, { ...studentData, id: studentRef.id, status: StudentStatus.ACTIVE });
-      const collection = getAdmissionCollection(admissionId);
-      const admissionRef = db.collection(collection).doc(admissionId);
-      batch.update(admissionRef, { status: 'approved', isEnrolled: true, temporaryStudentId: studentData.studentId });
-      await batch.commit();
-      addNotification(`Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`, 'success', 'Enrollment Complete');
+        const batch = db.batch();
+
+        // 1. Create the student document
+        const studentRef = db.collection('students').doc();
+        batch.set(studentRef, {
+            ...studentData,
+            id: studentRef.id,
+            status: StudentStatus.ACTIVE,
+        });
+
+        // 2. Update the correct admission collection based on ID prefix
+        const admissionCollection = admissionId.startsWith('BMSHST')
+            ? 'hostel_admissions'
+            : 'online_admissions';
+        const admissionRef = db.collection(admissionCollection).doc(admissionId);
+        batch.update(admissionRef, {
+            status: 'approved',
+            isEnrolled: true,
+            temporaryStudentId: studentData.studentId,
+        });
+
+        await batch.commit();
+        addNotification(
+            `Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`,
+            'success',
+            'Enrollment Complete'
+        );
     } catch (error: any) {
-      console.error("Enrollment failed:", error);
-      addNotification("Failed to enroll student. Please check database permissions.", 'error', 'Enrollment Failed');
-      throw error;
+        console.error("Enrollment failed:", error);
+        addNotification("Failed to enroll student. Please check database permissions.", 'error', 'Enrollment Failed');
+        throw error;
     }
-  };
+};
 
   const handleGenerateTc = async (tcData: Omit<TcRecord, 'id'>) => {
     try {

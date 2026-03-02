@@ -56,9 +56,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     
     useEffect(() => {
         const fetchDetails = async () => {
-            if (location.state) {
-                setAdmissionDetails(prev => ({ ...prev, ...(location.state as Partial<OnlineAdmission>) }));
-            } else if (admissionId) {
+            // Always fetch from Firestore for complete data (location.state is partial)
+            // location.state uses 'grade' but Firestore uses 'admissionGrade' — always fetch
+            if (admissionId) {
                 try {
                     // Boarder IDs start with BMSHST, day scholar IDs start with BMSAPP
                     const collection = admissionId.startsWith('BMSHST')
@@ -85,7 +85,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         };
 
         fetchDetails();
-    }, [admissionId, location.state, addNotification]);
+    }, [admissionId, addNotification]);
 
     useEffect(() => {
         if (admissionDetails?.paymentStatus === 'paid' || admissionDetails?.paymentStatus === 'pending') {

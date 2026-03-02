@@ -87,12 +87,22 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
     }, [admissionConfig, studentType, admissionDetails?.admissionGrade]);
     
+    const TEXTBOOK_FEES: Record<string, number> = {
+        'Nursery': 500, 'Kindergarten': 500,
+        'Class I': 580, 'Class II': 630,
+        'Class III': 640, 'Class IV': 640, 'Class V': 640,
+        'Class VI': 730, 'Class VII': 730,
+        'Class VIII': 780, 'Class IX': 780, 'Class X': 780,
+    };
+
+    const textbookFee = grade ? (TEXTBOOK_FEES[grade] ?? 0) : 0;
+
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
         const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
         const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
-        return oneTimeTotal + annualTotal;
-    }, [feeStructure]);
+        return oneTimeTotal + annualTotal + textbookFee;
+    }, [feeStructure, textbookFee]);
 
     const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
 
@@ -172,6 +182,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         details: OnlineAdmission,
         items: AdmissionItem[],
         baseTotal: number,
+        tbFee: number,
         itemsTotal: number,
         total: number
     ) => {
@@ -283,8 +294,11 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.setTextColor(30, 41, 59);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text('Base Admission Fees', margin + 2, y);
-        doc.text(`Rs. ${baseTotal}`, margin + contentW - 2, y, { align: 'right' });
+        doc.text('Admission Fees', margin + 2, y);
+        doc.text(`Rs. ${baseTotal - tbFee}`, margin + contentW - 2, y, { align: 'right' });
+        y += 6;
+        doc.text(`Textbook Fee (${details.admissionGrade})`, margin + 2, y);
+        doc.text(`Rs. ${tbFee}`, margin + contentW - 2, y, { align: 'right' });
         y += 6;
 
         // Purchased items
@@ -384,6 +398,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                         admissionDetails,
                         itemsToPurchase,
                         baseFeeTotal,
+                        textbookFee,
                         merchandiseTotal,
                         grandTotal
                     );
@@ -563,8 +578,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     <div className="mt-10 border-t pt-8">
                         <div className="max-w-md ml-auto space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                                <div className="flex justify-between font-medium"><span className="text-slate-700">Base Fees</span><span>₹{baseFeeTotal}</span></div>
-                                <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
+                                <div className="flex justify-between font-medium"><span className="text-slate-700">Admission Fees</span><span>₹{baseFeeTotal - textbookFee}</span></div>
+                                <div className="flex justify-between font-medium"><span className="text-slate-700">Textbook Fee <span className="text-xs text-amber-600 font-semibold">(Mandatory)</span></span><span>₹{textbookFee}</span></div>
+                                {merchandiseTotal > 0 && <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>}
                                 <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
                             <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}

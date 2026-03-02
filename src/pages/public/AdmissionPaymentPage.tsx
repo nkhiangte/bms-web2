@@ -9,6 +9,25 @@ import jsPDF from 'jspdf';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
 
+// ── Hardcoded textbook fees per grade (stable constant outside component) ─────
+const TEXTBOOK_FEES: Record<string, number> = {
+    'Nursery': 500,      'NU': 500,
+    'Kindergarten': 500, 'KG': 500,
+    'Class I': 580,   'I': 580,
+    'Class II': 630,  'II': 630,
+    'Class III': 640, 'III': 640,
+    'Class IV': 640,  'IV': 640,
+    'Class V': 640,   'V': 640,
+    'Class VI': 730,  'VI': 730,
+    'Class VII': 730, 'VII': 730,
+    'Class VIII': 780,'VIII': 780,
+    'Class IX': 780,  'IX': 780,
+    'Class X': 780,   'X': 780,
+};
+
+const getTextbookFee = (grade: string): number =>
+    TEXTBOOK_FEES[grade] ?? TEXTBOOK_FEES[grade.replace('Class ', '').trim()] ?? 0;
+
 interface AdmissionPaymentPageProps {
     addNotification: (message: string, type: NotificationType, title?: string) => void;
     admissionConfig?: AdmissionSettings; 
@@ -90,27 +109,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
     }, [admissionConfig, studentType, grade]);
 
-    const TEXTBOOK_FEES: Record<string, number> = {
-        // Grade enum values (e.g. "Class VI")
-        'Nursery': 500, 'Kindergarten': 500,
-        'Class I': 580, 'Class II': 630,
-        'Class III': 640, 'Class IV': 640, 'Class V': 640,
-        'Class VI': 730, 'Class VII': 730,
-        'Class VIII': 780, 'Class IX': 780, 'Class X': 780,
-        // Roman-numeral-only fallbacks (e.g. "I", "VI")
-        'I': 580, 'II': 630, 'III': 640, 'IV': 640, 'V': 640,
-        'VI': 730, 'VII': 730, 'VIII': 780, 'IX': 780, 'X': 780,
-        // Short codes fallback
-        'NU': 500, 'KG': 500,
-    };
-
-    const textbookFee = useMemo(() => {
-        if (!grade) return 0;
-        // Try exact match first, then "Class X" -> "X" fallback
-        return TEXTBOOK_FEES[grade]
-            ?? TEXTBOOK_FEES[grade.replace('Class ', '').trim()]
-            ?? 0;
-    }, [grade]);
+    // textbookFee: use stable function defined outside component so useMemo tracks correctly
+    const textbookFee = useMemo(() => getTextbookFee(grade), [grade]);
 
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
@@ -594,12 +594,20 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
                     <div className="mt-10 border-t pt-8">
                         <div className="max-w-md ml-auto space-y-4">
+                            {!admissionDetails ? (
+                                <div className="p-4 bg-slate-50 rounded-xl space-y-3 animate-pulse">
+                                    <div className="h-4 bg-slate-200 rounded w-3/4"/>
+                                    <div className="h-4 bg-slate-200 rounded w-2/3"/>
+                                    <div className="h-6 bg-slate-300 rounded w-1/2 ml-auto"/>
+                                </div>
+                            ) : (
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Admission Fees</span><span>₹{baseFeeTotal - textbookFee}</span></div>
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Textbook Fee <span className="text-xs text-amber-600 font-semibold">(Mandatory)</span></span><span>₹{textbookFee}</span></div>
                                 {merchandiseTotal > 0 && <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>}
                                 <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
+                            )}
                             <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}
                                 className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}

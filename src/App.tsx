@@ -127,6 +127,10 @@ import { SpinnerIcon } from '@/components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
 
+// ── Helper: resolve Firestore collection from admission ID prefix ─────────────
+const getAdmissionCollection = (id: string): string =>
+  id.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
+
 // ── Helper: generate a unique hostel admission ID ─────────────────────────────
 const generateHostelAdmissionId = (): string => {
   const ts = Date.now().toString(36).toUpperCase();
@@ -134,12 +138,8 @@ const generateHostelAdmissionId = (): string => {
   return `BMSHST${ts}${rand}`;
 };
 
-// ── Helper: resolve Firestore collection from admission ID prefix ─────────────
-const getAdmissionCollection = (id: string): string =>
-  id.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
-
 const App: React.FC = () => {
-  // --- State Declarations ---
+  // ── State ─────────────────────────────────────────────────────────────────
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
@@ -149,14 +149,14 @@ const App: React.FC = () => {
   const [hostelAdmissions, setHostelAdmissions] = useState<OnlineAdmission[]>([]);
   const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
 
-  // Configuration
+  // Config
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
   const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
   const [admissionSettings, setAdmissionSettings] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
   const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '' });
   const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
 
-  // Data Records
+  // Records
   const [tcRecords, setTcRecords] = useState<TcRecord[]>([]);
   const [serviceCerts, setServiceCerts] = useState<ServiceCertificateRecord[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -167,24 +167,25 @@ const App: React.FC = () => {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [examRoutines, setExamRoutines] = useState<ExamRoutine[]>([]);
   const [classRoutines, setClassRoutines] = useState<Record<string, DailyRoutine>>({});
+  const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.netlify.app/</loc></url></urlset>`);
 
-  // Hostel Data
+  // Hostel
   const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
   const [hostelStaff, setHostelStaff] = useState<HostelStaff[]>([]);
   const [hostelInventory, setHostelInventory] = useState<HostelInventoryItem[]>([]);
   const [stockLogs, setStockLogs] = useState<StockLog[]>([]);
   const [choreRoster, setChoreRoster] = useState({} as ChoreRoster);
 
-  // Other Logs
+  // Logs & Attendance
   const [conductLog, setConductLog] = useState<ConductEntry[]>([]);
   const [hostelDisciplineLog, setHostelDisciplineLog] = useState<HostelDisciplineEntry[]>([]);
   const [dailyStudentAttendance, setDailyStudentAttendance] = useState<Record<Grade, Record<string, StudentAttendanceRecord>>>(
     GRADES_LIST.reduce((acc, grade) => ({ ...acc, [grade]: {} }), {}) as Record<Grade, Record<string, StudentAttendanceRecord>>
   );
   const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
-  const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string; }[]>([]);
+  const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string }[]>([]);
 
-  // Derived state
+  // ── Derived ───────────────────────────────────────────────────────────────
   const assignedGrade: Grade | null = useMemo(() => {
     if (!user) return null;
     const staffMember = staff.find(s => s.emailAddress === user.email);
@@ -199,25 +200,22 @@ const App: React.FC = () => {
     return staffMember?.assignedSubjects || [];
   }, [user, staff]);
 
-  // Include both collections in the pending badge count
   const pendingAdmissionsCount =
     onlineAdmissions.filter(a => a.status === 'pending').length +
     hostelAdmissions.filter(a => a.status === 'pending').length;
   const pendingParentCount = users.filter(u => u.role === 'pending_parent').length;
-  const pendingStaffCount = users.filter(u => u.role === 'pending').length;
+  const pendingStaffCount  = users.filter(u => u.role === 'pending').length;
 
+  // ── Notifications ─────────────────────────────────────────────────────────
   const addNotification = (message: string, type: NotificationType, title?: string) => {
     const id = Date.now().toString();
     setNotifications(prev => [...prev, { id, message, type, title }]);
   };
+  const removeNotification = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id));
 
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  // --- Auth Handlers ---
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const handleLogin = async (email?: string, password?: string) => {
-    if (!email || !password) return { success: false, message: "Credentials missing" };
+    if (!email || !password) return { success: false, message: 'Credentials missing' };
     try {
       await auth.signInWithEmailAndPassword(email, password);
       return { success: true };
@@ -241,26 +239,14 @@ const App: React.FC = () => {
     setUser(null);
   };
 
-  // --- Data Update Handlers ---
-  const handleUpdateAcademicYear = async (year: string) => {
-    try {
-      await db.collection('config').doc('academic').set({ currentAcademicYear: year });
-      setAcademicYear(year);
-      addNotification(`Academic year set to ${year}.`, 'success');
-    } catch (error: any) {
-      console.error("Error setting academic year:", error);
-      addNotification('Failed to set academic year.', 'error');
-    }
-  };
-
+  // ── Students ──────────────────────────────────────────────────────────────
   const handleAddStudent = async (studentData: Omit<Student, 'id'>) => {
     try {
-      const newStudentRef = db.collection('students').doc();
+      const ref = db.collection('students').doc();
       const studentId = formatStudentId(studentData, academicYear);
-      await newStudentRef.set({ ...studentData, id: newStudentRef.id, studentId, academicYear });
+      await ref.set({ ...studentData, id: ref.id, studentId, academicYear });
       addNotification('Student added successfully!', 'success');
     } catch (error: any) {
-      console.error("Error adding student:", error);
       addNotification('Failed to add student.', 'error');
     }
   };
@@ -271,7 +257,6 @@ const App: React.FC = () => {
       await db.collection('students').doc(id).update(updatableData);
       addNotification('Student updated successfully!', 'success');
     } catch (error: any) {
-      console.error("Error updating student:", error);
       addNotification('Failed to update student.', 'error');
     }
   };
@@ -281,7 +266,6 @@ const App: React.FC = () => {
       await db.collection('students').doc(student.id).update({ status: 'Dropped' });
       addNotification(`Student ${student.name} marked as dropped.`, 'success');
     } catch (error: any) {
-      console.error("Error deleting student:", error);
       addNotification('Failed to drop student.', 'error');
     }
   };
@@ -291,7 +275,6 @@ const App: React.FC = () => {
       await db.collection('students').doc(studentId).update({ feePayments: payments });
       addNotification('Fee payments updated successfully!', 'success');
     } catch (error: any) {
-      console.error("Error updating fee payments:", error);
       addNotification('Failed to update fee payments.', 'error');
     }
   };
@@ -299,14 +282,12 @@ const App: React.FC = () => {
   const handleUpdateBulkFeePayments = async (updates: Array<{ studentId: string; payments: FeePayments }>) => {
     const batch = db.batch();
     updates.forEach(({ studentId, payments }) => {
-      const ref = db.collection('students').doc(studentId);
-      batch.update(ref, { feePayments: payments });
+      batch.update(db.collection('students').doc(studentId), { feePayments: payments });
     });
     try {
       await batch.commit();
       addNotification('Bulk fee payments updated successfully!', 'success');
     } catch (error: any) {
-      console.error("Error updating bulk fee payments:", error);
       addNotification('Failed to update bulk fee payments.', 'error');
     }
   };
@@ -315,34 +296,30 @@ const App: React.FC = () => {
     try {
       await db.collection('students').doc(studentId).update({ academicPerformance: performance });
     } catch (error: any) {
-      console.error("Error updating academic performance:", error);
       addNotification('Failed to update academic performance.', 'error');
-    }
-  };
-
-  const handleUpdateGradeDefinition = async (grade: Grade, newDefinition: GradeDefinition) => {
-    try {
-      const newDefs = { ...gradeDefinitions, [grade]: newDefinition };
-      await db.collection('config').doc('gradeDefinitions').set(newDefs);
-      addNotification(`Grade definition for ${grade} updated.`, 'success');
-    } catch (error: any) {
-      console.error("Error updating grade definition:", error);
-      addNotification('Failed to update grade definition.', 'error');
     }
   };
 
   const handleResetAllAcademicMarks = async () => {
     try {
       const batch = db.batch();
-      const studentRefs = await db.collection('students').get();
-      studentRefs.docs.forEach(doc => {
-        batch.update(db.collection('students').doc(doc.id), { academicPerformance: [] });
-      });
+      const snap = await db.collection('students').get();
+      snap.docs.forEach(doc => batch.update(db.collection('students').doc(doc.id), { academicPerformance: [] }));
       await batch.commit();
       addNotification('All academic records have been reset.', 'success');
     } catch (error: any) {
-      console.error("Error resetting all academic marks:", error);
       addNotification('Failed to reset all academic records.', 'error');
+    }
+  };
+
+  // ── Config ────────────────────────────────────────────────────────────────
+  const handleUpdateAcademicYear = async (year: string) => {
+    try {
+      await db.collection('config').doc('academic').set({ currentAcademicYear: year });
+      setAcademicYear(year);
+      addNotification(`Academic year set to ${year}.`, 'success');
+    } catch (error: any) {
+      addNotification('Failed to set academic year.', 'error');
     }
   };
 
@@ -352,57 +329,186 @@ const App: React.FC = () => {
       addNotification('Fee structure updated successfully!', 'success');
       return true;
     } catch (error: any) {
-      console.error("Error updating fee structure:", error);
       addNotification('Failed to update fee structure.', 'error');
       return false;
     }
   };
 
-  // ── Enrollment: routes to correct collection based on ID prefix ───────────
-const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
+  const handleUpdateGradeDefinition = async (grade: Grade, newDefinition: GradeDefinition) => {
     try {
-        const batch = db.batch();
+      await db.collection('config').doc('gradeDefinitions').set({ ...gradeDefinitions, [grade]: newDefinition });
+      addNotification(`Grade definition for ${grade} updated.`, 'success');
+    } catch (error: any) {
+      addNotification('Failed to update grade definition.', 'error');
+    }
+  };
 
-        // 1. Create the student document
-        const studentRef = db.collection('students').doc();
-        batch.set(studentRef, {
-            ...studentData,
-            id: studentRef.id,
-            status: StudentStatus.ACTIVE,
+  // ── Enrollment ────────────────────────────────────────────────────────────
+  // Routes to the correct Firestore collection based on admission ID prefix.
+  // Existing students keep their previousStudentId; new students get BMS26[Class][Roll].
+  const handleEnrollStudent = async (admissionId: string, studentData: Omit<Student, 'id'>) => {
+    try {
+      const batch = db.batch();
+      const studentRef = db.collection('students').doc();
+      batch.set(studentRef, { ...studentData, id: studentRef.id, status: StudentStatus.ACTIVE });
+      const admissionRef = db.collection(getAdmissionCollection(admissionId)).doc(admissionId);
+      batch.update(admissionRef, { status: 'approved', isEnrolled: true, temporaryStudentId: studentData.studentId });
+      await batch.commit();
+      addNotification(`${studentData.name} enrolled with ID ${studentData.studentId}!`, 'success', 'Enrollment Complete');
+    } catch (error: any) {
+      addNotification('Failed to enroll student. Check database permissions.', 'error', 'Enrollment Failed');
+      throw error;
+    }
+  };
+
+  // ── Admission Submit ──────────────────────────────────────────────────────
+  // Day Scholars → online_admissions (BMSAPP… ID)
+  // Boarders → hostel_admissions (BMSHST… ID)
+  const handleOnlineAdmissionSubmit = async (data: Partial<OnlineAdmission>, id?: string): Promise<string> => {
+    try {
+      const sanitized = Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v])
+      );
+
+      if (id) {
+        await db.collection(getAdmissionCollection(id)).doc(id).set(sanitized, { merge: true });
+        return id;
+      }
+
+      if (data.boardingType === 'Boarder') {
+        const newId = generateHostelAdmissionId();
+        await db.collection('hostel_admissions').doc(newId).set({
+          ...sanitized, id: newId, submissionDate: new Date().toISOString(),
         });
+        return newId;
+      } else {
+        const docRef = db.collection('online_admissions').doc();
+        const customId = `BMSAPP${docRef.id}`;
+        await db.collection('online_admissions').doc(customId).set({
+          ...sanitized, id: customId, temporaryStudentId: customId, submissionDate: new Date().toISOString(),
+        });
+        return customId;
+      }
+    } catch (error: any) {
+      addNotification('Failed to save admission. Please try again.', 'error');
+      throw error;
+    }
+  };
 
-        // 2. Update the correct admission collection based on ID prefix
-        const admissionCollection = admissionId.startsWith('BMSHST')
-            ? 'hostel_admissions'
-            : 'online_admissions';
-        const admissionRef = db.collection(admissionCollection).doc(admissionId);
-        batch.update(admissionRef, {
-            status: 'approved',
-            isEnrolled: true,
-            temporaryStudentId: studentData.studentId,
+  // ── Admission Status / Delete ─────────────────────────────────────────────
+  const handleAdmissionUpdateStatus = async (id: string, status: OnlineAdmission['status']): Promise<void> => {
+    try {
+      await db.collection(getAdmissionCollection(id)).doc(id).update({ status });
+      addNotification('Application status updated.', 'success');
+    } catch (error: any) {
+      addNotification('Failed to update status.', 'error');
+    }
+  };
+
+  const handleAdmissionDelete = async (id: string): Promise<void> => {
+    try {
+      await db.collection(getAdmissionCollection(id)).doc(id).delete();
+      addNotification('Application deleted.', 'success');
+    } catch (error: any) {
+      addNotification('Failed to delete application.', 'error');
+    }
+  };
+
+  // ── Promotion ─────────────────────────────────────────────────────────────
+  // Archives every active student, promotes to next grade with new IDs,
+  // graduates Class X, resets marks & fees, advances academic year.
+  const handlePromoteStudents = async () => {
+    try {
+      const currentYear = academicYear;
+      const nextYear    = getNextAcademicYear(currentYear);
+      const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE);
+
+      // Chunk into batches of 400 (Firestore limit is 500 ops/batch)
+      const CHUNK = 400;
+      for (let i = 0; i < activeStudents.length; i += CHUNK) {
+        const batch = db.batch();
+        const chunk = activeStudents.slice(i, i + CHUNK);
+
+        chunk.forEach(student => {
+          // Archive snapshot
+          const archiveRef = db
+            .collection('students_archive')
+            .doc(currentYear)
+            .collection('students')
+            .doc(student.id);
+          batch.set(archiveRef, {
+            ...student,
+            archivedAt: new Date().toISOString(),
+            archivedFromYear: currentYear,
+          });
+
+          const studentRef = db.collection('students').doc(student.id);
+
+          if (student.grade === Grade.X) {
+            // Class X → Graduate
+            batch.update(studentRef, {
+              status: StudentStatus.GRADUATED,
+              academicYear: currentYear,
+            });
+          } else {
+            // All others → promote
+            const gradeDef    = gradeDefinitions[student.grade];
+            const resultStatus = calculateStudentResult(student, gradeDef);
+            const nextGrade   = resultStatus === 'FAIL' ? student.grade : (getNextGrade(student.grade) || student.grade);
+            const newStudentId = formatStudentId({ grade: nextGrade, rollNo: student.rollNo } as any, nextYear);
+
+            batch.update(studentRef, {
+              grade: nextGrade,
+              studentId: newStudentId,
+              academicYear: nextYear,
+              academicPerformance: [],
+              feePayments: {
+                admissionFeePaid: true,
+                tuitionFeesPaid: {},
+                examFeesPaid: { terminal1: false, terminal2: false, terminal3: false },
+              },
+            });
+          }
         });
 
         await batch.commit();
-        addNotification(
-            `Student ${studentData.name} enrolled successfully with ID ${studentData.studentId}!`,
-            'success',
-            'Enrollment Complete'
-        );
-    } catch (error: any) {
-        console.error("Enrollment failed:", error);
-        addNotification("Failed to enroll student. Please check database permissions.", 'error', 'Enrollment Failed');
-        throw error;
-    }
-};
+      }
 
+      // Also clear attendance records
+      const [saSnap, staffSnap] = await Promise.all([
+        db.collection('studentAttendance').get(),
+        db.collection('staffAttendance').get(),
+      ]);
+      if (saSnap.docs.length + staffSnap.docs.length > 0) {
+        const attBatch = db.batch();
+        saSnap.docs.forEach(doc => attBatch.delete(db.collection('studentAttendance').doc(doc.id)));
+        staffSnap.docs.forEach(doc => attBatch.delete(db.collection('staffAttendance').doc(doc.id)));
+        await attBatch.commit();
+      }
+
+      // Advance academic year
+      await db.collection('config').doc('academic').set({ currentAcademicYear: nextYear });
+      setAcademicYear(nextYear);
+
+      addNotification(
+        `${activeStudents.length} students promoted. Academic year is now ${nextYear}.`,
+        'success', 'Promotion Complete'
+      );
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Promotion failed:', error);
+      addNotification(`Promotion failed: ${error.message}`, 'error', 'Promotion Error');
+    }
+  };
+
+  // ── TC / Service Certificates ─────────────────────────────────────────────
   const handleGenerateTc = async (tcData: Omit<TcRecord, 'id'>) => {
     try {
       await db.collection('tcRecords').add(tcData);
       await db.collection('students').doc(tcData.studentDbId).update({ status: StudentStatus.TRANSFERRED });
-      addNotification('Transfer Certificate generated and student status updated.', 'success');
+      addNotification('Transfer Certificate generated.', 'success');
       return true;
     } catch (error: any) {
-      console.error("Error generating TC:", error);
       addNotification('Failed to generate Transfer Certificate.', 'error');
       return false;
     }
@@ -412,543 +518,165 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
     try {
       await db.collection('serviceCertificates').add(certData);
       await db.collection('staff').doc(certData.staffDetails.staffNumericId).update({ status: StudentStatus.TRANSFERRED });
-      addNotification('Service Certificate generated and staff status updated.', 'success');
+      addNotification('Service Certificate generated.', 'success');
     } catch (error: any) {
-      console.error("Error generating Service Certificate:", error);
       addNotification('Failed to generate Service Certificate.', 'error');
     }
   };
 
-  const handleAddInventoryItem = async (itemData: Omit<InventoryItem, 'id'>) => {
-    try {
-      await db.collection('inventory').add(itemData);
-      addNotification('Inventory item added successfully.', 'success');
-    } catch (error: any) {
-      console.error("Error adding inventory item:", error);
-      addNotification('Failed to add inventory item.', 'error');
-    }
-  };
-
-  const handleEditInventoryItem = async (itemData: InventoryItem) => {
-    try {
-      await db.collection('inventory').doc(itemData.id).update(itemData);
-      addNotification('Inventory item updated successfully.', 'success');
-    } catch (error: any) {
-      console.error("Error editing inventory item:", error);
-      addNotification('Failed to edit inventory item.', 'error');
-    }
-  };
-
-  const handleDeleteInventoryItem = async (itemData: InventoryItem) => {
-    try {
-      await db.collection('inventory').doc(itemData.id).delete();
-      addNotification('Inventory item deleted successfully.', 'success');
-    } catch (error: any) {
-      console.error("Error deleting inventory item:", error);
-      addNotification('Failed to delete inventory item.', 'error');
-    }
-  };
+  // ── Inventory ─────────────────────────────────────────────────────────────
+  const handleAddInventoryItem    = async (item: Omit<InventoryItem, 'id'>) => { try { await db.collection('inventory').add(item); addNotification('Item added.', 'success'); } catch { addNotification('Failed to add item.', 'error'); } };
+  const handleEditInventoryItem   = async (item: InventoryItem)             => { try { await db.collection('inventory').doc(item.id).update(item); addNotification('Item updated.', 'success'); } catch { addNotification('Failed to update item.', 'error'); } };
+  const handleDeleteInventoryItem = async (item: InventoryItem)             => { try { await db.collection('inventory').doc(item.id).delete(); addNotification('Item deleted.', 'success'); } catch { addNotification('Failed to delete item.', 'error'); } };
 
   const handleUpdateStock = async (itemId: string, change: number, notes: string) => {
     try {
       const itemRef = db.collection('hostelInventory').doc(itemId);
       await db.runTransaction(async (transaction) => {
-        const itemDoc = await transaction.get(itemRef);
-        if (!itemDoc.exists) throw new Error("Item does not exist!");
-        const newStock = (itemDoc.data()?.currentStock || 0) + change;
-        if (newStock < 0) throw new Error("Not enough stock for this operation!");
+        const doc = await transaction.get(itemRef);
+        if (!doc.exists) throw new Error('Item does not exist!');
+        const newStock = (doc.data()?.currentStock || 0) + change;
+        if (newStock < 0) throw new Error('Not enough stock!');
         transaction.update(itemRef, { currentStock: newStock });
-        await db.collection('stockLogs').add({
-          itemId, itemName: itemDoc.data()?.name || 'Unknown',
-          quantity: Math.abs(change), type: change > 0 ? 'IN' : 'OUT',
-          date: new Date().toISOString(), notes,
-        });
+        await db.collection('stockLogs').add({ itemId, itemName: doc.data()?.name || 'Unknown', quantity: Math.abs(change), type: change > 0 ? 'IN' : 'OUT', date: new Date().toISOString(), notes });
       });
-      addNotification('Stock updated successfully!', 'success');
+      addNotification('Stock updated.', 'success');
     } catch (error: any) {
-      console.error("Error updating stock:", error);
       addNotification(`Failed to update stock: ${error.message}`, 'error');
     }
   };
 
-  const handleAddHostelResident = async (residentData: Omit<HostelResident, 'id'>) => {
-    try {
-      await db.collection('hostelResidents').add(residentData);
-      addNotification('Hostel resident added successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error adding hostel resident:", error);
-      addNotification('Failed to add hostel resident.', 'error');
-    }
-  };
+  // ── Hostel Residents ──────────────────────────────────────────────────────
+  const handleAddHostelResident    = async (r: Omit<HostelResident, 'id'>) => { try { await db.collection('hostelResidents').add(r); addNotification('Resident added.', 'success'); } catch { addNotification('Failed to add resident.', 'error'); } };
+  const handleEditHostelResident   = async (r: HostelResident)             => { try { await db.collection('hostelResidents').doc(r.id).update(r); addNotification('Resident updated.', 'success'); } catch { addNotification('Failed to update resident.', 'error'); } };
+  const handleDeleteHostelResident = async (r: HostelResident)             => { try { await db.collection('hostelResidents').doc(r.id).delete(); addNotification('Resident removed.', 'success'); } catch { addNotification('Failed to remove resident.', 'error'); } };
 
   const handleAddHostelResidentById = async (studentIdInput: string) => {
     try {
       const student = students.find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
-      if (!student) return { success: false, message: 'Student ID not found in school records.' };
-      const existingResident = hostelResidents.find(r => r.studentId === student.id);
-      if (existingResident) return { success: false, message: `Student ${student.name} is already a hostel resident.` };
-      const newResident: Omit<HostelResident, 'id'> = {
-        studentId: student.id, dormitory: 'Boys Dorm A' as any,
-        dateOfJoining: new Date().toISOString().split('T')[0],
-      };
-      await db.collection('hostelResidents').add(newResident);
-      addNotification(`Student ${student.name} added as hostel resident.`, 'success');
+      if (!student) return { success: false, message: 'Student ID not found.' };
+      if (hostelResidents.find(r => r.studentId === student.id)) return { success: false, message: `${student.name} is already a resident.` };
+      await db.collection('hostelResidents').add({ studentId: student.id, dormitory: 'Boys Dorm A' as any, dateOfJoining: new Date().toISOString().split('T')[0] });
+      addNotification(`${student.name} added as hostel resident.`, 'success');
       return { success: true };
     } catch (error: any) {
-      console.error("Error adding hostel resident by ID:", error);
-      addNotification('Failed to add hostel resident by ID.', 'error');
+      addNotification('Failed to add hostel resident.', 'error');
       return { success: false, message: 'Failed to add. Please try again.' };
     }
   };
 
-  const handleEditHostelResident = async (residentData: HostelResident) => {
-    try {
-      await db.collection('hostelResidents').doc(residentData.id).update(residentData);
-      addNotification('Hostel resident updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error editing hostel resident:", error);
-      addNotification('Failed to edit hostel resident.', 'error');
-    }
-  };
+  // ── Hostel Staff ──────────────────────────────────────────────────────────
+  const handleAddHostelStaff    = async (s: Omit<HostelStaff, 'id'>) => { try { await db.collection('hostelStaff').add(s); addNotification('Hostel staff added.', 'success'); } catch { addNotification('Failed to add hostel staff.', 'error'); } };
+  const handleEditHostelStaff   = async (s: HostelStaff)             => { try { await db.collection('hostelStaff').doc(s.id).update(s); addNotification('Hostel staff updated.', 'success'); } catch { addNotification('Failed to update hostel staff.', 'error'); } };
+  const handleDeleteHostelStaff = async (s: HostelStaff)             => { try { await db.collection('hostelStaff').doc(s.id).delete(); addNotification('Hostel staff deleted.', 'success'); } catch { addNotification('Failed to delete hostel staff.', 'error'); } };
 
-  const handleDeleteHostelResident = async (residentData: HostelResident) => {
-    try {
-      await db.collection('hostelResidents').doc(residentData.id).delete();
-      addNotification('Hostel resident deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting hostel resident:", error);
-      addNotification('Failed to delete hostel resident.', 'error');
-    }
-  };
-
-  const handleAddHostelStaff = async (staffData: Omit<HostelStaff, 'id'>) => {
-    try {
-      await db.collection('hostelStaff').add(staffData);
-      addNotification('Hostel staff added successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error adding hostel staff:", error);
-      addNotification('Failed to add hostel staff.', 'error');
-    }
-  };
-
-  const handleEditHostelStaff = async (staffData: HostelStaff) => {
-    try {
-      await db.collection('hostelStaff').doc(staffData.id).update(staffData);
-      addNotification('Hostel staff updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error editing hostel staff:", error);
-      addNotification('Failed to edit hostel staff.', 'error');
-    }
-  };
-
-  const handleDeleteHostelStaff = async (staffData: HostelStaff) => {
-    try {
-      await db.collection('hostelStaff').doc(staffData.id).delete();
-      addNotification('Hostel staff deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting hostel staff:", error);
-      addNotification('Failed to delete hostel staff.', 'error');
-    }
-  };
-
-  const handleSaveChoreRoster = async (newRoster: ChoreRoster) => {
-    try {
-      await db.collection('choreRoster').doc('current').set(newRoster);
-      addNotification('Chore roster updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error updating chore roster:", error);
-      addNotification('Failed to update chore roster.', 'error');
-    }
-  };
-
+  // ── Hostel Discipline ─────────────────────────────────────────────────────
   const handleSaveHostelDisciplineEntry = async (entryData: Omit<HostelDisciplineEntry, 'id' | 'reportedBy' | 'reportedById'>, id?: string) => {
     try {
-      const fullEntry = {
-        ...entryData,
-        reportedBy: user?.displayName || user?.email || 'Unknown',
-        reportedById: user!.uid,
-      };
-      if (id) {
-        await db.collection('hostelDisciplineLog').doc(id).update(fullEntry);
-      } else {
-        await db.collection('hostelDisciplineLog').add(fullEntry);
-      }
-      addNotification('Discipline record saved successfully!', 'success');
+      const fullEntry = { ...entryData, reportedBy: user?.displayName || user?.email || 'Unknown', reportedById: user!.uid };
+      if (id) { await db.collection('hostelDisciplineLog').doc(id).update(fullEntry); }
+      else { await db.collection('hostelDisciplineLog').add(fullEntry); }
+      addNotification('Discipline record saved.', 'success');
     } catch (error: any) {
-      console.error("Error saving discipline entry:", error);
       addNotification('Failed to save discipline entry.', 'error');
     }
   };
 
   const handleDeleteHostelDisciplineEntry = async (entry: HostelDisciplineEntry) => {
-    try {
-      await db.collection('hostelDisciplineLog').doc(entry.id).delete();
-      addNotification('Discipline record deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting discipline entry:", error);
-      addNotification('Failed to delete discipline entry.', 'error');
-    }
+    try { await db.collection('hostelDisciplineLog').doc(entry.id).delete(); addNotification('Discipline record deleted.', 'success'); }
+    catch { addNotification('Failed to delete discipline entry.', 'error'); }
   };
 
+  const handleSaveChoreRoster = async (roster: ChoreRoster) => {
+    try { await db.collection('choreRoster').doc('current').set(roster); addNotification('Chore roster updated.', 'success'); }
+    catch { addNotification('Failed to update chore roster.', 'error'); }
+  };
+
+  // ── Attendance ────────────────────────────────────────────────────────────
   const handleMarkStudentAttendance = async (grade: Grade, date: string, records: StudentAttendanceRecord) => {
-    try {
-      await db.collection('studentAttendance').doc(date).set({ [grade]: records }, { merge: true });
-      addNotification('Student attendance saved.', 'success');
-    } catch (error: any) {
-      console.error("Error marking student attendance:", error);
-      addNotification('Failed to save student attendance.', 'error');
-    }
+    try { await db.collection('studentAttendance').doc(date).set({ [grade]: records }, { merge: true }); addNotification('Attendance saved.', 'success'); }
+    catch { addNotification('Failed to save attendance.', 'error'); }
   };
 
-  const fetchStudentAttendanceForMonth = async (grade: Grade, year: number, month: number): Promise<{ [date: string]: StudentAttendanceRecord }> => {
+  const fetchStudentAttendanceForMonth = async (grade: Grade, year: number, month: number) => {
     try {
-      const querySnapshot = await db.collection('studentAttendance')
-        .where(firebase.firestore.FieldPath.documentId(), '>=', `${year}-${String(month).padStart(2, '0')}-01`)
-        .where(firebase.firestore.FieldPath.documentId(), '<=', `${year}-${String(month).padStart(2, '0')}-31`)
+      const pad = String(month).padStart(2, '0');
+      const snap = await db.collection('studentAttendance')
+        .where(firebase.firestore.FieldPath.documentId(), '>=', `${year}-${pad}-01`)
+        .where(firebase.firestore.FieldPath.documentId(), '<=', `${year}-${pad}-31`)
         .get();
-      const monthData: { [date: string]: StudentAttendanceRecord } = {};
-      querySnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data && data[grade]) monthData[doc.id] = data[grade];
-      });
-      return monthData;
-    } catch (error: any) {
-      console.error("Error fetching student attendance for month:", error);
-      addNotification('Failed to fetch student attendance data.', 'error');
-      return {};
-    }
+      const result: Record<string, StudentAttendanceRecord> = {};
+      snap.forEach(doc => { const d = doc.data(); if (d[grade]) result[doc.id] = d[grade]; });
+      return result;
+    } catch { return {}; }
   };
 
-  const fetchStudentAttendanceForRange = async (grade: Grade, startDate: string, endDate: string): Promise<{ [date: string]: StudentAttendanceRecord }> => {
+  const fetchStudentAttendanceForRange = async (grade: Grade, startDate: string, endDate: string) => {
     try {
-      const querySnapshot = await db.collection('studentAttendance')
+      const snap = await db.collection('studentAttendance')
         .where(firebase.firestore.FieldPath.documentId(), '>=', startDate)
         .where(firebase.firestore.FieldPath.documentId(), '<=', endDate)
         .get();
-      const rangeData: { [date: string]: StudentAttendanceRecord } = {};
-      querySnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data && data[grade]) rangeData[doc.id] = data[grade];
-      });
-      return rangeData;
-    } catch (error: any) {
-      console.error("Error fetching student attendance for range:", error);
-      addNotification('Failed to fetch student attendance data for range.', 'error');
-      return {};
-    }
+      const result: Record<string, StudentAttendanceRecord> = {};
+      snap.forEach(doc => { const d = doc.data(); if (d[grade]) result[doc.id] = d[grade]; });
+      return result;
+    } catch { return {}; }
   };
 
   const handleMarkStaffAttendance = async (staffId: string, status: StaffAttendanceRecord[string]) => {
     const today = new Date().toISOString().split('T')[0];
-    try {
-      await db.collection('staffAttendance').doc(today).set({ [staffId]: status }, { merge: true });
-      addNotification('Staff attendance marked.', 'success');
-    } catch (error: any) {
-      console.error("Error marking staff attendance:", error);
-      addNotification('Failed to mark staff attendance.', 'error');
-    }
+    try { await db.collection('staffAttendance').doc(today).set({ [staffId]: status }, { merge: true }); addNotification('Staff attendance marked.', 'success'); }
+    catch { addNotification('Failed to mark staff attendance.', 'error'); }
   };
 
-  const fetchStaffAttendanceForMonth = async (year: number, month: number): Promise<{ [date: string]: StaffAttendanceRecord }> => {
+  const fetchStaffAttendanceForMonth = async (year: number, month: number) => {
     try {
-      const querySnapshot = await db.collection('staffAttendance')
-        .where(firebase.firestore.FieldPath.documentId(), '>=', `${year}-${String(month).padStart(2, '0')}-01`)
-        .where(firebase.firestore.FieldPath.documentId(), '<=', `${year}-${String(month).padStart(2, '0')}-31`)
+      const pad = String(month).padStart(2, '0');
+      const snap = await db.collection('staffAttendance')
+        .where(firebase.firestore.FieldPath.documentId(), '>=', `${year}-${pad}-01`)
+        .where(firebase.firestore.FieldPath.documentId(), '<=', `${year}-${pad}-31`)
         .get();
-      const monthData: { [date: string]: StaffAttendanceRecord } = {};
-      querySnapshot.forEach(doc => { monthData[doc.id] = doc.data() as StaffAttendanceRecord; });
-      return monthData;
-    } catch (error: any) {
-      console.error("Error fetching staff attendance for month:", error);
-      addNotification('Failed to fetch staff attendance data.', 'error');
-      return {};
-    }
+      const result: Record<string, StaffAttendanceRecord> = {};
+      snap.forEach(doc => { result[doc.id] = doc.data() as StaffAttendanceRecord; });
+      return result;
+    } catch { return {}; }
   };
 
-  const fetchStaffAttendanceForRange = async (startDate: string, endDate: string): Promise<{ [date: string]: StaffAttendanceRecord }> => {
+  const fetchStaffAttendanceForRange = async (startDate: string, endDate: string) => {
     try {
-      const querySnapshot = await db.collection('staffAttendance')
+      const snap = await db.collection('staffAttendance')
         .where(firebase.firestore.FieldPath.documentId(), '>=', startDate)
         .where(firebase.firestore.FieldPath.documentId(), '<=', endDate)
         .get();
-      const rangeData: { [date: string]: StaffAttendanceRecord } = {};
-      querySnapshot.forEach(doc => { rangeData[doc.id] = doc.data() as StaffAttendanceRecord; });
-      return rangeData;
-    } catch (error: any) {
-      console.error("Error fetching staff attendance for range:", error);
-      addNotification('Failed to fetch staff attendance data for range.', 'error');
-      return {};
-    }
+      const result: Record<string, StaffAttendanceRecord> = {};
+      snap.forEach(doc => { result[doc.id] = doc.data() as StaffAttendanceRecord; });
+      return result;
+    } catch { return {}; }
   };
 
-  const handleSaveHomework = async (homework: Omit<Homework, 'id' | 'createdBy'>, id?: string) => {
-    try {
-      const dataWithCreator = { ...homework, createdBy: { uid: user!.uid, name: user!.displayName || user!.email! } };
-      if (id) {
-        await db.collection('homework').doc(id).update(dataWithCreator);
-      } else {
-        await db.collection('homework').add(dataWithCreator);
-      }
-      addNotification('Homework saved successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error saving homework:", error);
-      addNotification('Failed to save homework.', 'error');
-    }
-  };
-
-  const handleDeleteHomework = async (id: string) => {
-    try {
-      await db.collection('homework').doc(id).delete();
-      addNotification('Homework deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting homework:", error);
-      addNotification('Failed to delete homework.', 'error');
-    }
-  };
-
-  const handleSaveSyllabus = async (syllabus: Omit<Syllabus, 'id'>, id: string) => {
-    try {
-      await db.collection('syllabus').doc(id).set(syllabus);
-      addNotification('Syllabus saved successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error saving syllabus:", error);
-      addNotification('Failed to save syllabus.', 'error');
-    }
-  };
-
+  // ── Academic / Activity ───────────────────────────────────────────────────
   const handleBulkUpdateActivityLogs = async (updates: Array<{ studentId: string; examId: 'terminal1' | 'terminal2' | 'terminal3'; subjectName: string; activityLog: ActivityLog; activityMarks: number }>) => {
     const batch = db.batch();
     for (const update of updates) {
-      const studentRef = db.collection('students').doc(update.studentId);
-      const studentDoc = await studentRef.get();
-      if (studentDoc.exists) {
-        const currentPerformance = (studentDoc.data()?.academicPerformance || []) as Exam[];
-        const existingExamIndex = currentPerformance.findIndex(e => e.id === update.examId);
-        const newExam: Exam = existingExamIndex !== -1
-          ? { ...currentPerformance[existingExamIndex], name: currentPerformance[existingExamIndex].name }
-          : { id: update.examId, name: update.examId, results: [] };
-        const existingResultIndex = newExam.results.findIndex(r => r.subject === update.subjectName);
+      const ref = db.collection('students').doc(update.studentId);
+      const doc = await ref.get();
+      if (doc.exists) {
+        const perf = (doc.data()?.academicPerformance || []) as Exam[];
+        const examIdx = perf.findIndex(e => e.id === update.examId);
+        const exam: Exam = examIdx !== -1 ? { ...perf[examIdx] } : { id: update.examId, name: update.examId, results: [] };
+        const resIdx = exam.results.findIndex(r => r.subject === update.subjectName);
         const newResult: SubjectMark = { subject: update.subjectName, activityLog: update.activityLog, activityMarks: update.activityMarks };
-        if (existingResultIndex !== -1) {
-          newExam.results[existingResultIndex] = { ...newExam.results[existingResultIndex], ...newResult };
-        } else {
-          newExam.results.push(newResult);
-        }
-        if (existingExamIndex !== -1) {
-          currentPerformance[existingExamIndex] = newExam;
-        } else {
-          currentPerformance.push(newExam);
-        }
-        batch.update(studentRef, { academicPerformance: currentPerformance });
+        if (resIdx !== -1) { exam.results[resIdx] = { ...exam.results[resIdx], ...newResult }; }
+        else { exam.results.push(newResult); }
+        if (examIdx !== -1) { perf[examIdx] = exam; } else { perf.push(exam); }
+        batch.update(ref, { academicPerformance: perf });
       }
     }
-    try {
-      await batch.commit();
-      addNotification('Activity logs updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error bulk updating activity logs:", error);
-      addNotification('Failed to bulk update activity logs.', 'error');
-    }
+    try { await batch.commit(); addNotification('Activity logs updated.', 'success'); }
+    catch { addNotification('Failed to update activity logs.', 'error'); }
   };
 
-  const handleSendMessage = async (message: { fromParentId: string; fromParentName: string; toTeacherId: string; toTeacherName: string; childId: string; childName: string; message: string; }) => {
-    try {
-      await db.collection('parentMessages').add({ ...message, timestamp: firebase.firestore.FieldValue.serverTimestamp(), read: false });
-      addNotification('Message sent to teacher!', 'success');
-      return true;
-    } catch (error: any) {
-      console.error("Error sending message:", error);
-      addNotification('Failed to send message.', 'error');
-      return false;
-    }
-  };
-
-  const handleSaveNotice = async (notice: Omit<Notice, 'id' | 'createdBy'>, id?: string) => {
-    try {
-      const dataWithCreator = { ...notice, createdBy: { uid: user!.uid, name: user!.displayName || user!.email! } };
-      if (id) {
-        await db.collection('notices').doc(id).update(dataWithCreator);
-      } else {
-        await db.collection('notices').add(dataWithCreator);
-      }
-      addNotification('Notice saved successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error saving notice:", error);
-      addNotification('Failed to save notice.', 'error');
-    }
-  };
-
-  const handleDeleteNotice = async (id: string) => {
-    try {
-      await db.collection('notices').doc(id).delete();
-      addNotification('Notice deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting notice:", error);
-      addNotification('Failed to delete notice.', 'error');
-    }
-  };
-
-  const handleSaveNews = async (item: Omit<NewsItem, 'id'>, id?: string) => {
-    try {
-      if (id) {
-        await db.collection('news').doc(id).update(item);
-      } else {
-        await db.collection('news').add(item);
-      }
-      addNotification('News item saved successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error saving news item:", error);
-      addNotification('Failed to save news item.', 'error');
-    }
-  };
-
-  const handleDeleteNews = async (id: string) => {
-    try {
-      await db.collection('news').doc(id).delete();
-      addNotification('News item deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting news item:", error);
-      addNotification('Failed to delete news item.', 'error');
-    }
-  };
-
-  const handleSaveCalendarEvent = async (event: Omit<CalendarEvent, 'id'>, id?: string) => {
-    try {
-      if (id) {
-        await db.collection('calendarEvents').doc(id).update(event);
-      } else {
-        await db.collection('calendarEvents').add(event);
-      }
-      addNotification('Calendar event saved successfully!', 'success');
-      return true;
-    } catch (error: any) {
-      console.error("Error saving calendar event:", error);
-      addNotification('Failed to save calendar event.', 'error');
-      return false;
-    }
-  };
-
-  const handleDeleteCalendarEvent = async (event: CalendarEvent) => {
-    try {
-      await db.collection('calendarEvents').doc(event.id).delete();
-      addNotification('Calendar event deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting calendar event:", error);
-      addNotification('Failed to delete calendar event.', 'error');
-    }
-  };
-
-  const handleSaveExamRoutine = async (routine: Omit<ExamRoutine, 'id'>, id?: string) => {
-    try {
-      if (id) {
-        await db.collection('examRoutines').doc(id).update(routine);
-      } else {
-        await db.collection('examRoutines').add(routine);
-      }
-      addNotification('Exam routine saved successfully!', 'success');
-      return true;
-    } catch (error: any) {
-      console.error("Error saving exam routine:", error);
-      addNotification('Failed to save exam routine.', 'error');
-      return false;
-    }
-  };
-
-  const handleDeleteExamRoutine = async (routine: ExamRoutine) => {
-    try {
-      await db.collection('examRoutines').doc(routine.id).delete();
-      addNotification('Exam routine deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting exam routine:", error);
-      addNotification('Failed to delete exam routine.', 'error');
-    }
-  };
-
-  const handleUpdateClassRoutine = async (day: string, routine: DailyRoutine) => {
-    try {
-      await db.collection('classRoutines').doc(day).set({ routine });
-      addNotification(`Class routine for ${day} updated.`, 'success');
-    } catch (error: any) {
-      console.error("Error updating class routine:", error);
-      addNotification('Failed to update class routine.', 'error');
-    }
-  };
-
-  const handleSaveSitemapContent = async (newContent: string) => {
-    try {
-      await db.collection('config').doc('sitemap').set({ content: newContent });
-      addNotification('Sitemap updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error saving sitemap:", error);
-      addNotification('Failed to save sitemap.', 'error');
-    }
-  };
-
-  const handleSaveNavItem = async (item: Partial<NavMenuItem>) => {
-    try {
-      const id = item.id || db.collection('navigation').doc().id;
-      await db.collection('navigation').doc(id).set({ ...item, id, isActive: true, updatedAt: new Date().toISOString() }, { merge: true });
-      addNotification('Navigation item saved!', 'success');
-    } catch (error: any) {
-      console.error("Error saving navigation item:", error);
-      addNotification('Failed to save navigation item.', 'error');
-    }
-  };
-
-  const handleDeleteNavItem = async (id: string) => {
-    try {
-      await db.collection('navigation').doc(id).delete();
-      addNotification('Navigation item deleted.', 'success');
-    } catch (error: any) {
-      console.error("Error deleting navigation item:", error);
-      addNotification('Failed to delete navigation item.', 'error');
-    }
-  };
-
-  const handleUpdateUserProfile = async (updates: { photoURL?: string }) => {
-    try {
-      if (!user || !user.uid) return { success: false, message: "User not authenticated." };
-      await auth.currentUser?.updateProfile(updates);
-      await db.collection('users').doc(user.uid).update(updates);
-      addNotification('Profile updated successfully!', 'success');
-      return { success: true };
-    } catch (error: any) {
-      console.error("Error updating user profile:", error);
-      addNotification(`Failed to update profile: ${error.message}`, 'error');
-      return { success: false, message: error.message };
-    }
-  };
-
-  const handleUpdateUserRole = async (uid: string, newRole: 'admin' | 'user' | 'pending' | 'warden') => {
-    try {
-      await db.collection('users').doc(uid).update({ role: newRole });
-      addNotification(`User role updated to ${newRole}.`, 'success');
-    } catch (error: any) {
-      console.error("Error updating user role:", error);
-      addNotification('Failed to update user role.', 'error');
-    }
-  };
-
-  const handleDeleteUser = async (uid: string) => {
-    try {
-      await db.collection('users').doc(uid).delete();
-      addNotification('User deleted successfully (Firestore record).', 'success');
-    } catch (error: any) {
-      console.error("Error deleting user:", error);
-      addNotification('Failed to delete user.', 'error');
-    }
-  };
-
-  const handleUpdateParentUser = async (uid: string, updates: Partial<User>) => {
-    try {
-      await db.collection('users').doc(uid).update(updates);
-      addNotification('Parent account updated successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error updating parent user:", error);
-      addNotification('Failed to update parent account.', 'error');
-    }
-  };
-
+  // ── Staff ─────────────────────────────────────────────────────────────────
   const handleSaveStaff = async (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGradeKey: Grade | null) => {
     try {
       if (id) {
@@ -956,22 +684,17 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
         if (assignedGradeKey) {
           await db.collection('config').doc('gradeDefinitions').update({ [assignedGradeKey]: { ...gradeDefinitions[assignedGradeKey], classTeacherId: id } });
         } else {
-          const currentAssignedGrade = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
-          if (currentAssignedGrade) {
-            await db.collection('config').doc('gradeDefinitions').update({ [currentAssignedGrade]: { ...gradeDefinitions[currentAssignedGrade], classTeacherId: firebase.firestore.FieldValue.delete() } });
-          }
+          const cur = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
+          if (cur) await db.collection('config').doc('gradeDefinitions').update({ [cur]: { ...gradeDefinitions[cur], classTeacherId: firebase.firestore.FieldValue.delete() } });
         }
-        addNotification('Staff updated successfully!', 'success');
+        addNotification('Staff updated.', 'success');
       } else {
-        const newStaffRef = db.collection('staff').doc();
-        await newStaffRef.set({ ...staffData, id: newStaffRef.id });
-        if (assignedGradeKey) {
-          await db.collection('config').doc('gradeDefinitions').update({ [assignedGradeKey]: { ...gradeDefinitions[assignedGradeKey], classTeacherId: newStaffRef.id } });
-        }
-        addNotification('Staff added successfully!', 'success');
+        const ref = db.collection('staff').doc();
+        await ref.set({ ...staffData, id: ref.id });
+        if (assignedGradeKey) await db.collection('config').doc('gradeDefinitions').update({ [assignedGradeKey]: { ...gradeDefinitions[assignedGradeKey], classTeacherId: ref.id } });
+        addNotification('Staff added.', 'success');
       }
     } catch (error: any) {
-      console.error("Error saving staff:", error);
       addNotification('Failed to save staff.', 'error');
     }
   };
@@ -979,179 +702,99 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
   const handleDeleteStaff = async (id: string) => {
     try {
       await db.collection('staff').doc(id).delete();
-      const assignedGradeToDeletedStaff = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
-      if (assignedGradeToDeletedStaff) {
-        await db.collection('config').doc('gradeDefinitions').update({ [assignedGradeToDeletedStaff]: { ...gradeDefinitions[assignedGradeToDeletedStaff], classTeacherId: firebase.firestore.FieldValue.delete() } });
-      }
-      addNotification('Staff deleted successfully!', 'success');
-    } catch (error: any) {
-      console.error("Error deleting staff:", error);
-      addNotification('Failed to delete staff.', 'error');
-    }
+      const cur = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
+      if (cur) await db.collection('config').doc('gradeDefinitions').update({ [cur]: { ...gradeDefinitions[cur], classTeacherId: firebase.firestore.FieldValue.delete() } });
+      addNotification('Staff deleted.', 'success');
+    } catch { addNotification('Failed to delete staff.', 'error'); }
   };
 
-  const handlePromoteStudents = async () => {
+  // ── Content ───────────────────────────────────────────────────────────────
+  const handleSaveHomework = async (hw: Omit<Homework, 'id' | 'createdBy'>, id?: string) => {
     try {
-      const currentYear = academicYear;
-      const nextYear = getNextAcademicYear(currentYear);
-      const batch = db.batch();
-      const studentSnapshot = await db.collection('students').get();
-      studentSnapshot.docs.forEach(doc => {
-        const studentData = doc.data() as Student;
-        const archivedStudentRef = db.collection(`archive_${currentYear}_students`).doc(doc.id);
-        batch.set(archivedStudentRef, studentData);
-        let newGrade: Grade | null = null;
-        let newStatus: StudentStatus = studentData.status;
-        if (studentData.status === StudentStatus.ACTIVE) {
-          const gradeDef = gradeDefinitions[studentData.grade];
-          const resultStatus = calculateStudentResult(studentData, gradeDef);
-          if (resultStatus === 'PASS') {
-            if (studentData.grade === Grade.X) {
-              newStatus = StudentStatus.GRADUATED;
-            } else {
-              newGrade = getNextGrade(studentData.grade);
-              if (!newGrade) newStatus = StudentStatus.GRADUATED;
-            }
-          } else {
-            newGrade = studentData.grade;
-            newStatus = StudentStatus.ACTIVE;
-          }
-        } else {
-          newStatus = studentData.status;
-          newGrade = studentData.grade;
-        }
-        const studentRef = db.collection('students').doc(doc.id);
-        const updatedGrade = newGrade || studentData.grade;
-        const newStudentId = formatStudentId({ ...studentData, grade: updatedGrade }, nextYear);
-        batch.update(studentRef, {
-          grade: updatedGrade, studentId: newStudentId, academicYear: nextYear,
-          academicPerformance: [],
-          feePayments: { admissionFeePaid: false, tuitionFeesPaid: firebase.firestore.FieldValue.delete(), examFeesPaid: { terminal1: false, terminal2: false, terminal3: false } },
-          status: newStatus,
-        });
-      });
-      const studentAttendanceSnapshot = await db.collection('studentAttendance').get();
-      studentAttendanceSnapshot.docs.forEach(doc => { batch.delete(db.collection('studentAttendance').doc(doc.id)); });
-      const staffAttendanceSnapshot = await db.collection('staffAttendance').get();
-      staffAttendanceSnapshot.docs.forEach(doc => { batch.delete(db.collection('staffAttendance').doc(doc.id)); });
-      batch.update(db.collection('config').doc('academic'), { currentAcademicYear: nextYear });
-      await batch.commit();
-      addNotification(`Academic year advanced to ${nextYear}. Students promoted/detained.`, 'success', 'Promotion Complete');
-      window.location.reload();
-    } catch (error: any) {
-      console.error("Error promoting students:", error);
-      addNotification('Failed to promote students. Check console for details.', 'error', 'Promotion Failed');
-    }
+      const data = { ...hw, createdBy: { uid: user!.uid, name: user!.displayName || user!.email! } };
+      if (id) { await db.collection('homework').doc(id).update(data); } else { await db.collection('homework').add(data); }
+      addNotification('Homework saved.', 'success');
+    } catch { addNotification('Failed to save homework.', 'error'); }
+  };
+  const handleDeleteHomework = async (id: string) => { try { await db.collection('homework').doc(id).delete(); addNotification('Homework deleted.', 'success'); } catch { addNotification('Failed to delete homework.', 'error'); } };
+
+  const handleSaveSyllabus = async (syl: Omit<Syllabus, 'id'>, id: string) => {
+    try { await db.collection('syllabus').doc(id).set(syl); addNotification('Syllabus saved.', 'success'); }
+    catch { addNotification('Failed to save syllabus.', 'error'); }
   };
 
-  // ── Online Admission Submit: routes Day Scholars to online_admissions,
-  //    Boarders to hostel_admissions with a custom BMSHST… ID ─────────────────
-  const handleOnlineAdmissionSubmit = async (
-    data: Partial<OnlineAdmission>,
-    id?: string
-  ): Promise<string> => {
+  const handleSaveNotice = async (notice: Omit<Notice, 'id' | 'createdBy'>, id?: string) => {
     try {
-      const sanitizedData = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
-      );
-
-      if (id) {
-        // Updating an existing draft — route by ID prefix
-        const collection = getAdmissionCollection(id);
-        await db.collection(collection).doc(id).set(sanitizedData, { merge: true });
-        return id;
-      }
-
-      const isHostel = data.boardingType === 'Boarder';
-
-      if (isHostel) {
-        // New Boarder application: custom BMSHST… ID in hostel_admissions
-        const newId = generateHostelAdmissionId();
-        await db.collection('hostel_admissions').doc(newId).set({
-          ...sanitizedData,
-          id: newId,
-          submissionDate: new Date().toISOString(),
-        });
-        return newId;
-      } else {
-        // New Day Scholar application: BMSAPP… ID in online_admissions
-        const docRef = db.collection('online_admissions').doc();
-        const customId = `BMSAPP${docRef.id}`;
-        await db.collection('online_admissions').doc(customId).set({
-          ...sanitizedData,
-          id: customId,
-          temporaryStudentId: customId,
-          submissionDate: new Date().toISOString(),
-        });
-        return customId;
-      }
-    } catch (error: any) {
-      console.error('handleOnlineAdmissionSubmit error:', error);
-      addNotification('Failed to save admission. Please try again.', 'error');
-      throw error;
-    }
+      const data = { ...notice, createdBy: { uid: user!.uid, name: user!.displayName || user!.email! } };
+      if (id) { await db.collection('notices').doc(id).update(data); } else { await db.collection('notices').add(data); }
+      addNotification('Notice saved.', 'success');
+    } catch { addNotification('Failed to save notice.', 'error'); }
   };
+  const handleDeleteNotice = async (id: string) => { try { await db.collection('notices').doc(id).delete(); addNotification('Notice deleted.', 'success'); } catch { addNotification('Failed to delete notice.', 'error'); } };
 
-  // ── Admission status update: routes by ID prefix or explicit isHostel flag ─
-  const handleAdmissionUpdateStatus = async (
-    id: string,
-    status: OnlineAdmission['status'],
-    isHostel?: boolean
-  ): Promise<void> => {
+  const handleSaveNews = async (item: Omit<NewsItem, 'id'>, id?: string) => {
     try {
-      const collection = (isHostel ?? id.startsWith('BMSHST'))
-        ? 'hostel_admissions'
-        : 'online_admissions';
-      await db.collection(collection).doc(id).update({ status });
-      addNotification('Application status updated.', 'success');
-    } catch (error: any) {
-      console.error('Error updating admission status:', error);
-      addNotification('Failed to update status.', 'error');
-    }
+      if (id) { await db.collection('news').doc(id).update(item); } else { await db.collection('news').add(item); }
+      addNotification('News item saved.', 'success');
+    } catch { addNotification('Failed to save news item.', 'error'); }
   };
+  const handleDeleteNews = async (id: string) => { try { await db.collection('news').doc(id).delete(); addNotification('News item deleted.', 'success'); } catch { addNotification('Failed to delete news item.', 'error'); } };
 
-  // ── Admission delete: routes by ID prefix or explicit isHostel flag ────────
-  const handleAdmissionDelete = async (
-    id: string,
-    isHostel?: boolean
-  ): Promise<void> => {
+  const handleSaveCalendarEvent = async (event: Omit<CalendarEvent, 'id'>, id?: string) => {
     try {
-      const collection = (isHostel ?? id.startsWith('BMSHST'))
-        ? 'hostel_admissions'
-        : 'online_admissions';
-      await db.collection(collection).doc(id).delete();
-      addNotification('Application deleted.', 'success');
-    } catch (error: any) {
-      console.error('Error deleting admission:', error);
-      addNotification('Failed to delete application.', 'error');
-    }
+      if (id) { await db.collection('calendarEvents').doc(id).update(event); } else { await db.collection('calendarEvents').add(event); }
+      addNotification('Calendar event saved.', 'success'); return true;
+    } catch { addNotification('Failed to save calendar event.', 'error'); return false; }
+  };
+  const handleDeleteCalendarEvent = async (event: CalendarEvent) => { try { await db.collection('calendarEvents').doc(event.id).delete(); addNotification('Calendar event deleted.', 'success'); } catch { addNotification('Failed to delete calendar event.', 'error'); } };
+
+  const handleSaveExamRoutine = async (routine: Omit<ExamRoutine, 'id'>, id?: string) => {
+    try {
+      if (id) { await db.collection('examRoutines').doc(id).update(routine); } else { await db.collection('examRoutines').add(routine); }
+      addNotification('Exam routine saved.', 'success'); return true;
+    } catch { addNotification('Failed to save exam routine.', 'error'); return false; }
+  };
+  const handleDeleteExamRoutine = async (routine: ExamRoutine) => { try { await db.collection('examRoutines').doc(routine.id).delete(); addNotification('Exam routine deleted.', 'success'); } catch { addNotification('Failed to delete exam routine.', 'error'); } };
+
+  const handleUpdateClassRoutine = async (day: string, routine: DailyRoutine) => {
+    try { await db.collection('classRoutines').doc(day).set({ routine }); addNotification(`Class routine for ${day} updated.`, 'success'); }
+    catch { addNotification('Failed to update class routine.', 'error'); }
   };
 
-  // --- Firestore Data Listeners ---
+  // ── Users ─────────────────────────────────────────────────────────────────
+  const handleUpdateUserProfile  = async (updates: { photoURL?: string }) => { try { await auth.currentUser?.updateProfile(updates); await db.collection('users').doc(user!.uid).update(updates); addNotification('Profile updated.', 'success'); return { success: true }; } catch (error: any) { return { success: false, message: error.message }; } };
+  const handleUpdateUserRole     = async (uid: string, newRole: 'admin' | 'user' | 'pending' | 'warden') => { try { await db.collection('users').doc(uid).update({ role: newRole }); addNotification(`User role updated to ${newRole}.`, 'success'); } catch { addNotification('Failed to update user role.', 'error'); } };
+  const handleDeleteUser         = async (uid: string) => { try { await db.collection('users').doc(uid).delete(); addNotification('User deleted.', 'success'); } catch { addNotification('Failed to delete user.', 'error'); } };
+  const handleUpdateParentUser   = async (uid: string, updates: Partial<User>) => { try { await db.collection('users').doc(uid).update(updates); addNotification('Parent account updated.', 'success'); } catch { addNotification('Failed to update parent account.', 'error'); } };
+
+  const handleSendMessage = async (message: { fromParentId: string; fromParentName: string; toTeacherId: string; toTeacherName: string; childId: string; childName: string; message: string }) => {
+    try { await db.collection('parentMessages').add({ ...message, timestamp: firebase.firestore.FieldValue.serverTimestamp(), read: false }); addNotification('Message sent!', 'success'); return true; }
+    catch { addNotification('Failed to send message.', 'error'); return false; }
+  };
+
+  // ── Nav & Sitemap ─────────────────────────────────────────────────────────
+  const handleSaveNavItem    = async (item: Partial<NavMenuItem>) => { try { const id = item.id || db.collection('navigation').doc().id; await db.collection('navigation').doc(id).set({ ...item, id, isActive: true, updatedAt: new Date().toISOString() }, { merge: true }); addNotification('Navigation item saved.', 'success'); } catch { addNotification('Failed to save navigation item.', 'error'); } };
+  const handleDeleteNavItem  = async (id: string) => { try { await db.collection('navigation').doc(id).delete(); addNotification('Navigation item deleted.', 'success'); } catch { addNotification('Failed to delete navigation item.', 'error'); } };
+  const handleSaveSitemapContent = async (content: string) => { try { await db.collection('config').doc('sitemap').set({ content }); addNotification('Sitemap updated.', 'success'); } catch { addNotification('Failed to save sitemap.', 'error'); } };
+
+  // ── Firestore Listeners ───────────────────────────────────────────────────
   useEffect(() => {
-    const unsubAcademicYear = db.collection('config').doc('academic').onSnapshot(doc => {
-      if (doc.exists) setAcademicYear(doc.data()?.currentAcademicYear || getCurrentAcademicYear());
-    });
     const today = new Date().toISOString().split('T')[0];
-    const unsubDailyStudentAttendance = db.collection('studentAttendance').doc(today).onSnapshot(doc => {
-      if (doc.exists) {
-        setDailyStudentAttendance(doc.data() as Record<Grade, Record<string, StudentAttendanceRecord>>);
-      } else {
-        setDailyStudentAttendance(GRADES_LIST.reduce((acc, grade) => ({ ...acc, [grade]: {} }), {}) as Record<Grade, Record<string, StudentAttendanceRecord>>);
-      }
-    });
-    const unsubStaffAttendance = db.collection('staffAttendance').doc(today).onSnapshot(doc => {
-      if (doc.exists) setStaffAttendance(doc.data() as StaffAttendanceRecord);
-      else setStaffAttendance({});
-    });
-    return () => {
-      unsubAcademicYear();
-      unsubDailyStudentAttendance();
-      unsubStaffAttendance();
-    };
+    const unsubs = [
+      db.collection('config').doc('academic').onSnapshot(doc => {
+        if (doc.exists) setAcademicYear(doc.data()?.currentAcademicYear || getCurrentAcademicYear());
+      }),
+      db.collection('studentAttendance').doc(today).onSnapshot(doc => {
+        if (doc.exists) setDailyStudentAttendance(doc.data() as any);
+        else setDailyStudentAttendance(GRADES_LIST.reduce((acc, g) => ({ ...acc, [g]: {} }), {}) as any);
+      }),
+      db.collection('staffAttendance').doc(today).onSnapshot(doc => {
+        setStaffAttendance(doc.exists ? doc.data() as StaffAttendanceRecord : {});
+      }),
+    ];
+    return () => unsubs.forEach(u => u());
   }, []);
 
-  // Auth Listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
@@ -1162,166 +805,110 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
           } else {
             setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: 'user' });
           }
-        } catch (error: any) {
-          console.error("Error fetching user session:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+        } catch { setUser(null); }
+      } else { setUser(null); }
       setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Public Data Listeners (no auth required)
+  // Public data
   useEffect(() => {
-    const unsubNews = db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))));
-    const unsubExamRoutines = db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))));
-    const unsubClassRoutines = db.collection('classRoutines').onSnapshot(s => {
-      const routines: Record<string, DailyRoutine> = {};
-      s.docs.forEach(doc => routines[doc.id] = doc.data()?.routine as DailyRoutine);
-      setClassRoutines(routines);
-    });
-    const unsubSchoolSettings = db.collection('config').doc('schoolSettings').onSnapshot(doc => {
-      if (doc.exists) setSchoolConfig(doc.data() as any);
-    });
-    const unsubFeeStructure = db.collection('config').doc('feeStructure').onSnapshot(doc => {
-      if (doc.exists) {
-        const data = doc.data() || {};
-        const migrateSet = (oldSet: any): FeeSet => {
-          if (oldSet && Array.isArray(oldSet.heads)) return oldSet;
-          const heads: FeeHead[] = [];
-          if (oldSet?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(oldSet.tuitionFee), type: 'monthly' });
-          if (oldSet?.examFee) heads.push({ id: 'eTerm', name: 'Exam Fee (Per Term)', amount: Number(oldSet.examFee), type: 'term' });
-          return { heads };
-        };
-        setFeeStructure({ set1: migrateSet(data.set1), set2: migrateSet(data.set2), set3: migrateSet(data.set3), gradeMap: data.gradeMap || FEE_SET_GRADES });
-      }
-    });
-    const unsubAdmSettings = db.collection('config').doc('admissionSettings').onSnapshot(doc => {
-      if (doc.exists) setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...doc.data() } as AdmissionSettings);
-    });
-    const unsubGradeDefs = db.collection('config').doc('gradeDefinitions').onSnapshot(doc => {
-      if (doc.exists) setGradeDefinitions(doc.data() as any);
-    });
-    const unsubSitemap = db.collection('config').doc('sitemap').onSnapshot(doc => {
-      if (doc.exists && doc.data()?.content) setSitemapContent(doc.data()?.content);
-    });
-    const unsubNav = db.collection('navigation').onSnapshot(snapshot => {
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NavMenuItem));
-      setNavigation(items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
-    }, (error) => {
-      console.error("Navigation listener error:", error);
-    });
-    const unsubSyllabus = db.collection('syllabus').onSnapshot(s =>
-      setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)))
-    );
-
-    return () => {
-      unsubNews();
-      unsubExamRoutines();
-      unsubClassRoutines();
-      unsubSchoolSettings();
-      unsubFeeStructure();
-      unsubAdmSettings();
-      unsubGradeDefs();
-      unsubSitemap();
-      unsubNav();
-      unsubSyllabus();
-    };
+    const unsubs = [
+      db.collection('news').onSnapshot(s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem)))),
+      db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine)))),
+      db.collection('classRoutines').onSnapshot(s => {
+        const r: Record<string, DailyRoutine> = {};
+        s.docs.forEach(d => r[d.id] = d.data()?.routine as DailyRoutine);
+        setClassRoutines(r);
+      }),
+      db.collection('config').doc('schoolSettings').onSnapshot(doc => { if (doc.exists) setSchoolConfig(doc.data() as any); }),
+      db.collection('config').doc('feeStructure').onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data() || {};
+          const migrateSet = (s: any): FeeSet => {
+            if (s && Array.isArray(s.heads)) return s;
+            const heads: FeeHead[] = [];
+            if (s?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(s.tuitionFee), type: 'monthly' });
+            if (s?.examFee)    heads.push({ id: 'eTerm', name: 'Exam Fee (Per Term)', amount: Number(s.examFee), type: 'term' });
+            return { heads };
+          };
+          setFeeStructure({ set1: migrateSet(data.set1), set2: migrateSet(data.set2), set3: migrateSet(data.set3), gradeMap: data.gradeMap || FEE_SET_GRADES });
+        }
+      }),
+      db.collection('config').doc('admissionSettings').onSnapshot(doc => {
+        if (doc.exists) setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...doc.data() } as AdmissionSettings);
+      }),
+      db.collection('config').doc('gradeDefinitions').onSnapshot(doc => { if (doc.exists) setGradeDefinitions(doc.data() as any); }),
+      db.collection('config').doc('sitemap').onSnapshot(doc => { if (doc.exists && doc.data()?.content) setSitemapContent(doc.data()?.content); }),
+      db.collection('navigation').onSnapshot(snap => {
+        setNavigation(snap.docs.map(d => ({ id: d.id, ...d.data() } as NavMenuItem)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      }),
+      db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)))),
+    ];
+    return () => unsubs.forEach(u => u());
   }, []);
 
-  // Protected Data Listeners (auth required)
+  // Protected data
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+    const unsubs: (() => void)[] = [
       db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => {
         const data = d.data();
         if (Array.isArray(data.academicPerformance)) {
           data.academicPerformance = data.academicPerformance.map((exam: any) => ({
-            ...exam,
-            results: Array.isArray(exam.results) ? exam.results : Object.values(exam.results || {}),
+            ...exam, results: Array.isArray(exam.results) ? exam.results : Object.values(exam.results || {}),
           }));
         }
         return { id: d.id, ...data } as Student;
-      })));
-      db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))));
-      db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))));
-      db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))));
-      db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework))));
-      db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))));
+      }))),
+      db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff)))),
+      db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent)))),
+      db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice)))),
+      db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework)))),
+      db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))),
+    ];
 
-      if (['admin', 'warden', 'user'].includes(user.role)) {
-        // ── Day Scholar admissions ─────────────────────────────────────────
-        db.collection('online_admissions').onSnapshot(s =>
-          setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))
-        );
-        // ── Boarder / Hostel admissions ────────────────────────────────────
-        db.collection('hostel_admissions').onSnapshot(s =>
-          setHostelAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))
-        );
-        db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))));
-        db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem))));
-        db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord))));
-        db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() } as ServiceCertificateRecord))));
-        db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry))));
-      }
-
-      if (['admin', 'warden'].includes(user.role)) {
-        db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident))));
-        db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))));
-        db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem))));
-        db.collection('stockLogs').onSnapshot(s => setStockLogs(s.docs.map(d => ({ id: d.id, ...d.data() } as StockLog))));
-        db.collection('choreRoster').doc('current').onSnapshot(d => d.exists && setChoreRoster(d.data() as ChoreRoster));
-      }
+    if (['admin', 'warden', 'user'].includes(user.role)) {
+      unsubs.push(
+        db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))),
+        db.collection('hostel_admissions').onSnapshot(s => setHostelAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))),
+        db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User)))),
+        db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
+        db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord)))),
+        db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() } as ServiceCertificateRecord)))),
+        db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)))),
+      );
     }
+
+    if (['admin', 'warden'].includes(user.role)) {
+      unsubs.push(
+        db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident)))),
+        db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff)))),
+        db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem)))),
+        db.collection('stockLogs').onSnapshot(s => setStockLogs(s.docs.map(d => ({ id: d.id, ...d.data() } as StockLog)))),
+        db.collection('choreRoster').doc('current').onSnapshot(d => { if (d.exists) setChoreRoster(d.data() as ChoreRoster); }),
+      );
+    }
+
+    return () => unsubs.forEach(u => u());
   }, [user]);
 
-  const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.netlify.app/</loc></url></urlset>`);
-
-  const PublicSyllabusSelectionPage = () => (
-    <div className="bg-slate-50 min-h-screen py-14">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-sky-100 rounded-2xl mb-4">
-            <span className="text-3xl">📋</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Syllabus</h1>
-          <p className="mt-3 text-slate-500 text-base max-w-md mx-auto">
-            Select your class to view the curriculum progress and topic status.
-          </p>
-        </div>
-        {Object.keys(gradeDefinitions).length === 0 ? (
-          <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
-            <span className="text-5xl">📂</span>
-            <p className="mt-4 text-slate-700 font-semibold text-lg">No classes available yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {Object.keys(gradeDefinitions).map(grade => (
-              <a
-                key={grade}
-                href={`/syllabus/${encodeURIComponent(grade)}`}
-                className="group bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-6 flex flex-col items-center gap-3 hover:bg-sky-50 hover:border-sky-200 hover:shadow-md transition-all"
-              >
-                <span className="text-3xl">🎓</span>
-                <span className="font-bold text-slate-800 text-center group-hover:text-sky-700 transition-colors">{grade}</span>
-                <span className="text-xs font-semibold text-sky-600 group-hover:text-sky-800">View Syllabus →</span>
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
+  // ── Loading screen ────────────────────────────────────────────────────────
+  const LoadingScreen = () => (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin" />
     </div>
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       <OfflineIndicator />
       <NotificationContainer notifications={notifications} onDismiss={removeNotification} />
 
       <Routes>
-        {/* Public Routes */}
+        {/* ── Public Routes ─────────────────────────────────────────────── */}
         <Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
           <Route index element={<PublicHomePage news={news} user={user} />} />
           <Route path="about" element={<AboutPage user={user} />} />
@@ -1363,39 +950,65 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
           <Route path="sitemap" element={<SitemapPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
           <Route path="syllabus" element={<TextbooksPage />} />
+          <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
         </Route>
 
         <Route path="/sitemap.xml" element={<SitemapXmlPage sitemapContent={sitemapContent} />} />
 
-        {/* Auth Routes */}
+        {/* ── Auth Routes ───────────────────────────────────────────────── */}
         <Route path="/login" element={
-          authLoading
-            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin" /></div>
-            : user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />
+          authLoading ? <LoadingScreen /> : user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />
         } />
-        <Route path="/signup" element={<SignUpPage onSignUp={async (n, e, p) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if (c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending' }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
+        <Route path="/signup" element={<SignUpPage onSignUp={async (n, e, p) => {
+          try {
+            const c = await auth.createUserWithEmailAndPassword(e, p);
+            if (c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending' }); return { success: true, message: 'Awaiting approval.' }; }
+            return { success: false };
+          } catch (err: any) { return { success: false, message: err.message }; }
+        }} />} />
         <Route path="/parent-registration" element={<ParentRegistrationPage />} />
-        <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if (c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudents: [{ fullName: sname, studentId: sid, dob: dob, relationship: rel }], registrationDetails: { fullName: n, relationship: rel } }); return { success: true, message: "Awaiting approval." }; } return { success: false }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async (e) => { try { await auth.sendPasswordResetEmail(e); return { success: true, message: "Password reset email sent! Please check your inbox." }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
-        <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async (newPassword) => { try { const actionCode = new URLSearchParams(window.location.search).get('oobCode'); if (!actionCode) throw new Error("Missing action code for password reset."); await auth.confirmPasswordReset(actionCode, newPassword); return { success: true, message: "Password reset successfully! You can now log in." }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
+        <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => {
+          try {
+            const c = await auth.createUserWithEmailAndPassword(e, p);
+            if (c.user) {
+              await c.user.updateProfile({ displayName: n });
+              await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudents: [{ fullName: sname, studentId: sid, dob, relationship: rel }], registrationDetails: { fullName: n, relationship: rel } });
+              return { success: true, message: 'Awaiting approval.' };
+            }
+            return { success: false };
+          } catch (err: any) { return { success: false, message: err.message }; }
+        }} />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async (e) => {
+          try { await auth.sendPasswordResetEmail(e); return { success: true, message: 'Password reset email sent! Check your inbox.' }; }
+          catch (err: any) { return { success: false, message: err.message }; }
+        }} />} />
+        <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async (newPassword) => {
+          try {
+            const actionCode = new URLSearchParams(window.location.search).get('oobCode');
+            if (!actionCode) throw new Error('Missing action code.');
+            await auth.confirmPasswordReset(actionCode, newPassword);
+            return { success: true, message: 'Password reset! You can now log in.' };
+          } catch (err: any) { return { success: false, message: err.message }; }
+        }} />} />
 
-        {/* Protected Portal Routes */}
+        {/* ── Portal Routes ─────────────────────────────────────────────── */}
         <Route path="/portal" element={
-          authLoading
-            ? <div className="min-h-screen flex items-center justify-center bg-slate-50"><SpinnerIcon className="w-10 h-10 text-sky-600 animate-spin" /></div>
-            : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
+          authLoading ? <LoadingScreen /> : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)
         }>
           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
-          <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted for approval!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
+          <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} />} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />
-          <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: "Password changed. Please log in again." }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
+          <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => {
+            try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; }
+            catch (err: any) { return { success: false, message: err.message }; }
+          }} />} />
           <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />
           <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
           <Route path="student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
           <Route path="student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user!} calendarEvents={calendarEvents} />} />
-          <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={async (grade) => { addNotification(`Import dialog for ${grade || 'all grades'} would open here.`, 'info'); }} user={user!} />} />
-          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={async (grade) => { addNotification(`Import dialog for ${grade} would open here.`, 'info'); }} onDelete={handleDeleteStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
+          <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={async () => {}} user={user!} />} />
+          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={async () => {}} onDelete={handleDeleteStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
           <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={dailyStudentAttendance} onUpdateAttendance={handleMarkStudentAttendance} user={user!} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={fetchStudentAttendanceForRange} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} />} />
           <Route path="staff/attendance" element={<StaffAttendancePage user={user!} staff={staff} attendance={staffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} calendarEvents={calendarEvents} />} />
@@ -1423,7 +1036,7 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
           <Route path="hostel/health" element={<HostelHealthPage />} />
           <Route path="hostel/communication" element={<HostelCommunicationPage />} />
           <Route path="hostel/settings" element={<HostelSettingsPage />} />
-          <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (eventData, id) => { await handleSaveCalendarEvent(eventData, id); }} onEdit={async (eventData) => { await handleSaveCalendarEvent(eventData, eventData.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
+          <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (e, id) => { await handleSaveCalendarEvent(e, id); }} onEdit={async (e) => { await handleSaveCalendarEvent(e, e.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
           <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
           <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
           <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
@@ -1442,8 +1055,6 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
           <Route path="exams" element={<ExamSelectionPage />} />
           <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />
           <Route path="admission-settings" element={<AdmissionSettingsPage admissionConfig={admissionSettings} onUpdateConfig={async (c) => { await db.collection('config').doc('admissionSettings').set(c); return true; }} />} />
-
-          {/* ── Admissions list: now passes both collections + unified handlers ── */}
           <Route path="admissions" element={
             <OnlineAdmissionsListPage
               admissions={onlineAdmissions}
@@ -1454,7 +1065,6 @@ const handleEnrollStudent = async (admissionId: string, studentData: Omit<Studen
               academicYear={academicYear}
             />
           } />
-
           <Route path="homework-scanner" element={<HomeworkScannerPage />} />
           <Route path="activity-log" element={<ActivityLogPage students={students} user={user!} gradeDefinitions={gradeDefinitions} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onBulkUpdateActivityLogs={handleBulkUpdateActivityLogs} />} />
           <Route path="manage-homework" element={<ManageHomeworkPage user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} onSave={handleSaveHomework} onDelete={handleDeleteHomework} allHomework={homework} />} />

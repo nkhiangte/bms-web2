@@ -190,8 +190,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.text('BETHEL MISSION SCHOOL', pageW / 2, 13, { align: 'center' });
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('Lungpho, Champhai District, Mizoram — 796321', pageW / 2, 20, { align: 'center' });
-        doc.text('bethelms04@gmail.com  |  bms04.com', pageW / 2, 26, { align: 'center' });
+        doc.text('Champhai, Mizoram — 796321', pageW / 2, 20, { align: 'center' });
+        doc.text('bms@bms04.com  |  bms04.com', pageW / 2, 26, { align: 'center' });
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.text('PAYMENT RECEIPT & ADMISSION ACKNOWLEDGEMENT', pageW / 2, 34, { align: 'center' });
@@ -334,7 +334,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'normal');
         doc.text(
-            'This is a computer-generated receipt. For queries, contact bethelms04@gmail.com or visit the school office.',
+            'This is a computer-generated receipt. For queries, contact bms@bms04.com or visit the school office.',
             pageW / 2, y, { align: 'center', maxWidth: contentW }
         );
         doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW / 2, y + 6, { align: 'center' });

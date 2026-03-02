@@ -72,10 +72,11 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }
     }, [admissionDetails]);
 
-    const { admissionGrade: grade, studentType = 'Newcomer' } = admissionDetails || {};
+    // Derive grade/studentType from admissionDetails so all useMemos re-run after fetch
+    const grade       = admissionDetails?.admissionGrade ?? '';
+    const studentType = admissionDetails?.studentType    ?? 'Newcomer';
 
     const feeStructure = useMemo(() => {
-        const grade = admissionDetails?.admissionGrade;
         let structures: AdmissionSettings['feeStructure'];
         if (grade === 'Nursery' && admissionConfig.nurseryFeeStructure) {
             structures = admissionConfig.nurseryFeeStructure;
@@ -85,8 +86,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
         }
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
-    }, [admissionConfig, studentType, admissionDetails?.admissionGrade]);
-    
+    }, [admissionConfig, studentType, grade]);
+
     const TEXTBOOK_FEES: Record<string, number> = {
         'Nursery': 500, 'Kindergarten': 500,
         'Class I': 580, 'Class II': 630,
@@ -95,16 +96,18 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         'Class VIII': 780, 'Class IX': 780, 'Class X': 780,
     };
 
-    const textbookFee = grade ? (TEXTBOOK_FEES[grade] ?? 0) : 0;
+    const textbookFee = useMemo(() => grade ? (TEXTBOOK_FEES[grade] ?? 0) : 0, [grade]);
 
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
         const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
-        const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
+        const annualTotal  = (feeStructure.annual  || []).reduce((sum, item) => sum + item.amount, 0);
         return oneTimeTotal + annualTotal + textbookFee;
     }, [feeStructure, textbookFee]);
 
-    const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
+    const notebookPrice = useMemo(() =>
+        grade ? (admissionConfig.notebookPrices?.[grade as Grade] ?? 0) : 0,
+    [grade, admissionConfig.notebookPrices]);
 
     const allItems = useMemo(() => {
         const items = [

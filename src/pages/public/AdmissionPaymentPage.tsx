@@ -75,9 +75,17 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const { admissionGrade: grade, studentType = 'Newcomer' } = admissionDetails || {};
 
     const feeStructure = useMemo(() => {
-        const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
+        const grade = admissionDetails?.admissionGrade;
+        let structures: AdmissionSettings['feeStructure'];
+        if (grade === 'Nursery' && admissionConfig.nurseryFeeStructure) {
+            structures = admissionConfig.nurseryFeeStructure;
+        } else if (grade === 'Kindergarten' && admissionConfig.kgFeeStructure) {
+            structures = admissionConfig.kgFeeStructure;
+        } else {
+            structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
+        }
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
-    }, [admissionConfig, studentType]);
+    }, [admissionConfig, studentType, admissionDetails?.admissionGrade]);
     
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Grade, AdmissionItem, NotificationType, AdmissionSettings, User, OnlineAdmission, FeePayments } from '@/types';
@@ -5,28 +6,11 @@ import { SpinnerIcon, CheckCircleIcon, UploadIcon, CurrencyDollarIcon, BackIcon 
 import { resizeImage, uploadToImgBB } from '@/utils';
 import { DEFAULT_ADMISSION_SETTINGS, UNIFORM_SIZES } from '@/constants';
 import { db } from '@/firebaseConfig';
-import jsPDF from 'jspdf';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
 
-// ── Hardcoded textbook fees per grade (stable constant outside component) ─────
-const TEXTBOOK_FEES: Record<string, number> = {
-    'Nursery': 500,      'NU': 500,
-    'Kindergarten': 500, 'KG': 500,
-    'Class I': 580,   'I': 580,
-    'Class II': 630,  'II': 630,
-    'Class III': 640, 'III': 640,
-    'Class IV': 640,  'IV': 640,
-    'Class V': 640,   'V': 640,
-    'Class VI': 730,  'VI': 730,
-    'Class VII': 730, 'VII': 730,
-    'Class VIII': 780,'VIII': 780,
-    'Class IX': 780,  'IX': 780,
-    'Class X': 780,   'X': 780,
-};
-
-const getTextbookFee = (grade: string): number =>
-    TEXTBOOK_FEES[grade] ?? TEXTBOOK_FEES[grade.replace('Class ', '').trim()] ?? 0;
+// ── Boarder security deposit (added on top of new student admission fee) ──────
+const BOARDER_SECURITY_DEPOSIT = 2500;
 
 interface AdmissionPaymentPageProps {
     addNotification: (message: string, type: NotificationType, title?: string) => void;
@@ -51,41 +35,31 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const [selectedItems, setSelectedItems] = useState<Record<string, { quantity: number; size?: string }>>({});
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [upiTapped, setUpiTapped] = useState(false);
     const [paymentSubmitted, setPaymentSubmitted] = useState(false);
     
     useEffect(() => {
         const fetchDetails = async () => {
-            // Always fetch from Firestore for complete data (location.state is partial)
-            // location.state uses 'grade' but Firestore uses 'admissionGrade' — always fetch
-            if (admissionId) {
+            if (location.state) {
+                setAdmissionDetails(prev => ({ ...prev, ...(location.state as Partial<OnlineAdmission>) }));
+            } else if (admissionId) {
                 try {
-                    // Boarder IDs start with BMSHST, day scholar IDs start with BMSAPP
-                    const collection = admissionId.startsWith('BMSHST')
-                        ? 'hostel_admissions'
-                        : 'online_admissions';
-                    const docRef = db.collection(collection).doc(admissionId);
+                    const docRef = db.collection('online_admissions').doc(admissionId);
                     const doc = await docRef.get();
                     if (doc.exists) {
-                        const data = { id: doc.id, ...doc.data() } as OnlineAdmission;
-                        console.log('[AdmissionPayment] grade from Firestore:', data.admissionGrade);
-                        setAdmissionDetails(data);
+                        setAdmissionDetails({ id: doc.id, ...doc.data() } as OnlineAdmission);
                     } else {
                         addNotification("Admission record not found.", 'error');
                     }
-                } catch (error: any) {
+                } catch (error) {
                     console.error("Error fetching admission details:", error);
-                    const msg = error?.code === 'permission-denied'
-                        ? "Permission denied. Please contact the school office."
-                        : "Failed to load admission details.";
-                    addNotification(msg, 'error');
+                    addNotification("Failed to load admission details.", 'error');
                 }
             }
-            setIsLoadingDetails(false);
+             setIsLoadingDetails(false);
         };
 
         fetchDetails();
-    }, [admissionId, addNotification]);
+    }, [admissionId, location.state, addNotification]);
 
     useEffect(() => {
         if (admissionDetails?.paymentStatus === 'paid' || admissionDetails?.paymentStatus === 'pending') {
@@ -93,35 +67,23 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }
     }, [admissionDetails]);
 
-    // Derive grade/studentType from admissionDetails so all useMemos re-run after fetch
-    const grade       = admissionDetails?.admissionGrade ?? '';
-    const studentType = admissionDetails?.studentType    ?? 'Newcomer';
+    const { admissionGrade: grade, studentType = 'Newcomer', isboarder = false } = admissionDetails || {};
 
     const feeStructure = useMemo(() => {
-        let structures: AdmissionSettings['feeStructure'];
-        if (grade === 'Nursery' && admissionConfig.nurseryFeeStructure) {
-            structures = admissionConfig.nurseryFeeStructure;
-        } else if (grade === 'Kindergarten' && admissionConfig.kgFeeStructure) {
-            structures = admissionConfig.kgFeeStructure;
-        } else {
-            structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
-        }
+        const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
+        // Boarders use the new student fee structure (same admission fee as newcomers)
+        if (isboarder) return structures.newStudent;
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
-    }, [admissionConfig, studentType, grade]);
-
-    // textbookFee: use stable function defined outside component so useMemo tracks correctly
-    const textbookFee = useMemo(() => getTextbookFee(grade), [grade]);
-
+    }, [admissionConfig, studentType, isboarder]);
+    
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
         const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
-        const annualTotal  = (feeStructure.annual  || []).reduce((sum, item) => sum + item.amount, 0);
-        return oneTimeTotal + annualTotal + textbookFee;
-    }, [feeStructure, textbookFee]);
+        const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
+        return oneTimeTotal + annualTotal;
+    }, [feeStructure]);
 
-    const notebookPrice = useMemo(() =>
-        grade ? (admissionConfig.notebookPrices?.[grade as Grade] ?? 0) : 0,
-    [grade, admissionConfig.notebookPrices]);
+    const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
 
     const allItems = useMemo(() => {
         const items = [
@@ -155,7 +117,9 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }, 0);
     }, [selectedItems, allItems]);
     
-    const grandTotal = baseFeeTotal + merchandiseTotal;
+    // Security deposit is added for boarders on top of the base fee
+    const securityDeposit = isboarder ? BOARDER_SECURITY_DEPOSIT : 0;
+    const grandTotal = baseFeeTotal + merchandiseTotal + securityDeposit;
 
     const handleItemToggle = (itemName: string, isChecked: boolean) => {
         setSelectedItems(prev => {
@@ -185,192 +149,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return item.price;
     };
     
-
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setScreenshotFile(e.target.files[0]);
         }
-    };
-
-    // ── PDF generation ────────────────────────────────────────────────────────
-    const generateReceiptPDF = (
-        id: string,
-        details: OnlineAdmission,
-        items: AdmissionItem[],
-        baseTotal: number,
-        tbFee: number,
-        itemsTotal: number,
-        total: number
-    ) => {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageW = 210;
-        const margin = 20;
-        const contentW = pageW - margin * 2;
-        let y = 0;
-
-        // ── Header band ──────────────────────────────────────────────────────
-        doc.setFillColor(15, 40, 80);
-        doc.rect(0, 0, pageW, 38, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(17);
-        doc.setFont('helvetica', 'bold');
-        doc.text('BETHEL MISSION SCHOOL', pageW / 2, 13, { align: 'center' });
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Champhai, Mizoram — 796321', pageW / 2, 20, { align: 'center' });
-        doc.text('bms@bms04.com  |  bms04.com', pageW / 2, 26, { align: 'center' });
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PAYMENT RECEIPT & ADMISSION ACKNOWLEDGEMENT', pageW / 2, 34, { align: 'center' });
-
-        y = 50;
-
-        // ── Status badge ─────────────────────────────────────────────────────
-        doc.setFillColor(220, 252, 231);
-        doc.setDrawColor(134, 239, 172);
-        doc.roundedRect(margin, y, contentW, 12, 3, 3, 'FD');
-        doc.setTextColor(22, 101, 52);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('✓  Payment Submitted — PENDING VERIFICATION', pageW / 2, y + 8, { align: 'center' });
-
-        y += 20;
-
-        // ── Reference ID box ─────────────────────────────────────────────────
-        doc.setFillColor(15, 40, 80);
-        doc.roundedRect(margin, y, contentW, 18, 3, 3, 'F');
-        doc.setTextColor(148, 163, 184);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('REFERENCE ID', pageW / 2, y + 6, { align: 'center' });
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(id, pageW / 2, y + 14, { align: 'center' });
-
-        y += 24;
-
-        const submittedOn = new Date().toLocaleString('en-IN', {
-            day: '2-digit', month: 'long', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-        doc.setTextColor(100, 116, 139);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Date: ${submittedOn}`, pageW / 2, y, { align: 'center' });
-
-        y += 10;
-
-        // ── Student details section ───────────────────────────────────────────
-        doc.setFillColor(241, 245, 249);
-        doc.setDrawColor(226, 232, 240);
-        doc.rect(margin, y, contentW, 8, 'FD');
-        doc.setTextColor(51, 65, 85);
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text('STUDENT DETAILS', margin + 3, y + 5.5);
-        y += 10;
-
-        const studentRows: [string, string][] = [
-            ['Student Name', details.studentName || '—'],
-            ['Class', details.admissionGrade || '—'],
-            ["Father's Name", details.fatherName || '—'],
-            ['Contact', details.contactNumber ? `+91 ${details.contactNumber}` : '—'],
-            ['Student Type', details.studentType || '—'],
-            ['Admission Type', (details as any).boardingType || '—'],
-        ];
-
-        const colW = contentW / 2;
-        studentRows.forEach(([label, value], i) => {
-            const col = i % 2;
-            const rx = margin + col * colW;
-            if (col === 0 && i !== 0) y += 8;
-            doc.setTextColor(100, 116, 139);
-            doc.setFontSize(7.5);
-            doc.setFont('helvetica', 'normal');
-            doc.text(label, rx + 2, y);
-            doc.setTextColor(30, 41, 59);
-            doc.setFontSize(8.5);
-            doc.setFont('helvetica', 'bold');
-            doc.text(value.length > 28 ? value.slice(0, 26) + '…' : value, rx + 2, y + 4.5);
-        });
-        y += 14;
-
-        // ── Fee breakdown table ───────────────────────────────────────────────
-        doc.setFillColor(241, 245, 249);
-        doc.setDrawColor(226, 232, 240);
-        doc.rect(margin, y, contentW, 8, 'FD');
-        doc.setTextColor(51, 65, 85);
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text('FEE BREAKDOWN', margin + 3, y + 5.5);
-        y += 12;
-
-        // Base fees
-        doc.setTextColor(30, 41, 59);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Admission Fees', margin + 2, y);
-        doc.text(`Rs. ${baseTotal - tbFee}`, margin + contentW - 2, y, { align: 'right' });
-        y += 6;
-        doc.text(`Textbook Fee (${details.admissionGrade})`, margin + 2, y);
-        doc.text(`Rs. ${tbFee}`, margin + contentW - 2, y, { align: 'right' });
-        y += 6;
-
-        // Purchased items
-        if (items.length > 0) {
-            items.forEach(item => {
-                const label = item.size ? `${item.name} (${item.size})` : item.name;
-                doc.text(label.length > 40 ? label.slice(0, 38) + '…' : label, margin + 2, y);
-                doc.text(`Rs. ${item.price * item.quantity}`, margin + contentW - 2, y, { align: 'right' });
-                y += 6;
-            });
-        }
-
-        // Divider
-        doc.setDrawColor(226, 232, 240);
-        doc.line(margin, y, margin + contentW, y);
-        y += 6;
-
-        // Grand total
-        doc.setFillColor(15, 40, 80);
-        doc.rect(margin, y, contentW, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TOTAL AMOUNT PAID', margin + 3, y + 7);
-        doc.text(`Rs. ${total}`, margin + contentW - 3, y + 7, { align: 'right' });
-        y += 16;
-
-        // ── Note ─────────────────────────────────────────────────────────────
-        doc.setFillColor(239, 246, 255);
-        doc.setDrawColor(191, 219, 254);
-        doc.roundedRect(margin, y, contentW, 22, 3, 3, 'FD');
-        doc.setTextColor(29, 78, 216);
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        doc.text('IMPORTANT', margin + 4, y + 7);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.text('Your payment is under verification. Please bring this receipt and your Reference ID', margin + 4, y + 13);
-        doc.text('to the school office to collect your purchased items and complete enrollment.', margin + 4, y + 19);
-        y += 28;
-
-        // ── Footer ────────────────────────────────────────────────────────────
-        doc.setDrawColor(226, 232, 240);
-        doc.line(margin, y, margin + contentW, y);
-        y += 5;
-        doc.setTextColor(148, 163, 184);
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.text(
-            'This is a computer-generated receipt. For queries, contact bms@bms04.com or visit the school office.',
-            pageW / 2, y, { align: 'center', maxWidth: contentW }
-        );
-        doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW / 2, y + 6, { align: 'center' });
-
-        doc.save(`BMS_Receipt_${id}.pdf`);
     };
 
     const handleSubmitPayment = async () => {
@@ -378,7 +160,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             addNotification("Please upload a screenshot of your payment to confirm.", 'error');
             return;
         }
-        if (!admissionId) return;
+        if (!admissionId || grandTotal <= 0) return;
 
         setIsUploading(true);
         try {
@@ -388,42 +170,19 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if (item.hasSize && details.size && item.priceBySize) {
+                if(item.hasSize && details.size && item.priceBySize) {
                     price = item.priceBySize[details.size] ?? item.price;
                 }
-                return { 
-                    name: itemName, 
-                    price: price ?? 0, 
-                    quantity: details.quantity ?? 1, 
-                    ...(details.size ? { size: details.size } : {})
-                };
+                return { name: itemName, price, quantity: details.quantity, size: details.size };
             });
 
-            const collection = admissionId.startsWith('BMSHST') ? 'hostel_admissions' : 'online_admissions';
-            await db.collection(collection).doc(admissionId).update({
+            await db.collection('online_admissions').doc(admissionId).update({
                 paymentStatus: 'pending',
-                paymentAmount: grandTotal ?? 0,
+                paymentAmount: grandTotal,
                 paymentScreenshotUrl: url,
-                purchasedItems: itemsToPurchase
+                purchasedItems: itemsToPurchase,
+                ...(isboarder && { securityDepositAmount: BOARDER_SECURITY_DEPOSIT }),
             });
-
-            // Generate receipt PDF after successful Firestore update
-            try {
-                if (admissionDetails) {
-                    generateReceiptPDF(
-                        admissionId,
-                        admissionDetails,
-                        itemsToPurchase,
-                        baseFeeTotal,
-                        textbookFee,
-                        merchandiseTotal,
-                        grandTotal
-                    );
-                }
-            } catch (pdfErr) {
-                console.warn('PDF generation failed (non-critical):', pdfErr);
-            }
-
             setPaymentSubmitted(true);
         } catch (error) {
             console.error("Payment submission failed:", error);
@@ -456,28 +215,23 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     </div>
                     <div className="text-center mb-8">
                          <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
-                         <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{admissionDetails.studentName}</span> ({studentType})</p>
+                         <p className="mt-2 text-lg text-slate-600">
+                             Finalize application for <span className="font-bold">{admissionDetails.studentName}</span>
+                             {' '}({isboarder ? 'Boarder / Residential' : studentType})
+                         </p>
+                         {isboarder && (
+                             <p className="mt-1 text-sm font-semibold text-indigo-600 bg-indigo-50 inline-block px-3 py-1 rounded-full">
+                                 🏠 Boarder — Security Deposit of ₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')} included
+                             </p>
+                         )}
                     </div>
 
                     {paymentSubmitted ? (
                         <div className="text-center py-12">
                             <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
-                            <h2 className="text-2xl font-bold text-slate-800">Application Submitted!</h2>
-                            <p className="text-slate-600 mt-4 max-w-lg mx-auto">
-                                You have successfully submitted the admission forms. Please use this reference ID to collect merchandise from the school.
-                            </p>
-                            <div className="mt-6 inline-block bg-slate-100 border-2 border-dashed border-sky-300 rounded-lg px-8 py-4">
-                                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Reference ID</p>
-                                <p className="font-mono text-2xl font-bold text-sky-700">{admissionId}</p>
-                                <button
-                                    onClick={() => navigator.clipboard.writeText(admissionId)}
-                                    className="mt-3 text-xs font-semibold text-slate-500 hover:text-sky-600 underline"
-                                >
-                                    Copy to Clipboard
-                                </button>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-4">📄 A payment receipt has been downloaded to your device.</p>
-                            <div className="mt-8 flex justify-center gap-4">
+                            <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
+                            <p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
+                             <div className="mt-8 flex justify-center gap-4">
                                 <Link to="/" className="btn btn-secondary">Go to Homepage</Link>
                                 <Link to="/admissions/status" className="btn btn-primary">Check Status</Link>
                             </div>
@@ -490,77 +244,22 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                              <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
                                  <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
                                  <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                     <li><span className="font-semibold">On mobile:</span> copy the UPI ID, open GPay or PhonePe, paste it and pay.</li>
-                                     <li><span className="font-semibold">On desktop:</span> scan the QR code with your phone.</li>
-                                     <li>Pay the exact grand total shown below.</li>
+                                     <li>Calculate your total amount on the left.</li>
+                                     <li>Pay the total amount using the QR Code or UPI ID below.</li>
                                      <li>Take a screenshot of the successful payment.</li>
-                                     <li>Upload the screenshot here and submit.</li>
+                                     <li>Upload the screenshot and submit for verification.</li>
                                  </ol>
                             </div>
                             <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
-                                {/* Mobile: Copy UPI ID */}
-                                <div className="block md:hidden mb-6">
-                                    <p className="text-sm font-bold text-slate-700 mb-3">Pay via UPI App</p>
-                                    <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
-                                        <p className="text-xs text-slate-500 text-center mb-1">UPI ID</p>
-                                        <p className="font-mono text-lg font-bold text-sky-700 text-center break-all">{schoolConfig.upiId}</p>
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(schoolConfig.upiId || '');
-                                                setUpiTapped(true);
-                                            }}
-                                            className="flex items-center justify-center gap-2 w-full mt-3 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-xl text-base shadow active:scale-95 transition-all"
-                                        >
-                                            📋 Copy UPI ID
-                                        </button>
-                                        {upiTapped && (
-                                            <p className="text-xs text-emerald-600 font-semibold text-center mt-2">✓ Copied! Open GPay / PhonePe, paste and pay ₹{grandTotal}</p>
-                                        )}
-                                    </div>
-                                    <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mt-3">
-                                        <p className="text-xs text-sky-700 font-semibold">How to pay:</p>
-                                        <ol className="text-xs text-sky-700 mt-1 space-y-1 list-decimal list-inside">
-                                            <li>Copy the UPI ID above</li>
-                                            <li>Open GPay, PhonePe or Paytm</li>
-                                            <li>Go to "Pay by UPI ID" and paste it</li>
-                                            <li>Enter ₹{grandTotal} and complete payment</li>
-                                            <li>Come back here and upload the screenshot</li>
-                                        </ol>
-                                    </div>
-                                    <div className="flex items-center gap-3 my-4">
-                                        <div className="flex-1 h-px bg-slate-200" />
-                                        <span className="text-xs text-slate-400 font-semibold">OR SCAN QR</span>
-                                        <div className="flex-1 h-px bg-slate-200" />
-                                    </div>
-                                </div>
-
-                                {/* QR code (always visible, primary on desktop) */}
                                 <div className="flex flex-col items-center">
                                     {schoolConfig.paymentQRCodeUrl ? (
                                         <img src={schoolConfig.paymentQRCodeUrl} alt="School Payment QR Code" className="w-48 h-48 border p-1 rounded-md"/>
                                     ) : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center text-slate-500 rounded-md">QR Not Set</div>}
                                     <p className="mt-4 font-semibold text-slate-700">UPI ID: <span className="font-mono text-sky-700">{schoolConfig.upiId}</span></p>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(schoolConfig.upiId || '')}
-                                        className="mt-1 text-xs text-slate-400 hover:text-sky-600 underline"
-                                    >
-                                        Copy UPI ID
-                                    </button>
                                 </div>
-
-                                <div className={`mt-6 transition-all ${upiTapped ? 'ring-2 ring-emerald-400 rounded-xl p-3 bg-emerald-50' : ''}`}>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                                        {upiTapped ? '📸 Upload Payment Screenshot*' : 'Upload Payment Screenshot*'}
-                                    </label>
-                                    {upiTapped && (
-                                        <p className="text-xs text-emerald-600 font-medium mb-2">
-                                            ← Take a screenshot of your GPay/PhonePe success screen and upload it here.
-                                        </p>
-                                    )}
+                                <div className="mt-6">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Upload Payment Screenshot*</label>
                                     <input type="file" onChange={handleFileChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" required/>
-                                    {screenshotFile && (
-                                        <p className="text-xs text-emerald-600 mt-1 font-semibold">✓ {screenshotFile.name}</p>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -594,22 +293,27 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
                     <div className="mt-10 border-t pt-8">
                         <div className="max-w-md ml-auto space-y-4">
-                            {!admissionDetails ? (
-                                <div className="p-4 bg-slate-50 rounded-xl space-y-3 animate-pulse">
-                                    <div className="h-4 bg-slate-200 rounded w-3/4"/>
-                                    <div className="h-4 bg-slate-200 rounded w-2/3"/>
-                                    <div className="h-6 bg-slate-300 rounded w-1/2 ml-auto"/>
-                                </div>
-                            ) : (
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                                <div className="flex justify-between font-medium"><span className="text-slate-700">Admission Fees</span><span>₹{baseFeeTotal - textbookFee}</span></div>
-                                <div className="flex justify-between font-medium"><span className="text-slate-700">Textbook Fee <span className="text-xs text-amber-600 font-semibold">(Mandatory)</span></span><span>₹{textbookFee}</span></div>
-                                {merchandiseTotal > 0 && <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>}
-                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
+                                <div className="flex justify-between font-medium">
+                                    <span className="text-slate-700">Base Fees</span>
+                                    <span>₹{baseFeeTotal}</span>
+                                </div>
+                                {isboarder && (
+                                    <div className="flex justify-between font-medium text-indigo-700">
+                                        <span>Security Deposit (Boarder)</span>
+                                        <span>₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between font-medium">
+                                    <span className="text-slate-700">Additional Items</span>
+                                    <span>₹{merchandiseTotal}</span>
+                                </div>
+                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t">
+                                    <span>Grand Total</span>
+                                    <span className="text-emerald-700">₹{grandTotal}</span>
+                                </div>
                             </div>
-                            )}
-                            <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}
-                                className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
+                            <button onClick={handleSubmitPayment} disabled={isUploading || grandTotal <= 0} className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}
                                 <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
                             </button>

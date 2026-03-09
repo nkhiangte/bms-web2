@@ -12,15 +12,25 @@ const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
 // Security deposit charged on top of normal admission fee for boarders
 const BOARDER_SECURITY_DEPOSIT = 2500;
 
+// UPI payee details
+const UPI_ID = 'sawmikhawlhring64@oksbi';
+const UPI_NAME = 'Sawmi Khawlhring';
+
+/** Builds a UPI deep-link URL with pre-filled amount and generates a QR from it */
+const buildUpiQrUrl = (amount: number, note: string) => {
+    const upiString = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiString)}`;
+};
+
 interface AdmissionPaymentPageProps {
     addNotification: (message: string, type: NotificationType, title?: string) => void;
-    admissionConfig?: AdmissionSettings; 
+    admissionConfig?: AdmissionSettings;
     user: User | null;
     schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
 }
 
-const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ 
-    addNotification, 
+const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
+    addNotification,
     admissionConfig = DEFAULT_ADMISSION_SETTINGS,
     user,
     schoolConfig,
@@ -28,7 +38,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const { admissionId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    
+
     const [admissionDetails, setAdmissionDetails] = useState<OnlineAdmission | null>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
@@ -36,7 +46,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [paymentSubmitted, setPaymentSubmitted] = useState(false);
-    
+
     useEffect(() => {
         const fetchDetails = async () => {
             if (location.state) {
@@ -55,9 +65,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     addNotification("Failed to load admission details.", 'error');
                 }
             }
-             setIsLoadingDetails(false);
+            setIsLoadingDetails(false);
         };
-
         fetchDetails();
     }, [admissionId, location.state, addNotification]);
 
@@ -71,11 +80,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
     const feeStructure = useMemo(() => {
         const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
-        // Boarders pay the same admission fee as new students, plus the security deposit below
         if (isboarder) return structures.newStudent;
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
     }, [admissionConfig, studentType, isboarder]);
-    
+
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
         const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
@@ -83,7 +91,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return oneTimeTotal + annualTotal;
     }, [feeStructure]);
 
-    const notebookPrice = useMemo(() => (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0, [grade, admissionConfig.notebookPrices]);
+    const notebookPrice = useMemo(() =>
+        (grade && admissionConfig.notebookPrices[grade as Grade]) ? admissionConfig.notebookPrices[grade as Grade] : 0,
+        [grade, admissionConfig.notebookPrices]
+    );
 
     const allItems = useMemo(() => {
         const items = [
@@ -117,9 +128,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         }, 0);
     }, [selectedItems, allItems]);
 
-    // Security deposit is added on top for boarders
     const securityDeposit = isboarder ? BOARDER_SECURITY_DEPOSIT : 0;
     const grandTotal = baseFeeTotal + merchandiseTotal + securityDeposit;
+
+    // Dynamic UPI QR — regenerates whenever grandTotal changes
+    const upiQrUrl = useMemo(() => {
+        if (grandTotal <= 0) return null;
+        const note = `Admission-${admissionId || admissionDetails?.studentName || 'BMS'}`;
+        return buildUpiQrUrl(grandTotal, note);
+    }, [grandTotal, admissionId, admissionDetails?.studentName]);
 
     const handleItemToggle = (itemName: string, isChecked: boolean) => {
         setSelectedItems(prev => {
@@ -131,28 +148,26 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             return newItems;
         });
     };
-    
+
     const handleSizeChange = (itemName: string, size: string) => {
         setSelectedItems(prev => ({ ...prev, [itemName]: { ...prev[itemName], size } }));
     };
-    
+
     const getItemPriceDisplay = (item: typeof allItems[0], selectedSize?: string) => {
         if (item.hasSize && item.priceBySize) {
             if (selectedSize && item.priceBySize[selectedSize]) return item.priceBySize[selectedSize];
             const prices = Object.values(item.priceBySize);
             if (prices.length > 0) {
-                 const min = Math.min(...(prices as number[]));
-                 const max = Math.max(...(prices as number[]));
-                 if (min !== max) return `${min} - ${max}`;
+                const min = Math.min(...(prices as number[]));
+                const max = Math.max(...(prices as number[]));
+                if (min !== max) return `${min} - ${max}`;
             }
         }
         return item.price;
     };
-    
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setScreenshotFile(e.target.files[0]);
-        }
+        if (e.target.files && e.target.files[0]) setScreenshotFile(e.target.files[0]);
     };
 
     const handleSubmitPayment = async () => {
@@ -170,7 +185,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if(item.hasSize && details.size && item.priceBySize) {
+                if (item.hasSize && details.size && item.priceBySize) {
                     price = item.priceBySize[details.size] ?? item.price;
                 }
                 return { name: itemName, price, quantity: details.quantity, size: details.size };
@@ -197,7 +212,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }
 
     if (!admissionDetails) {
-        return <div className="text-center py-20">Admission details not found.</div>
+        return <div className="text-center py-20">Admission details not found.</div>;
     }
 
     return (
@@ -205,10 +220,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             <div className="container mx-auto px-4">
                 <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-4xl mx-auto">
                     <div className="mb-8">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
-                        >
+                        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                             <BackIcon className="w-5 h-5" />
                             Back
                         </button>
@@ -228,98 +240,148 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
                     {paymentSubmitted ? (
                         <div className="text-center py-12">
-                            <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
+                            <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
                             <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
-                            <p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
-                             <div className="mt-8 flex justify-center gap-4">
+                            <p className="text-slate-600 mt-2">Your payment is now pending verification from the school office.</p>
+                            <div className="mt-8 flex justify-center gap-4">
                                 <Link to="/" className="btn btn-secondary">Go to Homepage</Link>
                                 <Link to="/admissions/status" className="btn btn-primary">Check Status</Link>
                             </div>
                         </div>
                     ) : (
-                    <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                        {/* Right side: Instructions and Payment */}
-                        <div className="lg:order-2">
-                             <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
-                                 <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
-                                 <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                     <li>Calculate your total amount on the left.</li>
-                                     <li>Pay the total amount using the QR Code or UPI ID below.</li>
-                                     <li>Take a screenshot of the successful payment.</li>
-                                     <li>Upload the screenshot and submit for verification.</li>
-                                 </ol>
-                            </div>
-                            <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
-                                <div className="flex flex-col items-center">
-                                    {schoolConfig.paymentQRCodeUrl ? (
-                                        <img src={schoolConfig.paymentQRCodeUrl} alt="School Payment QR Code" className="w-48 h-48 border p-1 rounded-md"/>
-                                    ) : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center text-slate-500 rounded-md">QR Not Set</div>}
-                                    <p className="mt-4 font-semibold text-slate-700">UPI ID: <span className="font-mono text-sky-700">{schoolConfig.upiId}</span></p>
-                                </div>
-                                <div className="mt-6">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Upload Payment Screenshot*</label>
-                                    <input type="file" onChange={handleFileChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" required/>
-                                </div>
-                            </div>
-                        </div>
+                        <>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
-                        {/* Left Side: Item Selection */}
-                        <div className="lg:order-1">
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Additional Items (Optional)</h3>
-                                {allItems.map(item => {
-                                    const currentSize = selectedItems[item.name]?.size;
-                                    const displayPrice = getItemPriceDisplay(item, currentSize);
-                                    return (
-                                    <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : 'hover:bg-slate-50 transition'}`}>
-                                        <div className="flex items-center gap-4">
-                                            {item.checkable && <input type="checkbox" checked={!!selectedItems[item.name]} onChange={e => handleItemToggle(item.name, e.target.checked)} className="form-checkbox h-5 w-5 text-sky-600"/>}
-                                            <div>
-                                                <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
-                                                <p className="text-sm text-slate-600">₹{displayPrice}</p>
+                                {/* Right: QR + upload */}
+                                <div className="lg:order-2">
+                                    <div className="p-6 bg-slate-50 border rounded-xl space-y-3 mb-6">
+                                        <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
+                                        <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
+                                            <li>Select any additional items on the left.</li>
+                                            <li>Scan the QR code — the <strong>exact amount is pre-filled</strong>.</li>
+                                            <li>Complete the payment on GPay / PhonePe / any UPI app.</li>
+                                            <li>Take a screenshot and upload it below.</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="p-6 bg-white rounded-xl border-2 border-sky-200 flex flex-col items-center">
+                                        {/* Dynamic QR */}
+                                        {upiQrUrl ? (
+                                            <>
+                                                <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">
+                                                    Scan to Pay — Amount pre-filled
+                                                </p>
+                                                <div className="relative">
+                                                    <img
+                                                        key={upiQrUrl}
+                                                        src={upiQrUrl}
+                                                        alt={`Pay ₹${grandTotal} via UPI`}
+                                                        className="w-52 h-52 border-2 border-slate-200 rounded-xl p-1"
+                                                    />
+                                                    {/* Amount badge overlay */}
+                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-extrabold px-4 py-1 rounded-full shadow-lg whitespace-nowrap">
+                                                        ₹{grandTotal.toLocaleString('en-IN')}
+                                                    </div>
+                                                </div>
+                                                <p className="mt-6 text-sm font-semibold text-slate-700">
+                                                    UPI ID: <span className="font-mono text-sky-700">{UPI_ID}</span>
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    Works with GPay, PhonePe, Paytm, BHIM & all UPI apps
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <div className="w-52 h-52 bg-slate-100 flex items-center justify-center text-slate-400 rounded-xl text-sm">
+                                                Select items to generate QR
                                             </div>
-                                        </div>
-                                        {item.hasSize && selectedItems[item.name] && (
-                                            <select value={selectedItems[item.name]?.size} onChange={e => handleSizeChange(item.name, e.target.value)} className="form-select text-sm py-1">
-                                                {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
-                                            </select>
                                         )}
-                                    </div>
-                                )})}
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="mt-10 border-t pt-8">
-                        <div className="max-w-md ml-auto space-y-4">
-                            <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                                <div className="flex justify-between font-medium">
-                                    <span className="text-slate-700">Base Fees</span>
-                                    <span>₹{baseFeeTotal}</span>
-                                </div>
-                                {isboarder && (
-                                    <div className="flex justify-between font-medium text-indigo-700">
-                                        <span>Security Deposit (Boarder)</span>
-                                        <span>₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')}</span>
+                                        <div className="mt-6 w-full">
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                                Upload Payment Screenshot*
+                                            </label>
+                                            <input
+                                                type="file"
+                                                onChange={handleFileChange}
+                                                accept="image/*"
+                                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                )}
-                                <div className="flex justify-between font-medium">
-                                    <span className="text-slate-700">Additional Items</span>
-                                    <span>₹{merchandiseTotal}</span>
                                 </div>
-                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t">
-                                    <span>Grand Total</span>
-                                    <span className="text-emerald-700">₹{grandTotal}</span>
+
+                                {/* Left: Item selection */}
+                                <div className="lg:order-1 space-y-4">
+                                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Additional Items (Optional)</h3>
+                                    {allItems.map(item => {
+                                        const currentSize = selectedItems[item.name]?.size;
+                                        const displayPrice = getItemPriceDisplay(item, currentSize);
+                                        return (
+                                            <div key={item.name} className={`p-4 border rounded-lg flex items-center justify-between ${item.mandatory ? 'bg-slate-100' : 'hover:bg-slate-50 transition'}`}>
+                                                <div className="flex items-center gap-4">
+                                                    {item.checkable && (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!!selectedItems[item.name]}
+                                                            onChange={e => handleItemToggle(item.name, e.target.checked)}
+                                                            className="form-checkbox h-5 w-5 text-sky-600"
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <p className={`font-bold ${item.mandatory ? 'text-slate-800' : ''}`}>{item.name}</p>
+                                                        <p className="text-sm text-slate-600">₹{displayPrice}</p>
+                                                    </div>
+                                                </div>
+                                                {item.hasSize && selectedItems[item.name] && (
+                                                    <select
+                                                        value={selectedItems[item.name]?.size}
+                                                        onChange={e => handleSizeChange(item.name, e.target.value)}
+                                                        className="form-select text-sm py-1"
+                                                    >
+                                                        {item.sizes?.map(size => <option key={size} value={size}>Size: {size}</option>)}
+                                                    </select>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                            <button onClick={handleSubmitPayment} disabled={isUploading || grandTotal <= 0} className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
-                                {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}
-                                <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
-                            </button>
-                        </div>
-                    </div>
-                    </>
+
+                            {/* Totals + submit */}
+                            <div className="mt-10 border-t pt-8">
+                                <div className="max-w-md ml-auto space-y-4">
+                                    <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+                                        <div className="flex justify-between font-medium">
+                                            <span className="text-slate-700">Base Fees</span>
+                                            <span>₹{baseFeeTotal}</span>
+                                        </div>
+                                        {isboarder && (
+                                            <div className="flex justify-between font-medium text-indigo-700">
+                                                <span>Security Deposit (Boarder)</span>
+                                                <span>₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between font-medium">
+                                            <span className="text-slate-700">Additional Items</span>
+                                            <span>₹{merchandiseTotal}</span>
+                                        </div>
+                                        <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t">
+                                            <span>Grand Total</span>
+                                            <span className="text-emerald-700">₹{grandTotal}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleSubmitPayment}
+                                        disabled={isUploading || grandTotal <= 0}
+                                        className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400"
+                                    >
+                                        {isUploading ? <SpinnerIcon className="w-6 h-6" /> : <CurrencyDollarIcon className="w-6 h-6" />}
+                                        <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

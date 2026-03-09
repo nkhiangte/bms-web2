@@ -9,7 +9,7 @@ import { db } from '@/firebaseConfig';
 
 const { useParams, useLocation, Link, useNavigate } = ReactRouterDOM as any;
 
-// ── Boarder security deposit (added on top of new student admission fee) ──────
+// Security deposit charged on top of normal admission fee for boarders
 const BOARDER_SECURITY_DEPOSIT = 2500;
 
 interface AdmissionPaymentPageProps {
@@ -71,7 +71,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
 
     const feeStructure = useMemo(() => {
         const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
-        // Boarders use the new student fee structure (same admission fee as newcomers)
+        // Boarders pay the same admission fee as new students, plus the security deposit below
         if (isboarder) return structures.newStudent;
         return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
     }, [admissionConfig, studentType, isboarder]);
@@ -116,8 +116,8 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             return total + (effectivePrice * details.quantity);
         }, 0);
     }, [selectedItems, allItems]);
-    
-    // Security deposit is added for boarders on top of the base fee
+
+    // Security deposit is added on top for boarders
     const securityDeposit = isboarder ? BOARDER_SECURITY_DEPOSIT : 0;
     const grandTotal = baseFeeTotal + merchandiseTotal + securityDeposit;
 
@@ -214,16 +214,16 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                         </button>
                     </div>
                     <div className="text-center mb-8">
-                         <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
-                         <p className="mt-2 text-lg text-slate-600">
-                             Finalize application for <span className="font-bold">{admissionDetails.studentName}</span>
-                             {' '}({isboarder ? 'Boarder / Residential' : studentType})
-                         </p>
-                         {isboarder && (
-                             <p className="mt-1 text-sm font-semibold text-indigo-600 bg-indigo-50 inline-block px-3 py-1 rounded-full">
-                                 🏠 Boarder — Security Deposit of ₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')} included
-                             </p>
-                         )}
+                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
+                        <p className="mt-2 text-lg text-slate-600">
+                            Finalize application for <span className="font-bold">{admissionDetails.studentName}</span>
+                            {' '}({isboarder ? 'Boarder / Residential' : studentType})
+                        </p>
+                        {isboarder && (
+                            <p className="mt-2 text-sm font-semibold text-indigo-600 bg-indigo-50 inline-block px-3 py-1 rounded-full">
+                                🏫 Boarder — includes ₹{BOARDER_SECURITY_DEPOSIT.toLocaleString('en-IN')} security deposit
+                            </p>
+                        )}
                     </div>
 
                     {paymentSubmitted ? (

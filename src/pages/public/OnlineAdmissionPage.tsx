@@ -30,6 +30,10 @@ const ProgressBar: React.FC<{ currentStep: number }> = ({ currentStep }) => (
     </div>
 );
 
+// Inline field error display
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+    message ? <p className="text-red-500 text-xs mt-1 flex items-center gap-1">⚠ {message}</p> : null;
+
 
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
     const navigate = useNavigate();
@@ -39,6 +43,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     // step  1-3 = form steps
     const [step, setStep] = useState(-1);
     const [isBoarder, setIsBoarder] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -65,9 +70,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         siblingsInSchool: 0,
     });
 
+    const clearError = (field: string) => {
+        if (fieldErrors[field]) setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        clearError(name);
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof OnlineAdmission) => {
@@ -85,6 +95,43 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 setUploadingDoc(null);
             }
         }
+    };
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    const validateStep = (currentStep: number): boolean => {
+        const errors: Record<string, string> = {};
+
+        if (currentStep === 1) {
+            if (!formData.studentName?.trim())       errors.studentName    = "Full name is required.";
+            if (!formData.dateOfBirth?.trim())        errors.dateOfBirth    = "Date of birth is required.";
+            if (!formData.gender?.trim())             errors.gender         = "Gender is required.";
+            if (!formData.studentAadhaar?.trim())     errors.studentAadhaar = "Aadhaar number is required.";
+            if (!formData.category?.trim())           errors.category       = "Category is required.";
+            if (!formData.religion?.trim())           errors.religion       = "Religion is required.";
+        }
+
+        if (currentStep === 2) {
+            if (!formData.fatherName?.trim())         errors.fatherName      = "Father's name is required.";
+            if (!formData.motherName?.trim())         errors.motherName      = "Mother's name is required.";
+            if (!formData.contactNumber?.trim())      errors.contactNumber   = "Contact number is required.";
+            if (!formData.permanentAddress?.trim())   errors.permanentAddress = "Permanent address is required.";
+        }
+
+        setFieldErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
+            // Scroll to first error
+            setTimeout(() => {
+                const firstError = document.querySelector('.field-error-anchor');
+                firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+            return false;
+        }
+        return true;
+    };
+
+    const handleNextStep = () => {
+        if (validateStep(step)) setStep(s => s + 1);
     };
 
     const handleFetchStudent = async (e: React.FormEvent) => {
@@ -243,6 +290,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     const isNewStudent = formData.studentType === 'Newcomer';
     const isNursery = formData.admissionGrade === Grade.NURSERY;
 
+    // helper — red border if error exists for field
+    const inputClass = (field: string, base = 'form-input w-full mt-1') =>
+        `${base} ${fieldErrors[field] ? 'border-red-400 focus:ring-red-300 focus:border-red-400' : ''}`;
+    const selectClass = (field: string, base = 'form-select w-full mt-1') =>
+        `${base} ${fieldErrors[field] ? 'border-red-400' : ''}`;
+
     // ── STEP -1: Day Scholar vs Boarder ──────────────────────────────────────
     if (step === -1) {
         return (
@@ -250,46 +303,27 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="bg-white p-8 rounded-2xl shadow-xl">
                         <div className="mb-6">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
-                            >
+                            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                                 <BackIcon className="w-5 h-5" />
                                 Back to Admission Guidelines
                             </button>
                         </div>
                         <div className="text-center mb-10">
-                            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-3">
-                                Online Admission Portal
-                            </h1>
+                            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-3">Online Admission Portal</h1>
                             <p className="text-lg text-slate-600">Select Admission Type</p>
                             <p className="text-sm text-slate-400 mt-1">Please select whether you are applying as a Day Scholar or a Boarder/Residential student.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                            {/* Day Scholar */}
-                            <button
-                                onClick={() => { setIsBoarder(false); setStep(0); }}
-                                className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left"
-                            >
-                                <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
-                                    🏠
-                                </div>
+                            <button onClick={() => { setIsBoarder(false); setStep(0); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
+                                <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">🏠</div>
                                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Day Scholar</h3>
                                 <p className="text-slate-600">Student attends school during the day and returns home in the evening.</p>
                             </button>
-                            {/* Boarder */}
-                            <button
-                                onClick={() => { setIsBoarder(true); setStep(0); }}
-                                className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-indigo-500 hover:shadow-2xl transition-all group text-left"
-                            >
-                                <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
-                                    🏫
-                                </div>
+                            <button onClick={() => { setIsBoarder(true); setStep(0); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-indigo-500 hover:shadow-2xl transition-all group text-left">
+                                <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">🏫</div>
                                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Boarder / Residential</h3>
                                 <p className="text-slate-600">Student lives on campus in the school's residential hostel.</p>
-                                <p className="text-xs text-indigo-600 font-semibold mt-3 bg-indigo-50 inline-block px-2 py-1 rounded">
-                                    + ₹2,500 security deposit
-                                </p>
+                                <p className="text-xs text-indigo-600 font-semibold mt-3 bg-indigo-50 inline-block px-2 py-1 rounded">+ ₹2,500 security deposit</p>
                             </button>
                         </div>
                     </div>
@@ -305,45 +339,29 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="bg-white p-8 rounded-2xl shadow-xl">
                         <div className="mb-6">
-                            <button
-                                onClick={() => { setShowIdInput(null); setStep(-1); }}
-                                className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
-                            >
+                            <button onClick={() => { setShowIdInput(null); setStep(-1); }} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                                 <BackIcon className="w-5 h-5" />
                                 Back
                             </button>
                         </div>
-
-                        {/* Boarder badge */}
                         {isBoarder && (
                             <div className="mb-6 flex justify-center">
-                                <span className="bg-indigo-100 text-indigo-700 text-sm font-semibold px-4 py-1.5 rounded-full">
-                                    🏫 Boarder / Residential Application
-                                </span>
+                                <span className="bg-indigo-100 text-indigo-700 text-sm font-semibold px-4 py-1.5 rounded-full">🏫 Boarder / Residential Application</span>
                             </div>
                         )}
-
                         {!showIdInput ? (
                             <>
                                 <div className="text-center mb-10">
-                                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">
-                                        Online Admission Portal
-                                    </h1>
+                                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">Online Admission Portal</h1>
                                     <p className="text-lg text-slate-600">Please select an option to begin.</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                                    <button
-                                        onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer', isboarder: isBoarder })); setStep(1); }}
-                                        className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left"
-                                    >
+                                    <button onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer', isboarder: isBoarder })); setStep(1); }} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left">
                                         <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><PlusIcon className="w-8 h-8 text-sky-600" /></div>
                                         <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
                                         <p className="text-slate-600">For children seeking admission for the first time.</p>
                                     </button>
-                                    <button
-                                        onClick={() => setShowIdInput('existing')}
-                                        className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left"
-                                    >
+                                    <button onClick={() => setShowIdInput('existing')} className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left">
                                         <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6"><UserIcon className="w-8 h-8 text-emerald-600" /></div>
                                         <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
                                         <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
@@ -403,19 +421,14 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             <div className="bg-white p-8 rounded-lg shadow-xl text-center border animate-fade-in">
                                 <h3 className="text-2xl font-bold text-emerald-600">Application Saved!</h3>
                                 <p className="mt-2 text-slate-600">Please save this ID to continue your application later:</p>
-                                <div className="my-4 p-3 bg-slate-100 border-2 border-dashed rounded font-mono text-xl font-bold text-slate-800">
-                                    {savedApplicationId}
-                                </div>
+                                <div className="my-4 p-3 bg-slate-100 border-2 border-dashed rounded font-mono text-xl font-bold text-slate-800">{savedApplicationId}</div>
                                 <button onClick={() => navigator.clipboard.writeText(savedApplicationId)} className="btn btn-secondary w-full">Copy ID</button>
                                 <button onClick={() => setSavedApplicationId(null)} className="mt-4 text-sm text-slate-500 hover:underline">Close and Continue Editing</button>
                             </div>
                         </div>
                     )}
                     <div className="mb-6">
-                        <button
-                            onClick={() => step > 1 ? setStep(step - 1) : setStep(0)}
-                            className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
-                        >
+                        <button onClick={() => { setFieldErrors({}); step > 1 ? setStep(step - 1) : setStep(0); }} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                             <BackIcon className="w-5 h-5" />
                             Back
                         </button>
@@ -432,53 +445,161 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                     </div>
                     <ProgressBar currentStep={step} />
 
+                    {/* Validation summary banner */}
+                    {Object.keys(fieldErrors).length > 0 && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                            <span className="text-red-500 text-lg flex-shrink-0">⚠</span>
+                            <div>
+                                <p className="text-sm font-bold text-red-700">Please fill in all required fields before continuing:</p>
+                                <ul className="mt-1 list-disc list-inside text-sm text-red-600 space-y-0.5">
+                                    {Object.values(fieldErrors).map((msg, i) => <li key={i}>{msg}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* Step 1: Student Information */}
+                        {/* ── Step 1: Student Information ── */}
                         {step === 1 && (
                             <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">1. Student Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Class Applying For*</label><select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>{GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                    <div><label className="block text-sm font-bold">Full Name*</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <CustomDatePicker label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} required={true} minYear={1960} maxYear={new Date().getFullYear()} />
-                                    <div><label className="block text-sm font-bold">Gender*</label><select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>{GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                    <div><label className="block text-sm font-bold">Aadhaar No.*</label><input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">PEN No. (Optional)</label><input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Mother Tongue (Optional)</label><input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Blood Group (Optional)</label><select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1"><option value="">-- Select --</option>{BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                    <div><label className="block text-sm font-bold">CWSN*</label><select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1"><option value="No">No</option><option value="Yes">Yes</option></select></div>
-                                    <div><label className="block text-sm font-bold">Category*</label><select name="category" value={formData.category} onChange={handleChange} className="form-select w-full mt-1" required>{CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                    <div><label className="block text-sm font-bold">Religion*</label><input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Class Applying For*</label>
+                                        <select name="admissionGrade" value={formData.admissionGrade} onChange={handleChange} className="form-select w-full mt-1" required>
+                                            {GRADES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Full Name*</label>
+                                        <input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className={inputClass('studentName')} />
+                                        <FieldError message={fieldErrors.studentName} />
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <CustomDatePicker label="Date of Birth*" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleChange} required={false} minYear={1960} maxYear={new Date().getFullYear()} />
+                                        <FieldError message={fieldErrors.dateOfBirth} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Gender*</label>
+                                        <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1" required>
+                                            {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Aadhaar No.*</label>
+                                        <input type="text" name="studentAadhaar" value={formData.studentAadhaar || ''} onChange={handleChange} className={inputClass('studentAadhaar')} />
+                                        <FieldError message={fieldErrors.studentAadhaar} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">PEN No. (Optional)</label>
+                                        <input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Mother Tongue (Optional)</label>
+                                        <input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Blood Group (Optional)</label>
+                                        <select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1">
+                                            <option value="">-- Select --</option>
+                                            {BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">CWSN*</label>
+                                        <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1">
+                                            <option value="No">No</option>
+                                            <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Category*</label>
+                                        <select name="category" value={formData.category} onChange={handleChange} className={selectClass('category')}>
+                                            {CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                        <FieldError message={fieldErrors.category} />
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Religion*</label>
+                                        <select name="religion" value={formData.religion || ''} onChange={handleChange} className={selectClass('religion')}>
+                                            <option value="">-- Select --</option>
+                                            <option value="Christianity">Christianity</option>
+                                            <option value="Hinduism">Hinduism</option>
+                                            <option value="Islam">Islam</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                        <FieldError message={fieldErrors.religion} />
+                                    </div>
                                 </div>
                             </section>
                         )}
 
-                        {/* Step 2: Parent/Guardian Information */}
+                        {/* ── Step 2: Parent/Guardian Information ── */}
                         {step === 2 && (
                             <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">2. Parent/Guardian Information</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Father's Name*</label><input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Mother's Name*</label><input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Father's Occupation</label><input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Mother's Occupation</label><input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label><input type="text" name="parentAadhaar" value={formData.parentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Guardian's Name (if any)</label><input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Relationship with Guardian</label><input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Contact No.*</label><input type="tel" name="contactNumber" value={formData.contactNumber || ''} onChange={handleChange} className="form-input w-full mt-1" required /></div>
-                                    <div><label className="block text-sm font-bold">Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div className="md:col-span-2"><label className="block text-sm font-bold">Permanent Address*</label><textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={2} required></textarea></div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Father's Name*</label>
+                                        <input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className={inputClass('fatherName')} />
+                                        <FieldError message={fieldErrors.fatherName} />
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Mother's Name*</label>
+                                        <input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className={inputClass('motherName')} />
+                                        <FieldError message={fieldErrors.motherName} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Father's Occupation</label>
+                                        <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Mother's Occupation</label>
+                                        <input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label>
+                                        <input type="text" name="parentAadhaar" value={formData.parentAadhaar || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Guardian's Name (if any)</label>
+                                        <input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Relationship with Guardian</label>
+                                        <input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="field-error-anchor">
+                                        <label className="block text-sm font-bold">Contact No.*</label>
+                                        <input type="tel" name="contactNumber" value={formData.contactNumber || ''} onChange={handleChange} className={inputClass('contactNumber')} />
+                                        <FieldError message={fieldErrors.contactNumber} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Email</label>
+                                        <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div className="md:col-span-2 field-error-anchor">
+                                        <label className="block text-sm font-bold">Permanent Address*</label>
+                                        <textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className={`form-textarea w-full mt-1 ${fieldErrors.permanentAddress ? 'border-red-400 focus:ring-red-300' : ''}`} rows={2}></textarea>
+                                        <FieldError message={fieldErrors.permanentAddress} />
+                                    </div>
                                 </div>
                             </section>
                         )}
 
-                        {/* Step 3: Documents Upload */}
+                        {/* ── Step 3: Documents & Other Info ── */}
                         {step === 3 && (
                             <section className="animate-fade-in">
                                 <h2 className="text-xl font-semibold text-slate-800 border-b pb-2 mb-4">3. Documents & Other Info</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label className="block text-sm font-bold">Last School Attended</label><input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
-                                    <div><label className="block text-sm font-bold">Division in which he/she passed</label><input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" /></div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Last School Attended</label>
+                                        <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold">Division in which he/she passed</label>
+                                        <input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" />
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-bold">General Behaviour</label>
                                         <select name="generalBehaviour" value={formData.generalBehaviour || 'Normal'} onChange={handleChange} className="form-select w-full mt-1">
@@ -534,16 +655,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                             </section>
                         )}
 
+                        {/* ── Navigation ── */}
                         <div className="flex justify-between items-center pt-6 border-t">
                             {step > 1 ? (
-                                <button type="button" onClick={() => setStep(s => s - 1)} className="btn btn-secondary">Back</button>
-                            ) : <div></div>}
+                                <button type="button" onClick={() => { setFieldErrors({}); setStep(s => s - 1); }} className="btn btn-secondary">Back</button>
+                            ) : <div />}
                             <div className="flex items-center gap-4">
                                 <button type="button" onClick={handleSaveForLater} disabled={isSubmitting || isSaving} className="btn btn-secondary">
                                     {isSaving ? <><SpinnerIcon className="w-5 h-5" /> Saving...</> : <><SaveIcon className="w-5 h-5" /> Save for Later</>}
                                 </button>
                                 {step < 3 ? (
-                                    <button type="button" onClick={() => setStep(s => s + 1)} className="btn btn-primary">Next <ArrowRightIcon className="w-5 h-5" /></button>
+                                    <button type="button" onClick={handleNextStep} className="btn btn-primary">
+                                        Next <ArrowRightIcon className="w-5 h-5" />
+                                    </button>
                                 ) : (
                                     <button type="submit" disabled={isSubmitting || isSaving} className="btn btn-primary px-8 py-3 text-lg">
                                         {isSubmitting ? <><SpinnerIcon className="w-6 h-6" /> Submitting...</> : 'Submit Application'}

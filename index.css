@@ -2,54 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Google Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
 html {
   scroll-behavior: smooth;
 }
+
+/* ─── Design Tokens ─── */
 :root {
-  --primary: #0ea5e9; /* sky-500 */
-  --primary-dark: #0284c7; /* sky-600 */
-  --primary-light: #f0f9ff; /* sky-50 */
-  --secondary: #f59e0b; /* amber-500 */
-  --success: #10b981; /* emerald-500 */
-  --danger: #ef4444; /* red-500 */
-  --warning: #f97316; /* orange-500 */
-  --info: #6366f1; /* indigo-500 */
-  --light: #f8fafc; /* slate-50 */
-  --dark: #1e293b; /* slate-800 */
-  --body-bg: #bae6fd; /* deeper light blue */
-  --body-bg-light: #e0f2fe; /* light blue for scrollbar track */
-  --card-bg: #ffffff;
-  --text-main: #0f172a; /* slate-900 */
-  --text-muted: #64748b; /* slate-500 */
-  --border-color: #e2e8f0; /* slate-200 */
+  /* Brand */
+  --gold:          #C9A84C;
+  --gold-light:    #E8C97A;
+  --gold-dark:     #A07830;
+  --gold-glow:     rgba(201,168,76,0.18);
+
+  /* Backgrounds */
+  --bg-void:       #080808;
+  --bg-base:       #0F0F0F;
+  --bg-surface:    #161616;
+  --bg-elevated:   #1E1E1E;
+  --bg-card:       #1A1A1A;
+
+  /* Text */
+  --text-primary:  #F0EBE0;
+  --text-secondary:#A89880;
+  --text-muted:    #5C5248;
+  --text-inverse:  #0F0F0F;
+
+  /* Borders */
+  --border-subtle: rgba(201,168,76,0.12);
+  --border-mid:    rgba(201,168,76,0.25);
+  --border-strong: rgba(201,168,76,0.50);
+
+  /* Semantic (kept for portal compatibility) */
+  --primary:       #C9A84C;
+  --primary-dark:  #A07830;
+  --primary-light: #1A1610;
+  --secondary:     #C9A84C;
+  --success:       #22C55E;
+  --danger:        #EF4444;
+  --warning:       #F97316;
+  --info:          #6366F1;
+  --light:         #1E1E1E;
+  --dark:          #F0EBE0;
+  --body-bg:       #0F0F0F;
+  --body-bg-light: #1A1A1A;
+  --card-bg:       #1A1A1A;
+  --text-main:     #F0EBE0;
+  --text-muted-css:#5C5248;
+  --border-color:  #2A2520;
+
+  /* Typography */
+  --font-display:  'Playfair Display', Georgia, serif;
+  --font-body:     'DM Sans', system-ui, sans-serif;
 }
 
-/* Brighter Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+/* ─── Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family:      var(--font-body);
+  background-color: var(--bg-base);
+  color:            var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-::-webkit-scrollbar-track {
-  background: var(--body-bg-light);
-}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-surface); }
 ::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 5px;
-  border: 2px solid var(--body-bg-light);
+  background: var(--gold-dark);
+  border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ─── Public site typography ─── */
+.public-display {
+  font-family: var(--font-display);
+  color: var(--text-primary);
 }
 
+/* ─── Gold divider ─── */
+.gold-rule {
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 0 auto;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes scrollNews {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-/* Base button style */
+.animate-fade-in    { animation: fadeIn 0.5s ease-out forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.7s ease-out forwards; }
+
+/* ─── Shimmer text ─── */
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--gold-dark) 0%,
+    var(--gold-light) 40%,
+    var(--gold) 60%,
+    var(--gold-dark) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ─── Buttons ─── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -57,67 +137,77 @@ html {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   font-weight: 600;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  font-family: var(--font-body);
+  border-radius: 0.375rem;
   transition: all 0.2s ease-in-out;
   border: 1px solid transparent;
 }
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-.btn-primary {
-  background-color: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-.btn-primary:hover {
-  background-color: var(--primary-dark);
-  border-color: var(--primary-dark);
-}
-.btn-secondary {
-  background-color: var(--card-bg);
-  color: var(--text-main);
-  border-color: var(--border-color);
-}
-.btn-secondary:hover {
-  background-color: var(--light);
-  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* General component styles */
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color: #0F0F0F;
+  border-color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  box-shadow: 0 4px 16px var(--gold-glow);
+}
+
+.btn-secondary {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-mid);
+}
+.btn-secondary:hover {
+  background-color: var(--bg-card);
+  border-color: var(--border-strong);
+}
+
+/* ─── Card ─── */
 .card {
-  background-color: var(--card-bg);
-  border-radius: 0.75rem; /* 12px */
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
   transition: all 0.3s ease;
 }
 .card:hover {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  border-color: var(--border-mid);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border-mid);
 }
 
-input[type=text], input[type=email], input[type=password], input[type=tel], input[type=number], input[type=date], select, textarea {
-  border-radius: 0.5rem;
+/* ─── Form inputs ─── */
+input[type=text], input[type=email], input[type=password],
+input[type=tel], input[type=number], input[type=date],
+select, textarea {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
 input:focus, select:focus, textarea:focus {
-  --tw-ring-color: var(--primary);
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px var(--primary-light) !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 2px var(--gold-glow) !important;
+  outline: none;
+}
+select option {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
-/* Hide number input spinners */
+/* ─── Hide number spinners ─── */
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type=number] {
-  -moz-appearance: textfield; /* Firefox */
-}
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
 
-/* --- News Ticker --- */
+/* ─── News Ticker ─── */
 .news-ticker-container {
   overflow: hidden;
   display: flex;
@@ -125,71 +215,65 @@ input[type=number] {
 .news-ticker-content {
   display: flex;
   white-space: nowrap;
-  animation: scroll-news 40s linear infinite;
+  animation: scrollNews 40s linear infinite;
 }
-@keyframes scroll-news {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.news-ticker-container:hover .news-ticker-content {
-  animation-play-state: paused;
-}
+.news-ticker-container:hover .news-ticker-content { animation-play-state: paused; }
 
-/* --- Dropdown styles --- */
+/* ─── Public nav dropdown ─── */
 .dropdown .dropdown-content {
   display: none;
   position: absolute;
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-mid);
   min-width: 220px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
-  z-index: 1;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+  z-index: 50;
   border-radius: 0.5rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  animation: fadeIn 0.2s ease-out;
-  border: 1px solid var(--border-color);
+  padding: 0.4rem 0;
+  animation: fadeIn 0.15s ease-out;
 }
-.dropdown:hover .dropdown-content {
-  display: block;
-}
+.dropdown:hover .dropdown-content { display: block; }
 .dropdown-content a {
-  color: var(--text-main);
-  padding: 0.6rem 1.25rem;
+  color: var(--text-secondary);
+  padding: 0.55rem 1.25rem;
   text-decoration: none;
   display: block;
-  text-align: left;
   font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.15s, background 0.15s;
 }
 .dropdown-content a:hover {
-  background-color: var(--primary-light);
-  color: var(--primary-dark);
+  background-color: var(--bg-elevated);
+  color: var(--gold);
 }
 
-/* --- Print Styles --- */
+/* ─── Public page section backgrounds ─── */
+.public-section-dark    { background-color: var(--bg-base); }
+.public-section-surface { background-color: var(--bg-surface); }
+
+/* ─── A4 print size ─── */
+.A4-size {
+  width: 210mm;
+  min-height: 297mm;
+}
+
+/* ─── Print Styles (unchanged) ─── */
 @media print {
-  .print-hidden {
-      display: none !important;
-  }
-  .print-visible {
-      display: block !important;
-  }
-  /* Reset container heights/overflows to allow printing all pages */
+  .print-hidden { display: none !important; }
+  .print-visible { display: block !important; }
+
   html, body, #root {
     height: auto !important;
     overflow: visible !important;
     min-height: auto !important;
   }
-  
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     background-color: white !important;
+    color: black !important;
   }
-  #mark-statement-container {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-  }
+  #mark-statement-container { box-shadow: none !important; border: none !important; padding: 0 !important; }
   #mark-statement-table {
     font-size: 8pt;
     border-collapse: collapse;
@@ -200,26 +284,95 @@ input[type=number] {
     border: 1px solid #999;
     white-space: nowrap;
   }
-  #mark-statement-table .sticky {
-    position: static !important;
-    background-color: white !important;
-  }
-  #mark-statement-table input, #mark-statement-table select {
-    display: none;
-  }
-  #mark-statement-table .print-value {
-    display: inline !important;
-  }
+  #mark-statement-table .sticky { position: static !important; background-color: white !important; }
+  #mark-statement-table input, #mark-statement-table select { display: none; }
+  #mark-statement-table .print-value { display: inline !important; }
 
-  /* Mark statement pages: landscape */
-  @page {
-    size: A4 landscape;
-    margin: 1cm;
-  }
+  @page { size: A4 landscape; margin: 1cm; }
+}
+.print-value { display: none; }
 
-  /* Progress report print styles are injected dynamically by BulkProgressReportPage component */
+/* ─── Portal overrides — keep portal on light/neutral ─── */
+/* The portal (/portal/*) uses its own DashboardLayout and white cards.   */
+/* These overrides ensure form inputs, tables stay readable in the portal. */
+.portal-scope table { color: var(--text-primary); }
+.portal-scope th     { color: var(--text-primary); }
+
+/* ─── Utility classes used across public pages ─── */
+.section-label {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+.section-subtext {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
-.print-value {
-    display: none;
+/* ─── Gold border accent ─── */
+.gold-border-left {
+  border-left: 3px solid var(--gold);
+  padding-left: 1rem;
+}
+
+/* ─── Public feature cards ─── */
+.public-feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.public-feature-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 24px var(--gold-glow);
+}
+
+/* ─── Social link rows ─── */
+.social-link-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+.social-link-row:last-child { border-bottom: none; }
+.social-link-row:hover { color: var(--gold); }
+
+/* ─── News card ─── */
+.news-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.news-card:hover {
+  border-color: var(--border-mid);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+/* ─── Admission banner ─── */
+.admission-banner {
+  background: linear-gradient(90deg, #7A4800, var(--gold-dark), var(--gold), var(--gold-dark), #7A4800);
+  background-size: 300% 100%;
+  animation: shimmer 3s linear infinite;
+  color: #0F0F0F;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }

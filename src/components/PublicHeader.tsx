@@ -1,145 +1,56 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { ChevronDownIcon, UserIcon } from '@/components/Icons';
-import { User } from '@/types';
+import { User, NavMenuItem } from '@/types';
 
 const { Link, NavLink, useLocation } = ReactRouterDOM as any;
 
 interface PublicHeaderProps {
     user: User | null;
+    navigation: NavMenuItem[];
 }
 
-interface MenuItem {
-    label: string;
-    path: string;
-    children?: MenuItem[];
-}
-
-const MENU: MenuItem[] = [
-    { label: 'Home', path: '/' },
-    {
-        label: 'About',
-        path: '/about',
-        children: [
-            { label: 'About Us',   path: '/about' },
-            { label: 'History',    path: '/history' },
-            { label: 'Faculty',    path: '/faculty' },
-            { label: 'Rules',      path: '/rules' },
-                    { label: 'Download Prospectus',  path: 'https://drive.google.com/file/d/1yI24FOgMJoWh-QV72qC6Z77byO8aA-fr/view?usp=sharing' },
-
-        ],
-    },
-    {
-        label: 'Academics',
-        path: '/academics',
-        children: [
-            { label: 'Overview',   path: '/academics' },
-            { label: 'Curriculum', path: '/academics/curriculum' },
-            { label: 'Syllabus',   path: '/syllabus' },
-            { label: 'Routine',    path: '/routine' },
-        ],
-    },
-    {
-        label: 'Admissions',
-        path: '/admissions',
-        children: [
-            { label: 'Guidelines',       path: '/admissions' },
-            { label: 'Apply Online',     path: '/admissions/online' },
-            { label: 'Check Status',     path: '/admissions/status' },
-            { label: 'Fee Structure',    path: '/fees' },
-            { label: 'Supplies & Books', path: '/supplies' },
-        ],
-    },
-    {
-        label: 'Student Life',
-        path: '/student-life',
-        children: [
-            { label: 'Overview',       path: '/student-life' },
-            { label: 'NCC',            path: '/ncc' },
-            { label: 'Arts & Culture', path: '/arts-culture' },
-            { label: 'Eco Club',       path: '/eco-club' },
-            { label: 'Sports',         path: '/achievements/sports' },
-        ],
-    },
-    {
-        label: 'Achievements',
-        path: '/achievements',
-        children: [
-            { label: 'Overview', path: '/achievements' },
-            { label: 'Academic', path: '/achievements/academic' },
-            { label: 'Science',  path: '/achievements/science' },
-            { label: 'Sports',   path: '/achievements/sports' },
-            { label: 'Quiz',     path: '/achievements/quiz' },
-        ],
-    },
-    {
-        label: 'Facilities',
-        path: '/facilities',
-        children: [
-            { label: 'Overview',       path: '/facilities' },
-            { label: 'Infrastructure', path: '/infrastructure' },
-            { label: 'Hostel',         path: '/hostel' },
-            { label: 'Gallery',        path: '/gallery' },
-        ],
-    },
-    { label: 'News',    path: '/news' },
-    { label: 'Contact', path: '/contact' },
-];
-
-const isExternal = (path: string) =>
-    path?.startsWith('http') || path?.endsWith('.pdf');
-
-const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
-    const [mobileOpen, setMobileOpen]         = useState(false);
-    const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
-    const [openDropdown, setOpenDropdown]     = useState<string | null>(null);
-    const navRef = useRef<HTMLDivElement>(null);
+const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const location = useLocation();
 
-    // Close everything on route change
-    useEffect(() => {
-        setMobileOpen(false);
-        setMobileDropdown(null);
-        setOpenDropdown(null);
-    }, [location.pathname]);
+    const menuItems = (navigation || [])
+        .filter(item => item.isActive && !item.parent)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-    // Close desktop dropdown on outside click
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (navRef.current && !navRef.current.contains(e.target as Node)) {
-                setOpenDropdown(null);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
+    const getChildren = (parentId: string) => {
+        return (navigation || [])
+            .filter(item => item.isActive && item.parent === parentId)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    };
 
-    const dashboardLink = user?.role === 'parent'
-        ? '/portal/parent-dashboard'
-        : '/portal/dashboard';
+    const handleMobileDropdown = (id: string) => {
+        setOpenDropdown(prev => prev === id ? null : id);
+    };
+
+    const isExternalLink = (path: string) => path?.startsWith('http') || path?.endsWith('.pdf');
+
+    const activeLinkStyle = { color: '#38bdf8' }; // sky-400
+
+    const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
 
     return (
-        <header className="bg-white shadow-sm sticky top-0 z-30">
-
-            {/* ── Top Row ── */}
+        <header className="bg-zinc-950 shadow-md shadow-black/40 sticky top-0 z-30 border-b border-zinc-800">
+            {/* Top Row: Logo and Login */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-24 sm:h-32">
+                    {/* Logo */}
                     <Link to="/" className="flex items-center flex-shrink-0">
-                        <img
-                            src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png"
-                            alt="Bethel Mission School Logo"
-                            className="h-20 sm:h-24"
-                        />
+                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-20 sm:h-24" />
                     </Link>
 
+                    {/* Login Button & Mobile Menu Toggle */}
                     <div className="flex items-center gap-2">
                         {user ? (
-                            <Link
-                                to={dashboardLink}
-                                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-700 font-semibold rounded-lg hover:bg-sky-100 transition-colors border border-sky-200"
-                            >
+                            <Link to={dashboardLink} className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-900/40 text-sky-400 font-semibold rounded-lg hover:bg-sky-900/60 transition-colors border border-sky-700">
                                 <UserIcon className="w-5 h-5" />
-                                Dashboard
+                                <span>Dashboard</span>
                             </Link>
                         ) : (
                             <Link to="/login" className="btn btn-primary hidden sm:inline-flex">
@@ -148,166 +59,150 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                         )}
 
                         <button
-                            onClick={() => setMobileOpen(o => !o)}
-                            aria-label="Toggle mobile menu"
-                            className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="lg:hidden p-2 rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
                             </svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* ── Desktop Nav ── */}
-            <nav className="hidden lg:block border-t border-slate-100 bg-white" ref={navRef}>
+            {/* Desktop Navigation Bar */}
+            <nav className="hidden lg:block border-t border-zinc-800 bg-zinc-900">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center flex-wrap">
-                    {MENU.map(item => {
-                        if (!item.children?.length) {
-                            return (
-                                <NavLink
-                                    key={item.path}
-                                    to={item.path}
-                                    end={item.path === '/'}
-                                    className={({ isActive }: any) =>
-                                        `px-4 py-3.5 text-sm font-semibold uppercase tracking-wide transition-colors
-                                        ${isActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`
-                                    }
-                                >
-                                    {item.label}
-                                </NavLink>
-                            );
-                        }
+                    {menuItems.map(link => {
+                        const children = getChildren(link.id);
+                        const hasChildren = children.length > 0;
+                        const isDropdownActive = children.some(child => location.pathname === child.path);
 
-                        const isOpen = openDropdown === item.path;
-                        const isAnyChildActive = item.children.some(c =>
-                            location.pathname === c.path || location.pathname.startsWith(c.path + '/')
-                        );
-
-                        return (
-                            <div key={item.path} className="relative">
-                                <button
-                                    onClick={() => setOpenDropdown(isOpen ? null : item.path)}
-                                    className={`px-4 py-3.5 flex items-center gap-1 text-sm font-semibold transition-colors uppercase tracking-wide
-                                        ${isAnyChildActive || isOpen ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}
-                                >
-                                    {item.label}
-                                    <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                        return hasChildren ? (
+                            <div key={link.id} className="relative dropdown">
+                                <button className={`px-4 py-3 flex items-center gap-1 text-base font-semibold transition-colors uppercase ${isDropdownActive ? 'text-sky-400' : 'text-zinc-300 hover:text-sky-400'}`}>
+                                    {link.label}
+                                    <ChevronDownIcon className="w-4 h-4" />
                                 </button>
-
-                                {isOpen && (
-                                    <div className="absolute top-full left-0 bg-white border border-slate-100 rounded-xl shadow-xl min-w-[220px] py-2 z-50">
-                                        {item.children.map(child =>
-                                            isExternal(child.path) ? (
-                                                <a
-                                                    key={child.path}
-                                                    href={child.path}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    onClick={() => setOpenDropdown(null)}
-                                                    className="block px-5 py-3.5 text-base font-medium uppercase tracking-wide text-slate-700 hover:bg-sky-50 hover:text-sky-700"
-                                                >
-                                                    {child.label}
-                                                </a>
-                                            ) : (
-                                                <NavLink
-                                                    key={child.path}
-                                                    to={child.path}
-                                                    end
-                                                    onClick={() => setOpenDropdown(null)}
-                                                    className={({ isActive }: any) =>
-                                                        `block px-5 py-3.5 text-base font-medium uppercase tracking-wide transition-colors
-                                                        ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`
-                                                    }
-                                                >
-                                                    {child.label}
-                                                </NavLink>
-                                            )
-                                        )}
-                                    </div>
-                                )}
+                                <div className="dropdown-content">
+                                    {children.map(child => (
+                                        isExternalLink(child.path) ? (
+                                            <a
+                                                key={child.id}
+                                                href={child.path}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block px-4 py-2 text-sm transition-colors uppercase text-zinc-300 hover:bg-zinc-700 hover:text-sky-400 bg-zinc-800"
+                                            >
+                                                {child.label}
+                                            </a>
+                                        ) : (
+                                            <NavLink key={child.id} to={child.path} end className="block">
+                                                {({ isActive }: any) => (
+                                                    <span className={`block px-4 py-2 text-sm transition-colors uppercase bg-zinc-800 ${isActive ? 'text-sky-400 font-semibold bg-zinc-700' : 'text-zinc-300 hover:bg-zinc-700 hover:text-sky-400'}`}>
+                                                        {child.label}
+                                                    </span>
+                                                )}
+                                            </NavLink>
+                                        )
+                                    ))}
+                                </div>
                             </div>
+                        ) : (
+                            <NavLink
+                                key={link.id}
+                                to={link.path}
+                                end
+                                className="px-4 py-3 text-base font-semibold text-zinc-300 hover:text-sky-400 transition-colors uppercase"
+                                style={({ isActive }: any) => isActive ? activeLinkStyle : undefined}
+                            >
+                                {link.label}
+                            </NavLink>
                         );
                     })}
                 </div>
             </nav>
 
-            {/* ── Mobile Menu ── */}
-            {mobileOpen && (
-                <div className="lg:hidden bg-white border-t border-slate-100 shadow-lg">
-                    <nav className="px-3 pt-2 pb-4 space-y-1">
-                        {MENU.map(item => {
-                            const hasChildren = !!item.children?.length;
-                            const isExpanded  = mobileDropdown === item.path;
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && (
+                <div className="lg:hidden bg-zinc-900 border-t border-zinc-800">
+                    <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                        {menuItems.map(link => {
+                            const children = getChildren(link.id);
+                            const hasChildren = children.length > 0;
 
                             return hasChildren ? (
-                                <div key={item.path}>
+                                <div key={link.id}>
                                     <button
-                                        onClick={() => setMobileDropdown(prev => prev === item.path ? null : item.path)}
-                                        className="w-full flex justify-between items-center px-3 py-2.5 rounded-lg text-base font-semibold text-slate-700 hover:bg-slate-50 uppercase tracking-wide"
+                                        onClick={() => handleMobileDropdown(link.id)}
+                                        className="w-full flex justify-between items-center px-3 py-2 rounded-md text-lg font-medium text-zinc-300 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
                                     >
-                                        <span>{item.label}</span>
-                                        <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                        <span>{link.label}</span>
+                                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${openDropdown === link.id ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {isExpanded && (
-                                        <div className="mt-1 ml-4 pl-3 border-l-2 border-sky-100 space-y-1">
-                                            {item.children?.map(child =>
-                                                isExternal(child.path) ? (
+                                    {openDropdown === link.id && (
+                                        <div className="pl-6 pt-1 pb-2 space-y-1 bg-zinc-950 rounded-b-md">
+                                            {children.map(child => (
+                                                isExternalLink(child.path) ? (
                                                     <a
-                                                        key={child.path}
+                                                        key={child.id}
                                                         href={child.path}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 uppercase"
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-zinc-400 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
                                                     >
                                                         {child.label}
                                                     </a>
                                                 ) : (
                                                     <NavLink
-                                                        key={child.path}
+                                                        key={child.id}
                                                         to={child.path}
                                                         end
-                                                        className={({ isActive }: any) =>
-                                                            `block px-3 py-2 rounded-lg text-sm font-medium uppercase transition-colors
-                                                            ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-sky-600'}`
-                                                        }
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-zinc-400 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
+                                                        style={({ isActive }: any) => isActive ? { backgroundColor: '#0c1a2e', color: '#38bdf8' } : undefined}
                                                     >
                                                         {child.label}
                                                     </NavLink>
                                                 )
-                                            )}
+                                            ))}
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <NavLink
-                                    key={item.path}
-                                    to={item.path}
-                                    end={item.path === '/'}
-                                    className={({ isActive }: any) =>
-                                        `block px-3 py-2.5 rounded-lg text-base font-semibold uppercase tracking-wide transition-colors
-                                        ${isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50 hover:text-sky-600'}`
-                                    }
+                                    key={link.id}
+                                    to={link.path}
+                                    end
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="block px-3 py-2 rounded-md text-lg font-medium text-zinc-300 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
+                                    style={({ isActive }: any) => isActive ? { backgroundColor: '#0c1a2e', color: '#38bdf8' } : undefined}
                                 >
-                                    {item.label}
+                                    {link.label}
                                 </NavLink>
                             );
                         })}
 
-                        <div className="pt-3 border-t border-slate-100 sm:hidden">
-                            {user ? (
-                                <Link to={dashboardLink} className="flex items-center justify-center gap-2 btn btn-secondary w-full">
-                                    <UserIcon className="w-5 h-5" /> Dashboard
-                                </Link>
-                            ) : (
-                                <Link to="/login" className="btn btn-primary w-full text-center">
-                                    Portal Login
-                                </Link>
-                            )}
-                        </div>
+                        {/* Dashboard / Login Links */}
+                        {user ? (
+                            <Link
+                                to={dashboardLink}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="sm:hidden mt-4 mx-3 btn btn-secondary w-auto flex items-center justify-center gap-2"
+                            >
+                                <UserIcon className="w-5 h-5" /> Dashboard
+                            </Link>
+                        ) : (
+                            <Link
+                                to="/login"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="sm:hidden mt-4 mx-3 btn btn-primary w-auto"
+                            >
+                                Portal Login
+                            </Link>
+                        )}
                     </nav>
                 </div>
             )}

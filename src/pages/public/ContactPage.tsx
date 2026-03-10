@@ -1,12 +1,9 @@
-
 import React, { useState, FormEvent } from 'react';
 import { MailIcon, PhoneIcon, InstagramIcon, YouTubeIcon, FacebookIcon, CheckCircleIcon } from '@/components/Icons';
 import EditableContent from '@/components/EditableContent';
 import { User } from '@/types';
 
-interface ContactPageProps {
-    user: User | null;
-}
+interface ContactPageProps { user: User | null; }
 
 const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
     const [name, setName] = useState('');
@@ -17,104 +14,106 @@ const ContactPage: React.FC<ContactPageProps> = ({ user }) => {
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        
         const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-        const mailtoLink = `mailto:bms@bms04.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        
-        // This will attempt to open the user's default email client
-        window.location.href = mailtoLink;
-        
+        window.location.href = `mailto:bms@bms04.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         setIsSubmitted(true);
     };
 
+    const labelStyle = { color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.08em' };
+    const inputStyle = { background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-mid)' };
+
     return (
-        <div className="bg-white py-16">
+        <div className="py-20" style={{ background: 'var(--bg-base)' }}>
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">
-                         <EditableContent id="contact_title" defaultContent="Contact Us" type="text" user={user} />
+                <div className="text-center mb-14">
+                    <div className="section-label mb-3">Reach Out</div>
+                    <h1 className="section-heading">
+                        <EditableContent id="contact_title" defaultContent="Contact Us" type="text" user={user} />
                     </h1>
-                    <div className="mt-4 text-lg text-slate-600">
-                         <EditableContent id="contact_subtitle" defaultContent="We would love to hear from you. Please get in touch with us." type="text" user={user} />
-                    </div>
+                    <div className="gold-rule mt-4 mb-5" />
+                    <p className="section-subtext max-w-xl mx-auto">
+                        <EditableContent id="contact_subtitle" defaultContent="We would love to hear from you. Please get in touch with us." type="text" user={user} />
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-                    {/* Contact Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start max-w-5xl mx-auto">
+                    {/* Details */}
                     <div className="space-y-8">
                         <div>
-                            <h3 className="text-xl font-bold text-slate-800">School Address</h3>
-                            <address className="not-italic mt-2 text-slate-600">
-                                 <EditableContent 
-                                    id="contact_address" 
-                                    defaultContent={`Bethel Mission School\nChamphai, Mizoram - 796321\nIndia`} 
-                                    type="textarea" 
-                                    user={user} 
-                                />
+                            <h3 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--gold)' }}>School Address</h3>
+                            <address className="not-italic text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                                <EditableContent id="contact_address" defaultContent={`Bethel Mission School\nChamphai, Mizoram - 796321\nIndia`} type="textarea" user={user} />
                             </address>
                         </div>
-                         <div>
-                            <h3 className="text-xl font-bold text-slate-800">Get in Touch</h3>
-                             <div className="mt-4 space-y-4 text-slate-600">
-                                <div className="flex items-center gap-4 group">
-                                    <PhoneIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
-                                    <span className="font-semibold">
-                                         <EditableContent id="contact_phone" defaultContent="+91 9862148342" type="text" user={user} />
+                        <div>
+                            <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--gold)' }}>Get in Touch</h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-4">
+                                    <PhoneIcon className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                        <EditableContent id="contact_phone" defaultContent="+91 9862148342" type="text" user={user} />
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-4 group">
-                                    <MailIcon className="w-7 h-7 text-slate-400 group-hover:text-sky-600 transition-colors"/>
-                                    <span className="font-semibold">
-                                         <EditableContent id="contact_email" defaultContent="bms@bms04.com" type="text" user={user} />
+                                <div className="flex items-center gap-4">
+                                    <MailIcon className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                        <EditableContent id="contact_email" defaultContent="bms@bms04.com" type="text" user={user} />
                                     </span>
                                 </div>
                             </div>
                         </div>
-                         <div>
-                            <h3 className="text-xl font-bold text-slate-800">Social Media</h3>
-                            <div className="flex gap-4 mt-4">
-                                <a href="https://www.facebook.com/bethel.ms" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-100 rounded-full text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                                    <FacebookIcon className="w-6 h-6" />
-                                </a>
-                                <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-100 rounded-full text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm">
-                                    <InstagramIcon className="w-6 h-6" />
-                                </a>
-                                <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-100 rounded-full text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                                    <YouTubeIcon className="w-6 h-6" />
-                                </a>
+                        <div>
+                            <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--gold)' }}>Social Media</h3>
+                            <div className="flex gap-3">
+                                {[
+                                    { href: 'https://www.facebook.com/bethel.ms', icon: <FacebookIcon className="w-5 h-5" /> },
+                                    { href: 'https://www.instagram.com/bms_champhai/', icon: <InstagramIcon className="w-5 h-5" /> },
+                                    { href: 'https://www.youtube.com/@BethelMissionSchoolChamphai', icon: <YouTubeIcon className="w-5 h-5" /> },
+                                ].map(({ href, icon }) => (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                                        style={{ border: '1px solid var(--border-mid)', color: 'var(--text-secondary)' }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; (e.currentTarget as HTMLElement).style.color = 'var(--gold)'; }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-mid)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+                                    >
+                                        {icon}
+                                    </a>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Contact Form */}
-                    <div className="bg-slate-50 p-8 rounded-2xl shadow-inner border">
-                        <h3 className="text-xl font-bold text-slate-800 mb-6">Send us a Message</h3>
+                    {/* Form */}
+                    <div className="rounded-2xl p-8" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                        <h3 className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: 'var(--gold)' }}>Send a Message</h3>
                         {isSubmitted ? (
-                            <div className="bg-emerald-100 text-emerald-800 p-6 rounded-lg text-center animate-fade-in">
-                                <CheckCircleIcon className="w-12 h-12 mx-auto mb-4" />
-                                <h4 className="font-bold text-lg">Message Sent!</h4>
-                                <p className="mt-2">Thank you for reaching out. We will get back to you shortly.</p>
-                                <button onClick={() => setIsSubmitted(false)} className="mt-4 text-emerald-700 font-semibold hover:underline">Send another message</button>
+                            <div className="text-center py-8 animate-fade-in">
+                                <CheckCircleIcon className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--gold)' }} />
+                                <h4 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Message Sent!</h4>
+                                <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Thank you for reaching out. We will get back to you shortly.</p>
+                                <button onClick={() => setIsSubmitted(false)} className="mt-5 text-sm font-semibold hover:underline" style={{ color: 'var(--gold)' }}>Send another message</button>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {[
+                                    { label: 'Your Name', type: 'text', value: name, onChange: setName },
+                                    { label: 'Your Email', type: 'email', value: email, onChange: setEmail },
+                                    { label: 'Subject', type: 'text', value: subject, onChange: setSubject },
+                                ].map(({ label, type, value, onChange }) => (
+                                    <div key={label}>
+                                        <label className="block mb-1.5" style={labelStyle}>{label}</label>
+                                        <input type={type} value={value} onChange={e => onChange(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} required />
+                                    </div>
+                                ))}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Your Name</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm" required />
+                                    <label className="block mb-1.5" style={labelStyle}>Message</label>
+                                    <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} required />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Your Email</label>
-                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Subject</label>
-                                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className="w-full border-slate-300 rounded-md shadow-sm" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Message</label>
-                                    <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5} className="w-full border-slate-300 rounded-md shadow-sm" required></textarea>
-                                </div>
-                                <button type="submit" className="w-full btn btn-primary !py-3">Send via Email</button>
+                                <button type="submit" className="w-full btn btn-primary py-3 text-sm">Send via Email</button>
                             </form>
                         )}
                     </div>

@@ -1,6 +1,4 @@
-
 import React from 'react';
-// Fix: Use namespace import for react-router-dom to resolve member export issues
 import * as ReactRouterDOM from 'react-router-dom';
 import { DistinctionHolder } from '@/types';
 
@@ -34,182 +32,137 @@ const topRankers = [
     { name: 'R. Lalrinmawii', rank: '10th Rank', year: 2019, imgSrc: 'https://i.ibb.co/1fYFM37C/r-rinmawii.jpg' },
 ];
 
-interface ResultChartProps {
-    results: typeof hslcResults;
-}
+const DarkCard: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+    <div className={`rounded-xl p-8 mb-10 ${className}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+        {children}
+    </div>
+);
 
-const ResultChart: React.FC<ResultChartProps> = ({ results }) => {
-    const reversedResults = [...results].reverse();
-
+const ResultChart: React.FC = () => {
+    const reversedResults = [...hslcResults].reverse();
     return (
-        <div className="bg-white p-6 rounded-xl shadow-lg border mb-12">
-            <h3 className="text-2xl font-bold text-slate-800 text-center mb-6">HSLC Results Analysis (2008 - 2025)</h3>
-            
-            <div className="flex justify-center flex-wrap gap-x-4 gap-y-2 mb-8 text-sm">
-                <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-amber-400"></div><span>Distinction</span></div>
-                <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-sky-500"></div><span>I Division</span></div>
-                <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-emerald-500"></div><span>II Division</span></div>
-                <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-slate-400"></div><span>III Division</span></div>
-                <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-rose-500"></div><span>Failed</span></div>
+        <DarkCard>
+            <h3 className="text-xl font-bold text-center mb-6" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>HSLC Results Analysis (2008–2025)</h3>
+            <div className="flex justify-center flex-wrap gap-x-4 gap-y-2 mb-8 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {[['bg-amber-400','Distinction'],['bg-sky-500','I Division'],['bg-emerald-500','II Division'],['bg-slate-500','III Division'],['bg-rose-500','Failed']].map(([color, label]) => (
+                    <div key={label} className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded ${color}`}/><span>{label}</span></div>
+                ))}
             </div>
-            
-            <div className="flex justify-start items-end gap-3 md:gap-4 overflow-x-auto pb-4 px-2">
+            <div className="flex justify-start items-end gap-2 md:gap-3 overflow-x-auto pb-4 px-1">
                 {reversedResults.map(result => {
                     const failed = result.appeared - result.passed;
-                    
                     const segments = [
-                        { height: (result.thirdDivision / result.appeared) * 100, color: 'bg-slate-400', value: result.thirdDivision, label: 'III Div' },
-                        { height: (result.secondDivision / result.appeared) * 100, color: 'bg-emerald-500', value: result.secondDivision, label: 'II Div' },
-                        { height: (result.firstDivision / result.appeared) * 100, color: 'bg-sky-500', value: result.firstDivision, label: 'I Div' },
-                        { height: (result.distinction / result.appeared) * 100, color: 'bg-amber-400', value: result.distinction, label: 'Distinction' },
+                        { h: (result.thirdDivision / result.appeared) * 100, color: 'bg-slate-500' },
+                        { h: (result.secondDivision / result.appeared) * 100, color: 'bg-emerald-500' },
+                        { h: (result.firstDivision / result.appeared) * 100, color: 'bg-sky-500' },
+                        { h: (result.distinction / result.appeared) * 100, color: 'bg-amber-400' },
                     ];
-
-                    let bottomOffset = 0;
-
+                    let offset = 0;
                     return (
-                        <div key={result.year} className="flex flex-col items-center flex-shrink-0 text-center w-14">
-                            <div className="font-semibold text-sky-700 text-sm">{result.passPercentage}</div>
-                            <div className="w-full h-64 bg-slate-100 rounded-t-lg relative group mt-1">
-                                {segments.map(seg => {
-                                    const currentBottom = bottomOffset;
-                                    bottomOffset += seg.height;
-                                    if (seg.height === 0) return null;
-                                    return (
-                                        <div key={seg.label}
-                                             style={{ height: `${seg.height}%`, bottom: `${currentBottom}%` }}
-                                             className={`absolute w-full transition-all duration-300 ${seg.color}`}>
-                                        </div>
-                                    );
-                                })}
-                                {failed > 0 && (
-                                     <div style={{ height: `${(failed / result.appeared) * 100}%`, bottom: `${bottomOffset}%` }}
-                                         className="absolute w-full transition-all duration-300 bg-rose-500">
-                                    </div>
-                                )}
-                                <div className="absolute bottom-full mb-2 w-48 bg-slate-800 text-white text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none transform -translate-x-1/2 left-1/2 z-10 shadow-lg">
-                                    <div className="font-bold text-base mb-1">{result.year}</div>
-                                    <div>Appeared: {result.appeared}</div>
-                                    <div>Passed: {result.passed}</div>
-                                    <hr className="my-1 border-slate-600"/>
-                                    <div className="text-amber-300">Distinction: {result.distinction}</div>
-                                    <div className="text-sky-300">I Div: {result.firstDivision}</div>
-                                    <div className="text-emerald-300">II Div: {result.secondDivision}</div>
-                                    <div className="text-slate-300">III Div: {result.thirdDivision}</div>
-                                    {failed > 0 && <div className="text-rose-300">Failed: {failed}</div>}
-                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
+                        <div key={result.year} className="flex flex-col items-center flex-shrink-0 text-center w-12">
+                            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--gold)', fontSize: '0.6rem' }}>{result.passPercentage}</div>
+                            <div className="w-full h-56 rounded-t-lg relative group" style={{ background: 'var(--bg-elevated)' }}>
+                                {segments.map((seg, i) => { const b = offset; offset += seg.h; return seg.h > 0 ? <div key={i} style={{ height: `${seg.h}%`, bottom: `${b}%` }} className={`absolute w-full ${seg.color}`} /> : null; })}
+                                {failed > 0 && <div style={{ height: `${(failed/result.appeared)*100}%`, bottom: `${offset}%` }} className="absolute w-full bg-rose-500" />}
+                                <div className="absolute bottom-full mb-2 w-40 text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 shadow-2xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-mid)', color: 'var(--text-secondary)' }}>
+                                    <div className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{result.year}</div>
+                                    <div>Appeared: {result.appeared}</div><div>Passed: {result.passed}</div>
+                                    <hr className="my-1" style={{ borderColor: 'var(--border-subtle)' }} />
+                                    <div style={{ color: '#fbbf24' }}>Dist: {result.distinction}</div>
+                                    <div style={{ color: '#38bdf8' }}>I Div: {result.firstDivision}</div>
+                                    <div style={{ color: '#34d399' }}>II Div: {result.secondDivision}</div>
+                                    {failed > 0 && <div style={{ color: '#f87171' }}>Failed: {failed}</div>}
                                 </div>
                             </div>
-                            <div className="mt-2 text-sm font-bold text-slate-800">{result.year}</div>
+                            <div className="mt-1.5 text-xs font-bold" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>{result.year}</div>
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </DarkCard>
     );
 };
 
-
 const AcademicAchievementsPage: React.FC = () => {
-    // Only show years that have distinction holders (distinction > 0)
     const distinctionYears = hslcResults.filter(r => r.distinction > 0);
-
     return (
-        <div className="relative py-16 overflow-hidden bg-slate-50">
+        <div className="py-20" style={{ background: 'var(--bg-base)' }}>
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800">Academic Achievements</h1>
-                    <p className="mt-4 text-lg text-slate-600">A Legacy of Excellence</p>
+                <div className="text-center mb-14">
+                    <div className="section-label mb-3">Excellence</div>
+                    <h1 className="section-heading">Academic Achievements</h1>
+                    <div className="gold-rule mt-4 mb-5" />
+                    <p className="section-subtext">A Legacy of Excellence</p>
                 </div>
-                
                 <div className="max-w-5xl mx-auto">
-                    <section className="bg-white p-8 rounded-xl shadow-lg border mb-12">
-                        <h2 className="text-3xl font-bold text-slate-800 text-center mb-8">MBSE Top Rank Holders</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {topRankers.map(ranker => (
-                                <div key={ranker.name} className="text-center">
-                                    <img src={ranker.imgSrc} alt={ranker.name} className="rounded-lg shadow-md w-full h-auto object-cover aspect-[4/5]"/>
-                                    <div className="mt-4">
-                                        <p className="font-bold text-lg text-slate-800">{ranker.name}</p>
-                                        <p className="text-md text-sky-700 font-semibold">{ranker.rank}</p>
-                                        <p className="text-sm text-slate-500">{ranker.year}</p>
-                                    </div>
+                    {/* Top rankers */}
+                    <DarkCard>
+                        <h2 className="text-xl font-bold text-center mb-8" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>MBSE Top Rank Holders</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {topRankers.map(r => (
+                                <div key={r.name} className="text-center">
+                                    <img src={r.imgSrc} alt={r.name} className="rounded-lg w-full h-auto object-cover aspect-[4/5]" style={{ border: '1px solid var(--border-subtle)' }} />
+                                    <p className="mt-3 font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{r.name}</p>
+                                    <p className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>{r.rank}</p>
+                                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{r.year}</p>
                                 </div>
                             ))}
                         </div>
-                    </section>
+                    </DarkCard>
 
-                    <ResultChart results={hslcResults} />
+                    <ResultChart />
 
-                    {/* ── DISTINGUISHED HSLC GRADUATES ── */}
-                    <section className="bg-white p-8 rounded-xl shadow-lg border mb-12">
-                        <h2 className="text-3xl font-bold text-slate-800 text-center mb-2">Distinguished HSLC Graduates</h2>
-                        <p className="text-center text-slate-500 mb-8">Students who achieved Distinction in the MBSE HSLC Board Examination</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {/* Distinction year cards */}
+                    <DarkCard>
+                        <h2 className="text-xl font-bold text-center mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Distinguished HSLC Graduates</h2>
+                        <p className="text-center text-sm mb-8" style={{ color: 'var(--text-muted)' }}>Students who achieved Distinction in the MBSE HSLC Board Examination</p>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                             {distinctionYears.map(result => (
-                                <Link
-                                    key={result.year}
-                                    to={`/achievements/academic/distinction-holders/${result.year}`}
-                                    className="group flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 to-slate-100 hover:from-sky-100 hover:to-sky-200 border border-slate-200 hover:border-sky-400 rounded-xl p-5 transition-all transform hover:-translate-y-1 hover:shadow-md text-center"
+                                <Link key={result.year} to={`/achievements/academic/distinction-holders/${result.year}`}
+                                    className="group flex flex-col items-center justify-center rounded-xl p-4 transition-all"
+                                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'; }}
                                 >
-                                    <span className="text-2xl font-extrabold text-slate-800 group-hover:text-sky-700 transition-colors">
-                                        {result.year}
-                                    </span>
-                                    <span className="mt-1 text-sm font-semibold text-amber-600">
-                                        {result.distinction} {result.distinction === 1 ? 'student' : 'students'}
-                                    </span>
-                                    <span className="mt-2 text-xs text-sky-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                        View →
-                                    </span>
+                                    <span className="text-xl font-extrabold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{result.year}</span>
+                                    <span className="mt-1 text-xs font-semibold" style={{ color: 'var(--gold)' }}>{result.distinction} students</span>
+                                    <span className="mt-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-muted)' }}>View →</span>
                                 </Link>
                             ))}
                         </div>
-                    </section>
+                    </DarkCard>
 
-                    <div className="bg-white p-8 rounded-xl shadow-lg border">
-                        <h2 className="text-3xl font-bold text-slate-800 text-center mb-8">Detailed HSLC Results by Year</h2>
-                        <div className="overflow-x-auto rounded-lg border">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-100">
+                    {/* Table */}
+                    <DarkCard>
+                        <h2 className="text-xl font-bold text-center mb-6" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Detailed HSLC Results by Year</h2>
+                        <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border-subtle)' }}>
+                            <table className="min-w-full">
+                                <thead style={{ background: 'var(--bg-elevated)' }}>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Year</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Appeared</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Passed</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Pass %</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Distinction</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">I Div</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">II Div</th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">III Div</th>
+                                        {['Year','Appeared','Passed','Pass %','Distinction','I Div','II Div','III Div'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)', textAlign: h === 'Year' ? 'left' : 'center' }}>{h}</th>
+                                        ))}
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-slate-200">
-                                    {hslcResults.map(result => (
-                                        <tr key={result.year} className="hover:bg-slate-50">
-                                            <td className="px-6 py-4">
+                                <tbody>
+                                    {hslcResults.map((result, i) => (
+                                        <tr key={result.year} style={{ borderTop: '1px solid var(--border-subtle)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                                            <td className="px-4 py-3 font-bold">
                                                 {result.distinction > 0 ? (
-                                                    <Link 
-                                                        to={`/achievements/academic/distinction-holders/${result.year}`}
-                                                        className="font-bold text-sky-700 hover:underline"
-                                                        title={`View distinction holders for ${result.year}`}
-                                                    >
-                                                        {result.year}
-                                                    </Link>
+                                                    <Link to={`/achievements/academic/distinction-holders/${result.year}`} className="hover:underline" style={{ color: 'var(--gold)' }}>{result.year}</Link>
                                                 ) : (
-                                                    <span className="font-bold text-slate-700">{result.year}</span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>{result.year}</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-center">{result.appeared}</td>
-                                            <td className="px-6 py-4 text-center">{result.passed}</td>
-                                            <td className="px-6 py-4 text-center font-semibold text-sky-700">{result.passPercentage}</td>
-                                            <td className="px-6 py-4 text-center">{result.distinction}</td>
-                                            <td className="px-6 py-4 text-center">{result.firstDivision}</td>
-                                            <td className="px-6 py-4 text-center">{result.secondDivision}</td>
-                                            <td className="px-6 py-4 text-center">{result.thirdDivision}</td>
+                                            {[result.appeared, result.passed, result.passPercentage, result.distinction, result.firstDivision, result.secondDivision, result.thirdDivision].map((v, j) => (
+                                                <td key={j} className="px-4 py-3 text-center text-sm" style={{ color: j === 2 ? 'var(--gold)' : 'var(--text-secondary)', fontWeight: j === 2 ? 600 : 400 }}>{v}</td>
+                                            ))}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </DarkCard>
                 </div>
             </div>
         </div>

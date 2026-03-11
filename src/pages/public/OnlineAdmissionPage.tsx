@@ -771,32 +771,39 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         </div>
                                     </div>
 
-                                    <SectionDivider icon="📄" title="Documents Upload" />
-                                    {isNewStudent && (
-                                        <p className="text-sm text-slate-600 my-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                            <span className="font-bold">Important:</span> Birth Certificate is mandatory.{!isNursery && ' Last Report Card is also mandatory.'}
-                                        </p>
-                                    )}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {([
-                                            { label: `Birth Certificate${isNewStudent ? '*' : ''}`, field: 'birthCertificateUrl' as keyof OnlineAdmission, url: formData.birthCertificateUrl, error: errors.birthCertificateUrl },
-                                            { label: 'Transfer Certificate (if applicable)', field: 'transferCertificateUrl' as keyof OnlineAdmission, url: formData.transferCertificateUrl, error: undefined },
-                                            { label: `Last Report Card${isNewStudent && !isNursery ? '*' : ''}`, field: 'reportCardUrl' as keyof OnlineAdmission, url: formData.reportCardUrl, error: errors.reportCardUrl },
-                                        ]).map(({ label, field, url, error }) => (
-                                            <div key={String(field)}>
-                                                <label className="block text-sm font-bold text-slate-700 mb-1">{label}</label>
-                                                <div className="flex items-center gap-3 p-3 border rounded-xl bg-slate-50">
-                                                    <label className="btn btn-secondary cursor-pointer flex items-center gap-2 min-h-[44px]">
-                                                        {uploadingDoc === String(field) ? <SpinnerIcon className="w-5 h-5" /> : <UploadIcon className="w-5 h-5" />}
-                                                        <input type="file" onChange={e => handleFileChange(e, field)} className="hidden" accept="image/*" />
-                                                        Upload
-                                                    </label>
-                                                    {url && <a href={url} target="_blank" rel="noreferrer"><img src={url} alt={label} className="w-12 h-12 rounded-lg object-cover border" /></a>}
-                                                </div>
-                                                {error && <><FieldError message={error} /><span className="field-error" /></>}
+                                    {isNewStudent ? (
+                                        <>
+                                            <SectionDivider icon="📄" title="Documents Upload" />
+                                            <p className="text-sm text-slate-600 my-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                                <span className="font-bold">Important:</span> Birth Certificate is mandatory.{!isNursery && ' Last Report Card is also mandatory.'}
+                                            </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                {([
+                                                    { label: 'Birth Certificate*', field: 'birthCertificateUrl' as keyof OnlineAdmission, url: formData.birthCertificateUrl, error: errors.birthCertificateUrl },
+                                                    { label: 'Transfer Certificate (if applicable)', field: 'transferCertificateUrl' as keyof OnlineAdmission, url: formData.transferCertificateUrl, error: undefined },
+                                                    { label: `Last Report Card${!isNursery ? '*' : ''}`, field: 'reportCardUrl' as keyof OnlineAdmission, url: formData.reportCardUrl, error: errors.reportCardUrl },
+                                                ]).map(({ label, field, url, error }) => (
+                                                    <div key={String(field)}>
+                                                        <label className="block text-sm font-bold text-slate-700 mb-1">{label}</label>
+                                                        <div className="flex items-center gap-3 p-3 border rounded-xl bg-slate-50">
+                                                            <label className="btn btn-secondary cursor-pointer flex items-center gap-2 min-h-[44px]">
+                                                                {uploadingDoc === String(field) ? <SpinnerIcon className="w-5 h-5" /> : <UploadIcon className="w-5 h-5" />}
+                                                                <input type="file" onChange={e => handleFileChange(e, field)} className="hidden" accept="image/*" />
+                                                                Upload
+                                                            </label>
+                                                            {url && <a href={url} target="_blank" rel="noreferrer"><img src={url} alt={label} className="w-12 h-12 rounded-lg object-cover border" /></a>}
+                                                        </div>
+                                                        {error && <><FieldError message={error} /><span className="field-error" /></>}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </>
+                                    ) : (
+                                        <div className="mt-6 flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-xl p-4">
+                                            <span className="text-xl flex-shrink-0">ℹ️</span>
+                                            <p className="text-sm text-sky-800">No documents are required for existing students. You may proceed to review and submit.</p>
+                                        </div>
+                                    )}
                                 </section>
                             )}
 

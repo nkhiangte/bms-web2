@@ -31,12 +31,12 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
 
     const isExternalLink = (path: string) => path?.startsWith('http') || path?.endsWith('.pdf');
 
-    const activeLinkStyle = { color: '#38bdf8' }; // sky-400
+    const activeLinkStyle = { color: 'var(--primary)' };
 
     const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
 
     return (
-        <header className="bg-zinc-950 shadow-md shadow-black/40 sticky top-0 z-30 border-b border-zinc-800">
+        <header className="bg-white shadow-sm sticky top-0 z-30">
             {/* Top Row: Logo and Login */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-24 sm:h-32">
@@ -48,7 +48,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                     {/* Login Button & Mobile Menu Toggle */}
                     <div className="flex items-center gap-2">
                         {user ? (
-                            <Link to={dashboardLink} className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-900/40 text-sky-400 font-semibold rounded-lg hover:bg-sky-900/60 transition-colors border border-sky-700">
+                            <Link to={dashboardLink} className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-700 font-semibold rounded-lg hover:bg-sky-100 transition-colors border border-sky-200">
                                 <UserIcon className="w-5 h-5" />
                                 <span>Dashboard</span>
                             </Link>
@@ -60,7 +60,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
 
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                            className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
@@ -70,8 +70,8 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                 </div>
             </div>
 
-            {/* Desktop Navigation Bar */}
-            <nav className="hidden lg:block border-t border-zinc-800 bg-zinc-900">
+            {/* Desktop Navigation Bar — bg-white added to prevent transparency over hero */}
+            <nav className="hidden lg:block border-t border-slate-200 bg-white">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center flex-wrap">
                     {menuItems.map(link => {
                         const children = getChildren(link.id);
@@ -80,7 +80,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
 
                         return hasChildren ? (
                             <div key={link.id} className="relative dropdown">
-                                <button className={`px-4 py-3 flex items-center gap-1 text-base font-semibold transition-colors uppercase ${isDropdownActive ? 'text-sky-400' : 'text-zinc-300 hover:text-sky-400'}`}>
+                                <button className={`px-4 py-3 flex items-center gap-1 text-base font-semibold transition-colors uppercase ${isDropdownActive ? 'text-sky-600' : 'text-slate-700 hover:text-sky-600'}`}>
                                     {link.label}
                                     <ChevronDownIcon className="w-4 h-4" />
                                 </button>
@@ -92,14 +92,14 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                                 href={child.path}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="block px-4 py-2 text-sm transition-colors uppercase text-zinc-300 hover:bg-zinc-700 hover:text-sky-400 bg-zinc-800"
+                                                className="block px-4 py-2 text-sm transition-colors uppercase text-slate-700 hover:bg-sky-50 hover:text-sky-600"
                                             >
                                                 {child.label}
                                             </a>
                                         ) : (
                                             <NavLink key={child.id} to={child.path} end className="block">
                                                 {({ isActive }: any) => (
-                                                    <span className={`block px-4 py-2 text-sm transition-colors uppercase bg-zinc-800 ${isActive ? 'text-sky-400 font-semibold bg-zinc-700' : 'text-zinc-300 hover:bg-zinc-700 hover:text-sky-400'}`}>
+                                                    <span className={`block px-4 py-2 text-sm transition-colors uppercase ${isActive ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-600'}`}>
                                                         {child.label}
                                                     </span>
                                                 )}
@@ -113,7 +113,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                 key={link.id}
                                 to={link.path}
                                 end
-                                className="px-4 py-3 text-base font-semibold text-zinc-300 hover:text-sky-400 transition-colors uppercase"
+                                className="px-4 py-3 text-base font-semibold text-slate-700 hover:text-sky-600 transition-colors uppercase"
                                 style={({ isActive }: any) => isActive ? activeLinkStyle : undefined}
                             >
                                 {link.label}
@@ -125,7 +125,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
 
             {/* Mobile Menu */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-zinc-900 border-t border-zinc-800">
+                <div className="lg:hidden bg-white border-t">
                     <nav className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                         {menuItems.map(link => {
                             const children = getChildren(link.id);
@@ -135,14 +135,14 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                 <div key={link.id}>
                                     <button
                                         onClick={() => handleMobileDropdown(link.id)}
-                                        className="w-full flex justify-between items-center px-3 py-2 rounded-md text-lg font-medium text-zinc-300 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
+                                        className="w-full flex justify-between items-center px-3 py-2 rounded-md text-lg font-medium text-slate-700 hover:bg-slate-100 hover:text-sky-600 uppercase"
                                     >
                                         <span>{link.label}</span>
                                         <ChevronDownIcon className={`w-5 h-5 transition-transform ${openDropdown === link.id ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     {openDropdown === link.id && (
-                                        <div className="pl-6 pt-1 pb-2 space-y-1 bg-zinc-950 rounded-b-md">
+                                        <div className="pl-6 pt-1 pb-2 space-y-1 bg-slate-50 rounded-b-md">
                                             {children.map(child => (
                                                 isExternalLink(child.path) ? (
                                                     <a
@@ -151,7 +151,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="block px-3 py-2 rounded-md text-base font-medium text-zinc-400 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
                                                     >
                                                         {child.label}
                                                     </a>
@@ -161,8 +161,8 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                                         to={child.path}
                                                         end
                                                         onClick={() => setIsMobileMenuOpen(false)}
-                                                        className="block px-3 py-2 rounded-md text-base font-medium text-zinc-400 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
-                                                        style={({ isActive }: any) => isActive ? { backgroundColor: '#0c1a2e', color: '#38bdf8' } : undefined}
+                                                        className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:bg-slate-200 hover:text-sky-600 uppercase"
+                                                        style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
                                                     >
                                                         {child.label}
                                                     </NavLink>
@@ -177,8 +177,8 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                                     to={link.path}
                                     end
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-3 py-2 rounded-md text-lg font-medium text-zinc-300 hover:bg-zinc-800 hover:text-sky-400 uppercase transition-colors"
-                                    style={({ isActive }: any) => isActive ? { backgroundColor: '#0c1a2e', color: '#38bdf8' } : undefined}
+                                    className="block px-3 py-2 rounded-md text-lg font-medium text-slate-700 hover:bg-slate-100 hover:text-sky-600 uppercase"
+                                    style={({ isActive }: any) => isActive ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary-dark)' } : undefined}
                                 >
                                     {link.label}
                                 </NavLink>

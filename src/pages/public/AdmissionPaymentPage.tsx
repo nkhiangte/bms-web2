@@ -16,11 +16,6 @@ interface AdmissionPaymentPageProps {
     schoolConfig: { paymentQRCodeUrl?: string; upiId?: string };
 }
 
-// Helper: remove all undefined values so Firestore doesn't throw
-const stripUndefined = <T extends object>(obj: T): T => {
-    return JSON.parse(JSON.stringify(obj, (_, v) => (v === undefined ? null : v)));
-};
-
 const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({ 
     addNotification, 
     admissionConfig = DEFAULT_ADMISSION_SETTINGS,
@@ -106,6 +101,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }, [allItems]);
 
     const merchandiseTotal = useMemo(() => {
+// FIX: Cast the result of Object.entries to explicitly type the 'details' object, resolving property access errors.
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             if (!item) return total;
@@ -168,10 +164,10 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if (item.hasSize && details.size && item.priceBySize) {
+                if(item.hasSize && details.size && item.priceBySize) {
                     price = item.priceBySize[details.size] ?? item.price;
                 }
-                // Only include 'size' if it actually has a value — undefined breaks Firestore
+                // FIX: Only include 'size' when it has a value — undefined is rejected by Firestore
                 const admissionItem: AdmissionItem = {
                     name: itemName,
                     price,
@@ -183,17 +179,21 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                 return admissionItem;
             });
 
-            // Strip any remaining undefined/null values before sending to Firestore
-            const updatePayload = stripUndefined({
-                paymentStatus: 'pending',
-                paymentAmount: grandTotal,
-                paymentScreenshotUrl: url,
-                purchasedItems: itemsToPurchase,
-            });
+            // FIX: Sanitize payload — Firestore rejects any field with value undefined
+            const updatePayload = JSON.parse(
+                JSON.stringify(
+                    {
+                        paymentStatus: 'pending',
+                        paymentAmount: grandTotal,
+                        paymentScreenshotUrl: url,
+                        purchasedItems: itemsToPurchase,
+                    },
+                    (_, v) => (v === undefined ? null : v)
+                )
+            );
 
             await db.collection('online_admissions').doc(admissionId).update(updatePayload);
             setPaymentSubmitted(true);
-            addNotification("Payment proof submitted successfully!", 'success');
         } catch (error) {
             console.error("Payment submission failed:", error);
             addNotification("Failed to submit payment proof. Please try again.", 'error');
@@ -298,7 +298,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Base Fees</span><span>₹{baseFeeTotal}</span></div>
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
-                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
+                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span >Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
                             <button onClick={handleSubmitPayment} disabled={isUploading || grandTotal <= 0} className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}

@@ -47,12 +47,15 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     } else {
                         addNotification("Admission record not found.", 'error');
                     }
-                } catch (error) {
+               } catch (error: any) {
                     console.error("Error fetching admission details:", error);
-                    addNotification("Failed to load admission details.", 'error');
+                    const msg = error?.code === 'permission-denied'
+                        ? "Permission denied. Please contact the school office."
+                        : "Failed to load admission details.";
+                    addNotification(msg, 'error');
                 }
             }
-             setIsLoadingDetails(false);
+            setIsLoadingDetails(false);
         };
 
         fetchDetails();
@@ -67,14 +70,16 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     const { admissionGrade: grade, studentType = 'Newcomer' } = admissionDetails || {};
 
     const feeStructure = useMemo(() => {
-        const structures = admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure;
-        return studentType === 'Existing' ? structures.existingStudent : structures.newStudent;
+        const structures = (admissionConfig.feeStructure || DEFAULT_ADMISSION_SETTINGS.feeStructure) as any;
+        if (studentType === 'Existing') return structures.existingStudent;
+        if (studentType === 'Boarder') return structures.boarder ?? structures.newStudent;
+        return structures.newStudent;
     }, [admissionConfig, studentType]);
     
     const baseFeeTotal = useMemo(() => {
         if (!feeStructure) return 0;
-        const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum, item) => sum + item.amount, 0);
-        const annualTotal = (feeStructure.annual || []).reduce((sum, item) => sum + item.amount, 0);
+        const oneTimeTotal = (feeStructure.oneTime || []).reduce((sum: number, item: any) => sum + item.amount, 0);
+        const annualTotal = (feeStructure.annual || []).reduce((sum: number, item: any) => sum + item.amount, 0);
         return oneTimeTotal + annualTotal;
     }, [feeStructure]);
 
@@ -101,7 +106,6 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
     }, [allItems]);
 
     const merchandiseTotal = useMemo(() => {
-// FIX: Cast the result of Object.entries to explicitly type the 'details' object, resolving property access errors.
         return (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).reduce((total, [itemName, details]) => {
             const item = allItems.find(i => i.name === itemName);
             if (!item) return total;
@@ -154,7 +158,7 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             addNotification("Please upload a screenshot of your payment to confirm.", 'error');
             return;
         }
-        if (!admissionId || grandTotal <= 0) return;
+        if (!admissionId) return;
 
         setIsUploading(true);
         try {
@@ -164,33 +168,24 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
             const itemsToPurchase: AdmissionItem[] = (Object.entries(selectedItems) as [string, { quantity: number; size?: string }][]).map(([itemName, details]) => {
                 const item = allItems.find(i => i.name === itemName)!;
                 let price = item.price;
-                if(item.hasSize && details.size && item.priceBySize) {
+                if (item.hasSize && details.size && item.priceBySize) {
                     price = item.priceBySize[details.size] ?? item.price;
                 }
-                // FIX: Only include 'size' when it has a value — undefined is rejected by Firestore
-                const admissionItem: AdmissionItem = {
-                    name: itemName,
-                    price,
-                    quantity: details.quantity,
+                return { 
+                    name: itemName, 
+                    price: price ?? 0, 
+                    quantity: details.quantity ?? 1, 
+                    ...(details.size ? { size: details.size } : {})
                 };
-                if (details.size !== undefined && details.size !== null) {
-                    admissionItem.size = details.size;
-                }
-                return admissionItem;
             });
 
-            // FIX: Sanitize payload — Firestore rejects any field with value undefined
-            const updatePayload = JSON.parse(
-                JSON.stringify(
-                    {
-                        paymentStatus: 'pending',
-                        paymentAmount: grandTotal,
-                        paymentScreenshotUrl: url,
-                        purchasedItems: itemsToPurchase,
-                    },
-                    (_, v) => (v === undefined ? null : v)
-                )
-            );
+            // Sanitize payload to remove any undefined values before sending to Firestore
+            const updatePayload = JSON.parse(JSON.stringify({
+                paymentStatus: 'pending',
+                paymentAmount: grandTotal ?? 0,
+                paymentScreenshotUrl: url,
+                purchasedItems: itemsToPurchase
+            }, (_, v) => v === undefined ? null : v));
 
             await db.collection('online_admissions').doc(admissionId).update(updatePayload);
             setPaymentSubmitted(true);
@@ -210,6 +205,12 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
         return <div className="text-center py-20">Admission details not found.</div>
     }
 
+    // ── Label shown beside student name ──────────────────────────────────────
+    const studentTypeLabel =
+        studentType === 'Boarder' ? 'Boarder / Residential'
+        : studentType === 'Existing' ? 'Existing Student'
+        : 'New Student';
+
     return (
         <div className="bg-slate-50 py-16">
             <div className="container mx-auto px-4">
@@ -224,16 +225,47 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                         </button>
                     </div>
                     <div className="text-center mb-8">
-                         <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
-                         <p className="mt-2 text-lg text-slate-600">Finalize application for <span className="font-bold">{admissionDetails.studentName}</span> ({studentType})</p>
+                        <h1 className="text-3xl font-extrabold text-slate-800">Admission Payment</h1>
+                        <p className="mt-2 text-lg text-slate-600">
+                            Finalize application for <span className="font-bold">{admissionDetails.studentName}</span>
+                            {' '}
+                            <span className={`inline-block text-sm font-semibold px-2 py-0.5 rounded-full ${
+                                studentType === 'Boarder'
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : studentType === 'Existing'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-sky-100 text-sky-700'
+                            }`}>
+                                {studentTypeLabel}
+                            </span>
+                        </p>
+                        {/* Boarder notice */}
+                        {studentType === 'Boarder' && (
+                            <div className="mt-4 inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-amber-800 text-sm">
+                                <span>🏠</span>
+                                <span>Residential / boarding fees are included in the base fee total below.</span>
+                            </div>
+                        )}
                     </div>
 
                     {paymentSubmitted ? (
                         <div className="text-center py-12">
                             <CheckCircleIcon className="w-16 h-16 text-emerald-500 mx-auto mb-4"/>
-                            <h2 className="text-2xl font-bold text-slate-800">Payment Submitted!</h2>
-                            <p className="text-slate-600 mt-2">Your payment is now pending verification from the school office. You can check the status of your application later.</p>
-                             <div className="mt-8 flex justify-center gap-4">
+                            <h2 className="text-2xl font-bold text-slate-800">Application Submitted!</h2>
+                            <p className="text-slate-600 mt-4 max-w-lg mx-auto">
+                                You have successfully submitted the admission forms. Please use this reference ID to collect merchandise from the school.
+                            </p>
+                            <div className="mt-6 inline-block bg-slate-100 border-2 border-dashed border-sky-300 rounded-lg px-8 py-4">
+                                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Reference ID</p>
+                                <p className="font-mono text-2xl font-bold text-sky-700">{admissionId}</p>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(admissionId)}
+                                    className="mt-3 text-xs font-semibold text-slate-500 hover:text-sky-600 underline"
+                                >
+                                    Copy to Clipboard
+                                </button>
+                            </div>
+                            <div className="mt-8 flex justify-center gap-4">
                                 <Link to="/" className="btn btn-secondary">Go to Homepage</Link>
                                 <Link to="/admissions/status" className="btn btn-primary">Check Status</Link>
                             </div>
@@ -243,14 +275,14 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                         {/* Right side: Instructions and Payment */}
                         <div className="lg:order-2">
-                             <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
-                                 <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
-                                 <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
-                                     <li>Calculate your total amount on the left.</li>
-                                     <li>Pay the total amount using the QR Code or UPI ID below.</li>
-                                     <li>Take a screenshot of the successful payment.</li>
-                                     <li>Upload the screenshot and submit for verification.</li>
-                                 </ol>
+                            <div className="p-6 bg-slate-50 border rounded-xl space-y-4">
+                                <h3 className="text-lg font-bold text-slate-800">Instructions</h3>
+                                <ol className="list-decimal list-inside text-sm text-slate-700 space-y-2">
+                                    <li>Calculate your total amount on the left.</li>
+                                    <li>Pay the total amount using the QR Code or UPI ID below.</li>
+                                    <li>Take a screenshot of the successful payment.</li>
+                                    <li>Upload the screenshot and submit for verification.</li>
+                                </ol>
                             </div>
                             <div className="p-6 bg-white mt-6 rounded-xl border-2 border-sky-200">
                                 <div className="flex flex-col items-center">
@@ -296,11 +328,18 @@ const AdmissionPaymentPage: React.FC<AdmissionPaymentPageProps> = ({
                     <div className="mt-10 border-t pt-8">
                         <div className="max-w-md ml-auto space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                                <div className="flex justify-between font-medium"><span className="text-slate-700">Base Fees</span><span>₹{baseFeeTotal}</span></div>
+                                <div className="flex justify-between font-medium">
+                                    <span className="text-slate-700">
+                                        Base Fees
+                                        {studentType === 'Boarder' && <span className="ml-2 text-xs text-amber-600 font-semibold">(incl. boarding)</span>}
+                                    </span>
+                                    <span>₹{baseFeeTotal}</span>
+                                </div>
                                 <div className="flex justify-between font-medium"><span className="text-slate-700">Additional Items</span><span>₹{merchandiseTotal}</span></div>
-                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span >Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
+                                <div className="flex justify-between font-extrabold text-lg text-slate-900 pt-2 border-t"><span>Grand Total</span><span className="text-emerald-700">₹{grandTotal}</span></div>
                             </div>
-                            <button onClick={handleSubmitPayment} disabled={isUploading || grandTotal <= 0} className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
+                            <button onClick={handleSubmitPayment} disabled={isUploading || !screenshotFile}
+                                className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 !py-4 !text-xl shadow-xl hover:shadow-emerald-200 transition-all disabled:bg-slate-400">
                                 {isUploading ? <SpinnerIcon className="w-6 h-6"/> : <CurrencyDollarIcon className="w-6 h-6"/>}
                                 <span>{isUploading ? 'Submitting...' : 'Submit Payment Proof'}</span>
                             </button>

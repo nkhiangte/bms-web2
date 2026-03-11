@@ -871,8 +871,14 @@ const App: React.FC = () => {
 
     if (['admin', 'warden', 'user'].includes(user.role)) {
       unsubs.push(
-        db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))),
-        db.collection('hostel_admissions').onSnapshot(s => setHostelAdmissions(s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)))),
+db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
+    ...s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)),
+    ...prev.filter(a => a.id.startsWith('BMSHSTMM'))
+])),
+        db.collection('hostel_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
+    ...prev.filter(a => !a.id.startsWith('BMSHSTMM')),
+    ...s.docs.map(d => ({ id: d.id, ...d.data(), studentType: 'Boarder' } as OnlineAdmission))
+])),
         db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User)))),
         db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
         db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord)))),

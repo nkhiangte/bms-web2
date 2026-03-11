@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { AdmissionSettings, AdmissionItemConfig, FeeHead } from '@/types';
-import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, CurrencyDollarIcon } from '@/components/Icons';
+import { BackIcon, HomeIcon, SaveIcon, PlusIcon, TrashIcon, SpinnerIcon, ChevronDownIcon, ChevronUpIcon, CurrencyDollarIcon } from '@/components/Icons';
 import { GRADES_LIST, UNIFORM_SIZES } from '@/constants';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
@@ -11,14 +11,6 @@ interface AdmissionSettingsPageProps {
     onUpdateConfig: (config: AdmissionSettings) => Promise<boolean>;
 }
 
-type GradeTier = 'nursery' | 'kg' | 'default';
-
-const TIER_LABELS: Record<GradeTier, { label: string; desc: string; color: string }> = {
-    nursery: { label: 'Nursery',     desc: 'Applies to Nursery admissions only',        color: 'violet' },
-    kg:      { label: 'Kindergarten',desc: 'Applies to KG admissions only',              color: 'sky'    },
-    default: { label: 'Class I+',    desc: 'Applies to Class I through Class X',         color: 'emerald'},
-};
-
 const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admissionConfig, onUpdateConfig }) => {
     const navigate = useNavigate();
     const [config, setConfig] = useState<AdmissionSettings>(admissionConfig);
@@ -27,26 +19,11 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
     const [newItemPrice, setNewItemPrice] = useState(0);
     const [newItemType, setNewItemType] = useState<'general' | 'uniform'>('general');
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-    const [activeTier, setActiveTier] = useState<GradeTier>('default');
 
-    useEffect(() => { setConfig(admissionConfig); }, [admissionConfig]);
+    useEffect(() => {
+        setConfig(admissionConfig);
+    }, [admissionConfig]);
 
-    // ── Helpers to get/set fee structure per tier ────────────────────────────
-    const getFeeStructure = (tier: GradeTier) => {
-        if (tier === 'nursery') return config.nurseryFeeStructure ?? config.feeStructure;
-        if (tier === 'kg')      return config.kgFeeStructure      ?? config.feeStructure;
-        return config.feeStructure;
-    };
-
-    const setFeeStructure = (tier: GradeTier, updated: AdmissionSettings['feeStructure']) => {
-        setConfig(prev => {
-            if (tier === 'nursery') return { ...prev, nurseryFeeStructure: updated };
-            if (tier === 'kg')      return { ...prev, kgFeeStructure: updated };
-            return { ...prev, feeStructure: updated };
-        });
-    };
-
-    // ── Save ─────────────────────────────────────────────────────────────────
     const handleSave = async () => {
         setIsSaving(true);
         await onUpdateConfig(config);
@@ -54,7 +31,6 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
         alert('Admission settings saved successfully!');
     };
 
-    // ── Items ─────────────────────────────────────────────────────────────────
     const handleItemChange = (id: string, field: keyof AdmissionItemConfig, value: any) => {
         setConfig(prev => ({
             ...prev,
@@ -99,69 +75,74 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
         }
     };
 
-    // ── Fee heads ─────────────────────────────────────────────────────────────
+    // --- Generic fee head handlers that work for all 3 student types ---
+    type StudentFeeType = 'newStudent' | 'existingStudent' | 'boarder';
+
+    const ensureFeeStructure = (prev: AdmissionSettings): AdmissionSettings => {
+        const base = { ...prev };
+        if (!base.feeStructure) {
+            base.feeStructure = {
+                newStudent: { oneTime: [], annual: [] },
+                existingStudent: { oneTime: [], annual: [] },
+            };
+        }
+        // Ensure boarder section exists even on older configs
+        if (!(base.feeStructure as any).boarder) {
+            (base.feeStructure as any).boarder = { oneTime: [], annual: [] };
+        }
+        return base;
+    };
+
     const handleFeeHeadChange = (
-        tier: GradeTier,
-        studentType: 'newStudent' | 'existingStudent',
+        studentType: StudentFeeType,
         frequency: 'oneTime' | 'annual',
         index: number,
         field: keyof FeeHead,
         value: string | number
     ) => {
-        const current = getFeeStructure(tier);
-        const updatedList = [...current[studentType][frequency]];
-        updatedList[index] = { ...updatedList[index], [field]: value as any };
-        setFeeStructure(tier, {
-            ...current,
-            [studentType]: { ...current[studentType], [frequency]: updatedList }
+        setConfig(prev => {
+            const newConfig = ensureFeeStructure({ ...prev });
+            const updatedList = [...(newConfig.feeStructure as any)[studentType][frequency]];
+            updatedList[index] = { ...updatedList[index], [field]: value };
+            (newConfig.feeStructure as any)[studentType][frequency] = updatedList;
+            return newConfig;
         });
     };
 
-    const handleAddFeeHead = (
-        tier: GradeTier,
-        studentType: 'newStudent' | 'existingStudent',
-        frequency: 'oneTime' | 'annual'
-    ) => {
-        const current = getFeeStructure(tier);
-        const newHead: FeeHead = { id: `fee-${Date.now()}`, name: 'New Fee Head', amount: 0 };
-        setFeeStructure(tier, {
-            ...current,
-            [studentType]: {
-                ...current[studentType],
-                [frequency]: [...current[studentType][frequency], newHead]
-            }
+    const handleAddFeeHead = (studentType: StudentFeeType, frequency: 'oneTime' | 'annual') => {
+        setConfig(prev => {
+            const newConfig = ensureFeeStructure({ ...prev });
+            const newHead: FeeHead = { id: `fee-${Date.now()}`, name: 'New Fee Head', amount: 0 };
+            (newConfig.feeStructure as any)[studentType][frequency] = [
+                ...(newConfig.feeStructure as any)[studentType][frequency],
+                newHead,
+            ];
+            return newConfig;
         });
     };
 
-    const handleRemoveFeeHead = (
-        tier: GradeTier,
-        studentType: 'newStudent' | 'existingStudent',
-        frequency: 'oneTime' | 'annual',
-        index: number
-    ) => {
-        const current = getFeeStructure(tier);
-        setFeeStructure(tier, {
-            ...current,
-            [studentType]: {
-                ...current[studentType],
-                [frequency]: current[studentType][frequency].filter((_, i) => i !== index)
-            }
+    const handleRemoveFeeHead = (studentType: StudentFeeType, frequency: 'oneTime' | 'annual', index: number) => {
+        setConfig(prev => {
+            const newConfig = ensureFeeStructure({ ...prev });
+            (newConfig.feeStructure as any)[studentType][frequency] = (newConfig.feeStructure as any)[studentType][frequency].filter((_: any, i: number) => i !== index);
+            return newConfig;
         });
     };
 
-    // ── Render fee table ──────────────────────────────────────────────────────
     const renderFeeTable = (
-        tier: GradeTier,
-        studentType: 'newStudent' | 'existingStudent',
+        studentType: StudentFeeType,
         frequency: 'oneTime' | 'annual',
         title: string
     ) => {
-        const fees = getFeeStructure(tier)[studentType][frequency] || [];
+        const safeConfig = ensureFeeStructure(config);
+        const fees: FeeHead[] = (safeConfig.feeStructure as any)?.[studentType]?.[frequency] || [];
+        const total = fees.reduce((sum, f) => sum + (f.amount || 0), 0);
+
         return (
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
                     <h4 className="font-bold text-slate-600 text-xs uppercase tracking-wider">{title}</h4>
-                    <button onClick={() => handleAddFeeHead(tier, studentType, frequency)} className="text-[10px] btn btn-secondary py-1 px-2">
+                    <button onClick={() => handleAddFeeHead(studentType, frequency)} className="text-[10px] btn btn-secondary py-1 px-2">
                         <PlusIcon className="w-3 h-3"/> Add
                     </button>
                 </div>
@@ -181,7 +162,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                                         <input
                                             type="text"
                                             value={fee.name}
-                                            onChange={e => handleFeeHeadChange(tier, studentType, frequency, index, 'name', e.target.value)}
+                                            onChange={(e) => handleFeeHeadChange(studentType, frequency, index, 'name', e.target.value)}
                                             className="w-full border-none focus:ring-0 text-sm py-1 px-2"
                                             placeholder="e.g. Admission Fee"
                                         />
@@ -190,12 +171,12 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                                         <input
                                             type="number"
                                             value={fee.amount}
-                                            onChange={e => handleFeeHeadChange(tier, studentType, frequency, index, 'amount', parseInt(e.target.value) || 0)}
+                                            onChange={(e) => handleFeeHeadChange(studentType, frequency, index, 'amount', parseInt(e.target.value) || 0)}
                                             className="w-full border-none focus:ring-0 text-sm py-1 px-2 font-mono"
                                         />
                                     </td>
                                     <td className="p-1 text-center">
-                                        <button onClick={() => handleRemoveFeeHead(tier, studentType, frequency, index)} className="text-red-400 hover:text-red-600 p-1">
+                                        <button onClick={() => handleRemoveFeeHead(studentType, frequency, index)} className="text-red-400 hover:text-red-600 p-1">
                                             <TrashIcon className="w-4 h-4"/>
                                         </button>
                                     </td>
@@ -207,20 +188,30 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                                 </tr>
                             )}
                         </tbody>
+                        {fees.length > 0 && (
+                            <tfoot className="bg-slate-50 border-t">
+                                <tr>
+                                    <td className="p-2 text-xs font-bold text-slate-600">Subtotal</td>
+                                    <td className="p-2 text-xs font-bold font-mono text-slate-800">₹{total.toLocaleString()}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        )}
                     </table>
                 </div>
             </div>
         );
     };
 
-    // ── Tier total helper ─────────────────────────────────────────────────────
-    const getTierTotal = (tier: GradeTier, studentType: 'newStudent' | 'existingStudent') => {
-        const fs = getFeeStructure(tier)[studentType];
-        const sum = (arr: FeeHead[]) => arr.reduce((s, f) => s + (f.amount || 0), 0);
-        return sum(fs.oneTime) + sum(fs.annual);
+    // Grand total helper for a student type
+    const getTotal = (studentType: StudentFeeType) => {
+        const safeConfig = ensureFeeStructure(config);
+        const section = (safeConfig.feeStructure as any)?.[studentType];
+        if (!section) return 0;
+        const oneTime = (section.oneTime || []).reduce((s: number, f: FeeHead) => s + (f.amount || 0), 0);
+        const annual = (section.annual || []).reduce((s: number, f: FeeHead) => s + (f.amount || 0), 0);
+        return oneTime + annual;
     };
-
-    const tierColor = TIER_LABELS[activeTier].color;
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6 max-w-6xl mx-auto">
@@ -236,7 +227,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800">Admission Fee Settings</h1>
-                    <p className="text-slate-600 mt-1">Configure separate fee structures for Nursery, KG, and Class I+.</p>
+                    <p className="text-slate-600 mt-1">Configure separate fee structures for newcomers, returning students, and boarders.</p>
                 </div>
                 <button onClick={handleSave} disabled={isSaving} className="btn btn-primary shadow-sky-200 shadow-lg">
                     {isSaving ? <SpinnerIcon className="w-5 h-5" /> : <SaveIcon className="w-5 h-5" />}
@@ -245,78 +236,93 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
             </div>
 
             <div className="space-y-8">
-                {/* ── 1. Fee Structures with Grade Tier Tabs ───────────────── */}
+
+                {/* ── Section 1: Day Scholar Fee Structures (New + Existing) ── */}
                 <section className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-sky-100 text-sky-600 rounded-lg">
                             <CurrencyDollarIcon className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-bold text-slate-800">Detailed Fee Breakdown</h2>
-                    </div>
-
-                    {/* Tier tabs */}
-                    <div className="flex gap-2 mb-6 flex-wrap">
-                        {(Object.entries(TIER_LABELS) as [GradeTier, typeof TIER_LABELS[GradeTier]][]).map(([tier, info]) => {
-                            const isActive = activeTier === tier;
-                            const colorMap: Record<string, string> = {
-                                violet: isActive ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-violet-600 border-violet-200 hover:border-violet-400',
-                                sky:    isActive ? 'bg-sky-600 text-white border-sky-600'       : 'bg-white text-sky-600 border-sky-200 hover:border-sky-400',
-                                emerald:isActive ? 'bg-emerald-600 text-white border-emerald-600': 'bg-white text-emerald-600 border-emerald-200 hover:border-emerald-400',
-                            };
-                            return (
-                                <button
-                                    key={tier}
-                                    onClick={() => setActiveTier(tier)}
-                                    className={`px-5 py-2.5 rounded-xl border-2 font-bold text-sm transition-all ${colorMap[info.color]}`}
-                                >
-                                    {info.label}
-                                    {tier !== 'default' && (
-                                        <span className={`ml-2 text-xs font-normal opacity-80`}>custom</span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Tier description + totals */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-6 p-3 bg-white rounded-xl border">
-                        <p className="text-sm text-slate-500">{TIER_LABELS[activeTier].desc}</p>
-                        <div className="flex gap-4 text-sm">
-                            <span className="text-slate-600">New student total: <strong className="text-slate-800">₹{getTierTotal(activeTier, 'newStudent')}</strong></span>
-                            <span className="text-slate-600">Existing student total: <strong className="text-slate-800">₹{getTierTotal(activeTier, 'existingStudent')}</strong></span>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800">Day Scholar Fee Breakdown</h2>
+                            <p className="text-xs text-slate-500 mt-0.5">For new students and existing students re-admitting</p>
                         </div>
                     </div>
-
-                    {activeTier !== 'default' && (
-                        <div className="flex items-center gap-2 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-medium">
-                            ⚠️ If no custom fees are set here, the <strong>Class I+ fees</strong> will be used as fallback for {TIER_LABELS[activeTier].label}.
-                        </div>
-                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* New Student */}
                         <div className="space-y-6">
-                            <div className={`flex items-center gap-2 border-b-2 border-sky-500 pb-2`}>
-                                <span className="w-3 h-3 rounded-full bg-sky-500"></span>
-                                <h3 className="text-lg font-bold text-sky-800">New Student Fees</h3>
+                            <div className="flex items-center justify-between border-b-2 border-sky-500 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-3 h-3 rounded-full bg-sky-500"></span>
+                                    <h3 className="text-lg font-bold text-sky-800">New Student Fees</h3>
+                                </div>
+                                <span className="text-xs font-bold bg-sky-100 text-sky-700 px-2 py-1 rounded-full">
+                                    Total: ₹{getTotal('newStudent').toLocaleString()}
+                                </span>
                             </div>
-                            {renderFeeTable(activeTier, 'newStudent', 'oneTime', 'Admission / Registration (One-Time)')}
-                            {renderFeeTable(activeTier, 'newStudent', 'annual', 'Annual / Periodic Charges')}
+                            {renderFeeTable('newStudent', 'oneTime', 'Admission / Registration (One-Time)')}
+                            {renderFeeTable('newStudent', 'annual', 'Annual / Periodic Charges')}
                         </div>
 
                         {/* Existing Student */}
                         <div className="space-y-6">
-                            <div className="flex items-center gap-2 border-b-2 border-emerald-500 pb-2">
-                                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                                <h3 className="text-lg font-bold text-emerald-800">Existing Student (Re-Admission)</h3>
+                            <div className="flex items-center justify-between border-b-2 border-emerald-500 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                    <h3 className="text-lg font-bold text-emerald-800">Existing Student (Re-Admission)</h3>
+                                </div>
+                                <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+                                    Total: ₹{getTotal('existingStudent').toLocaleString()}
+                                </span>
                             </div>
-                            {renderFeeTable(activeTier, 'existingStudent', 'oneTime', 'Re-Admission / Processing (One-Time)')}
-                            {renderFeeTable(activeTier, 'existingStudent', 'annual', 'Annual / Periodic Charges')}
+                            {renderFeeTable('existingStudent', 'oneTime', 'Re-Admission / Processing (One-Time)')}
+                            {renderFeeTable('existingStudent', 'annual', 'Annual / Periodic Charges')}
                         </div>
                     </div>
                 </section>
 
-                {/* ── 2. Items Configuration ───────────────────────────────── */}
+                {/* ── Section 2: Boarders (Residential) Fees ── */}
+                <section className="bg-amber-50 p-6 rounded-2xl border border-amber-200">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+                            <CurrencyDollarIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800">Boarders (Residential) Fees</h2>
+                            <p className="text-xs text-slate-500 mt-0.5">Fee structure for students staying in the hostel / boarding facility</p>
+                        </div>
+                        <span className="ml-auto text-sm font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded-full">
+                            Total: ₹{getTotal('boarder').toLocaleString()}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* One-Time */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 border-b-2 border-amber-400 pb-2">
+                                <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                                <h3 className="text-lg font-bold text-amber-800">One-Time / Admission Charges</h3>
+                            </div>
+                            {renderFeeTable('boarder', 'oneTime', 'Admission / Security / Registration (One-Time)')}
+                        </div>
+
+                        {/* Annual / Periodic */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 border-b-2 border-orange-400 pb-2">
+                                <span className="w-3 h-3 rounded-full bg-orange-400"></span>
+                                <h3 className="text-lg font-bold text-orange-800">Annual / Periodic Charges</h3>
+                            </div>
+                            {renderFeeTable('boarder', 'annual', 'Annual / Term / Monthly Charges')}
+                        </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-amber-100 border border-amber-300 rounded-lg text-xs text-amber-800">
+                        <strong>Note:</strong> Boarder fees are stored separately and can be used in the Hostel / Boarding fee payment flow. They do not affect Day Scholar totals.
+                    </div>
+                </section>
+
+                {/* ── Section 3: Items Configuration ── */}
                 <section className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                     <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Mandatory & Optional Items (For Sale)</h2>
 
@@ -400,19 +406,34 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                         </table>
                     </div>
 
-                    {/* Add New Item */}
+                    {/* Add New Item Form */}
                     <div className="mt-6 p-4 bg-white border border-dashed border-slate-300 rounded-xl flex flex-wrap gap-4 items-end">
                         <div className="flex-grow min-w-[200px]">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">New Item Name</label>
-                            <input type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="form-input w-full text-sm" placeholder="e.g. Identity Card"/>
+                            <input
+                                type="text"
+                                value={newItemName}
+                                onChange={e => setNewItemName(e.target.value)}
+                                className="form-input w-full text-sm"
+                                placeholder="e.g. Identity Card"
+                            />
                         </div>
                         <div className="w-24">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Base Price</label>
-                            <input type="number" value={newItemPrice} onChange={e => setNewItemPrice(parseInt(e.target.value) || 0)} className="form-input w-full text-sm font-mono"/>
+                            <input
+                                type="number"
+                                value={newItemPrice}
+                                onChange={e => setNewItemPrice(parseInt(e.target.value) || 0)}
+                                className="form-input w-full text-sm font-mono"
+                            />
                         </div>
                         <div className="w-32">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Item Type</label>
-                            <select value={newItemType} onChange={e => setNewItemType(e.target.value as any)} className="form-select w-full text-sm">
+                            <select
+                                value={newItemType}
+                                onChange={e => setNewItemType(e.target.value as any)}
+                                className="form-select w-full text-sm"
+                            >
                                 <option value="general">General</option>
                                 <option value="uniform">Uniform (Sized)</option>
                             </select>
@@ -422,6 +443,7 @@ const AdmissionSettingsPage: React.FC<AdmissionSettingsPageProps> = ({ admission
                         </button>
                     </div>
                 </section>
+
             </div>
         </div>
     );

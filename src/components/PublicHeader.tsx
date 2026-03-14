@@ -15,15 +15,14 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const location = useLocation();
 
-    const menuItems = (navigation || [])
-        .filter(item => item.isActive && !item.parent)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
+   const menuItems = (navigation || [])
+    .filter(item => item.isActive && !item.parent && item.path && item.path !== '–' && item.path !== '-')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const getChildren = (parentId: string) => {
-        return (navigation || [])
-            .filter(item => item.isActive && item.parent === parentId)
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    };
+    return (navigation || [])
+        .filter(item => item.isActive && item.parent === parentId && item.path && item.path !== '–' && item.path !== '-')
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+};
 
     const handleMobileDropdown = (id: string) => {
         setOpenDropdown(prev => prev === id ? null : id);

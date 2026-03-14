@@ -82,7 +82,7 @@ const Field: React.FC<{
     type?: string;
 }> = ({ label, value, onChange, placeholder, type = 'text' }) => (
     <div className="grid grid-cols-5 gap-3 items-start py-2.5 border-b border-slate-100 last:border-0">
-        <label className="col-span-2 text-xs font-medium text-slate-500 uppercase tracking-wide pt-2">{label}</label>
+        <label className="col-span-2 text-xs font-medium text-slate-700 uppercase tracking-wide pt-2">{label}</label>
         <input
             type={type}
             value={value}
@@ -98,7 +98,7 @@ const SubCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title
         <div className="bg-red-800 px-5 py-2.5">
             <h4 className="text-white text-xs font-bold uppercase tracking-widest">{title}</h4>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-5 bg-white text-slate-800">{children}</div>
     </div>
 );
 
@@ -177,10 +177,10 @@ const DisclosureEditor: React.FC<{
         setSaved(false);
     };
 
-    const inputCls = "w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-300 bg-white";
+    const inputCls = "w-full text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-300 bg-white text-slate-800 placeholder:text-slate-400";
 
     return (
-        <div className="mt-8 border-2 border-red-100 rounded-2xl overflow-hidden">
+        <div className="mt-8 border-2 border-red-100 rounded-2xl overflow-hidden bg-white">
 
             {/* Editor header */}
             <div className="bg-red-800 px-6 py-4 flex justify-between items-center">
@@ -205,8 +205,8 @@ const DisclosureEditor: React.FC<{
             </div>
 
             {/* Sticky save bar */}
-            <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-5 py-2.5 flex justify-between items-center">
-                <p className="text-xs text-slate-500">
+            <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-5 py-2.5 flex justify-between items-center">
+                <p className="text-xs text-slate-700 font-medium">
                     {saved
                         ? <span className="text-green-600 font-semibold">✓ Changes saved</span>
                         : 'Unsaved changes'}
@@ -224,10 +224,10 @@ const DisclosureEditor: React.FC<{
                 </button>
             </div>
 
-            <div className="flex bg-slate-50">
+            <div className="flex bg-white">
 
                 {/* Section sidebar */}
-                <aside className="hidden md:block w-52 shrink-0 border-r border-slate-200 p-3 bg-white">
+                <aside className="hidden md:block w-52 shrink-0 border-r border-slate-200 p-3 bg-white text-slate-800">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">Sections</p>
                     {DISCLOSURE_SECTIONS.map(s => (
                         <button
@@ -236,7 +236,7 @@ const DisclosureEditor: React.FC<{
                             className={`w-full text-left text-xs px-3 py-2 rounded-lg mb-0.5 font-medium transition-colors ${
                                 activeSection === s.id
                                     ? 'bg-red-800 text-white'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                    : 'text-slate-700 hover:bg-slate-100'
                             }`}
                         >
                             {s.label}
@@ -254,7 +254,7 @@ const DisclosureEditor: React.FC<{
                                 className={`shrink-0 text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
                                     activeSection === s.id
                                         ? 'bg-red-800 text-white'
-                                        : 'bg-slate-100 text-slate-600'
+                                        : 'bg-slate-100 text-slate-700'
                                 }`}
                             >
                                 {s.label}
@@ -264,7 +264,7 @@ const DisclosureEditor: React.FC<{
                 </div>
 
                 {/* Main editor area */}
-                <main className="flex-1 p-4 lg:p-6 min-w-0">
+                <main className="flex-1 p-4 lg:p-6 min-w-0 bg-white">
 
                     {/* A: General Information */}
                     {activeSection === 'general' && (
@@ -304,8 +304,8 @@ const DisclosureEditor: React.FC<{
                             <p className="text-xs text-slate-500 mb-4">Paste the URL of each uploaded PDF or Google Drive file.</p>
                             <div className="space-y-3">
                                 {data.documents.map((doc, i) => (
-                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                        <p className="text-xs font-medium text-slate-700 mb-2">{i + 1}. {doc.label}</p>
+                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                        <p className="text-xs font-medium text-slate-800 mb-2">{i + 1}. {doc.label}</p>
                                         <input type="url" value={doc.fileUrl || ''} onChange={e => updateDocUrl(i, e.target.value)}
                                             placeholder="https://..." className={inputCls} />
                                     </div>
@@ -320,8 +320,8 @@ const DisclosureEditor: React.FC<{
                             <p className="text-xs text-slate-500 mb-4">Paste URLs for each document or page link.</p>
                             <div className="space-y-3">
                                 {data.academics.map((item, i) => (
-                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                        <p className="text-xs font-medium text-slate-700 mb-2">{i + 1}. {item.label}</p>
+                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                        <p className="text-xs font-medium text-slate-800 mb-2">{i + 1}. {item.label}</p>
                                         <input type="url" value={item.fileUrl || ''} onChange={e => updateAcademicUrl(i, e.target.value)}
                                             placeholder="https://..." className={inputCls} />
                                     </div>
@@ -507,16 +507,16 @@ const DisclosureEditor: React.FC<{
                         <SubCard title="J. Statutory Committees">
                             <div className="space-y-4">
                                 {data.committees.map((c, i) => (
-                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                        <p className="text-xs font-bold text-slate-700 mb-2">{c.name}</p>
+                                    <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                        <p className="text-xs font-bold text-slate-800 mb-2">{c.name}</p>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-xs text-slate-400 uppercase">Details / Members</label>
+                                                <label className="text-xs text-slate-600 uppercase font-medium">Details / Members</label>
                                                 <input value={c.details || ''} onChange={e => updateCommittee(i, 'details', e.target.value)}
                                                     placeholder="e.g. As per notification" className={`${inputCls} mt-1`} />
                                             </div>
                                             <div>
-                                                <label className="text-xs text-slate-400 uppercase">Document URL</label>
+                                                <label className="text-xs text-slate-600 uppercase font-medium">Document URL</label>
                                                 <input type="url" value={c.fileUrl || ''} onChange={e => updateCommittee(i, 'fileUrl', e.target.value)}
                                                     placeholder="https://..." className={`${inputCls} mt-1`} />
                                             </div>

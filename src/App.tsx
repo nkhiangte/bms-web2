@@ -149,6 +149,7 @@ const App: React.FC = () => {
   const [onlineAdmissions, setOnlineAdmissions] = useState<OnlineAdmission[]>([]);
   const [hostelAdmissions, setHostelAdmissions] = useState<OnlineAdmission[]>([]);
   const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
+const [disclosureData, setDisclosureData] = useState<DisclosureData>(DEFAULT_DISCLOSURE_DATA);
 
   // Config
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
@@ -723,6 +724,10 @@ const App: React.FC = () => {
     try { await db.collection('syllabus').doc(id).set(syl); addNotification('Syllabus saved.', 'success'); }
     catch { addNotification('Failed to save syllabus.', 'error'); }
   };
+  const handleSaveDisclosure = async (data: DisclosureData) => {
+    await db.collection('settings').doc('disclosure').set(data);
+    setDisclosureData(data);
+};
 
   const handleSaveNotice = async (notice: Omit<Notice, 'id' | 'createdBy'>, id?: string) => {
     try {
@@ -789,6 +794,8 @@ const App: React.FC = () => {
         if (doc.exists) setDailyStudentAttendance(doc.data() as any);
         else setDailyStudentAttendance(GRADES_LIST.reduce((acc, g) => ({ ...acc, [g]: {} }), {}) as any);
       }),
+     db.collection('settings').doc('disclosure').get()
+    .then(doc => { if (doc.exists) setDisclosureData(doc.data() as DisclosureData); });
       db.collection('staffAttendance').doc(today).onSnapshot(doc => {
         setStaffAttendance(doc.exists ? doc.data() as StaffAttendanceRecord : {});
       }),
@@ -1006,6 +1013,18 @@ db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} />} />
+          // Add disclosureData and onSaveDisclosure:
+<Route path="admin" element={
+    <AdminPage
+        pendingAdmissionsCount={pendingAdmissionsCount}
+        pendingParentCount={pendingParentCount}
+        pendingStaffCount={pendingStaffCount}
+        students={students}
+        academicYear={academicYear}
+        disclosureData={disclosureData}
+        onSaveDisclosure={handleSaveDisclosure}
+    />
+} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} onUpdateProfile={handleUpdateUserProfile} />} />
           <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => {
             try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; }

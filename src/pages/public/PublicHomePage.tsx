@@ -7,7 +7,15 @@ import EditableContent from '@/components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
 
-const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string }> = ({ icon, title, description, link }) => (
+const VIDEO_URL = 'https://res.cloudinary.com/dso9smw8g/video/upload/v1773516439/Aerial_View_720P_esp3qw.mp4';
+
+// ── Feature Card ──────────────────────────────────────────────────────────────
+const FeatureCard: React.FC<{
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    link: string;
+}> = ({ icon, title, description, link }) => (
     <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100">
         <div className="text-sky-600 mb-4">{icon}</div>
         <h3 className="text-xl font-bold text-slate-800">{title}</h3>
@@ -18,17 +26,18 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description:
     </div>
 );
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 interface PublicHomePageProps {
     news: NewsItem[];
     user: User | null;
 }
 
 const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
-    const latestNews = useMemo(() => {
-        return [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
-    }, [news]);
+    const latestNews = useMemo(() =>
+        [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2),
+    [news]);
 
-    // Clear any leftover body background from previous versions
+    // Clear any leftover body background styles from previous versions
     useEffect(() => {
         document.body.style.backgroundImage = '';
         document.body.style.backgroundAttachment = '';
@@ -36,14 +45,12 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
         document.body.style.backgroundPosition = '';
         document.body.style.backgroundRepeat = '';
         document.body.style.backgroundColor = '#f8fafc';
-        return () => {
-            document.body.style.backgroundColor = '';
-        };
+        return () => { document.body.style.backgroundColor = ''; };
     }, []);
 
     return (
         <>
-            {/* Admission Banner — fixed at bottom */}
+            {/* ── Admission Banner fixed at bottom ── */}
             <Link
                 to="/admissions/online"
                 className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-sky-600 to-sky-800 text-white p-3 text-center shadow-lg hover:from-sky-500 hover:to-sky-700 transition-all duration-300"
@@ -53,65 +60,74 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                 </span>
             </Link>
 
-            {/* ── HERO SECTION ── Light theme with school image */}
-            <section className="relative w-full overflow-hidden bg-white" style={{ minHeight: '70vh' }}>
-                {/* Background image with light overlay */}
-                <div className="absolute inset-0">
-                    <EditableContent
-                        id="home_hero_bg"
-                        defaultContent="https://i.ibb.co/BHqzjc7B/476817001-1037388215087221-6787739082745578123-n.jpg"
-                        type="image"
-                        user={user}
-                        className="w-full h-full object-cover"
-                        style={{ position: 'absolute', inset: 0 }}
-                        imgAlt="Bethel Mission School"
-                    />
-                    {/* Light overlay instead of dark */}
-                    <div className="absolute inset-0 bg-white/60 pointer-events-none" />
-                </div>
+            {/* ── HERO — MP4 Video Background ── */}
+            <section
+                className="relative w-full overflow-hidden"
+                style={{ height: 'calc(100vh - 130px)', minHeight: '520px' }}
+            >
+                {/* Native video tag — autoplays on ALL browsers including iOS/Android */}
+                <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    src={VIDEO_URL}
+                />
 
-                {/* Hero content */}
-                <div className="relative z-10 flex items-center justify-center" style={{ minHeight: '70vh' }}>
-                    <div className="text-center px-4 max-w-4xl mx-auto py-16">
-                        <div className="bg-white/80 backdrop-blur-sm border border-slate-200 p-8 md:p-14 rounded-2xl shadow-xl">
-                            <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-slate-900 tracking-tight">
-                                <EditableContent
-                                    id="home_hero_title"
-                                    defaultContent="Welcome to Bethel Mission School"
-                                    type="text"
-                                    user={user}
-                                />
-                            </h1>
-                            <div className="w-20 h-1 bg-sky-500 mx-auto my-6 rounded-full" />
-                            <p className="text-lg md:text-2xl text-slate-700 font-medium tracking-wide">
-                                <EditableContent
-                                    id="home_hero_subtitle"
-                                    defaultContent="Service to God & Men"
-                                    type="text"
-                                    user={user}
-                                />
-                            </p>
-                            <div className="mt-8 flex flex-wrap gap-4 justify-center">
-                                <Link
-                                    to="/about"
-                                    className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors shadow"
-                                >
-                                    About Us
-                                </Link>
-                                <Link
-                                    to="/admissions/online"
-                                    className="px-6 py-3 bg-white hover:bg-slate-50 text-sky-700 font-bold rounded-lg transition-colors shadow border border-sky-200"
-                                >
-                                    Apply Now
-                                </Link>
-                            </div>
+                {/* Dark overlay for text legibility */}
+                <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+
+                {/* Hero text */}
+                <div className="relative z-10 flex items-center justify-center h-full">
+                    <div className="text-center px-4 max-w-4xl mx-auto">
+                        <p className="text-sky-300 uppercase tracking-widest text-sm font-bold mb-4">
+                            Champhai, Mizoram · Est. 1996
+                        </p>
+                        <h1
+                            className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight text-white tracking-tight"
+                            style={{ textShadow: '2px 4px 12px rgba(0,0,0,0.7)' }}
+                        >
+                            <EditableContent
+                                id="home_hero_title"
+                                defaultContent="Bethel Mission School"
+                                type="text"
+                                user={user}
+                            />
+                        </h1>
+                        <div className="w-24 h-1 bg-sky-400 mx-auto my-6 rounded-full" />
+                        <p
+                            className="text-xl md:text-2xl text-white/85 font-medium tracking-wide italic"
+                            style={{ textShadow: '1px 2px 6px rgba(0,0,0,0.6)' }}
+                        >
+                            <EditableContent
+                                id="home_hero_subtitle"
+                                defaultContent='"Service to God & Men"'
+                                type="text"
+                                user={user}
+                            />
+                        </p>
+                        <div className="mt-10 flex flex-wrap gap-4 justify-center">
+                            <Link
+                                to="/about"
+                                className="px-7 py-3 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-lg transition-colors shadow-xl text-sm tracking-wide"
+                            >
+                                About Us
+                            </Link>
+                            <Link
+                                to="/admissions/online"
+                                className="px-7 py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-lg transition-colors shadow-xl border border-sky-400 text-sm tracking-wide"
+                            >
+                                Apply Now →
+                            </Link>
                         </div>
                     </div>
                 </div>
 
                 {/* Scroll arrow */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
-                    <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
+                    <svg className="w-7 h-7 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
@@ -129,7 +145,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                         ].map(stat => (
                             <div key={stat.label}>
                                 <div className="text-3xl font-extrabold">{stat.value}</div>
-                                <div className="text-sky-200 text-sm mt-1 font-medium">{stat.label}</div>
+                                <div className="text-sky-200 text-sm mt-1 font-medium uppercase tracking-wide">{stat.label}</div>
                             </div>
                         ))}
                     </div>
@@ -145,31 +161,27 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                             Stay updated with the latest happenings at Bethel Mission School.
                         </p>
                     </div>
-
                     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {latestNews.length > 0 ? (
-                            latestNews.map(item => (
-                                <div key={item.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 flex flex-col">
-                                    {item.imageUrls && item.imageUrls.length > 0 && (
-                                        <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover rounded-lg mb-4" />
-                                    )}
-                                    <p className="text-xs font-semibold text-sky-600 uppercase tracking-wide">{formatDateForNews(item.date)}</p>
-                                    <h3 className="mt-2 text-lg font-bold text-slate-800">{item.title}</h3>
-                                    <p className="mt-2 text-slate-600 text-sm leading-relaxed flex-grow">
-                                        {item.content.substring(0, 150)}{item.content.length > 150 ? '...' : ''}
-                                    </p>
-                                    <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start">
-                                        Read More &rarr;
-                                    </Link>
-                                </div>
-                            ))
-                        ) : (
+                        {latestNews.length > 0 ? latestNews.map(item => (
+                            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 flex flex-col">
+                                {item.imageUrls && item.imageUrls.length > 0 && (
+                                    <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover rounded-lg mb-4" />
+                                )}
+                                <p className="text-xs font-semibold text-sky-600 uppercase tracking-wide">{formatDateForNews(item.date)}</p>
+                                <h3 className="mt-2 text-lg font-bold text-slate-800">{item.title}</h3>
+                                <p className="mt-2 text-slate-600 text-sm leading-relaxed flex-grow">
+                                    {item.content.substring(0, 150)}{item.content.length > 150 ? '...' : ''}
+                                </p>
+                                <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start">
+                                    Read More &rarr;
+                                </Link>
+                            </div>
+                        )) : (
                             <div className="md:col-span-2 text-center py-16 border-2 border-dashed border-slate-200 rounded-xl bg-white">
                                 <p className="text-slate-500 text-base">No news articles yet. Check back soon.</p>
                             </div>
                         )}
                     </div>
-
                     {news.length > 2 && (
                         <div className="text-center mt-10">
                             <Link to="/news" className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors shadow">
@@ -185,14 +197,9 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-10">
                         <h2 className="text-3xl font-bold text-slate-800">
-                            <EditableContent
-                                id="home_choose_title"
-                                defaultContent="Why Choose Us?"
-                                type="text"
-                                user={user}
-                            />
+                            <EditableContent id="home_choose_title" defaultContent="Why Choose Us?" type="text" user={user} />
                         </h2>
-                        <div className="mt-3 max-w-3xl mx-auto text-slate-500">
+                        <div className="mt-3 max-w-3xl mx-auto text-slate-500 text-sm leading-relaxed">
                             <EditableContent
                                 id="home_choose_desc"
                                 defaultContent="At Bethel Mission School, we are dedicated to providing a nurturing yet challenging educational environment that fosters academic excellence, strong moral character, and a lifelong passion for learning."
@@ -234,8 +241,6 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                         </p>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl mx-auto">
-
-                        {/* Social links */}
                         <div className="bg-white p-8 rounded-xl shadow-md border border-slate-100">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Find Us On</h3>
                             <div className="flex flex-col gap-5">
@@ -265,10 +270,9 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 </a>
                             </div>
                         </div>
-
-                        {/* Facebook Plugin */}
                         <div className="bg-white p-4 rounded-xl shadow-md border border-slate-100 flex justify-center overflow-hidden">
-                            <div className="fb-page"
+                            <div
+                                className="fb-page"
                                 data-href="https://www.facebook.com/bethel.ms"
                                 data-tabs="timeline"
                                 data-width="320"
@@ -276,7 +280,8 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 data-small-header="true"
                                 data-adapt-container-width="true"
                                 data-hide-cover="false"
-                                data-show-facepile="false">
+                                data-show-facepile="false"
+                            >
                                 <blockquote cite="https://www.facebook.com/bethel.ms" className="fb-xfbml-parse-ignore">
                                     <a href="https://www.facebook.com/bethel.ms">Bethel Mission School, Champhai</a>
                                 </blockquote>

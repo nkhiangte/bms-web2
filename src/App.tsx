@@ -99,6 +99,7 @@ import RoutinePage from '@/pages/public/RoutinePage';
 import ExamSelectionPage from '@/pages/ExamSelectionPage';
 import ExamClassSelectionPage from '@/pages/ExamClassSelectionPage';
 import AdmissionSettingsPage from '@/pages/AdmissionSettingsPage';
+import MandatoryDisclosurePage from '@/pages/public/MandatoryDisclosurePage';
 import ParentDashboardPage from '@/pages/ParentDashboardPage';
 import HomeworkScannerPage from '@/pages/HomeworkScannerPage';
 import ActivityLogPage from '@/pages/ActivityLogPage';
@@ -950,6 +951,7 @@ db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
           <Route path="hostel" element={<HostelPage user={user} />} />
           <Route path="gallery/*" element={<GalleryPage user={user} />} />
           <Route path="contact" element={<ContactPage user={user} />} />
+         <Route path="disclosure" element={<MandatoryDisclosurePage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />

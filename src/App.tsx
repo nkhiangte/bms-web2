@@ -857,6 +857,7 @@ useEffect(() => {
         setNavigation(snap.docs.map(d => ({ id: d.id, ...d.data() } as NavMenuItem)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
       }),
       db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)))),
+   db.collection('staff').onSnapshot(s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff)))),
     ];
     return () => unsubs.forEach(u => u());
   }, []);

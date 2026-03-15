@@ -223,7 +223,7 @@ input[type=number] { -moz-appearance: textfield; }
 .dropdown .dropdown-content {
   display: none;
   position: absolute;
-  background-color: var(--bg-surface);
+  background-color: var(--bg-surface) !important;
   border: 1px solid var(--border-mid);
   min-width: 220px;
   box-shadow: 0 16px 40px rgba(0,0,0,0.7);
@@ -233,18 +233,21 @@ input[type=number] { -moz-appearance: textfield; }
   animation: fadeIn 0.15s ease-out;
 }
 .dropdown:hover .dropdown-content { display: block; }
-.dropdown-content a {
-  color: var(--text-secondary);
+.dropdown-content a,
+.dropdown-content a span {
+  color: var(--text-primary) !important;
   padding: 0.55rem 1.25rem;
   text-decoration: none;
   display: block;
   font-weight: 500;
   font-size: 0.875rem;
   transition: color 0.15s, background 0.15s;
+  background-color: transparent;
 }
-.dropdown-content a:hover {
-  background-color: var(--bg-elevated);
-  color: var(--gold);
+.dropdown-content a:hover,
+.dropdown-content a:hover span {
+  background-color: var(--bg-elevated) !important;
+  color: var(--gold) !important;
 }
 
 /* ─── Public page section backgrounds ─── */

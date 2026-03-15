@@ -11,6 +11,7 @@ import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculate
 import LoginPage from '@/pages/LoginPage';
 import SignUpPage from '@/pages/SignUpPage';
 import ParentSignUpPage from '@/pages/ParentSignUpPage';
+import ManageAchievementsPage from '@/pages/ManageAchievementsPage';
 import ParentRegistrationPage from '@/pages/ParentRegistrationPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
@@ -750,6 +751,7 @@ const App: React.FC = () => {
           <Route path="admissions" element={<AdmissionsPage user={user} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
+         <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
           <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} schoolConfig={schoolConfig} />} />
           <Route path="supplies" element={<SuppliesPage user={user} />} />
           <Route path="student-life" element={<StudentLifePage user={user} />} />

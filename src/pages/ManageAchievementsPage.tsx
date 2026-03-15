@@ -155,12 +155,7 @@ const seedScienceAchievements = async () => {
                 <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
                     <p className="text-red-700 font-semibold">Failed to load achievements</p>
                     <p className="text-red-500 text-sm mt-1">{error}</p>
-                    <button
-                        onClick={() => { setError(null); setLoading(true); }}
-                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                    >
-                        Retry
-                    </button>
+                    <button onClick={seedScienceAchievements} className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Seed Science</button>
                 </div>
             </div>
         );

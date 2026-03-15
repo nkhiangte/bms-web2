@@ -779,7 +779,7 @@ const App: React.FC = () => {
           <Route path="disclosure" element={<MandatoryDisclosurePage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
-         <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
+        
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
@@ -864,6 +864,7 @@ const App: React.FC = () => {
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
           <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
           <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
+          <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
           <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

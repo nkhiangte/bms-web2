@@ -26,20 +26,35 @@ interface Props { user: User; }
 const ManageAchievementsPage: React.FC<Props> = ({ user }) => {
     const [achievements, setAchievements] = useState<Achievement[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null); // ← ADD THIS
     const [editing, setEditing] = useState<Partial<Achievement> | null>(null);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [filterCat, setFilterCat] = useState('All');
 
     useEffect(() => {
+        // ✅ Don't subscribe until user is ready
+        if (!user) return;
+
+        setLoading(true);
+        setError(null);
+
         const unsub = db.collection('achievements')
             .orderBy('year', 'desc')
-            .onSnapshot(snap => {
-                setAchievements(snap.docs.map(d => ({ id: d.id, ...d.data() } as Achievement)));
-                setLoading(false);
-            }, () => setLoading(false));
+            .onSnapshot(
+                snap => {
+                    setAchievements(snap.docs.map(d => ({ id: d.id, ...d.data() } as Achievement)));
+                    setLoading(false);
+                },
+                (err) => {
+                    // ✅ Properly handle and display the error
+                    console.error('Firestore error:', err);
+                    setError(err.message);
+                    setLoading(false);
+                }
+            );
         return () => unsub();
-    }, []);
+    }, [user]); // ✅ Re-run when user changes, not just on mount
 
     const handleNew = () => setEditing({ ...EMPTY });
 
@@ -61,12 +76,20 @@ const ManageAchievementsPage: React.FC<Props> = ({ user }) => {
                 await db.collection('achievements').add(data);
             }
             setEditing(null);
-        } finally { setSaving(false); }
+        } catch (err: any) {
+            alert('Save failed: ' + err.message); // ✅ Don't silently fail
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleDelete = async (id: string) => {
         if (!window.confirm('Delete this achievement?')) return;
-        await db.collection('achievements').doc(id).delete();
+        try {
+            await db.collection('achievements').doc(id).delete();
+        } catch (err: any) {
+            alert('Delete failed: ' + err.message);
+        }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,14 +100,34 @@ const ManageAchievementsPage: React.FC<Props> = ({ user }) => {
             const resized = await resizeImage(file, 1024, 1024, 0.85);
             const url = await uploadToImgBB(resized);
             setEditing(prev => prev ? { ...prev, imageUrl: url } : prev);
-        } catch { alert('Failed to upload image.'); }
-        finally { setUploading(false); }
+        } catch {
+            alert('Failed to upload image.');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500';
     const labelCls = 'block text-xs font-semibold text-slate-500 uppercase mb-1';
-
     const filtered = filterCat === 'All' ? achievements : achievements.filter(a => a.category === filterCat);
+
+    // ✅ Show error state instead of blank screen
+    if (error) {
+        return (
+            <div className="p-6 max-w-5xl mx-auto">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <p className="text-red-700 font-semibold">Failed to load achievements</p>
+                    <p className="text-red-500 text-sm mt-1">{error}</p>
+                    <button
+                        onClick={() => { setError(null); setLoading(true); }}
+                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 max-w-5xl mx-auto">
@@ -133,12 +176,8 @@ const ManageAchievementsPage: React.FC<Props> = ({ user }) => {
                                     {uploading ? 'Uploading...' : 'Upload Photo'}
                                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                                 </label>
-                                {editing.imageUrl && (
-                                    <img src={editing.imageUrl} alt="preview" className="w-12 h-12 object-cover rounded-lg border border-slate-200" />
-                                )}
-                                {editing.imageUrl && (
-                                    <button onClick={() => setEditing({ ...editing, imageUrl: '' })} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
-                                )}
+                                {editing.imageUrl && <img src={editing.imageUrl} alt="preview" className="w-12 h-12 object-cover rounded-lg border border-slate-200" />}
+                                {editing.imageUrl && <button onClick={() => setEditing({ ...editing, imageUrl: '' })} className="text-red-400 hover:text-red-600 text-xs">Remove</button>}
                             </div>
                         </div>
                         <div className="md:col-span-2">

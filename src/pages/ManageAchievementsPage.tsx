@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { seedAchievements } from '@/seedAchievements';
 import { db } from '@/firebaseConfig';
 import { uploadToImgBB, resizeImage } from '@/utils';
 import { SpinnerIcon, PlusIcon, XIcon } from '@/components/Icons';

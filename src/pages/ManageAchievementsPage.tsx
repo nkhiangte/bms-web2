@@ -173,10 +173,9 @@ const seedScienceAchievements = async () => {
                     <PlusIcon className="w-4 h-4" /> Add Achievement
                 </button>
             </div>
-<button onClick={seedAchievements} className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-    Seed Once
-</button>
-            {/* Edit / Add Form */}
+<button onClick={seedScienceAchievements} className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+    Seed Science
+</button>            {/* Edit / Add Form */}
             {editing && (
                 <div className="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm">
                     <div className="flex justify-between items-center mb-5">

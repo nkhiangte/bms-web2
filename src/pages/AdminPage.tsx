@@ -405,7 +405,7 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                     <tbody>
                                         {data.enrolment.rows.map((row, i) => (
                                             <tr key={i} className="border-b border-slate-100">
-                                                <td className="px-1 py-1.5"><input value={row.className} onChange={e => updateEnrolment(i, 'className', e.target.value)} className={inputCls} /></td>
+                                               <td className="px-1 py-1.5"><input value={row.className} onChange={e => updateEnrolment(i, 'className', e.target.value)} className={inputCls} style={{ minWidth: '160px' }} /></td>
                                                 {(['boys', 'girls', 'total'] as const).map(f => (
                                                     <td key={f} className="px-1 py-1.5"><input value={row[f] || ''} onChange={e => updateEnrolment(i, f, e.target.value)} className={`${inputCls} text-center`} /></td>
                                                 ))}

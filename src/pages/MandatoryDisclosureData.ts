@@ -121,7 +121,12 @@ export const DISCLOSURE_SECTIONS = [
     { id: 'feeStructure',    label: 'I. Fee Structure' },
     { id: 'committees',      label: 'J. Statutory Committees' },
 ];
-
+enrolment: {
+    rows: EnrolmentRow[];
+    totalBoys?: string;   // ← add
+    totalGirls?: string;  // ← add
+    grandTotal: string;
+};
 // ─── Default / seed data ─────────────────────────────────────────────────────
 
 export const DEFAULT_DISCLOSURE_DATA: DisclosureData = {

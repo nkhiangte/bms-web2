@@ -254,10 +254,9 @@ const DisclosureEditor: React.FC<{
                 </button>
             </div>
 
-            <div className="flex bg-white">
-
+<div className="flex flex-col md:flex-row bg-white">
                 {/* Section sidebar */}
-                <aside className="hidden md:block w-52 shrink-0 border-r border-slate-200 p-3 bg-white text-slate-800">
+                <aside className="hidden md:block w-48 shrink-0 border-r border-slate-200 p-3 bg-white text-slate-800">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">Sections</p>
                     {DISCLOSURE_SECTIONS.map(s => (
                         <button
@@ -290,8 +289,7 @@ const DisclosureEditor: React.FC<{
                 </div>
 
                 {/* Main editor area */}
-                <main className="flex-1 p-4 lg:p-6 min-w-0 bg-white">
-
+<main className="flex-1 p-4 lg:p-6 bg-white overflow-x-auto w-0 min-w-0">
                     {/* A: General Information */}
                     {activeSection === 'general' && (
                         <SubCard title="A. General Information">

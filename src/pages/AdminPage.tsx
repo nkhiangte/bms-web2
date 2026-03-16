@@ -446,9 +446,16 @@ const DisclosureEditor: React.FC<{
                                     <tbody>
                                         {data.boardResults.map((row, i) => (
                                             <tr key={i} className="border-b border-slate-100">
-                                                {(['year', 'appeared', 'passed', 'passPercent', 'distinction'] as (keyof BoardResultRow)[]).map(f => (
-                                                    <td key={f} className="px-1 py-1.5"><input value={row[f] || ''} onChange={e => updateBoardResult(i, f, e.target.value)} className={inputCls} /></td>
-                                                ))}
+                                               {(['year', 'appeared', 'passed', 'passPercent', 'distinction'] as (keyof BoardResultRow)[]).map(f => (
+    <td key={f} className="px-1 py-1.5">
+        <input
+            value={row[f] || ''}
+            onChange={e => updateBoardResult(i, f, e.target.value)}
+            className={inputCls}
+            style={{ minWidth: f === 'year' ? '110px' : f === 'distinction' ? '130px' : '80px' }}
+        />
+    </td>
+))}
                                                 <td className="px-1 py-1.5 text-center">
                                                     <button onClick={() => { setData(p => ({ ...p, boardResults: p.boardResults.filter((_, idx) => idx !== i) })); setSaved(false); }} className="text-red-400 hover:text-red-700 p-1">
                                                         <TrashIcon className="w-4 h-4" />

@@ -149,12 +149,20 @@ const DisclosureEditor: React.FC<{
         setSaved(false);
     };
 
-    const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
-        const rows = [...data.enrolment.rows];
-        rows[i] = { ...rows[i], [field]: val };
-        setData(p => ({ ...p, enrolment: { ...p.enrolment, rows } }));
-        setSaved(false);
-    };
+const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
+    const rows = [...data.enrolment.rows];
+    rows[i] = { ...rows[i], [field]: val };
+
+    // Auto-calculate total when boys or girls changes
+    if (field === 'boys' || field === 'girls') {
+        const boys = parseInt(field === 'boys' ? val : rows[i].boys || '0') || 0;
+        const girls = parseInt(field === 'girls' ? val : rows[i].girls || '0') || 0;
+        rows[i].total = (boys + girls).toString();
+    }
+
+    setData(p => ({ ...p, enrolment: { ...p.enrolment, rows } }));
+    setSaved(false);
+};
 
     const updateBoardResult = (i: number, field: keyof BoardResultRow, val: string) => {
         const rows = [...data.boardResults];

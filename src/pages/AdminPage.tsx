@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { 
     BackIcon, 
@@ -42,7 +42,7 @@ const DisclosureIcon = () => (
     </svg>
 );
 
-// ─── AdminCard (unchanged) ────────────────────────────────────────────────────
+// ─── AdminCard ────────────────────────────────────────────────────────────────
 
 const AdminCard: React.FC<{
     title: string;
@@ -102,7 +102,7 @@ const SubCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title
     </div>
 );
 
-// ─── Disclosure Editor (embedded) ────────────────────────────────────────────
+// ─── Disclosure Editor ────────────────────────────────────────────────────────
 
 const DisclosureEditor: React.FC<{
     initialData: DisclosureData;
@@ -113,6 +113,23 @@ const DisclosureEditor: React.FC<{
     const [activeSection, setActiveSection] = useState('general');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+
+    // Auto-calculate totals from existing data on load
+    useEffect(() => {
+        const rows = (initialData ?? DEFAULT_DISCLOSURE_DATA).enrolment.rows;
+        const totalBoys = rows.reduce((sum, row) => sum + (parseInt(row.boys || '0') || 0), 0);
+        const totalGirls = rows.reduce((sum, row) => sum + (parseInt(row.girls || '0') || 0), 0);
+        const grandTotal = totalBoys + totalGirls;
+        setData(p => ({
+            ...p,
+            enrolment: {
+                ...p.enrolment,
+                totalBoys: totalBoys.toString(),
+                totalGirls: totalGirls.toString(),
+                grandTotal: grandTotal.toString(),
+            }
+        }));
+    }, []);
 
     const update = useCallback(<K extends keyof DisclosureData>(
         section: K,
@@ -133,8 +150,6 @@ const DisclosureEditor: React.FC<{
         }
     };
 
-    // ── Array updaters ──
-
     const updateDocUrl = (i: number, url: string) => {
         const docs = [...data.documents];
         docs[i] = { ...docs[i], fileUrl: url };
@@ -149,34 +164,32 @@ const DisclosureEditor: React.FC<{
         setSaved(false);
     };
 
-const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
-    const rows = [...data.enrolment.rows];
-    rows[i] = { ...rows[i], [field]: val };
+    const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
+        const rows = [...data.enrolment.rows];
+        rows[i] = { ...rows[i], [field]: val };
 
-    // Auto-calculate row total when boys or girls changes
-    if (field === 'boys' || field === 'girls') {
-        const boys = parseInt(field === 'boys' ? val : rows[i].boys || '0') || 0;
-        const girls = parseInt(field === 'girls' ? val : rows[i].girls || '0') || 0;
-        rows[i].total = (boys + girls).toString();
-    }
-
-    // Auto-calculate column totals and grand total
-    const totalBoys = rows.reduce((sum, row) => sum + (parseInt(row.boys || '0') || 0), 0);
-    const totalGirls = rows.reduce((sum, row) => sum + (parseInt(row.girls || '0') || 0), 0);
-    const grandTotal = totalBoys + totalGirls;
-
-    setData(p => ({
-        ...p,
-        enrolment: {
-            ...p.enrolment,
-            rows,
-            totalBoys: totalBoys.toString(),
-            totalGirls: totalGirls.toString(),
-            grandTotal: grandTotal.toString(),
+        if (field === 'boys' || field === 'girls') {
+            const boys = parseInt(field === 'boys' ? val : rows[i].boys || '0') || 0;
+            const girls = parseInt(field === 'girls' ? val : rows[i].girls || '0') || 0;
+            rows[i].total = (boys + girls).toString();
         }
-    }));
-    setSaved(false);
-};
+
+        const totalBoys = rows.reduce((sum, row) => sum + (parseInt(row.boys || '0') || 0), 0);
+        const totalGirls = rows.reduce((sum, row) => sum + (parseInt(row.girls || '0') || 0), 0);
+        const grandTotal = totalBoys + totalGirls;
+
+        setData(p => ({
+            ...p,
+            enrolment: {
+                ...p.enrolment,
+                rows,
+                totalBoys: totalBoys.toString(),
+                totalGirls: totalGirls.toString(),
+                grandTotal: grandTotal.toString(),
+            }
+        }));
+        setSaved(false);
+    };
 
     const updateBoardResult = (i: number, field: keyof BoardResultRow, val: string) => {
         const rows = [...data.boardResults];
@@ -211,16 +224,10 @@ const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
                     <p className="text-red-200 text-xs mt-0.5">Changes are saved to Firestore and reflected on the public disclosure page.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link
-                        to="/portal/disclosure"
-                        className="text-xs font-semibold text-white border border-white/40 hover:border-white px-3 py-1.5 rounded-lg transition-colors"
-                    >
+                    <Link to="/portal/disclosure" className="text-xs font-semibold text-white border border-white/40 hover:border-white px-3 py-1.5 rounded-lg transition-colors">
                         Preview →
                     </Link>
-                    <button
-                        onClick={onClose}
-                        className="text-xs font-semibold text-white border border-white/40 hover:border-white px-3 py-1.5 rounded-lg transition-colors"
-                    >
+                    <button onClick={onClose} className="text-xs font-semibold text-white border border-white/40 hover:border-white px-3 py-1.5 rounded-lg transition-colors">
                         ✕ Close
                     </button>
                 </div>
@@ -236,8 +243,8 @@ const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg transition-colors"
-style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
+                    className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                    style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                 >
                     {saving
                         ? <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
@@ -257,9 +264,7 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                             key={s.id}
                             onClick={() => setActiveSection(s.id)}
                             className={`w-full text-left text-xs px-3 py-2 rounded-lg mb-0.5 font-medium transition-colors ${
-                                activeSection === s.id
-                                    ? 'bg-red-800 text-white'
-                                    : 'text-slate-700 hover:bg-slate-100'
+                                activeSection === s.id ? 'bg-red-800 text-white' : 'text-slate-700 hover:bg-slate-100'
                             }`}
                         >
                             {s.label}
@@ -275,9 +280,7 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                 key={s.id}
                                 onClick={() => setActiveSection(s.id)}
                                 className={`shrink-0 text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                                    activeSection === s.id
-                                        ? 'bg-red-800 text-white'
-                                        : 'bg-slate-100 text-slate-700'
+                                    activeSection === s.id ? 'bg-red-800 text-white' : 'bg-slate-100 text-slate-700'
                                 }`}
                             >
                                 {s.label}
@@ -329,8 +332,7 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                 {data.documents.map((doc, i) => (
                                     <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                         <p className="text-xs font-medium text-slate-800 mb-2">{i + 1}. {doc.label}</p>
-                                        <input type="url" value={doc.fileUrl || ''} onChange={e => updateDocUrl(i, e.target.value)}
-                                            placeholder="https://..." className={inputCls} />
+                                        <input type="url" value={doc.fileUrl || ''} onChange={e => updateDocUrl(i, e.target.value)} placeholder="https://..." className={inputCls} />
                                     </div>
                                 ))}
                             </div>
@@ -345,8 +347,7 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                 {data.academics.map((item, i) => (
                                     <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                         <p className="text-xs font-medium text-slate-800 mb-2">{i + 1}. {item.label}</p>
-                                        <input type="url" value={item.fileUrl || ''} onChange={e => updateAcademicUrl(i, e.target.value)}
-                                            placeholder="https://..." className={inputCls} />
+                                        <input type="url" value={item.fileUrl || ''} onChange={e => updateAcademicUrl(i, e.target.value)} placeholder="https://..." className={inputCls} />
                                     </div>
                                 ))}
                             </div>
@@ -427,12 +428,30 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                     <tbody>
                                         {data.enrolment.rows.map((row, i) => (
                                             <tr key={i} className="border-b border-slate-100">
-                                               <td className="px-1 py-1.5"><input value={row.className} onChange={e => updateEnrolment(i, 'className', e.target.value)} className={inputCls} style={{ minWidth: '160px' }} /></td>
+                                                <td className="px-1 py-1.5">
+                                                    <input value={row.className} onChange={e => updateEnrolment(i, 'className', e.target.value)} className={inputCls} style={{ minWidth: '160px' }} />
+                                                </td>
                                                 {(['boys', 'girls', 'total'] as const).map(f => (
-                                                    <td key={f} className="px-1 py-1.5"><input value={row[f] || ''} onChange={e => updateEnrolment(i, f, e.target.value)} className={`${inputCls} text-center`} /></td>
+                                                    <td key={f} className="px-1 py-1.5">
+                                                        <input
+                                                            value={row[f] || ''}
+                                                            onChange={e => updateEnrolment(i, f, e.target.value)}
+                                                            readOnly={f === 'total'}
+                                                            className={`${inputCls} text-center ${f === 'total' ? 'bg-slate-50 font-semibold' : ''}`}
+                                                        />
+                                                    </td>
                                                 ))}
                                                 <td className="px-1 py-1.5 text-center">
-                                                    <button onClick={() => { const rows = data.enrolment.rows.filter((_, idx) => idx !== i); setData(p => ({ ...p, enrolment: { ...p.enrolment, rows } })); setSaved(false); }} className="text-red-400 hover:text-red-700 p-1">
+                                                    <button
+                                                        onClick={() => {
+                                                            const rows = data.enrolment.rows.filter((_, idx) => idx !== i);
+                                                            const totalBoys = rows.reduce((s, r) => s + (parseInt(r.boys || '0') || 0), 0);
+                                                            const totalGirls = rows.reduce((s, r) => s + (parseInt(r.girls || '0') || 0), 0);
+                                                            setData(p => ({ ...p, enrolment: { ...p.enrolment, rows, totalBoys: totalBoys.toString(), totalGirls: totalGirls.toString(), grandTotal: (totalBoys + totalGirls).toString() } }));
+                                                            setSaved(false);
+                                                        }}
+                                                        className="text-red-400 hover:text-red-700 p-1"
+                                                    >
                                                         <TrashIcon className="w-4 h-4" />
                                                     </button>
                                                 </td>
@@ -441,19 +460,21 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                     </tbody>
                                 </table>
                             </div>
-                           <div className="flex items-center gap-4 mt-2 border-t border-slate-200 pt-3">
-    <button onClick={() => { setData(p => ({ ...p, enrolment: { ...p.enrolment, rows: [...p.enrolment.rows, { className: '' }] } })); setSaved(false); }}
-        className="flex items-center gap-1.5 text-sm text-red-700 hover:text-red-900 font-medium">
-        <PlusIcon className="w-4 h-4" /> Add Row
-    </button>
-    <div className="flex-1" />
-    <span className="text-xs font-medium text-slate-500 uppercase">Total Boys</span>
-    <input readOnly value={data.enrolment.totalBoys || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
-    <span className="text-xs font-medium text-slate-500 uppercase">Total Girls</span>
-    <input readOnly value={data.enrolment.totalGirls || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
-    <span className="text-xs font-medium text-slate-500 uppercase">Grand Total</span>
-    <input readOnly value={data.enrolment.grandTotal || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 font-bold text-slate-800" />
-</div>
+                            <div className="flex flex-wrap items-center gap-3 mt-2 border-t border-slate-200 pt-3">
+                                <button
+                                    onClick={() => { setData(p => ({ ...p, enrolment: { ...p.enrolment, rows: [...p.enrolment.rows, { className: '' }] } })); setSaved(false); }}
+                                    className="flex items-center gap-1.5 text-sm text-red-700 hover:text-red-900 font-medium"
+                                >
+                                    <PlusIcon className="w-4 h-4" /> Add Row
+                                </button>
+                                <div className="flex-1" />
+                                <span className="text-xs font-medium text-slate-500 uppercase">Total Boys</span>
+                                <input readOnly value={data.enrolment.totalBoys || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
+                                <span className="text-xs font-medium text-slate-500 uppercase">Total Girls</span>
+                                <input readOnly value={data.enrolment.totalGirls || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
+                                <span className="text-xs font-medium text-slate-500 uppercase">Grand Total</span>
+                                <input readOnly value={data.enrolment.grandTotal || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 font-bold text-slate-800" />
+                            </div>
                         </SubCard>
                     )}
 
@@ -472,16 +493,16 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                     <tbody>
                                         {data.boardResults.map((row, i) => (
                                             <tr key={i} className="border-b border-slate-100">
-                                               {(['year', 'appeared', 'passed', 'passPercent', 'distinction'] as (keyof BoardResultRow)[]).map(f => (
-    <td key={f} className="px-1 py-1.5">
-        <input
-            value={row[f] || ''}
-            onChange={e => updateBoardResult(i, f, e.target.value)}
-            className={inputCls}
-            style={{ minWidth: f === 'year' ? '110px' : f === 'distinction' ? '130px' : '80px' }}
-        />
-    </td>
-))}
+                                                {(['year', 'appeared', 'passed', 'passPercent', 'distinction'] as (keyof BoardResultRow)[]).map(f => (
+                                                    <td key={f} className="px-1 py-1.5">
+                                                        <input
+                                                            value={row[f] || ''}
+                                                            onChange={e => updateBoardResult(i, f, e.target.value)}
+                                                            className={inputCls}
+                                                            style={{ minWidth: f === 'year' ? '110px' : f === 'distinction' ? '130px' : '80px' }}
+                                                        />
+                                                    </td>
+                                                ))}
                                                 <td className="px-1 py-1.5 text-center">
                                                     <button onClick={() => { setData(p => ({ ...p, boardResults: p.boardResults.filter((_, idx) => idx !== i) })); setSaved(false); }} className="text-red-400 hover:text-red-700 p-1">
                                                         <TrashIcon className="w-4 h-4" />
@@ -545,13 +566,11 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="text-xs text-slate-600 uppercase font-medium">Details / Members</label>
-                                                <input value={c.details || ''} onChange={e => updateCommittee(i, 'details', e.target.value)}
-                                                    placeholder="e.g. As per notification" className={`${inputCls} mt-1`} />
+                                                <input value={c.details || ''} onChange={e => updateCommittee(i, 'details', e.target.value)} placeholder="e.g. As per notification" className={`${inputCls} mt-1`} />
                                             </div>
                                             <div>
                                                 <label className="text-xs text-slate-600 uppercase font-medium">Document URL</label>
-                                                <input type="url" value={c.fileUrl || ''} onChange={e => updateCommittee(i, 'fileUrl', e.target.value)}
-                                                    placeholder="https://..." className={`${inputCls} mt-1`} />
+                                                <input type="url" value={c.fileUrl || ''} onChange={e => updateCommittee(i, 'fileUrl', e.target.value)} placeholder="https://..." className={`${inputCls} mt-1`} />
                                             </div>
                                         </div>
                                     </div>
@@ -622,10 +641,10 @@ const AdminPage: React.FC<AdminPageProps> = ({
     const adminLinks = [
         { title: "Manage Staff",        description: "Add, view, and manage all staff profiles.",                              icon: <BriefcaseIcon className="w-7 h-7" />,      link: "/portal/staff" },
         { title: "Fee Management",      description: "Collect tuition/exam fees and edit fee structures.",                     icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/fees" },
-        { title: "Online Admissions",   description: "Review and process new student applications.",                           icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions",        count: pendingAdmissionsCount },
+        { title: "Online Admissions",   description: "Review and process new student applications.",                           icon: <InboxArrowDownIcon className="w-7 h-7" />, link: "/portal/admissions", count: pendingAdmissionsCount },
         { title: "Admission Settings",  description: "Edit Admission & Re-admission fees for both new and existing students.", icon: <CurrencyDollarIcon className="w-7 h-7" />, link: "/portal/admission-settings" },
-        { title: "Parents Management",  description: "View parent biodata and approve new accounts.",                          icon: <UserGroupIcon className="w-7 h-7" />,      link: "/portal/parents",           count: pendingParentCount },
-        { title: "Staff User Accounts", description: "Approve new user registrations for staff.",                              icon: <UserGroupIcon className="w-7 h-7" />,      link: "/portal/users",             count: pendingStaffCount },
+        { title: "Parents Management",  description: "View parent biodata and approve new accounts.",                          icon: <UserGroupIcon className="w-7 h-7" />,      link: "/portal/parents", count: pendingParentCount },
+        { title: "Staff User Accounts", description: "Approve new user registrations for staff.",                              icon: <UserGroupIcon className="w-7 h-7" />,      link: "/portal/users", count: pendingStaffCount },
         { title: "News Management",     description: "Create and manage school news.",                                         icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
         { title: "School Settings",     description: "Update school info, payment QR codes, etc.",                             icon: <CogIcon className="w-7 h-7" />,            link: "/portal/settings" },
         { title: "Manage Documents",    description: "Upload and manage downloadable PDF documents for the website.",          icon: <DocIcon />,                                link: "/portal/documents" },
@@ -633,12 +652,11 @@ const AdminPage: React.FC<AdminPageProps> = ({
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
-            {/* Top Nav */}
             <div className="mb-6 flex justify-between items-center">
                 <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                     <BackIcon className="w-5 h-5" /> Back
                 </button>
-                <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home/Dashboard">
+                <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors">
                     <HomeIcon className="w-5 h-5" /><span>Home</span>
                 </Link>
             </div>
@@ -648,12 +666,10 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 <p className="text-slate-600 mt-2">Central hub for all administrative tasks.</p>
             </div>
 
-            {/* Cards grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {adminLinks.map(link => (
                     <AdminCard key={link.title} {...link} />
                 ))}
-                {/* Disclosure card — opens editor inline */}
                 <AdminCard
                     title="Mandatory Public Disclosure"
                     description="Edit and publish the school's mandatory public disclosure information."
@@ -663,7 +679,6 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 />
             </div>
 
-            {/* Inline Disclosure Editor */}
             {showDisclosure && (
                 <div id="disclosure-editor">
                     <DisclosureEditor
@@ -674,15 +689,10 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 </div>
             )}
 
-            {/* Data Maintenance */}
             <div className="mt-10 p-6 bg-amber-50 border border-amber-200 rounded-xl">
                 <h2 className="text-lg font-bold text-amber-800 mb-1">🔧 Data Maintenance</h2>
                 <p className="text-sm text-amber-700 mb-4">Run this once to write correct <code>studentId</code> and <code>academicYear</code> fields into all student records. Safe to run multiple times.</p>
-                <button
-                    onClick={handleMigrateStudentIds}
-                    disabled={migrating}
-                    className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50"
-                >
+                <button onClick={handleMigrateStudentIds} disabled={migrating} className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50">
                     {migrating ? 'Updating...' : 'Fix Student IDs in Database'}
                 </button>
                 {migrateResult && <p className="mt-3 text-sm font-semibold text-slate-700">{migrateResult}</p>}

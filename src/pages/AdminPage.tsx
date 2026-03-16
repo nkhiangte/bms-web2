@@ -563,16 +563,16 @@ const DisclosureEditor: React.FC<{
                                 {data.committees.map((c, i) => (
                                     <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                         <p className="text-xs font-bold text-slate-800 mb-2">{c.name}</p>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-xs text-slate-600 uppercase font-medium">Details / Members</label>
-                                                <input value={c.details || ''} onChange={e => updateCommittee(i, 'details', e.target.value)} placeholder="e.g. As per notification" className={`${inputCls} mt-1`} />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs text-slate-600 uppercase font-medium">Document URL</label>
-                                                <input type="url" value={c.fileUrl || ''} onChange={e => updateCommittee(i, 'fileUrl', e.target.value)} placeholder="https://..." className={`${inputCls} mt-1`} />
-                                            </div>
-                                        </div>
+                                        <div className="flex flex-col gap-2">
+    <div>
+        <label className="text-xs text-slate-600 uppercase font-medium">Details / Members</label>
+        <input value={c.details || ''} onChange={e => updateCommittee(i, 'details', e.target.value)} placeholder="e.g. As per notification" className={`${inputCls} mt-1`} />
+    </div>
+    <div>
+        <label className="text-xs text-slate-600 uppercase font-medium">Document URL</label>
+        <input type="url" value={c.fileUrl || ''} onChange={e => updateCommittee(i, 'fileUrl', e.target.value)} placeholder="https://..." className={`${inputCls} mt-1`} />
+    </div>
+</div>
                                     </div>
                                 ))}
                             </div>

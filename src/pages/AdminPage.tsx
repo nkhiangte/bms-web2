@@ -441,16 +441,19 @@ style={{ backgroundColor: '#991b1b', color: '#ffffff' }}
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => { setData(p => ({ ...p, enrolment: { ...p.enrolment, rows: [...p.enrolment.rows, { className: '' }] } })); setSaved(false); }}
-                                    className="flex items-center gap-1.5 text-sm text-red-700 hover:text-red-900 font-medium">
-                                    <PlusIcon className="w-4 h-4" /> Add Row
-                                </button>
-                                <div className="flex-1" />
-                                <label className="text-xs font-medium text-slate-500 uppercase">Grand Total</label>
-                                <input value={data.enrolment.grandTotal} onChange={e => { setData(p => ({ ...p, enrolment: { ...p.enrolment, grandTotal: e.target.value } })); setSaved(false); }}
-                                    placeholder="e.g. 450" className="w-24 text-sm border border-slate-200 rounded px-2 py-1.5 text-center focus:outline-none focus:ring-1 focus:ring-red-300 bg-white" />
-                            </div>
+                           <div className="flex items-center gap-4 mt-2 border-t border-slate-200 pt-3">
+    <button onClick={() => { setData(p => ({ ...p, enrolment: { ...p.enrolment, rows: [...p.enrolment.rows, { className: '' }] } })); setSaved(false); }}
+        className="flex items-center gap-1.5 text-sm text-red-700 hover:text-red-900 font-medium">
+        <PlusIcon className="w-4 h-4" /> Add Row
+    </button>
+    <div className="flex-1" />
+    <span className="text-xs font-medium text-slate-500 uppercase">Total Boys</span>
+    <input readOnly value={data.enrolment.totalBoys || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
+    <span className="text-xs font-medium text-slate-500 uppercase">Total Girls</span>
+    <input readOnly value={data.enrolment.totalGirls || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 text-slate-700" />
+    <span className="text-xs font-medium text-slate-500 uppercase">Grand Total</span>
+    <input readOnly value={data.enrolment.grandTotal || '0'} className="w-16 text-sm border border-slate-200 rounded px-2 py-1.5 text-center bg-slate-50 font-bold text-slate-800" />
+</div>
                         </SubCard>
                     )}
 

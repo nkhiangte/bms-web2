@@ -153,14 +153,28 @@ const updateEnrolment = (i: number, field: keyof EnrolmentRow, val: string) => {
     const rows = [...data.enrolment.rows];
     rows[i] = { ...rows[i], [field]: val };
 
-    // Auto-calculate total when boys or girls changes
+    // Auto-calculate row total when boys or girls changes
     if (field === 'boys' || field === 'girls') {
         const boys = parseInt(field === 'boys' ? val : rows[i].boys || '0') || 0;
         const girls = parseInt(field === 'girls' ? val : rows[i].girls || '0') || 0;
         rows[i].total = (boys + girls).toString();
     }
 
-    setData(p => ({ ...p, enrolment: { ...p.enrolment, rows } }));
+    // Auto-calculate column totals and grand total
+    const totalBoys = rows.reduce((sum, row) => sum + (parseInt(row.boys || '0') || 0), 0);
+    const totalGirls = rows.reduce((sum, row) => sum + (parseInt(row.girls || '0') || 0), 0);
+    const grandTotal = totalBoys + totalGirls;
+
+    setData(p => ({
+        ...p,
+        enrolment: {
+            ...p.enrolment,
+            rows,
+            totalBoys: totalBoys.toString(),
+            totalGirls: totalGirls.toString(),
+            grandTotal: grandTotal.toString(),
+        }
+    }));
     setSaved(false);
 };
 

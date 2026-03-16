@@ -527,17 +527,15 @@ const DisclosureEditor: React.FC<{
                                 <table className="w-full text-sm mb-4">
                                     <thead>
                                         <tr className="bg-slate-50 border-b border-slate-200">
-                                            <th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase">Fee Head</th>
-                                            <th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase w-36">Amount (₹)</th>
-                                            <th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase w-40">Remarks</th>
-                                            <th className="w-10" />
+                                           <th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase" style={{ minWidth: '180px' }}>Fee Head</th>
+<th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase" style={{ minWidth: '130px' }}>Amount (₹)</th>
+<th className="px-2 py-2 text-left text-xs font-bold text-slate-500 uppercase" style={{ minWidth: '150px' }}>Remarks</th>                                            <th className="w-10" />
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {data.feeStructure.map((row, i) => (
                                             <tr key={i} className="border-b border-slate-100">
-                                                <td className="px-1 py-1.5"><input value={row.head} onChange={e => updateFeeRow(i, 'head', e.target.value)} className={inputCls} /></td>
-                                                <td className="px-1 py-1.5"><input value={row.amount || ''} onChange={e => updateFeeRow(i, 'amount', e.target.value)} placeholder="e.g. ₹12,000" className={inputCls} /></td>
+<td className="px-1 py-1.5"><input value={row.head} onChange={e => updateFeeRow(i, 'head', e.target.value)} className={inputCls} style={{ minWidth: '180px' }} /></td>                                                <td className="px-1 py-1.5"><input value={row.amount || ''} onChange={e => updateFeeRow(i, 'amount', e.target.value)} placeholder="e.g. ₹12,000" className={inputCls} /></td>
                                                 <td className="px-1 py-1.5"><input value={row.remarks || ''} onChange={e => updateFeeRow(i, 'remarks', e.target.value)} placeholder="Optional" className={inputCls} /></td>
                                                 <td className="px-1 py-1.5 text-center">
                                                     <button onClick={() => { setData(p => ({ ...p, feeStructure: p.feeStructure.filter((_, idx) => idx !== i) })); setSaved(false); }} className="text-red-400 hover:text-red-700 p-1">

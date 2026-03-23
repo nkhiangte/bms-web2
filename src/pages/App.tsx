@@ -1,1 +1,0 @@
-// This file is obsolete. Please use src/App.tsx.

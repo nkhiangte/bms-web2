@@ -56,27 +56,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     return students.filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade]);
 
-  // Added explicit type cast to SubjectDefinition[] to resolve arithmetic operation errors in useMemo below
-const subjectDefinitions = useMemo(() => {
+  const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
     
-    // Start with subjects from the global grade settings
     const baseSubjects = [...(gradeDefinitions[grade]?.subjects || [])];
     const subjectsMap = new Map<string, SubjectDefinition>();
     
-    // Add base subjects to map
     baseSubjects.forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
 
-    // Scan current students' exam results for this specific term to find additional subjects
     classStudents.forEach(student => {
       const studentExam = student.academicPerformance?.find(e => e.id === examId);
       if (studentExam?.results) {
         studentExam.results.forEach(res => {
           const normalized = normalizeSubjectName(res.subject);
-const alreadyExists = Array.from(subjectsMap.keys()).some(existingKey =>
-  subjectsMatch(existingKey, res.subject)
-);
-if (!alreadyExists) {            // Subject exists in Firestore but not in Grade Settings
+          if (!subjectsMap.has(normalized)) {
             subjectsMap.set(normalized, {
               name: res.subject,
               examFullMarks: 100,
@@ -103,31 +96,8 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
 
   const isClassIXorX = useMemo(() => grade === Grade.IX || grade === Grade.X, [grade]);
   const isNurseryToII = useMemo(() => [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade as Grade), [grade]);
-  // Class IX terminal3 uses SA (max 80) + FA (max 20) split columns
   const isIXTerminal3 = useMemo(() => grade === Grade.IX && examId === 'terminal3', [grade, examId]);
 
-  // Pre-compute the total number of subject input columns so we can assign
-  // stable data-col indices to the attendance inputs that follow.
-  const totalSubjectInputCols = useMemo(() => {
-    let count = 0;
-    for (const sd of subjectDefinitions) {
-      if (sd.gradingSystem === 'OABC') {
-        // OABC uses a <select>, not tracked for keyboard nav, so skip
-        count++;
-      } else if (isIXTerminal3 || hasActivities) {
-        count += 2; // two inputs per subject (SA+FA or Exam+Activity)
-      } else {
-        count += 1;
-      }
-    }
-    return count;
-  }, [subjectDefinitions, hasActivities, isIXTerminal3]);
-
-  // Column indices for the two attendance inputs (always the last two input columns)
-  const workingDaysColIndex = totalSubjectInputCols;
-  const daysPresentColIndex = totalSubjectInputCols + 1;
-
-  // Keyboard navigation: Enter moves to next student's same column
   const tableRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -136,7 +106,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
     const current = e.currentTarget;
     const row = parseInt(current.getAttribute('data-row') || '0', 10);
     const col = parseInt(current.getAttribute('data-col') || '0', 10);
-    // Find the input in the next row with same col
     const next = tableRef.current?.querySelector<HTMLInputElement>(
       `input[data-row="${row + 1}"][data-col="${col}"]`
     );
@@ -144,7 +113,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
       next.focus();
       next.select();
     } else {
-      // Wrap to first row, next column
       const nextColFirst = tableRef.current?.querySelector<HTMLInputElement>(
         `input[data-col="${col + 1}"][data-row="0"]`
       );
@@ -158,15 +126,7 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
   const [marksData, setMarksData] = useState<MarksData>({});
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
   const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
-  // Keep a ref in sync with changedStudents so the useEffect below can read the
-  // latest value without having it in the dependency array. This prevents the
-  // effect from re-running (and wiping local edits) when changedStudents is
-  // cleared after a successful save.
-  const changedStudentsRef = useRef<Set<string>>(new Set());
-  useEffect(() => { changedStudentsRef.current = changedStudents; }, [changedStudents]);
-
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('rollNo');
@@ -182,9 +142,7 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
           if (e.id === examId) return true;
           if (!e.name) return false;
           const eName = e.name.trim().toLowerCase();
-          // Match current name
           if (examDetails && eName === examDetails.name.trim().toLowerCase()) return true;
-          // Match legacy names before rename (e.g. "Third Terminal Examination" → "III Terminal Examination")
           const legacyNames: Record<string, string[]> = {
               terminal1: ['first terminal examination', 'i terminal examination'],
               terminal2: ['second terminal examination', 'ii terminal examination'],
@@ -205,23 +163,18 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
             initialMarks[student.id][subjectDef.name + '_exam'] = result?.examMarks ?? result?.marks ?? null;
             initialMarks[student.id][subjectDef.name + '_activity'] = result?.activityMarks ?? null;
         } else if (grade === Grade.IX && examId === 'terminal3') {
-            // SA: prefer saMarks, fall back to examMarks (pre-SA/FA data stored this way), then marks
             initialMarks[student.id][subjectDef.name + '_sa'] = result?.saMarks ?? result?.examMarks ?? result?.marks ?? null;
-            // FA: prefer faMarks, fall back to activityMarks (safe fallback)
             initialMarks[student.id][subjectDef.name + '_fa'] = result?.faMarks ?? result?.activityMarks ?? null;
         } else {
-            // Robust check: even if activities are disabled for class, check both marks and examMarks field
             initialMarks[student.id][subjectDef.name] = result?.marks ?? result?.examMarks ?? null;
         }
       });
     });
     
-    // Only update marks/attendance for students that haven't been locally modified.
-    // Read from the ref so this effect doesn't re-run when changedStudents changes.
     setMarksData(prev => {
       const updated = { ...prev };
       Object.keys(initialMarks).forEach(studentId => {
-        if (!changedStudentsRef.current.has(studentId)) {
+        if (!changedStudents.has(studentId)) {
           updated[studentId] = initialMarks[studentId];
         }
       });
@@ -231,16 +184,13 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
     setAttendanceData(prev => {
       const updated = { ...prev };
       Object.keys(initialAttendance).forEach(studentId => {
-        if (!changedStudentsRef.current.has(studentId)) {
+        if (!changedStudents.has(studentId)) {
           updated[studentId] = initialAttendance[studentId];
         }
       });
       return updated;
     });
-  // changedStudents intentionally excluded — we use changedStudentsRef instead
-  // so saving (which clears changedStudents) doesn't trigger this effect and
-  // overwrite the just-saved values before Firebase syncs back.
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
+  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
     const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
@@ -303,7 +253,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
         let currentSubjFMValue: number = 0;
         
         if (hasActivities) {
-            // Fix: Simplified to avoid redundant Number wrapping while ensuring types are correct for arithmetic
             const examMark = Number(studentMarks[sd.name + '_exam'] || 0);
             const activityMark = Number(studentMarks[sd.name + '_activity'] || 0);
             
@@ -313,16 +262,14 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
             currentSubjFMValue = Number(sd.examFullMarks || 0) + Number(sd.activityFullMarks || 0);
             
             if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-         } else if (isIXTerminal3) {
-    const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
-    const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
-    currentSubjMarkValue = saMark + faMark;
-    localExamTotal += currentSubjMarkValue;
-    currentSubjFMValue = 100; // SA 80 + FA 20
-    // Pass rule: SA must be >= 27. FA has no pass mark.
-    if (saMark < 27) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
-}
-            else {
+        } else if (isIXTerminal3) {
+            const saMark = Number(studentMarks[sd.name + '_sa'] || 0);
+            const faMark = Number(studentMarks[sd.name + '_fa'] || 0);
+            currentSubjMarkValue = saMark + faMark;
+            localExamTotal += currentSubjMarkValue;
+            currentSubjFMValue = 100;
+            if (currentSubjMarkValue < 33) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+        } else {
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);
@@ -342,7 +289,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
       let result = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
       if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
 
-
       let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
       let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
       
@@ -359,7 +305,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
           else remark = "Passed. Consistent effort is needed to improve scores.";
       }
 
-      // Explicitly construct the object to match ProcessedStudent interface
       const processed: ProcessedStudent = {
           ...student,
           grandTotal: localGrandTotal,
@@ -370,7 +315,7 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
           division,
           academicGrade,
           remark,
-          rank: 0 // Placeholder, updated below
+          rank: 0
       };
       return processed;
     });
@@ -397,10 +342,8 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
         sortedData.sort((a, b) => {
             const aIsFail = a.result === 'FAIL';
             const bIsFail = b.result === 'FAIL';
-
             if (aIsFail && !bIsFail) return 1;
             if (!aIsFail && bIsFail) return -1;
-            
             return Number(b.grandTotal) - Number(a.grandTotal);
         });
     } else {
@@ -433,7 +376,6 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
             } else if (grade === Grade.IX && examId === 'terminal3') {
                 if (studentMarks[sd.name + '_sa'] !== undefined) newResult.saMarks = studentMarks[sd.name + '_sa'] as number;
                 if (studentMarks[sd.name + '_fa'] !== undefined) newResult.faMarks = studentMarks[sd.name + '_fa'] as number;
-                // also set marks = sa + fa for backward compat
                 newResult.marks = (Number(studentMarks[sd.name + '_sa'] || 0) + Number(studentMarks[sd.name + '_fa'] || 0)) || undefined;
             } else {
                 if (studentMarks[sd.name] !== undefined) newResult.marks = studentMarks[sd.name] as number;
@@ -447,13 +389,10 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
             results: newResults,
         };
         
-        // Save attendance if either field has a value (don't require both to be filled)
-        const totalWorkingDays = attendanceData[studentId]?.totalWorkingDays;
-        const daysPresent = attendanceData[studentId]?.daysPresent;
-        if (totalWorkingDays != null || daysPresent != null) {
-            newExamData.attendance = {
-                totalWorkingDays: totalWorkingDays ?? 0,
-                daysPresent: daysPresent ?? 0,
+        if (attendanceData[studentId]?.totalWorkingDays != null && attendanceData[studentId]?.daysPresent != null) {
+            newExamData.attendance = { 
+                totalWorkingDays: attendanceData[studentId].totalWorkingDays!, 
+                daysPresent: attendanceData[studentId].daysPresent! 
             };
         }
 
@@ -465,208 +404,159 @@ if (!alreadyExists) {            // Subject exists in Firestore but not in Grade
     setChangedStudents(new Set());
     setIsSaving(false);
     setIsConfirmSaveModalOpen(false);
-    setIsSaveSuccess(true);
-    setTimeout(() => setIsSaveSuccess(false), 3000);
   };
 
-      // ================= EXPORT TO EXCEL =================
-const handleExportExcel = () => {
-  if (!processedData.length) return;
+  const handleExportExcel = () => {
+    if (!processedData.length) return;
 
-  const headers = ['Roll No', 'Name'];
-  subjectDefinitions.forEach(sd => {
-    if (sd.gradingSystem === 'OABC') {
-      headers.push(sd.name);
-    } else if (isIXTerminal3) {
-      headers.push(`${sd.name} SA`, `${sd.name} FA`);
-    } else if (hasActivities) {
-      headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
-    } else {
-      headers.push(sd.name);
-    }
-  });
-if (hasActivities) {
-  headers.push('Exam Total', 'Activity Total', 'Grand Total');
-} else {
-  headers.push('Total');
-}
-headers.push('Percentage', 'Rank', 'Division', 'Result', 'Remark');
-  const data = processedData.map(student => {
-    const subjectMarks: any[] = [];
-    subjectDefinitions.forEach(sd => {
-      if (sd.gradingSystem === 'OABC') {
-        subjectMarks.push(marksData[student.id]?.[sd.name] ?? '-');
-      } else if (isIXTerminal3) {
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_sa'] ?? 0);
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
-      } else if (hasActivities) {
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_exam'] ?? 0);
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
-      } else {
-        subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
-      }
-    });
-const totals = hasActivities
-  ? [student.examTotal, student.activityTotal, student.grandTotal]
-  : [student.grandTotal];
-return [student.rollNo, student.name, ...subjectMarks, ...totals, student.percentage.toFixed(2), student.rank, student.division, student.result, student.remark];
-  });
-
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
-  XLSX.writeFile(workbook, `${grade}_${examDetails?.name}_Statement.xlsx`);
-};
-
-// ================= EXPORT TO PDF =================
-const handleExportPDF = () => {
-  if (!processedData.length) return;
-
-  const doc = new jsPDF('landscape');
-  doc.setFontSize(14);
-  doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
-  doc.setFontSize(11);
-  doc.text(`Exam: ${examDetails?.name}`, 14, 22);
-
-  const tableColumn: string[] = ['Roll No', 'Name'];
-  subjectDefinitions.forEach(sd => {
-    if (sd.gradingSystem === 'OABC') {
-      tableColumn.push(sd.name);
-    } else if (isIXTerminal3) {
-      tableColumn.push(`${sd.name}\nSA`);
-      tableColumn.push(`${sd.name}\nFA`);
-    } else if (hasActivities) {
-      tableColumn.push(`${sd.name}\nExam`);
-      tableColumn.push(`${sd.name}\nActivity`);
-    } else {
-      tableColumn.push(sd.name);
-    }
-  });
-if (hasActivities) {
-  tableColumn.push('Exam\nTotal', 'Act.\nTotal', 'Grand\nTotal');
-} else {
-  tableColumn.push('Total');
-}
-tableColumn.push('Percentage', 'Rank', 'Division', 'Result');
-  const tableRows = processedData.map(student => {
-    const subjectMarks: any[] = [];
-    subjectDefinitions.forEach(sd => {
-      if (sd.gradingSystem === 'OABC') {
-        subjectMarks.push(marksData[student.id]?.[sd.name] ?? '-');
-      } else if (isIXTerminal3) {
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_sa'] ?? 0);
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
-      } else if (hasActivities) {
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_exam'] ?? 0);
-        subjectMarks.push(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
-      } else {
-        subjectMarks.push(marksData[student.id]?.[sd.name] ?? 0);
-      }
-    });
-const totals = hasActivities
-  ? [student.examTotal, student.activityTotal, student.grandTotal]
-  : [student.grandTotal];
-return [student.rollNo, student.name, ...subjectMarks, ...totals, student.percentage.toFixed(2), student.rank, student.division, student.result];
-  });
-
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: 30,
-    styles: { fontSize: 6, cellPadding: 2 },
-    headStyles: { fillColor: [41, 128, 185], fontSize: 6, halign: 'center' },
-    columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 30 } },
-  });
-
-  doc.save(`${grade}_${examDetails?.name}_Statement.pdf`);
-};    // Add this function inside your ClassMarkStatementPage component
-const exportToCSV = () => {
-  // Prepare headers
-  const headers = ['Roll No', 'Name'];
-  
-  subjectDefinitions.forEach(sd => {
-    if (sd.gradingSystem === 'OABC') {
-      headers.push(sd.name);
-    } else if (isIXTerminal3) {
-      headers.push(`${sd.name} SA`, `${sd.name} FA`);
-    } else if (hasActivities) {
-      headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
-    } else {
-      headers.push(sd.name);
-    }
-  });
-  
-  headers.push('Grand Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present');
-
-  // Prepare data rows
-  const rows = processedData.map(student => {
-    const row = [
-      student.rollNo,
-      student.name,
+    const headers = [
+      'Roll No', 'Name',
+      ...subjectDefinitions.map(sd => sd.name),
+      'Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark'
     ];
+
+    const data = processedData.map(student => {
+      const subjectMarks = subjectDefinitions.map(sd => {
+        if (sd.gradingSystem === 'OABC') return marksData[student.id]?.[sd.name] ?? '-';
+        if (isIXTerminal3) {
+          const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
+          const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
+          return Number(sa) + Number(fa);
+        }
+        if (hasActivities) {
+          const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
+          const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
+          return Number(exam) + Number(act);
+        }
+        return marksData[student.id]?.[sd.name] ?? 0;
+      });
+
+      return [
+        student.rollNo, student.name, ...subjectMarks,
+        student.grandTotal, student.percentage.toFixed(2),
+        student.rank, student.division, student.result, student.remark
+      ];
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
+    XLSX.writeFile(workbook, `${grade}_${examDetails?.name}_Statement.xlsx`);
+  };
+
+  const handleExportPDF = () => {
+    if (!processedData.length) return;
+
+    const doc = new jsPDF('landscape');
+    doc.setFontSize(14);
+    doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
+    doc.setFontSize(11);
+    doc.text(`Exam: ${examDetails?.name}`, 14, 22);
+
+    const tableColumn = [
+      'Roll No', 'Name',
+      ...subjectDefinitions.map(sd => sd.name),
+      'Total', 'Percentage', 'Rank', 'Division', 'Result'
+    ];
+
+    const tableRows = processedData.map(student => {
+      const subjectMarks = subjectDefinitions.map(sd => {
+        if (sd.gradingSystem === 'OABC') return marksData[student.id]?.[sd.name] ?? '-';
+        if (isIXTerminal3) {
+          const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
+          const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
+          return Number(sa) + Number(fa);
+        }
+        if (hasActivities) {
+          const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
+          const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
+          return Number(exam) + Number(act);
+        }
+        return marksData[student.id]?.[sd.name] ?? 0;
+      });
+
+      return [
+        student.rollNo, student.name, ...subjectMarks,
+        student.grandTotal, student.percentage.toFixed(2),
+        student.rank, student.division, student.result
+      ];
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save(`${grade}_${examDetails?.name}_Statement.pdf`);
+  };
+
+  const exportToCSV = () => {
+    const headers = ['Roll No', 'Name'];
     
     subjectDefinitions.forEach(sd => {
       if (sd.gradingSystem === 'OABC') {
-        row.push(marksData[student.id]?.[sd.name] || '-');
+        headers.push(sd.name);
       } else if (isIXTerminal3) {
-        row.push(marksData[student.id]?.[sd.name + '_sa'] || '-');
-        row.push(marksData[student.id]?.[sd.name + '_fa'] || '-');
+        headers.push(`${sd.name} SA`, `${sd.name} FA`);
       } else if (hasActivities) {
-        row.push(marksData[student.id]?.[sd.name + '_exam'] || '-');
-        row.push(marksData[student.id]?.[sd.name + '_activity'] || '-');
+        headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
       } else {
-        row.push(marksData[student.id]?.[sd.name] || '-');
+        headers.push(sd.name);
       }
     });
     
-    row.push(
-      student.grandTotal,
-      student.percentage.toFixed(2) + '%',
-      student.rank,
-      student.division,
-      student.result,
-      student.remark,
-      attendanceData[student.id]?.totalWorkingDays || '-',
-      attendanceData[student.id]?.daysPresent || '-'
-    );
-    
-    return row.join(',');
-  });
-  // Create CSV content
- const csvContent = [headers.join(','), ...rows].join('\n');
+    headers.push('Grand Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present');
 
-  // Download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${grade}_${examDetails?.name}_Marks_Statement.csv`;
-  link.click();
-}; // End of exportToCSV
+    const rows = processedData.map(student => {
+      const row: any[] = [student.rollNo, student.name];
+      
+      subjectDefinitions.forEach(sd => {
+        if (sd.gradingSystem === 'OABC') {
+          row.push(marksData[student.id]?.[sd.name] || '-');
+        } else if (isIXTerminal3) {
+          row.push(marksData[student.id]?.[sd.name + '_sa'] || '-');
+          row.push(marksData[student.id]?.[sd.name + '_fa'] || '-');
+        } else if (hasActivities) {
+          row.push(marksData[student.id]?.[sd.name + '_exam'] || '-');
+          row.push(marksData[student.id]?.[sd.name + '_activity'] || '-');
+        } else {
+          row.push(marksData[student.id]?.[sd.name] || '-');
+        }
+      });
+      
+      row.push(
+        student.grandTotal, student.percentage.toFixed(2) + '%',
+        student.rank, student.division, student.result, student.remark,
+        attendanceData[student.id]?.totalWorkingDays || '-',
+        attendanceData[student.id]?.daysPresent || '-'
+      );
+      
+      return row.join(',');
+    });
 
-const handleSaveSubjects = async (newDef: GradeDefinition) => {
-    if(grade) {
-        await onUpdateGradeDefinition(grade, newDef);
-        setIsEditSubjectsModalOpen(false);
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${grade}_${examDetails?.name}_Marks_Statement.csv`;
+    link.click();
+  };
+
+  const handleSaveSubjects = async (newDef: GradeDefinition) => {
+    if (grade) {
+      await onUpdateGradeDefinition(grade, newDef);
+      setIsEditSubjectsModalOpen(false);
     }
-};
+  };
 
   if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
 
   return (
-   <>
-<style>{`
-  @media print {
-    .print-hidden { display: none !important; }
-    #mark-statement-table input,
-    #mark-statement-table select {
-      all: unset;
-      display: block;
-      width: 100%;
-      text-align: center;
-    }
-  }
-`}</style>
-<div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
+    <>
+    <div id="mark-statement-container" className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center print-hidden">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"><BackIcon className="w-5 h-5"/> Back</button>
             <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors" title="Go to Home"><HomeIcon className="w-5 h-5"/> Home</Link>
@@ -676,7 +566,7 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name} | <span className="font-semibold">Academic Year:</span> {academicYear}</p>
         </div>
 
-        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
+        <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>
             <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
                 <button 
@@ -697,34 +587,16 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                 >
                     Total Marks
                 </button>
-              <button
-  onClick={handleExportExcel}
-  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
->
-  Export Excel
-</button>
-
-<button
-  onClick={handleExportPDF}
-  className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition"
->
-  Export PDF
-</button>
-
-<button
-  onClick={() => window.print()}
-  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition"
->
-  🖨️ Print
-</button>
             </div>
+            <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition">Export Excel</button>
+            <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition">Export PDF</button>
         </div>
         
-<div className="mt-2 overflow-auto border rounded-lg max-h-[75vh]" ref={tableRef}>
-      <table id="mark-statement-table" className="min-w-[2000px] text-sm">
-                 <thead className="bg-slate-100 sticky top-0 z-20">
-    <tr>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-30 border-b border-r w-16 align-middle">No</th>
+        <div className="mt-2 overflow-x-auto border rounded-lg" ref={tableRef}>
+            <table id="mark-statement-table" className="min-w-[2000px] text-sm">
+                 <thead className="bg-slate-100">
+                    <tr>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
                         
                         {subjectDefinitions.map(sd => {
@@ -736,15 +608,8 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                 return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{sd.name}</th>;
                             }
                         })}
-{hasActivities ? (
-  <>
-    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Exam Total</th>
-    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Activity Total</th>
-    <th rowSpan={2} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Grand Total</th>
-  </>
-) : (
-  <th rowSpan={isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
-)}                        
+                        
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Rank</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
@@ -753,8 +618,8 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Working Days</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Days Present</th>
                     </tr>
-{(hasActivities || isIXTerminal3) && (
-    <tr className="sticky top-[41px] z-20">
+                    {(hasActivities || isIXTerminal3) && (
+                        <tr>
                             {isIXTerminal3
                                 ? subjectDefinitions.flatMap(sd =>
                                     sd.gradingSystem !== 'OABC' ? [
@@ -769,18 +634,17 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                     ] : []
                                 )
                             }
-                    </tr>
-                )}
+                        </tr>
+                    )}
                 </thead>
-                            <tbody className="bg-white divide-y divide-slate-200">
+                <tbody className="bg-white divide-y divide-slate-200">
                     {processedData.map((student, studentIndex) => {
-                        // Build flat ordered column keys for this class/exam type
-                        // so every input gets a stable data-col index for keyboard nav
                         let colIndex = 0;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-white z-10 whitespace-nowrap">{student.rollNo}</td>
-                            <td className="px-2 py-1 font-medium border-r sticky left-16 bg-white z-10 whitespace-nowrap">{student.name}</td>
+                            <td className="px-2 py-1 font-bold text-slate-800 text-center border-r sticky left-0 bg-inherit whitespace-nowrap">{student.rollNo}</td>
+                            {/* FIX: Added text-slate-800 to make student names visible */}
+                            <td className="px-2 py-1 font-medium text-slate-800 border-r whitespace-nowrap">{student.name}</td>
                             
                             {subjectDefinitions.map(sd => {
                                 const isOABC = sd.gradingSystem === 'OABC';
@@ -886,41 +750,17 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
                                 );
                             })}
 
-{hasActivities ? (
-  <>
-    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.examTotal}</td>
-    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.activityTotal}</td>
-    <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
-  </>
-) : (
-  <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
-)}
-                          <td className="px-1 py-1 text-center border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
-                            <td className="px-1 py-1 text-center font-bold border-l whitespace-nowrap">{student.rank}</td>
-                            <td className="px-1 py-1 text-center border-l whitespace-nowrap">{isClassIXorX ? student.division : '-'}</td>
+                            <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
+                            <td className="px-1 py-1 text-center text-slate-800 border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
+                            <td className="px-1 py-1 text-center font-bold text-slate-800 border-l whitespace-nowrap">{student.rank}</td>
+                            <td className="px-1 py-1 text-center text-slate-800 border-l whitespace-nowrap">{isClassIXorX ? student.division : '-'}</td>
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
-                            <td className="px-1 py-1 text-sm border-l">{student.remark}</td>
+                            <td className="px-1 py-1 text-sm text-slate-700 border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
-                                <input
-                                    type="number"
-                                    value={attendanceData[student.id]?.totalWorkingDays ?? ''}
-                                    onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    data-row={studentIndex}
-                                    data-col={workingDaysColIndex}
-                                    className="form-input w-20 text-center"
-                                />
+                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                             <td className="px-1 py-1 border-l">
-                                <input
-                                    type="number"
-                                    value={attendanceData[student.id]?.daysPresent ?? ''}
-                                    onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    data-row={studentIndex}
-                                    data-col={daysPresentColIndex}
-                                    className="form-input w-20 text-center"
-                                />
+                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                         </tr>
                         );
@@ -985,15 +825,6 @@ const handleSaveSubjects = async (newDef: GradeDefinition) => {
         grade={grade}
         initialGradeDefinition={gradeDefinitions[grade]}
     />}
-
-    {/* Success toast */}
-    {isSaveSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg animate-fade-in">
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            <span className="font-semibold">Changes saved successfully!</span>
-            <button onClick={() => setIsSaveSuccess(false)} className="ml-2 text-white/80 hover:text-white text-lg leading-none">&times;</button>
-        </div>
-    )}
     </>
   );
 };

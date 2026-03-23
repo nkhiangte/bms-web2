@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://bms04.netlify.app/sitemap.xml

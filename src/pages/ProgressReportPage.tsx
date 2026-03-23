@@ -558,8 +558,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
 
             {/* ── Printable area ── */}
             <div id="progress-report-printable" className="container mx-auto bg-white p-6 my-4 shadow-lg print:w-full print:max-w-none print:my-0 print:shadow-none print:p-0">
-                <div className="font-serif text-xs">
-
+              <div className="font-serif text-xs text-slate-900">
                     {/* On screen: show banner for terminal1/2, blank space for terminal3 */}
                     <div className="print:hidden">
                         {examId !== 'terminal3' ? (
@@ -582,12 +581,12 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                     {/* Student info */}
                     <section className="mb-1 border-2 border-slate-400 rounded text-xs flex items-stretch">
                         <div className="flex-1 p-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 content-start">
-                            <div><strong className="block text-slate-500">Student's Name:</strong><span className="font-bold">{student.name}</span></div>
-                            <div><strong className="block text-slate-500">Father's Name:</strong><span className="font-bold">{student.fatherName}</span></div>
-                            <div><strong className="block text-slate-500">Date of Birth:</strong><span className="font-bold">{formatDateForDisplay(student.dateOfBirth)}</span></div>
-                            <div><strong className="block text-slate-500">Class:</strong><span className="font-bold">{student.grade}</span></div>
-                            <div><strong className="block text-slate-500">Roll No:</strong><span className="font-bold">{student.rollNo}</span></div>
-                            <div><strong className="block text-slate-500">Student ID:</strong><span className="font-bold">{formatStudentId(student, academicYear)}</span></div>
+                            <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold">{student.name}</span></div>
+                            <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold">{student.fatherName}</span></div>
+                            <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold">{formatDateForDisplay(student.dateOfBirth)}</span></div>
+                            <div><strong className="block text-slate-600">Class:</strong><span className="font-bold">{student.grade}</span></div>
+                            <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold">{student.rollNo}</span></div>
+                            <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold">{formatStudentId(student, academicYear)}</span></div>
                         </div>
                         <div className="border-l-2 border-slate-400 flex-shrink-0 w-20 print:w-16 flex items-center justify-center p-1">
                             {student.photographUrl ? (

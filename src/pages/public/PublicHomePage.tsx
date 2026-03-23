@@ -53,7 +53,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
             {/* ── Admission Banner fixed at bottom ── */}
             <Link
                 to="/admissions/online"
-                className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-sky-600 to-sky-800 text-white p-3 text-center shadow-lg hover:from-sky-500 hover:to-sky-700 transition-all duration-300"
+                className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 p-4 text-center shadow-lg animate-pulse hover:animate-none hover:from-amber-300 hover:to-orange-400 transition-all duration-300"
             >
                 <span className="font-bold text-lg tracking-wider uppercase">
                     🎓 Admission Open 2026–27 — Click Here to Apply

@@ -364,10 +364,10 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
              {canEdit && (
                 <button
-                  onClick={() => setIsEditModalOpen(true)}  {/* ← FIXED: opens modal instead of saving */}
+                  onClick={() => setIsEditModalOpen(true)}  
                   className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5"
                 >
-                  <EditIcon className="h-5 h-5" />
+                  <EditIcon className="h-5 w-5" />
                   Edit Profile
                 </button>
              )}

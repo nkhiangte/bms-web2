@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, FeeStructure, ConductEntry, ConductEntryType, HostelDisciplineEntry, StudentStatus } from '@/types';
@@ -42,6 +41,174 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
     </div>
 )
 
+// ─── Inline Edit Modal ────────────────────────────────────────────────────────
+interface EditStudentModalProps {
+  student: Student;
+  onSave: (updated: Student) => Promise<void>;
+  onClose: () => void;
+}
+
+const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, onSave, onClose }) => {
+  const [form, setForm] = useState<Student>({ ...student });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    await onSave(form);
+    setIsSaving(false);
+    onClose();
+  };
+
+  const fieldClass = "mt-1 block w-full border border-slate-300 rounded-md shadow-sm px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500";
+  const labelClass = "block text-sm font-bold text-slate-700";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-900">Edit Student Profile</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-800 text-2xl font-bold leading-none">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+
+          {/* Personal Information */}
+          <div>
+            <h3 className="text-md font-bold text-slate-700 border-b pb-1 mb-4">Personal Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Full Name</label>
+                <input name="name" value={form.name || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Date of Birth</label>
+                <input name="dateOfBirth" value={form.dateOfBirth || ''} onChange={handleChange} className={fieldClass} placeholder="DD/MM/YYYY" />
+              </div>
+              <div>
+                <label className={labelClass}>Gender</label>
+                <select name="gender" value={form.gender || ''} onChange={handleChange} className={fieldClass}>
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Blood Group</label>
+                <input name="bloodGroup" value={form.bloodGroup || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>PEN</label>
+                <input name="pen" value={form.pen || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Aadhaar Number</label>
+                <input name="aadhaarNumber" value={form.aadhaarNumber || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Contact Number</label>
+                <input name="contact" value={form.contact || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>CWSN</label>
+                <select name="cwsn" value={form.cwsn || ''} onChange={handleChange} className={fieldClass}>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Photograph URL</label>
+                <input name="photographUrl" value={form.photographUrl || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Address</label>
+                <textarea name="address" value={form.address || ''} onChange={handleChange} rows={2} className={fieldClass} />
+              </div>
+            </div>
+          </div>
+
+          {/* Parent & Guardian */}
+          <div>
+            <h3 className="text-md font-bold text-slate-700 border-b pb-1 mb-4">Parent & Guardian Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Father's Name</label>
+                <input name="fatherName" value={form.fatherName || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Father's Occupation</label>
+                <input name="fatherOccupation" value={form.fatherOccupation || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Father's Aadhaar</label>
+                <input name="fatherAadhaar" value={form.fatherAadhaar || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Mother's Name</label>
+                <input name="motherName" value={form.motherName || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Mother's Occupation</label>
+                <input name="motherOccupation" value={form.motherOccupation || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Mother's Aadhaar</label>
+                <input name="motherAadhaar" value={form.motherAadhaar || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Guardian's Name</label>
+                <input name="guardianName" value={form.guardianName || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Relationship with Guardian</label>
+                <input name="guardianRelationship" value={form.guardianRelationship || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+            </div>
+          </div>
+
+          {/* Academic & Health */}
+          <div>
+            <h3 className="text-md font-bold text-slate-700 border-b pb-1 mb-4">Academic & Health</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className={labelClass}>Last School Attended</label>
+                <input name="lastSchoolAttended" value={form.lastSchoolAttended || ''} onChange={handleChange} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Achievements</label>
+                <textarea name="achievements" value={form.achievements || ''} onChange={handleChange} rows={2} className={fieldClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Health Conditions</label>
+                <textarea name="healthConditions" value={form.healthConditions || ''} onChange={handleChange} rows={2} className={fieldClass} />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-200">
+            <button type="button" onClick={onClose} disabled={isSaving}
+              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition">
+              Cancel
+            </button>
+            <button type="submit" disabled={isSaving}
+              className="flex items-center gap-2 px-5 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow hover:bg-sky-700 transition disabled:opacity-60">
+              {isSaving ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : <CheckIcon className="w-5 h-5" />}
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
   const { studentId } = useParams() as { studentId: string };
@@ -61,6 +228,10 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   const [isSavingConduct, setIsSavingConduct] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<ConductEntry | null>(null);
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+
+  // ── NEW: controls the edit modal ──────────────────────────────────────────
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────────
   
   const canEdit = user.role === 'admin' || (user.role === 'user' && student && student.grade === assignedGrade);
   const isAdmin = user.role === 'admin';
@@ -155,6 +326,16 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
 
   return (
     <>
+    {/* ── Edit Modal — opens when button is clicked, calls onEdit only on submit ── */}
+    {isEditModalOpen && student && (
+      <EditStudentModal
+        student={student}
+        onSave={onEdit}
+        onClose={() => setIsEditModalOpen(false)}
+      />
+    )}
+    {/* ─────────────────────────────────────────────────────────────────────── */}
+
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex justify-between items-center">
              <button
@@ -183,7 +364,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
              {canEdit && (
                 <button
-                  onClick={() => onEdit(student)}
+                  onClick={() => setIsEditModalOpen(true)}  {/* ← FIXED: opens modal instead of saving */}
                   className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5"
                 >
                   <EditIcon className="h-5 h-5" />

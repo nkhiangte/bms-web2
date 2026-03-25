@@ -144,7 +144,7 @@ const UndoTransferPanel: React.FC = () => {
     useEffect(() => {
         setIsLoading(true);
         const unsubscribe = db.collection('students')
-            .where('status', 'in', [StudentStatus.TRANSFERRED, StudentStatus.LEFT, 'Transferred', 'Left', 'transferred', 'left'])
+           .where('status', 'in', ['Transferred', 'Left', 'transferred', 'left'])
             .onSnapshot(snapshot => {
                 const data = snapshot.docs.map(doc => ({
                     id: doc.id,

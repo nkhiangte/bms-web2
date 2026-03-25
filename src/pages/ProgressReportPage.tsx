@@ -15,31 +15,12 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-const findResultWithAliases = (results: any[], subjectDef: any) => {
+// Uses the same subjectsMatch utility as ClassMarkStatementPage so subject
+// lookup is consistent between the two pages (fixes Social Studies / Social
+// Science mismatch that caused marks to show as 0 in the progress report).
+const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
-    
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
-
-    return results.find(r => {
-        if (!r?.subject) return false;
-        
-        const normResultName = normalizeSubjectName(r.subject);
-        if (normResultName === normSubjDefName) return true;
-
-        const mathNames = ['math', 'maths', 'mathematics'];
-        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
-        
-        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
-        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-        if (normSubjDefName === 'social science' && normResultName === 'social studies') return true;
-        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
-        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
-        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
-        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
-        
-        return false;
-    });
+    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
 };
 
 const calculateTermSummary = (
@@ -89,10 +70,9 @@ const calculateTermSummary = (
             } else if (isClassIXorX && examId === 'terminal3') {
                 const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
                 const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? r?.examMarks ?? 0);
                 if (totalMark < 33) fSubjects++;
             } else {
-                // FIX: fall back to examMarks for data saved before the marks/examMarks field unification
                 totalMark = Number(r?.marks ?? r?.examMarks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
                 if (totalMark < limit) fSubjects++;
@@ -144,7 +124,6 @@ const calculateTermSummary = (
             subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
-            // FIX: fall back to examMarks for data saved before the marks/examMarks field unification
             totalSubjectMark = Number(result?.marks ?? result?.examMarks ?? 0);
             examTotal += totalSubjectMark;
             subjectFullMarks = sd.examFullMarks;
@@ -306,11 +285,9 @@ const MultiTermReportCard: React.FC<{
                                     isGraded ? (
                                         <><td colSpan={2} style={tdStyle}>{t1?.grade ?? '-'}</td><td colSpan={2} style={tdStyle}>{t2?.grade ?? '-'}</td><td colSpan={2} style={tdStyle}>{t3?.grade ?? '-'}</td></>
                                     ) : (
-                                        // FIX: fall back to examMarks for T1/T2 plain marks display
                                         <><td colSpan={2} style={tdStyle}>{t1?.marks ?? t1?.examMarks ?? '-'}</td><td colSpan={2} style={tdStyle}>{t2?.marks ?? t2?.examMarks ?? '-'}</td><td style={tdStyle}>{t3?.saMarks ?? t3?.marks ?? '-'}</td><td style={tdStyle}>{t3?.faMarks ?? '-'}</td></>
                                     )
                                 ) : (
-                                    // FIX: fall back to examMarks for plain (no-activity) classes
                                     <><td style={tdStyle}>{isGraded ? (t1?.grade ?? '-') : (t1?.marks ?? t1?.examMarks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t2?.grade ?? '-') : (t2?.marks ?? t2?.examMarks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t3?.grade ?? '-') : (t3?.marks ?? t3?.examMarks ?? '-')}</td></>
                                 )}
                             </tr>
@@ -432,7 +409,6 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                             <tr key={sd.name}>
                                 <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500 }}>{sd.name}</td>
                                 {isNurseryToII ? (
-                                    // FIX: fall back to examMarks for Nursery–II plain marks display
                                     <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 35}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? result?.examMarks ?? 0)}</td></>
                                 ) : hasActivities ? (
                                     isGraded ? (
@@ -441,7 +417,6 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                         <><td style={tdStyle}>{sd.examFullMarks}</td><td style={tdStyle}>{result?.examMarks ?? 0}</td><td style={tdStyle}>{sd.activityFullMarks}</td><td style={tdStyle}>{result?.activityMarks ?? 0}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td></>
                                     )
                                 ) : (
-                                    // FIX: fall back to examMarks for plain (no-activity, non-NurseryToII) classes (e.g. Class X)
                                     <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 33}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? result?.examMarks ?? 0)}</td></>
                                 )}
                             </tr>

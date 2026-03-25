@@ -434,7 +434,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                  <thead className="bg-slate-100">
                     <tr>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-b border-r w-16 align-middle">No</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 sticky left-16 bg-slate-100 z-10 border-b border-r min-w-48 align-middle">Student Name</th>
                         
                         {subjectDefinitions.map(sd => {
                             if (hasActivities && sd.gradingSystem !== 'OABC') {
@@ -482,8 +482,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         const isTransferred = student.status === StudentStatus.TRANSFERRED;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${student.status === StudentStatus.TRANSFERRED ? 'bg-amber-50 opacity-75' : changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-inherit whitespace-nowrap">{student.rollNo}</td>
-                            <td className="px-2 py-1 font-medium border-r whitespace-nowrap">
+                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 z-10 whitespace-nowrap w-16 bg-inherit">{student.rollNo}</td>
+                            <td className="px-2 py-1 font-medium border-r sticky left-16 z-10 whitespace-nowrap min-w-[180px] bg-inherit">
                               {student.name}
                               {student.status === StudentStatus.TRANSFERRED && (
                                 <span className="ml-2 text-xs font-semibold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">TC</span>
@@ -500,7 +500,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                             <select
                                                 value={marksData[student.id]?.[sd.name] as string ?? ''}
                                                 onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
-                                                className="form-select w-16 text-center"
+                                                className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                             >
                                                 <option value="">-</option>
                                                 {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
@@ -522,7 +522,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                                     onKeyDown={handleKeyDown}
                                                     data-row={studentIndex}
                                                     data-col={saCol}
-                                                    className="form-input w-16 text-center"
+                                                    className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                                     placeholder="-"
                                                     max={80}
                                                 />
@@ -535,7 +535,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                                     onKeyDown={handleKeyDown}
                                                     data-row={studentIndex}
                                                     data-col={faCol}
-                                                    className="form-input w-16 text-center"
+                                                    className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                                     placeholder="-"
                                                     max={20}
                                                 />
@@ -557,7 +557,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                                     onKeyDown={handleKeyDown}
                                                     data-row={studentIndex}
                                                     data-col={examCol}
-                                                    className="form-input w-16 text-center"
+                                                    className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                                     placeholder="-"
                                                 />
                                             </td>
@@ -569,7 +569,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                                     onKeyDown={handleKeyDown}
                                                     data-row={studentIndex}
                                                     data-col={actCol}
-                                                    className="form-input w-16 text-center"
+                                                    className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                                     placeholder="-"
                                                 />
                                             </td>
@@ -587,7 +587,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                             onKeyDown={handleKeyDown}
                                             data-row={studentIndex}
                                             data-col={totalCol}
-                                            className="form-input w-16 text-center"
+                                            className="w-14 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400"
                                             placeholder="-"
                                         />
                                     </td>
@@ -601,10 +601,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
                             <td className="px-1 py-1 text-sm border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
+                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="w-16 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400" />
                             </td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
+                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="w-16 text-center border border-slate-300 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-sky-400" />
                             </td>
                         </tr>
                         );

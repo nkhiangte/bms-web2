@@ -539,13 +539,24 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Working Days</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Days Present</th>
                     </tr>
-                    {(hasActivities || isIXTerminal3) && (
-                        <tr>
-                            {isIXTerminal3
-                                ? subjectDefinitions.flatMap(sd =>
-                                    sd.gradingSystem !== 'OABC' ? [
-                                        <th key={`${sd.name}-sa`} className="px-0.5 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l">SA<br/><span className="font-normal text-slate-400">/80</span></th>,
-                                        <th key={`${sd.name}-fa`} className="px-0.5 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l border-r">FA<br/><span className="font-normal text-slate-400">/20</span></th>
+    {(hasActivities || isIXTerminal3) && (
+    <tr className="bg-slate-50">
+        {isIXTerminal3
+            ? subjectDefinitions.flatMap(sd =>
+                sd.gradingSystem !== 'OABC' ? [
+                    <th key={`${sd.name}-sa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">SA<br/><span className="font-normal text-slate-400">/80</span></th>,
+                    <th key={`${sd.name}-fa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">FA<br/><span className="font-normal text-slate-400">/20</span></th>
+                ] : []
+            )
+            : subjectDefinitions.flatMap(sd =>
+                sd.gradingSystem !== 'OABC' ? [
+                    <th key={`${sd.name}-exam`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">Exam</th>,
+                    <th key={`${sd.name}-activity`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">Activity</th>
+                ] : []
+            )
+        }
+    </tr>
+)}
                                     ] : []
                                 )
                                 : subjectDefinitions.flatMap(sd =>

@@ -15,14 +15,20 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-const findResultWithAliases = (results, subjectDef) => {
+const findResultWithAliases = (results: any[], subjectDef: any) => {
     if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
-    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
-};
+    
+    const normSubjDefName = normalizeSubjectName(subjectDef.name);
+
+    return results.find(r => {
+        if (!r?.subject) return false;
+        
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
+
         const mathNames = ['math', 'maths', 'mathematics'];
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+        
         if (normSubjDefName === 'english' && normResultName === 'english i') return true;
         if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
         if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
@@ -31,6 +37,7 @@ const findResultWithAliases = (results, subjectDef) => {
         if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
         if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
         if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
+        
         return false;
     });
 };

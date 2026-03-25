@@ -37,9 +37,13 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
         if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
 
-        // Social Studies aliases
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
-        if (normSubjDefName === 'social science' && normResultName === 'social studies') return true;
+        // Social Studies aliases - ENHANCED
+        const socialNames = ['social studies', 'social science', 'social-studies', 'socialstudies'];
+        if (socialNames.includes(normSubjDefName) && socialNames.includes(normResultName)) return true;
+
+        // Science aliases
+        const scienceNames = ['science', 'general science'];
+        if (scienceNames.includes(normSubjDefName) && scienceNames.includes(normResultName)) return true;
 
         // Other aliases
         if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;

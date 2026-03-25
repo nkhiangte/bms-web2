@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
 import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '@/utils';
 import { ImportMarksModal } from '@/components/ImportMarksModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EditSubjectsModal from '@/components/EditSubjectsModal';
@@ -41,7 +41,41 @@ type SortCriteria = 'rollNo' | 'name' | 'totalMarks';
 
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
-    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
+    const normSubjDefName = normalizeSubjectName(subjectDef.name);
+
+    return results.find(r => {
+        if (!r?.subject) return false;
+        const normResultName = normalizeSubjectName(r.subject);
+
+        // Exact match
+        if (normResultName === normSubjDefName) return true;
+
+        // Math aliases
+        const mathNames = ['math', 'maths', 'mathematics'];
+        if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
+
+        // English aliases
+        if (normSubjDefName === 'english' && normResultName === 'english i') return true;
+        if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
+        if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
+        if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
+
+        // Social Studies aliases - ENHANCED
+        const socialNames = ['social studies', 'social science', 'social-studies', 'socialstudies'];
+        if (socialNames.includes(normSubjDefName) && socialNames.includes(normResultName)) return true;
+
+        // Science aliases
+        const scienceNames = ['science', 'general science'];
+        if (scienceNames.includes(normSubjDefName) && scienceNames.includes(normResultName)) return true;
+
+        // Other aliases
+        if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;
+        if (normSubjDefName === 'spelling' && normResultName === 'spellings') return true;
+        if (normSubjDefName === 'rhymes' && normResultName === 'rhyme') return true;
+        if (normSubjDefName === 'rhyme' && normResultName === 'rhymes') return true;
+
+        return false;
+    });
 };
 
 const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ students, academicYear, user, gradeDefinitions, onUpdateAcademic, onUpdateGradeDefinition }) => {
@@ -198,7 +232,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       });
       return updated;
     });
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents]);
+  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents, grade]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
     const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
@@ -373,8 +407,14 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const originalExam = student.academicPerformance?.find(e => e.id === examId);
 
         const newResults = subjectDefinitions.map(sd => {
-            const originalResult = Array.isArray(originalExam?.results) ? originalExam.results.find(r => subjectsMatch(r.subject, sd.name)) : undefined;
-            const newResult: SubjectMark = { subject: sd.name, ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) };
+            const originalResult = Array.isArray(originalExam?.results) ? findResultWithAliases(originalExam.results, sd) : undefined;
+            
+            // IMPORTANT: Use the original subject name if it exists to maintain consistency
+            const subjectName = originalResult?.subject || sd.name;
+            const newResult: SubjectMark = { 
+                subject: subjectName,
+                ...(originalResult?.activityLog && { activityLog: originalResult.activityLog }) 
+            };
 
             if (sd.gradingSystem === 'OABC') {
                 if (studentMarks[sd.name]) newResult.grade = studentMarks[sd.name] as any;
@@ -502,18 +542,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
         </div>
 
-        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
-            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
-            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
-                <button onClick={() => setSortCriteria('rollNo')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Roll No</button>
-                <button onClick={() => setSortCriteria('name')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Name</button>
-                <button onClick={() => setSortCriteria('totalMarks')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Total Marks</button>
-                <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">Export Excel</button>
-                <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">Export PDF</button>
+        <div className="mt-6 flex justify-between items-center gap-2 print-hidden">
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-600">Sort by:</span>
+                <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
+                    <button onClick={() => setSortCriteria('rollNo')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Roll No</button>
+                    <button onClick={() => setSortCriteria('name')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Name</button>
+                    <button onClick={() => setSortCriteria('totalMarks')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Total Marks</button>
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-semibold">Export Excel</button>
+                <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition text-sm font-semibold">Export PDF</button>
             </div>
         </div>
         
-        <div className="mt-2 overflow-x-auto border rounded-lg" ref={tableRef}>
+        <div className="mt-4 overflow-x-auto border rounded-lg" ref={tableRef}>
             <table id="mark-statement-table" className="min-w-[2000px] text-sm">
                  <thead className="bg-slate-100">
                     <tr>
@@ -539,30 +583,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Working Days</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Days Present</th>
                     </tr>
-    {(hasActivities || isIXTerminal3) && (
-    <tr className="bg-slate-50">
-        {isIXTerminal3
-            ? subjectDefinitions.flatMap(sd =>
-                sd.gradingSystem !== 'OABC' ? [
-                    <th key={`${sd.name}-sa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">SA<br/><span className="font-normal text-slate-400">/80</span></th>,
-                    <th key={`${sd.name}-fa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">FA<br/><span className="font-normal text-slate-400">/20</span></th>
-                ] : []
-            )
-            : subjectDefinitions.flatMap(sd =>
-                sd.gradingSystem !== 'OABC' ? [
-                    <th key={`${sd.name}-exam`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">Exam</th>,
-                    <th key={`${sd.name}-activity`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">Activity</th>
-                ] : []
-            )
-        }
-    </tr>
-)}
+                    {(hasActivities || isIXTerminal3) && (
+                        <tr className="bg-slate-50">
+                            {isIXTerminal3
+                                ? subjectDefinitions.flatMap(sd =>
+                                    sd.gradingSystem !== 'OABC' ? [
+                                        <th key={`${sd.name}-sa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">SA<br/><span className="font-normal text-slate-400">/80</span></th>,
+                                        <th key={`${sd.name}-fa`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">FA<br/><span className="font-normal text-slate-400">/20</span></th>
                                     ] : []
                                 )
                                 : subjectDefinitions.flatMap(sd =>
                                     sd.gradingSystem !== 'OABC' ? [
-                                        <th key={`${sd.name}-exam`} className="px-0.5 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l">Exam</th>,
-                                        <th key={`${sd.name}-activity`} className="px-0.5 py-1 text-center font-semibold text-slate-600 text-xs border-b border-l border-r">Activity</th>
+                                        <th key={`${sd.name}-exam`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l">Exam</th>,
+                                        <th key={`${sd.name}-activity`} className="px-0.5 py-1 text-center font-semibold text-slate-700 text-xs border-b border-l border-r">Activity</th>
                                     ] : []
                                 )
                             }

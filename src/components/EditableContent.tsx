@@ -13,6 +13,7 @@ interface EditableContentProps {
     style?: React.CSSProperties; // Inline styles
     imgAlt?: string; // Alt text for images
     placeholder?: string;
+    tagName?: keyof React.JSX.IntrinsicElements; // Root element tag
 }
 
 const EditableContent: React.FC<EditableContentProps> = ({ 
@@ -23,7 +24,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
     className = '', 
     style = {},
     imgAlt = 'Website image',
-    placeholder = 'Enter content...'
+    placeholder = 'Enter content...',
+    tagName = 'div'
 }) => {
     const [content, setContent] = useState<string>(defaultContent);
     const [isEditing, setIsEditing] = useState(false);
@@ -195,6 +197,8 @@ const EditableContent: React.FC<EditableContentProps> = ({
         });
     };
 
+    const Root = tagName as any;
+
     if (type === 'image') {
         return (
             <div className={`relative group ${className}`} style={style}>
@@ -290,13 +294,16 @@ const EditableContent: React.FC<EditableContentProps> = ({
     }
 
     return (
-        <div className={`relative group inline-block w-full ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all cursor-text' : ''}`}>
+        <Root 
+            className={`relative group ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all cursor-text' : ''} ${className}`} 
+            style={style}
+        >
             {type === 'textarea' ? (
-                 <div className={`whitespace-pre-wrap ${className}`} style={style}>
+                 <span className="whitespace-pre-wrap block">
                      {renderRichText(content)}
-                 </div>
+                 </span>
             ) : (
-                 <span className={className} style={style}>{content}</span>
+                 <>{content}</>
             )}
            
             {isAdmin && (
@@ -308,7 +315,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                     <EditIcon className="w-3 h-3" />
                 </button>
             )}
-        </div>
+        </Root>
     );
 };
 

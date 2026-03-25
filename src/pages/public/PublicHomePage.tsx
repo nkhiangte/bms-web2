@@ -85,29 +85,25 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                         <p className="text-sky-300 uppercase tracking-widest text-sm font-bold mb-4">
                             Champhai, Mizoram · Est. 1996
                         </p>
-                        <h1
+                        <EditableContent
+                            id="home_hero_title"
+                            defaultContent="Bethel Mission School"
+                            type="text"
+                            user={user}
+                            tagName="h1"
                             className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight text-white tracking-tight"
                             style={{ textShadow: '2px 4px 12px rgba(0,0,0,0.7)' }}
-                        >
-                            <EditableContent
-                                id="home_hero_title"
-                                defaultContent="Bethel Mission School"
-                                type="text"
-                                user={user}
-                            />
-                        </h1>
+                        />
                         <div className="w-24 h-1 bg-sky-400 mx-auto my-6 rounded-full" />
-                        <p
+                        <EditableContent
+                            id="home_hero_subtitle"
+                            defaultContent='"Service to God & Men"'
+                            type="text"
+                            user={user}
+                            tagName="p"
                             className="text-xl md:text-2xl text-white/85 font-medium tracking-wide italic"
                             style={{ textShadow: '1px 2px 6px rgba(0,0,0,0.6)' }}
-                        >
-                            <EditableContent
-                                id="home_hero_subtitle"
-                                defaultContent='"Service to God & Men"'
-                                type="text"
-                                user={user}
-                            />
-                        </p>
+                        />
                         <div className="mt-10 flex flex-wrap gap-4 justify-center">
                             <Link
                                 to="/about"

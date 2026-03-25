@@ -208,7 +208,7 @@ const DocumentsManagerPage: React.FC<DocumentsManagerPageProps> = ({ user }) => 
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {Object.entries(grouped).map(([cat, docs]) => (
+                    {(Object.entries(grouped) as [string, any[]][]).map(([cat, docs]) => (
                         <div key={cat}>
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">{cat}</h3>
                             <div className="space-y-2">

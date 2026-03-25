@@ -4,7 +4,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
-import { db, auth, firebase } from '@/firebaseConfig';
+import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
 import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade } from '@/utils';
 
 // Page Imports
@@ -593,20 +593,29 @@ const App: React.FC = () => {
 
   // ── Attendance + Disclosure (isolated, always-on) ─────────────────────────
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    // Test connection to Firestore
+    const testConnection = async () => {
+      try {
+        await db.collection('config').doc('academic').get({ source: 'server' });
+        console.log("Firestore connection successful.");
+      } catch (error: any) {
+        if (error.message.includes('the client is offline') || error.code === 'unavailable') {
+          console.error("Please check your Firebase configuration. The client is offline.");
+        }
+        // Log other errors but don't block
+        console.warn("Firestore connection test failed:", error);
+      }
+    };
+    testConnection();
+
     db.collection('settings').doc('disclosure').get()
-      .then(doc => { if (doc.exists) setDisclosureData(doc.data() as DisclosureData); });
+      .then(doc => { if (doc.exists) setDisclosureData(doc.data() as DisclosureData); })
+      .catch(err => handleFirestoreError(err, OperationType.GET, 'settings/disclosure'));
+
     const unsubs = [
       db.collection('config').doc('academic').onSnapshot(doc => {
         if (doc.exists) setAcademicYear(doc.data()?.currentAcademicYear || getCurrentAcademicYear());
-      }),
-      db.collection('studentAttendance').doc(today).onSnapshot(doc => {
-        if (doc.exists) setDailyStudentAttendance(doc.data() as any);
-        else setDailyStudentAttendance(GRADES_LIST.reduce((acc, g) => ({ ...acc, [g]: {} }), {}) as any);
-      }),
-      db.collection('staffAttendance').doc(today).onSnapshot(doc => {
-        setStaffAttendance(doc.exists ? doc.data() as StaffAttendanceRecord : {});
-      }),
+      }, err => handleFirestoreError(err, OperationType.GET, 'config/academic')),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
@@ -617,8 +626,9 @@ const App: React.FC = () => {
       if (firebaseUser) {
         try {
           const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
+          const isAdminEmail = firebaseUser.email === 'nkhiangte@gmail.com';
           if (userDoc.exists) { setUser({ uid: firebaseUser.uid, ...userDoc.data() } as User); }
-          else { setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: 'user' }); }
+          else { setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending' }); }
         } catch { setUser(null); }
       } else { setUser(null); }
       setAuthLoading(false);
@@ -630,7 +640,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const unsub = db.collection('news').onSnapshot(
       s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))),
-      err => console.error('News listener error:', err)
+      err => handleFirestoreError(err, OperationType.LIST, 'news')
     );
     return () => unsub();
   }, []);
@@ -639,7 +649,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const unsub = db.collection('staff').onSnapshot(
       s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))),
-      err => console.error('Staff listener error:', err)
+      err => handleFirestoreError(err, OperationType.LIST, 'staff')
     );
     return () => unsub();
   }, []);
@@ -647,35 +657,62 @@ const App: React.FC = () => {
   // ── Public data (config, nav, routines, syllabus) ─────────────────────────
   useEffect(() => {
     const unsubs = [
-      db.collection('examRoutines').onSnapshot(s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine)))),
-      db.collection('classRoutines').onSnapshot(s => {
-        const r: Record<string, DailyRoutine> = {};
-        s.docs.forEach(d => r[d.id] = d.data()?.routine as DailyRoutine);
-        setClassRoutines(r);
-      }),
-      db.collection('config').doc('schoolSettings').onSnapshot(doc => { if (doc.exists) setSchoolConfig(doc.data() as any); }),
-      db.collection('config').doc('feeStructure').onSnapshot(doc => {
-        if (doc.exists) {
-          const data = doc.data() || {};
-          const migrateSet = (s: any): FeeSet => {
-            if (s && Array.isArray(s.heads)) return s;
-            const heads: FeeHead[] = [];
-            if (s?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(s.tuitionFee), type: 'monthly' });
-            if (s?.examFee)    heads.push({ id: 'eTerm', name: 'Exam Fee (Per Term)', amount: Number(s.examFee), type: 'term' });
-            return { heads };
-          };
-          setFeeStructure({ set1: migrateSet(data.set1), set2: migrateSet(data.set2), set3: migrateSet(data.set3), gradeMap: data.gradeMap || FEE_SET_GRADES });
-        }
-      }),
-      db.collection('config').doc('admissionSettings').onSnapshot(doc => {
-        if (doc.exists) setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...doc.data() } as AdmissionSettings);
-      }),
-      db.collection('config').doc('gradeDefinitions').onSnapshot(doc => { if (doc.exists) setGradeDefinitions(doc.data() as any); }),
-      db.collection('config').doc('sitemap').onSnapshot(doc => { if (doc.exists && doc.data()?.content) setSitemapContent(doc.data()?.content); }),
-      db.collection('navigation').onSnapshot(snap => {
-        setNavigation(snap.docs.map(d => ({ id: d.id, ...d.data() } as NavMenuItem)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
-      }),
-      db.collection('syllabus').onSnapshot(s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus)))),
+      db.collection('examRoutines').onSnapshot(
+        s => setExamRoutines(s.docs.map(d => ({ id: d.id, ...d.data() } as ExamRoutine))),
+        err => handleFirestoreError(err, OperationType.LIST, 'examRoutines')
+      ),
+      db.collection('classRoutines').onSnapshot(
+        s => {
+          const r: Record<string, DailyRoutine> = {};
+          s.docs.forEach(d => r[d.id] = d.data()?.routine as DailyRoutine);
+          setClassRoutines(r);
+        },
+        err => handleFirestoreError(err, OperationType.LIST, 'classRoutines')
+      ),
+      db.collection('config').doc('schoolSettings').onSnapshot(
+        doc => { if (doc.exists) setSchoolConfig(doc.data() as any); },
+        err => handleFirestoreError(err, OperationType.GET, 'config/schoolSettings')
+      ),
+      db.collection('config').doc('feeStructure').onSnapshot(
+        doc => {
+          if (doc.exists) {
+            const data = doc.data() || {};
+            const migrateSet = (s: any): FeeSet => {
+              if (s && Array.isArray(s.heads)) return s;
+              const heads: FeeHead[] = [];
+              if (s?.tuitionFee) heads.push({ id: 'tui', name: 'Tuition Fee (Monthly)', amount: Number(s.tuitionFee), type: 'monthly' });
+              if (s?.examFee)    heads.push({ id: 'eTerm', name: 'Exam Fee (Per Term)', amount: Number(s.examFee), type: 'term' });
+              return { heads };
+            };
+            setFeeStructure({ set1: migrateSet(data.set1), set2: migrateSet(data.set2), set3: migrateSet(data.set3), gradeMap: data.gradeMap || FEE_SET_GRADES });
+          }
+        },
+        err => handleFirestoreError(err, OperationType.GET, 'config/feeStructure')
+      ),
+      db.collection('config').doc('admissionSettings').onSnapshot(
+        doc => {
+          if (doc.exists) setAdmissionSettings({ ...DEFAULT_ADMISSION_SETTINGS, ...doc.data() } as AdmissionSettings);
+        },
+        err => handleFirestoreError(err, OperationType.GET, 'config/admissionSettings')
+      ),
+      db.collection('config').doc('gradeDefinitions').onSnapshot(
+        doc => { if (doc.exists) setGradeDefinitions(doc.data() as any); },
+        err => handleFirestoreError(err, OperationType.GET, 'config/gradeDefinitions')
+      ),
+      db.collection('config').doc('sitemap').onSnapshot(
+        doc => { if (doc.exists && doc.data()?.content) setSitemapContent(doc.data()?.content); },
+        err => handleFirestoreError(err, OperationType.GET, 'config/sitemap')
+      ),
+      db.collection('navigation').onSnapshot(
+        snap => {
+          setNavigation(snap.docs.map(d => ({ id: d.id, ...d.data() } as NavMenuItem)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+        },
+        err => handleFirestoreError(err, OperationType.LIST, 'navigation')
+      ),
+      db.collection('syllabus').onSnapshot(
+        s => setSyllabus(s.docs.map(d => ({ id: d.id, ...d.data() } as Syllabus))),
+        err => handleFirestoreError(err, OperationType.LIST, 'syllabus')
+      ),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
@@ -683,6 +720,7 @@ const App: React.FC = () => {
   // ── Protected data (logged-in users only) ─────────────────────────────────
   useEffect(() => {
     if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
     const unsubs: (() => void)[] = [
       db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => {
         const data = d.data();
@@ -692,38 +730,50 @@ const App: React.FC = () => {
           }));
         }
         return { id: d.id, ...data } as Student;
-      }))),
-      db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent)))),
-      db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice)))),
-      db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework)))),
-      db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry)))),
+      })), err => handleFirestoreError(err, OperationType.LIST, 'students')),
+      db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))), err => handleFirestoreError(err, OperationType.LIST, 'calendarEvents')),
     ];
+
+    if (['admin', 'warden', 'user', 'parent'].includes(user.role)) {
+      unsubs.push(
+        db.collection('studentAttendance').doc(today).onSnapshot(doc => {
+          if (doc.exists) setDailyStudentAttendance(doc.data() as any);
+          else setDailyStudentAttendance(GRADES_LIST.reduce((acc, g) => ({ ...acc, [g]: {} }), {}) as any);
+        }, err => handleFirestoreError(err, OperationType.GET, `studentAttendance/${today}`)),
+        db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))), err => handleFirestoreError(err, OperationType.LIST, 'notices')),
+        db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework))), err => handleFirestoreError(err, OperationType.LIST, 'homework')),
+        db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))), err => handleFirestoreError(err, OperationType.LIST, 'conductLog')),
+      );
+    }
 
     if (['admin', 'warden', 'user'].includes(user.role)) {
       unsubs.push(
+        db.collection('staffAttendance').doc(today).onSnapshot(doc => {
+          setStaffAttendance(doc.exists ? doc.data() as StaffAttendanceRecord : {});
+        }, err => handleFirestoreError(err, OperationType.GET, `staffAttendance/${today}`)),
         db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
           ...s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)),
           ...prev.filter(a => a.id.startsWith('BMSHSTMM'))
-        ])),
+        ]), err => handleFirestoreError(err, OperationType.LIST, 'online_admissions')),
         db.collection('hostel_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
           ...prev.filter(a => !a.id.startsWith('BMSHSTMM')),
-          ...s.docs.map(d => ({ id: d.id, ...d.data(), studentType: 'Boarder' } as OnlineAdmission))
-        ])),
-        db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User)))),
-        db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
-        db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord)))),
-        db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() } as ServiceCertificateRecord)))),
-        db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry)))),
+          ...s.docs.map(d => ({ id: d.id, ...d.data(), studentType: 'Boarder' } as any as OnlineAdmission))
+        ]), err => handleFirestoreError(err, OperationType.LIST, 'hostel_admissions')),
+        db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))), err => handleFirestoreError(err, OperationType.LIST, 'users')),
+        db.collection('inventory').onSnapshot(s => setInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem))), err => handleFirestoreError(err, OperationType.LIST, 'inventory')),
+        db.collection('tcRecords').onSnapshot(s => setTcRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as TcRecord))), err => handleFirestoreError(err, OperationType.LIST, 'tcRecords')),
+        db.collection('serviceCertificates').onSnapshot(s => setServiceCerts(s.docs.map(d => ({ id: d.id, ...d.data() } as ServiceCertificateRecord))), err => handleFirestoreError(err, OperationType.LIST, 'serviceCertificates')),
+        db.collection('hostelDisciplineLog').onSnapshot(s => setHostelDisciplineLog(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelDisciplineEntry))), err => handleFirestoreError(err, OperationType.LIST, 'hostelDisciplineLog')),
       );
     }
 
     if (['admin', 'warden'].includes(user.role)) {
       unsubs.push(
-        db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident)))),
-        db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff)))),
-        db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem)))),
-        db.collection('stockLogs').onSnapshot(s => setStockLogs(s.docs.map(d => ({ id: d.id, ...d.data() } as StockLog)))),
-        db.collection('choreRoster').doc('current').onSnapshot(d => { if (d.exists) setChoreRoster(d.data() as ChoreRoster); }),
+        db.collection('hostelResidents').onSnapshot(s => setHostelResidents(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelResident))), err => handleFirestoreError(err, OperationType.LIST, 'hostelResidents')),
+        db.collection('hostelStaff').onSnapshot(s => setHostelStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelStaff))), err => handleFirestoreError(err, OperationType.LIST, 'hostelStaff')),
+        db.collection('hostelInventory').onSnapshot(s => setHostelInventory(s.docs.map(d => ({ id: d.id, ...d.data() } as HostelInventoryItem))), err => handleFirestoreError(err, OperationType.LIST, 'hostelInventory')),
+        db.collection('stockLogs').onSnapshot(s => setStockLogs(s.docs.map(d => ({ id: d.id, ...d.data() } as StockLog))), err => handleFirestoreError(err, OperationType.LIST, 'stockLogs')),
+        db.collection('choreRoster').doc('current').onSnapshot(d => { if (d.exists) setChoreRoster(d.data() as ChoreRoster); }, err => handleFirestoreError(err, OperationType.GET, 'choreRoster/current')),
       );
     }
 

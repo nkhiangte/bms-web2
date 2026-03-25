@@ -48,9 +48,9 @@ const WebsiteMediaManagerPage: React.FC<WebsiteMediaManagerPageProps> = ({ user 
     }, [selectedSection.id]);
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+        const files = Array.from(e.target.files || []) as File[];
         setUploadItems(prev => [...prev, ...files.map(file => ({
-            file, preview: URL.createObjectURL(file),
+            file: file as File, preview: URL.createObjectURL(file),
             title: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
             caption: '', status: 'pending' as const,
         }))]);

@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user", "warden", "parent", "pending"] },
+        "studentIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "grade": { "type": "string" },
+        "section": { "type": "string" },
+        "rollNumber": { "type": "string" },
+        "dateOfBirth": { "type": "string", "format": "date" },
+        "gender": { "type": "string" },
+        "aadhaarNumber": { "type": "string" },
+        "contact": { "type": "string" },
+        "address": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "photographUrl": { "type": "string" }
+      },
+      "required": ["name", "grade"]
+    },
+    "Staff": {
+      "title": "Staff",
+      "description": "Staff member record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "designation": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "contact": { "type": "string" }
+      },
+      "required": ["name", "designation"]
+    },
+    "NewsItem": {
+      "title": "News Item",
+      "description": "Public news or announcement",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["title", "content", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Student records"
+    },
+    "/staff/{staffId}": {
+      "schema": "Staff",
+      "description": "Staff records"
+    },
+    "/news/{newsId}": {
+      "schema": "NewsItem",
+      "description": "Public news items"
+    }
+  }
+}

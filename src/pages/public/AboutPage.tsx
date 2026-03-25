@@ -124,7 +124,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ user }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        {Object.entries(grouped).map(([category, docs]) => (
+                                        {(Object.entries(grouped) as [string, any[]][]).map(([category, docs]) => (
                                             <div key={category}>
                                                 {Object.keys(grouped).length > 1 && (
                                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">{category}</h3>

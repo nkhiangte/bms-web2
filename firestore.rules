@@ -19,14 +19,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return hasRole('admin');
+      return isSignedIn() &&
+             (hasRole('admin') || 
+              (request.auth.token.email == "nkhiangte@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isStaff() {
-      return isSignedIn() &&
-            (hasRole('admin') ||
+      return isAdmin() ||
              hasRole('user')  ||
-             hasRole('warden'));
+             hasRole('warden');
     }
 
     function isParent() {
@@ -34,7 +35,7 @@ service cloud.firestore {
     }
 
     function isWardenOrAdmin() {
-      return hasRole('admin') || hasRole('warden');
+      return isAdmin() || hasRole('warden');
     }
 
     // Returns parent studentIds or [] when unavailable
@@ -77,13 +78,20 @@ service cloud.firestore {
     match /online_admissions/{admissionId} {
       allow create: if true; 
       allow get: if true;    
-      allow list, delete: if isAdmin();
-      allow update: if isAdmin() || (resource.data.status != 'rejected');
+      allow list, delete: if isStaff();
+      allow update: if isStaff() || (resource.data.status != 'rejected');
+    }
+
+    match /hostel_admissions/{admissionId} {
+      allow create: if true;
+      allow get: if true;
+      allow list, delete: if isStaff();
+      allow update: if isStaff();
     }
     
     match /transactions/{transactionId} {
         allow create: if true; // Allow anyone to initiate a transaction record
-        allow read, update: if isAdmin(); // Only admins can verify and update status
+        allow read, update: if isStaff(); // Only staff can verify and update status
     }
     
     // ---------------------------
@@ -92,7 +100,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow get, update: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
-      allow read, list, delete: if isAdmin();
+      allow read, list, delete: if isStaff();
 
       match /prefs/{prefId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -137,9 +145,17 @@ service cloud.firestore {
     }
 
     // ---------------------------
+    // Navigation
+    // ---------------------------
+    match /navigation/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ---------------------------
     // Settings & Config
     // ---------------------------
-    match /settings/academic {
+    match /settings/{docId} {
       allow read: if true; 
       allow write: if isAdmin();
     }
@@ -245,8 +261,8 @@ service cloud.firestore {
     }
 
     match /hostelDisciplineLog/{docId} {
-      allow list: if isWardenOrAdmin() || isParent();
-      allow get: if isWardenOrAdmin() ||
+      allow list: if isStaff() || isParent();
+      allow get: if isStaff() ||
                  (isParent() && resource.data.studentId in getParentStudentIds());
       allow create, update, delete: if isWardenOrAdmin();
     }

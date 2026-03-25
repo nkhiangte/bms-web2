@@ -200,9 +200,9 @@ const GalleryManagerPage: React.FC<GalleryManagerPageProps> = ({ user }) => {
     };
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+        const files = Array.from(e.target.files || []) as File[];
         const items: UploadItem[] = files.map(file => ({
-            file, preview: URL.createObjectURL(file),
+            file: file as File, preview: URL.createObjectURL(file),
             title: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
             caption: '',
             year: '', // ← NEW

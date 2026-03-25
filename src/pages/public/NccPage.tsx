@@ -46,8 +46,8 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
     }, [lightboxIndex, images.length]);
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        setUploadItems(prev => [...prev, ...files.map(file => ({ file, preview: URL.createObjectURL(file), title: file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '), caption: '', status: 'pending' as const }))]);
+        const files = Array.from(e.target.files || []) as File[];
+        setUploadItems(prev => [...prev, ...files.map(file => ({ file: file as File, preview: URL.createObjectURL(file), title: file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '), caption: '', status: 'pending' as const }))]);
     };
 
     const handleUploadAll = async () => {

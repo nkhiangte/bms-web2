@@ -15,9 +15,6 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-// Uses the same subjectsMatch utility as ClassMarkStatementPage so subject
-// lookup is consistent between the two pages (fixes Social Studies / Social
-// Science mismatch that caused marks to show as 0 in the progress report).
 const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
     if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
     return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
@@ -70,10 +67,10 @@ const calculateTermSummary = (
             } else if (isClassIXorX && examId === 'terminal3') {
                 const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
                 const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? r?.examMarks ?? 0);
+                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
                 if (totalMark < 33) fSubjects++;
             } else {
-                totalMark = Number(r?.marks ?? r?.examMarks ?? 0);
+                totalMark = Number(r?.marks ?? 0);
                 const limit = isClassIXorX ? 33 : 35;
                 if (totalMark < limit) fSubjects++;
             }
@@ -124,7 +121,7 @@ const calculateTermSummary = (
             subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
-            totalSubjectMark = Number(result?.marks ?? result?.examMarks ?? 0);
+            totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;
             subjectFullMarks = sd.examFullMarks;
             const failLimit = isClassIXorX ? 33 : 35;
@@ -175,28 +172,9 @@ const calculateTermSummary = (
     return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: currentStudentStats.result, division, academicGrade, remark, rank };
 };
 
-// ─── Print styles injected once ──────────────────────────────────────────────
-const PRINT_STYLES = `
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
-  body * { visibility: hidden; }
-  #progress-report-printable, #progress-report-printable * { visibility: visible; }
-  #progress-report-printable {
-    position: fixed;
-    top: 0; left: 0;
-    width: 210mm;
-    padding: 8cm 1cm 1cm 1cm;
-    box-sizing: border-box;
-    font-size: 9pt;
-    font-family: serif;
-  }
-  .print-hidden { display: none !important; }
-}
-`;
-
+// ─────────────────────────────────────────────────────────────────────────────
+//  Multi-Term Report Card
+// ─────────────────────────────────────────────────────────────────────────────
 const MultiTermReportCard: React.FC<{
     student: Student;
     gradeDef: GradeDefinition;
@@ -206,7 +184,7 @@ const MultiTermReportCard: React.FC<{
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isIXorX = student.grade === Grade.IX || student.grade === Grade.X;
-    const isIXTerminal3Report = student.grade === Grade.IX;
+    const isIXTerminal3Report = student.grade === Grade.IX || student.grade === Grade.X;
     const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
     const getAttendancePercent = (attendance?: Attendance) => {
@@ -285,10 +263,10 @@ const MultiTermReportCard: React.FC<{
                                     isGraded ? (
                                         <><td colSpan={2} style={tdStyle}>{t1?.grade ?? '-'}</td><td colSpan={2} style={tdStyle}>{t2?.grade ?? '-'}</td><td colSpan={2} style={tdStyle}>{t3?.grade ?? '-'}</td></>
                                     ) : (
-                                        <><td colSpan={2} style={tdStyle}>{t1?.marks ?? t1?.examMarks ?? '-'}</td><td colSpan={2} style={tdStyle}>{t2?.marks ?? t2?.examMarks ?? '-'}</td><td style={tdStyle}>{t3?.saMarks ?? t3?.marks ?? '-'}</td><td style={tdStyle}>{t3?.faMarks ?? '-'}</td></>
+                                        <><td colSpan={2} style={tdStyle}>{t1?.marks ?? '-'}</td><td colSpan={2} style={tdStyle}>{t2?.marks ?? '-'}</td><td style={tdStyle}>{t3?.saMarks ?? t3?.marks ?? '-'}</td><td style={tdStyle}>{t3?.faMarks ?? '-'}</td></>
                                     )
                                 ) : (
-                                    <><td style={tdStyle}>{isGraded ? (t1?.grade ?? '-') : (t1?.marks ?? t1?.examMarks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t2?.grade ?? '-') : (t2?.marks ?? t2?.examMarks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t3?.grade ?? '-') : (t3?.marks ?? t3?.examMarks ?? '-')}</td></>
+                                    <><td style={tdStyle}>{isGraded ? (t1?.grade ?? '-') : (t1?.marks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t2?.grade ?? '-') : (t2?.marks ?? '-')}</td><td style={tdStyle}>{isGraded ? (t3?.grade ?? '-') : (t3?.marks ?? '-')}</td></>
                                 )}
                             </tr>
                         );
@@ -409,7 +387,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                             <tr key={sd.name}>
                                 <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500 }}>{sd.name}</td>
                                 {isNurseryToII ? (
-                                    <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 35}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? result?.examMarks ?? 0)}</td></>
+                                    <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 35}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td></>
                                 ) : hasActivities ? (
                                     isGraded ? (
                                         <td colSpan={5} style={{ ...tdStyle, fontWeight: 'bold', textAlign: 'center' }}>{result?.grade || '-'}</td>
@@ -417,7 +395,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                                         <><td style={tdStyle}>{sd.examFullMarks}</td><td style={tdStyle}>{result?.examMarks ?? 0}</td><td style={tdStyle}>{sd.activityFullMarks}</td><td style={tdStyle}>{result?.activityMarks ?? 0}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td></>
                                     )
                                 ) : (
-                                    <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 33}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? result?.examMarks ?? 0)}</td></>
+                                    <><td style={tdStyle}>{isGraded ? 'Graded' : sd.examFullMarks}</td><td style={tdStyle}>{isGraded ? '-' : 33}</td><td style={{ ...tdStyle, fontWeight: 'bold' }}>{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td></>
                                 )}
                             </tr>
                         );
@@ -522,13 +500,34 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
 
     const singleExam = useMemo(() => exams[examId as 'terminal1' | 'terminal2' | 'terminal3'], [exams, examId]);
 
+    const dynamicPrintStyles = useMemo(() => `
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  body * { visibility: hidden; }
+  #progress-report-printable, #progress-report-printable * { visibility: visible; }
+  #progress-report-printable {
+    position: fixed;
+    top: 0; left: 0;
+    width: 210mm;
+    padding: ${examId === 'terminal3' ? '8.5cm' : '0.5cm'} 1cm 1cm 1cm;
+    box-sizing: border-box;
+    font-size: 9pt;
+    font-family: serif;
+  }
+  .print-hidden { display: none !important; }
+}
+`, [examId]);
+
     if (!student) return <div className="p-8 text-center">Loading student data...</div>;
     if (!gradeDef) return <div className="p-8 text-center"><p>Curriculum not defined for {student.grade}.</p></div>;
 
     return (
         <div className="bg-slate-100 print:bg-white">
-            {/* Inject print styles */}
-            <style dangerouslySetInnerHTML={{ __html: PRINT_STYLES }} />
+            {/* Inject dynamic print styles */}
+            <style dangerouslySetInnerHTML={{ __html: dynamicPrintStyles }} />
 
             {/* Screen nav bar */}
             <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm">
@@ -548,8 +547,8 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
             {/* ── Printable area ── */}
             <div id="progress-report-printable" className="container mx-auto bg-white p-6 my-4 shadow-lg print:w-full print:max-w-none print:my-0 print:shadow-none print:p-0">
               <div className="font-serif text-xs text-slate-900">
-                    {/* On screen: show banner for terminal1/2, blank space for terminal3 */}
-                    <div className="print:hidden">
+                    {/* On screen: show banner for terminal1/2, blank space for terminal3. In print: show banner only for terminal 1 & 2 */}
+                    <div className={examId === 'terminal3' ? "print:hidden" : ""}>
                         {examId !== 'terminal3' ? (
                             <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2" />
                         ) : (

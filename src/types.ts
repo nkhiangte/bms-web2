@@ -299,7 +299,7 @@ export interface SubjectDefinition {
     name: string;
     examFullMarks: number;
     activityFullMarks: number;
-    gradingSystem?: 'OABC';
+    gradingSystem?: 'OABC' | 'Numerical';
 }
 
 export interface GradeDefinition {
@@ -714,6 +714,7 @@ export interface NavMenuItem {
     label: string;
     path: string;
     order: number;
+    parent?: string; // Added parent for sub-navigation support
     isActive?: boolean;
     updatedAt?: string;
 }

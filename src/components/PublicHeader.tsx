@@ -38,10 +38,10 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
         <header className="bg-white shadow-sm sticky top-0 z-30">
             {/* Top Row: Logo and Login */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-24 sm:h-32">
+                <div className="flex items-center justify-between h-20 sm:h-24">
                     {/* Logo */}
                     <Link to="/" className="flex items-center flex-shrink-0">
-                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-20 sm:h-24" />
+                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-16 sm:h-20" />
                     </Link>
 
                     {/* Login Button & Mobile Menu Toggle */}

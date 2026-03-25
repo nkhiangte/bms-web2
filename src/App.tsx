@@ -286,7 +286,7 @@ const App: React.FC = () => {
     try {
       const batch = db.batch();
       const studentRef = db.collection('students').doc();
-      batch.set(studentRef, { ...studentData, id: studentRef.id, status: StudentStatus.ACTIVE });
+      batch.set(studentRef, { ...studentData, id: studentRef.id, status: StudentStatus.ACTIVE, academicYear });
       const admissionRef = db.collection(getAdmissionCollection(admissionId)).doc(admissionId);
       batch.update(admissionRef, { status: 'approved', isEnrolled: true, temporaryStudentId: studentData.studentId });
       await batch.commit();
@@ -340,8 +340,7 @@ const App: React.FC = () => {
             const gradeDef = gradeDefinitions[student.grade];
             const resultStatus = calculateStudentResult(student, gradeDef);
             const nextGrade = resultStatus === 'FAIL' ? student.grade : (getNextGrade(student.grade) || student.grade);
-            const newStudentId = formatStudentId({ grade: nextGrade, rollNo: student.rollNo } as any, nextYear);
-            batch.update(studentRef, { grade: nextGrade, studentId: newStudentId, academicYear: nextYear, academicPerformance: [], feePayments: { admissionFeePaid: true, tuitionFeesPaid: {}, examFeesPaid: { terminal1: false, terminal2: false, terminal3: false } } });
+            batch.update(studentRef, { grade: nextGrade, academicYear: nextYear, academicPerformance: [], feePayments: { admissionFeePaid: true, tuitionFeesPaid: {}, examFeesPaid: { terminal1: false, terminal2: false, terminal3: false } } });
           }
         });
         await batch.commit();
@@ -722,15 +721,23 @@ const App: React.FC = () => {
     if (!user) return;
     const today = new Date().toISOString().split('T')[0];
     const unsubs: (() => void)[] = [
-      db.collection('students').onSnapshot(s => setStudents(s.docs.map(d => {
-        const data = d.data();
-        if (Array.isArray(data.academicPerformance)) {
-          data.academicPerformance = data.academicPerformance.map((exam: any) => ({
-            ...exam, results: Array.isArray(exam.results) ? exam.results : Object.values(exam.results || {}),
-          }));
-        }
-        return { id: d.id, ...data } as Student;
-      })), err => handleFirestoreError(err, OperationType.LIST, 'students')),
+      db.collection('students').onSnapshot(s => {
+        const allStudents = s.docs.map(d => {
+          const data = d.data();
+          if (Array.isArray(data.academicPerformance)) {
+            data.academicPerformance = data.academicPerformance.map((exam: any) => ({
+              ...exam, results: Array.isArray(exam.results) ? exam.results : Object.values(exam.results || {}),
+            }));
+          }
+          return { id: d.id, ...data } as Student;
+        });
+        // Filter students by academic year. If no academicYear is set, assume it's 2025-26 for legacy data.
+        const filteredStudents = allStudents.filter(s => 
+          s.academicYear === academicYear || 
+          (!s.academicYear && academicYear === '2025-26')
+        );
+        setStudents(filteredStudents);
+      }, err => handleFirestoreError(err, OperationType.LIST, 'students')),
       db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))), err => handleFirestoreError(err, OperationType.LIST, 'calendarEvents')),
     ];
 
@@ -778,7 +785,7 @@ const App: React.FC = () => {
     }
 
     return () => unsubs.forEach(u => u());
-  }, [user]);
+  }, [user, academicYear]);
 
   const LoadingScreen = () => (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">

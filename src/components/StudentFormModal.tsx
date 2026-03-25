@@ -92,10 +92,11 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
     }, [student, isOpen, newStudentTargetGrade]);
     
     useEffect(() => {
-        if (isOpen && !student) { 
-            const tempStudentForId = { ...getInitialFormData(), ...formData, id: 'temp' } as Student;
-            const newStudentId = formatStudentId(tempStudentForId, academicYear);
-            if (newStudentId !== formData.studentId) {
+        if (isOpen) { 
+            // Only auto-generate if the studentId is empty. This makes it a permanent ID.
+            if (!formData.studentId) {
+                const tempStudentForId = { ...getInitialFormData(), ...formData, id: student?.id || 'temp' } as Student;
+                const newStudentId = formatStudentId(tempStudentForId, academicYear);
                 setFormData(prev => ({ ...prev, studentId: newStudentId }));
             }
         }

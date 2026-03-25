@@ -25,7 +25,8 @@ const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: S
         if (mathNames.includes(normSubjDefName) && mathNames.includes(normResultName)) return true;
         if (normSubjDefName === 'english' && normResultName === 'english i') return true;
         if (normSubjDefName === 'english - ii' && normResultName === 'english ii') return true;
-        if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+       if (normSubjDefName === 'social studies' && normResultName === 'social science') return true;
+if (normSubjDefName === 'social science' && normResultName === 'social studies') return true;
         if (normSubjDefName === 'eng-i' && (normResultName === 'english' || normResultName === 'english i')) return true;
         if (normSubjDefName === 'eng-ii' && (normResultName === 'english ii' || normResultName === 'english - ii')) return true;
         if (normSubjDefName === 'spellings' && normResultName === 'spelling') return true;

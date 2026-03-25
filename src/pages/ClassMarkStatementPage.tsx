@@ -58,34 +58,42 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
-    
+
     const baseSubjects = [...(gradeDefinitions[grade]?.subjects || [])];
     const subjectsMap = new Map<string, SubjectDefinition>();
-    
     baseSubjects.forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
 
-    classStudents.forEach(student => {
-      const studentExam = student.academicPerformance?.find(e => e.id === examId);
-      if (studentExam?.results) {
-        studentExam.results.forEach(res => {
-          const normalized = normalizeSubjectName(res.subject);
-          if (!subjectsMap.has(normalized)) {
-            subjectsMap.set(normalized, {
-              name: res.subject,
-              examFullMarks: 100,
-              activityFullMarks: 0,
-              gradingSystem: res.grade ? 'OABC' : 'Numerical'
-            });
-          }
-        });
-      }
-    });
+    // FIX: For Class IX and X, only use subjects from grade settings.
+    // Do NOT auto-add subjects found in student Firestore data — this caused
+    // phantom columns like "Social Science" to appear when marks were saved
+    // under a wrong/old subject name.
+    // For all other classes, keep the original behaviour of auto-discovering
+    // subjects from student data (needed for lower classes).
+    if (grade !== Grade.IX && grade !== Grade.X) {
+      classStudents.forEach(student => {
+        const studentExam = student.academicPerformance?.find(e => e.id === examId);
+        if (studentExam?.results) {
+          studentExam.results.forEach(res => {
+            const normalized = normalizeSubjectName(res.subject);
+            if (!subjectsMap.has(normalized)) {
+              subjectsMap.set(normalized, {
+                name: res.subject,
+                examFullMarks: 100,
+                activityFullMarks: 0,
+                gradingSystem: res.grade ? 'OABC' : 'Numerical'
+              });
+            }
+          });
+        }
+      });
+    }
 
     let finalSubjects = Array.from(subjectsMap.values());
 
     if (grade === Grade.IX || grade === Grade.X) {
         finalSubjects = finalSubjects.map(sub => ({ ...sub, examFullMarks: 100, activityFullMarks: 0 }));
     }
+
     return finalSubjects;
   }, [grade, gradeDefinitions, classStudents, examId]) as SubjectDefinition[];
   
@@ -126,8 +134,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [marksData, setMarksData] = useState<MarksData>({});
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
   const [isSaving, setIsSaving] = useState(false);
-  // Use a ref so the useEffect always sees the latest value without being a dependency
-  const changedStudentsRef = useRef<Set<string>>(new Set());
   const [changedStudents, setChangedStudents] = useState<Set<string>>(new Set());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isConfirmSaveModalOpen, setIsConfirmSaveModalOpen] = useState(false);
@@ -173,11 +179,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       });
     });
     
-    // Use the ref (not state) to avoid stale closure — always reflects latest changed students
     setMarksData(prev => {
       const updated = { ...prev };
       Object.keys(initialMarks).forEach(studentId => {
-        if (!changedStudentsRef.current.has(studentId)) {
+        if (!changedStudents.has(studentId)) {
           updated[studentId] = initialMarks[studentId];
         }
       });
@@ -187,13 +192,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     setAttendanceData(prev => {
       const updated = { ...prev };
       Object.keys(initialAttendance).forEach(studentId => {
-        if (!changedStudentsRef.current.has(studentId)) {
+        if (!changedStudents.has(studentId)) {
           updated[studentId] = initialAttendance[studentId];
         }
       });
       return updated;
     });
-  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails]);
+  }, [classStudents, subjectDefinitions, examId, hasActivities, examDetails, changedStudents]);
   
   const handleMarkChange = (studentId: string, subjectName: string, value: string, type: 'exam' | 'activity' | 'total' | 'grade' | 'sa' | 'fa') => {
     const subjectDef = subjectDefinitions.find(sd => sd.name === subjectName);
@@ -202,7 +207,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     let key = subjectName;
     if (type === 'grade') {
         setMarksData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [key]: value }}));
-        changedStudentsRef.current = new Set(changedStudentsRef.current).add(studentId);
         setChangedStudents(prev => new Set(prev).add(studentId));
         return;
     }
@@ -217,7 +221,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const numericValue = value === '' ? null : Math.max(0, Math.min(parseInt(value, 10), fullMarks));
 
     setMarksData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [key]: numericValue }}));
-    changedStudentsRef.current = new Set(changedStudentsRef.current).add(studentId);
     setChangedStudents(prev => new Set(prev).add(studentId));
   };
   
@@ -225,7 +228,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     if (!/^\d*$/.test(value)) return;
     const numericValue = value === '' ? null : Math.max(0, parseInt(value, 10));
     setAttendanceData(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: numericValue }}));
-    changedStudentsRef.current = new Set(changedStudentsRef.current).add(studentId);
     setChangedStudents(prev => new Set(prev).add(studentId));
   };
   
@@ -237,9 +239,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         }
         return newMarksData;
     });
-    const newChanged = new Set([...changedStudentsRef.current, ...Object.keys(importedMarks)]);
-    changedStudentsRef.current = newChanged;
-    setChangedStudents(newChanged);
+    setChangedStudents(prev => new Set([...prev, ...Object.keys(importedMarks)]));
   };
 
   const processedData: ProcessedStudent[] = useMemo(() => {
@@ -281,8 +281,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             currentSubjMarkValue = Number(studentMarks[sd.name] || 0);
             localExamTotal += currentSubjMarkValue;
             currentSubjFMValue = Number(sd.examFullMarks || 0);
-            // FIX: Class III-VIII pass limit should be 35, not 33
-            const failLimit = isClassIXorX ? 33 : 35;
+            const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
             if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
         }
         localGrandTotal += currentSubjMarkValue;
@@ -410,7 +409,6 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     });
 
     await Promise.all(updatePromises);
-    changedStudentsRef.current = new Set();
     setChangedStudents(new Set());
     setIsSaving(false);
     setIsConfirmSaveModalOpen(false);
@@ -418,36 +416,16 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const handleExportExcel = () => {
     if (!processedData.length) return;
-
-    const headers = [
-      'Roll No', 'Name',
-      ...subjectDefinitions.map(sd => sd.name),
-      'Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark'
-    ];
-
+    const headers = ['Roll No', 'Name', ...subjectDefinitions.map(sd => sd.name), 'Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark'];
     const data = processedData.map(student => {
       const subjectMarks = subjectDefinitions.map(sd => {
         if (sd.gradingSystem === 'OABC') return marksData[student.id]?.[sd.name] ?? '-';
-        if (isIXTerminal3) {
-          const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
-          const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
-          return Number(sa) + Number(fa);
-        }
-        if (hasActivities) {
-          const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
-          const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
-          return Number(exam) + Number(act);
-        }
+        if (isIXTerminal3) return Number(marksData[student.id]?.[sd.name + '_sa'] ?? 0) + Number(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
+        if (hasActivities) return Number(marksData[student.id]?.[sd.name + '_exam'] ?? 0) + Number(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
         return marksData[student.id]?.[sd.name] ?? 0;
       });
-
-      return [
-        student.rollNo, student.name, ...subjectMarks,
-        student.grandTotal, student.percentage.toFixed(2),
-        student.rank, student.division, student.result, student.remark
-      ];
+      return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result, student.remark];
     });
-
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Statement');
@@ -456,101 +434,45 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const handleExportPDF = () => {
     if (!processedData.length) return;
-
     const doc = new jsPDF('landscape');
     doc.setFontSize(14);
     doc.text(`Statement of Marks - Class ${grade}`, 14, 15);
     doc.setFontSize(11);
     doc.text(`Exam: ${examDetails?.name}`, 14, 22);
-
-    const tableColumn = [
-      'Roll No', 'Name',
-      ...subjectDefinitions.map(sd => sd.name),
-      'Total', 'Percentage', 'Rank', 'Division', 'Result'
-    ];
-
+    const tableColumn = ['Roll No', 'Name', ...subjectDefinitions.map(sd => sd.name), 'Total', 'Percentage', 'Rank', 'Division', 'Result'];
     const tableRows = processedData.map(student => {
       const subjectMarks = subjectDefinitions.map(sd => {
         if (sd.gradingSystem === 'OABC') return marksData[student.id]?.[sd.name] ?? '-';
-        if (isIXTerminal3) {
-          const sa = marksData[student.id]?.[sd.name + '_sa'] ?? 0;
-          const fa = marksData[student.id]?.[sd.name + '_fa'] ?? 0;
-          return Number(sa) + Number(fa);
-        }
-        if (hasActivities) {
-          const exam = marksData[student.id]?.[sd.name + '_exam'] ?? 0;
-          const act = marksData[student.id]?.[sd.name + '_activity'] ?? 0;
-          return Number(exam) + Number(act);
-        }
+        if (isIXTerminal3) return Number(marksData[student.id]?.[sd.name + '_sa'] ?? 0) + Number(marksData[student.id]?.[sd.name + '_fa'] ?? 0);
+        if (hasActivities) return Number(marksData[student.id]?.[sd.name + '_exam'] ?? 0) + Number(marksData[student.id]?.[sd.name + '_activity'] ?? 0);
         return marksData[student.id]?.[sd.name] ?? 0;
       });
-
-      return [
-        student.rollNo, student.name, ...subjectMarks,
-        student.grandTotal, student.percentage.toFixed(2),
-        student.rank, student.division, student.result
-      ];
+      return [student.rollNo, student.name, ...subjectMarks, student.grandTotal, student.percentage.toFixed(2), student.rank, student.division, student.result];
     });
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
-      styles: { fontSize: 7 },
-      headStyles: { fillColor: [41, 128, 185] }
-    });
-
+    autoTable(doc, { head: [tableColumn], body: tableRows, startY: 30, styles: { fontSize: 7 }, headStyles: { fillColor: [41, 128, 185] } });
     doc.save(`${grade}_${examDetails?.name}_Statement.pdf`);
   };
 
   const exportToCSV = () => {
     const headers = ['Roll No', 'Name'];
-    
     subjectDefinitions.forEach(sd => {
-      if (sd.gradingSystem === 'OABC') {
-        headers.push(sd.name);
-      } else if (isIXTerminal3) {
-        headers.push(`${sd.name} SA`, `${sd.name} FA`);
-      } else if (hasActivities) {
-        headers.push(`${sd.name} Exam`, `${sd.name} Activity`);
-      } else {
-        headers.push(sd.name);
-      }
+      if (sd.gradingSystem === 'OABC') { headers.push(sd.name); }
+      else if (isIXTerminal3) { headers.push(`${sd.name} SA`, `${sd.name} FA`); }
+      else if (hasActivities) { headers.push(`${sd.name} Exam`, `${sd.name} Activity`); }
+      else { headers.push(sd.name); }
     });
-    
     headers.push('Grand Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present');
-
     const rows = processedData.map(student => {
       const row: any[] = [student.rollNo, student.name];
-      
       subjectDefinitions.forEach(sd => {
-        if (sd.gradingSystem === 'OABC') {
-          row.push(marksData[student.id]?.[sd.name] || '-');
-        } else if (isIXTerminal3) {
-          row.push(marksData[student.id]?.[sd.name + '_sa'] || '-');
-          row.push(marksData[student.id]?.[sd.name + '_fa'] || '-');
-        } else if (hasActivities) {
-          row.push(marksData[student.id]?.[sd.name + '_exam'] || '-');
-          row.push(marksData[student.id]?.[sd.name + '_activity'] || '-');
-        } else {
-          row.push(marksData[student.id]?.[sd.name] || '-');
-        }
+        if (sd.gradingSystem === 'OABC') { row.push(marksData[student.id]?.[sd.name] || '-'); }
+        else if (isIXTerminal3) { row.push(marksData[student.id]?.[sd.name + '_sa'] || '-'); row.push(marksData[student.id]?.[sd.name + '_fa'] || '-'); }
+        else if (hasActivities) { row.push(marksData[student.id]?.[sd.name + '_exam'] || '-'); row.push(marksData[student.id]?.[sd.name + '_activity'] || '-'); }
+        else { row.push(marksData[student.id]?.[sd.name] || '-'); }
       });
-      
-      row.push(
-        student.grandTotal,
-        student.percentage.toFixed(2) + '%',
-        student.rank,
-        student.division,
-        student.result,
-        student.remark,
-        attendanceData[student.id]?.totalWorkingDays || '-',
-        attendanceData[student.id]?.daysPresent || '-'
-      );
-      
+      row.push(student.grandTotal, student.percentage.toFixed(2) + '%', student.rank, student.division, student.result, student.remark, attendanceData[student.id]?.totalWorkingDays || '-', attendanceData[student.id]?.daysPresent || '-');
       return row.join(',');
     });
-
     const csvContent = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -561,16 +483,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const handleSaveSubjects = async (newDef: GradeDefinition) => {
     if (grade) {
-      await onUpdateGradeDefinition(grade, newDef);
-      setIsEditSubjectsModalOpen(false);
+        await onUpdateGradeDefinition(grade, newDef);
+        setIsEditSubjectsModalOpen(false);
     }
   };
 
   if (!grade || !examDetails) return <div>Error: Invalid grade or exam.</div>;
-
-  // Shared input class — explicitly forces dark text on white background to prevent white-on-white invisible text
-  const inputCls = "form-input w-16 text-center text-slate-900 bg-white border border-slate-300 rounded";
-  const attendanceInputCls = "form-input w-20 text-center text-slate-900 bg-white border border-slate-300 rounded";
 
   return (
     <>
@@ -584,24 +502,15 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name}</p>
         </div>
 
-        <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
+        <div className="mt-6 flex justify-end items-center gap-2 print-hidden">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>
             <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
-                <button 
-                    onClick={() => setSortCriteria('rollNo')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >Roll No</button>
-                <button
-                    onClick={() => setSortCriteria('name')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >Name</button>
-                <button
-                    onClick={() => setSortCriteria('totalMarks')}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
-                >Total Marks</button>
+                <button onClick={() => setSortCriteria('rollNo')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Roll No</button>
+                <button onClick={() => setSortCriteria('name')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'name' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Name</button>
+                <button onClick={() => setSortCriteria('totalMarks')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'totalMarks' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}>Total Marks</button>
+                <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">Export Excel</button>
+                <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">Export PDF</button>
             </div>
-            <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-xs font-bold">Export Excel</button>
-            <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition text-xs font-bold">Export PDF</button>
         </div>
         
         <div className="mt-2 overflow-x-auto border rounded-lg" ref={tableRef}>
@@ -612,7 +521,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-left font-bold text-slate-800 border-b border-r min-w-48 align-middle">Student Name</th>
                         
                         {subjectDefinitions.map(sd => {
-                            if ((hasActivities || isIXTerminal3) && sd.gradingSystem !== 'OABC') {
+                            if (hasActivities && sd.gradingSystem !== 'OABC') {
+                                return <th key={sd.name} colSpan={2} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">{sd.name}</th>;
+                            } else if (isIXTerminal3 && sd.gradingSystem !== 'OABC') {
                                 return <th key={sd.name} colSpan={2} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l">{sd.name}</th>;
                             } else {
                                 return <th key={sd.name} rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-3 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{sd.name}</th>;
@@ -622,7 +533,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Total</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Percentage</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Rank</th>
-                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : 'Grade'}</th>
+                        <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">{isClassIXorX ? 'Division' : '-'}</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-center font-bold text-slate-800 border-b border-l align-middle">Result</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-2 py-2 text-left font-bold text-slate-800 border-b border-l min-w-[150px] align-middle">Remark</th>
                         <th rowSpan={hasActivities || isIXTerminal3 ? 2 : 1} className="px-1 py-2 text-center font-bold text-slate-800 border-b border-l align-middle w-20">Working Days</th>
@@ -652,8 +563,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                         let colIndex = 0;
                         return (
                         <tr key={student.id} className={`hover:bg-slate-50 ${changedStudents.has(student.id) ? 'bg-sky-50' : ''}`}>
-                            <td className="px-2 py-1 font-bold text-center text-slate-800 border-r sticky left-0 bg-inherit whitespace-nowrap">{student.rollNo}</td>
-                            <td className="px-2 py-1 font-medium text-slate-800 border-r whitespace-nowrap">{student.name}</td>
+                            <td className="px-2 py-1 font-bold text-center border-r sticky left-0 bg-inherit whitespace-nowrap">{student.rollNo}</td>
+                            <td className="px-2 py-1 font-medium border-r whitespace-nowrap">{student.name}</td>
                             
                             {subjectDefinitions.map(sd => {
                                 const isOABC = sd.gradingSystem === 'OABC';
@@ -662,11 +573,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     const col = colIndex++;
                                     return (
                                         <td key={sd.name} colSpan={1} className="px-0.5 py-1 border-l text-center">
-                                            <select
-                                                value={marksData[student.id]?.[sd.name] as string ?? ''}
-                                                onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
-                                                className="form-select w-16 text-center text-slate-900 bg-white border border-slate-300 rounded"
-                                            >
+                                            <select value={marksData[student.id]?.[sd.name] as string ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')} className="form-select w-16 text-center">
                                                 <option value="">-</option>
                                                 {OABC_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                                             </select>
@@ -680,30 +587,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_sa'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={saCol}
-                                                    className={inputCls}
-                                                    placeholder="-"
-                                                    max={80}
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_sa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={saCol} className="form-input w-16 text-center" placeholder="-" max={80} />
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_fa'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={faCol}
-                                                    className={inputCls}
-                                                    placeholder="-"
-                                                    max={20}
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_fa'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={faCol} className="form-input w-16 text-center" placeholder="-" max={20} />
                                             </td>
                                         </React.Fragment>
                                     );
@@ -715,28 +602,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     return (
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_exam'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={examCol}
-                                                    className={inputCls}
-                                                    placeholder="-"
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_exam'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={examCol} className="form-input w-16 text-center" placeholder="-" />
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
-                                                <input
-                                                    type="number"
-                                                    value={marksData[student.id]?.[sd.name + '_activity'] ?? ''}
-                                                    onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')}
-                                                    onKeyDown={handleKeyDown}
-                                                    data-row={studentIndex}
-                                                    data-col={actCol}
-                                                    className={inputCls}
-                                                    placeholder="-"
-                                                />
+                                                <input type="number" value={marksData[student.id]?.[sd.name + '_activity'] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={actCol} className="form-input w-16 text-center" placeholder="-" />
                                             </td>
                                         </React.Fragment>
                                     );
@@ -745,31 +614,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 const totalCol = colIndex++;
                                 return (
                                     <td key={sd.name} className="px-0.5 py-1 border-l text-center">
-                                        <input
-                                            type="number"
-                                            value={marksData[student.id]?.[sd.name] ?? ''}
-                                            onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')}
-                                            onKeyDown={handleKeyDown}
-                                            data-row={studentIndex}
-                                            data-col={totalCol}
-                                            className={inputCls}
-                                            placeholder="-"
-                                        />
+                                        <input type="number" value={marksData[student.id]?.[sd.name] ?? ''} onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')} onKeyDown={handleKeyDown} data-row={studentIndex} data-col={totalCol} className="form-input w-16 text-center" placeholder="-" />
                                     </td>
                                 );
                             })}
 
                             <td className="px-1 py-1 text-center font-bold text-sky-700 border-l whitespace-nowrap">{student.grandTotal}</td>
-                            <td className="px-1 py-1 text-center text-slate-800 border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
-                            <td className="px-1 py-1 text-center font-bold text-slate-800 border-l whitespace-nowrap">{student.rank}</td>
-                            <td className="px-1 py-1 text-center text-slate-800 border-l whitespace-nowrap">{isClassIXorX ? student.division : student.academicGrade}</td>
+                            <td className="px-1 py-1 text-center border-l whitespace-nowrap">{student.percentage.toFixed(2)}</td>
+                            <td className="px-1 py-1 text-center font-bold border-l whitespace-nowrap">{student.rank}</td>
+                            <td className="px-1 py-1 text-center border-l whitespace-nowrap">{isClassIXorX ? student.division : '-'}</td>
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
-                            <td className="px-1 py-1 text-sm text-slate-700 border-l">{student.remark}</td>
+                            <td className="px-1 py-1 text-sm border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className={attendanceInputCls} />
+                                <input type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                             <td className="px-1 py-1 border-l">
-                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className={attendanceInputCls} />
+                                <input type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                         </tr>
                         );
@@ -783,11 +643,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 <CogIcon className="w-5 h-5" />
                 <span>Manage Subjects</span>
             </button>
-            <Link
-                to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`}
-                target="_blank"
-                className="btn btn-secondary flex items-center gap-2"
-            >
+            <Link to={`/portal/reports/bulk-print/${encodedGrade}/${examId}`} target="_blank" className="btn btn-secondary flex items-center gap-2">
                 <PrinterIcon className="w-5 h-5" />
                 <span>Bulk Print Reports</span>
             </Link>
@@ -795,45 +651,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span>Import Marks</span>
             </button>
-            <button
-                onClick={() => setIsConfirmSaveModalOpen(true)}
-                disabled={isSaving || changedStudents.size === 0}
-                className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400"
-            >
+            <button onClick={() => setIsConfirmSaveModalOpen(true)} disabled={isSaving || changedStudents.size === 0} className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400">
                 {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}
                 <span>Save Changes ({changedStudents.size})</span>
             </button>
         </div>
     </div>
     
-    <ConfirmationModal
-        isOpen={isConfirmSaveModalOpen}
-        onClose={() => setIsConfirmSaveModalOpen(false)}
-        onConfirm={handleConfirmSave}
-        title="Save Changes"
-        confirmDisabled={isSaving}
-    >
+    <ConfirmationModal isOpen={isConfirmSaveModalOpen} onClose={() => setIsConfirmSaveModalOpen(false)} onConfirm={handleConfirmSave} title="Save Changes" confirmDisabled={isSaving}>
         <p>Save marks for {changedStudents.size} student(s)?</p>
     </ConfirmationModal>
 
-    {examDetails && <ImportMarksModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onApplyImport={handleApplyImport}
-        classStudents={classStudents}
-        subjectDefinitions={subjectDefinitions}
-        examName={examDetails.name}
-        hasActivities={hasActivities}
-        isSaving={isSaving}
-    />}
+    {examDetails && <ImportMarksModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} onApplyImport={handleApplyImport} classStudents={classStudents} subjectDefinitions={subjectDefinitions} examName={examDetails.name} hasActivities={hasActivities} isSaving={isSaving} />}
     
-    {grade && gradeDefinitions[grade] && <EditSubjectsModal
-        isOpen={isEditSubjectsModalOpen}
-        onClose={() => setIsEditSubjectsModalOpen(false)}
-        onSave={handleSaveSubjects}
-        grade={grade}
-        initialGradeDefinition={gradeDefinitions[grade]}
-    />}
+    {grade && gradeDefinitions[grade] && <EditSubjectsModal isOpen={isEditSubjectsModalOpen} onClose={() => setIsEditSubjectsModalOpen(false)} onSave={handleSaveSubjects} grade={grade} initialGradeDefinition={gradeDefinitions[grade]} />}
     </>
   );
 };

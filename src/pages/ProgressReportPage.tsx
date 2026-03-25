@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
 import { db } from '@/firebaseConfig';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
@@ -15,10 +15,10 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
+const findResultWithAliases = (results, subjectDef) => {
     if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
-    const normSubjDefName = normalizeSubjectName(subjectDef.name);
-    return results.find(r => {
+    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
+};
         const normResultName = normalizeSubjectName(r.subject);
         if (normResultName === normSubjDefName) return true;
         const mathNames = ['math', 'maths', 'mathematics'];

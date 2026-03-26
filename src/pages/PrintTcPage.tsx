@@ -14,8 +14,8 @@ interface PrintTcPageProps {
 
 const DetailItem: React.FC<{ label: string; value?: string | number }> = ({ label, value }) => (
     <div className="flex items-end pb-1">
-        <span className="text-slate-900 pr-2 whitespace-nowrap">{label}</span>
-        <span className="flex-grow font-bold text-slate-900 border-b border-dotted border-slate-900 text-left">{value || ''}</span>
+        <span className="text-slate-900 pr-1 whitespace-nowrap text-[11px] uppercase tracking-tight">{label}</span>
+        <span className="flex-grow font-bold text-slate-900 border-b border-dotted border-slate-900 text-left pl-1">{value || ''}</span>
     </div>
 );
 
@@ -54,9 +54,10 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
 
         <div id="printable-tc" className="bg-white A4-size p-8 shadow-lg print:shadow-none font-serif text-sm">
                  <style>{`
-                    @page { size: A4 portrait; margin: 1.5cm; }
+                    @page { size: A4 portrait; margin: 1cm; }
                     @media print {
-                        #printable-tc { font-size: 10pt; padding: 0; }
+                        #printable-tc { font-size: 9.5pt; padding: 0.5cm; }
+                        .A4-size { width: 100% !important; height: auto !important; }
                     }
                 `}</style>
                 <header className="text-center mb-6">
@@ -75,29 +76,29 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     <div className="col-span-2 text-right"><strong>Student ID:</strong> {record.studentDisplayId}</div>
                 </div>
 
-                <main className="space-y-3 text-slate-900">
+                <main className="space-y-2 text-slate-900">
                     <div className="flex items-center">
-                        <span className="w-1/4">Name of student:</span>
+                        <span className="text-[11px] uppercase tracking-tight pr-1">Name of student:</span>
                         <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.nameOfStudent}</span>
-                        <span className="w-1/6 text-right pr-2">Gender:</span>
-                        <span className="w-1/6 font-bold border-b border-dotted border-slate-900 text-center">{record.gender}</span>
+                        <span className="text-[11px] uppercase tracking-tight px-2">Gender:</span>
+                        <span className="w-20 font-bold border-b border-dotted border-slate-900 text-center">{record.gender}</span>
                     </div>
                      <div className="flex items-center">
-                        <span className="w-1/4">Father's Name:</span>
+                        <span className="text-[11px] uppercase tracking-tight pr-1">Father's Name:</span>
                         <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.fatherName}</span>
                     </div>
                      <div className="flex items-center">
-                        <span className="w-1/4">Mother's Name:</span>
+                        <span className="text-[11px] uppercase tracking-tight pr-1">Mother's Name:</span>
                         <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.motherName}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-12 gap-y-3 pt-2">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 pt-1">
                         <DetailItem label="Current Class:" value={record.currentClass} />
                         <DetailItem label="Roll No:" value={record.rollNo} />
                         <DetailItem label="Date of birth:" value={formatDateForDisplay(record.dateOfBirth)} />
                         <div className="col-span-2 flex items-end pb-1">
-                            <span className="pr-2 whitespace-nowrap">Date of birth in words:</span>
-                            <span className="flex-grow font-bold border-b border-dotted border-slate-900 text-left">{record.dateOfBirthInWords}</span>
+                            <span className="pr-1 whitespace-nowrap text-[11px] uppercase tracking-tight">Date of birth in words:</span>
+                            <span className="flex-grow font-bold border-b border-dotted border-slate-900 text-left pl-1">{record.dateOfBirthInWords}</span>
                         </div>
                         <DetailItem label="Category:" value={record.category} />
                         <DetailItem label="Religion:" value={record.religion} />

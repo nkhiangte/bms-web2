@@ -14,8 +14,8 @@ interface PrintTcPageProps {
 
 const DetailItem: React.FC<{ label: string; value?: string | number }> = ({ label, value }) => (
     <div className="flex items-end pb-1">
-        <span className="text-slate-700 pr-2 whitespace-nowrap">{label}</span>
-        <span className="flex-grow font-bold text-slate-900 border-b border-dotted border-slate-600 text-left">{value || ''}</span>
+        <span className="text-slate-900 pr-2 whitespace-nowrap">{label}</span>
+        <span className="flex-grow font-bold text-slate-900 border-b border-dotted border-slate-900 text-left">{value || ''}</span>
     </div>
 );
 
@@ -75,20 +75,20 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     <div className="col-span-2 text-right"><strong>Student ID:</strong> {record.studentDisplayId}</div>
                 </div>
 
-                <main className="space-y-3 text-slate-800">
+                <main className="space-y-3 text-slate-900">
                     <div className="flex items-center">
                         <span className="w-1/4">Name of student:</span>
-                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-600 text-center">{record.nameOfStudent}</span>
+                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.nameOfStudent}</span>
                         <span className="w-1/6 text-right pr-2">Gender:</span>
-                        <span className="w-1/6 font-bold border-b border-dotted border-slate-600 text-center">{record.gender}</span>
+                        <span className="w-1/6 font-bold border-b border-dotted border-slate-900 text-center">{record.gender}</span>
                     </div>
                      <div className="flex items-center">
                         <span className="w-1/4">Father's Name:</span>
-                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-600 text-center">{record.fatherName}</span>
+                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.fatherName}</span>
                     </div>
                      <div className="flex items-center">
                         <span className="w-1/4">Mother's Name:</span>
-                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-600 text-center">{record.motherName}</span>
+                        <span className="flex-grow font-bold text-base border-b border-dotted border-slate-900 text-center">{record.motherName}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-12 gap-y-3 pt-2">
@@ -97,7 +97,7 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                         <DetailItem label="Date of birth:" value={formatDateForDisplay(record.dateOfBirth)} />
                         <div className="col-span-2 flex items-end pb-1">
                             <span className="pr-2 whitespace-nowrap">Date of birth in words:</span>
-                            <span className="flex-grow font-bold border-b border-dotted border-slate-600 text-left">{record.dateOfBirthInWords}</span>
+                            <span className="flex-grow font-bold border-b border-dotted border-slate-900 text-left">{record.dateOfBirthInWords}</span>
                         </div>
                         <DetailItem label="Category:" value={record.category} />
                         <DetailItem label="Religion:" value={record.religion} />
@@ -112,20 +112,20 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     </div>
                 </main>
                 
-                <footer className="mt-16">
+                <footer className="mt-16 text-slate-900">
                     <div className="grid grid-cols-3 gap-8">
                         <div className="flex flex-col justify-end">
                             <div className="h-12"></div>
-                            <p className="border-t-2 border-slate-500 pt-1 text-center">Prepared by</p>
+                            <p className="border-t-2 border-slate-900 pt-1 text-center font-semibold">Prepared by</p>
                         </div>
                         <div className="flex flex-col justify-end">
-                             <p className="text-center">Date : {formatDateForDisplay(record.dateOfIssueOfTc)}</p>
+                             <p className="text-center font-semibold">Date : {formatDateForDisplay(record.dateOfIssueOfTc)}</p>
                         </div>
                          <div className="flex flex-col justify-end text-center">
                             <div className="h-12"></div>
-                            <div className="border-t-2 border-slate-500 pt-1">
-                                <p className="font-bold">K MALSAWMDAWNGI</p>
-                                <p>Principal</p>
+                            <div className="border-t-2 border-slate-900 pt-1">
+                                <p className="font-bold uppercase">K MALSAWMDAWNGI</p>
+                                <p className="font-semibold">Principal</p>
                             </div>
                         </div>
                     </div>

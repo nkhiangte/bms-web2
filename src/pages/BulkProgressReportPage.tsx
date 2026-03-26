@@ -4,6 +4,7 @@ import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
@@ -198,13 +199,13 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
                             ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p>
                             : <div className="h-4" />}
                     </div>
-                    <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                    <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                 </div>
                 <div className="text-center">
                     <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
                         <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
                     </div>
-                    <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                    <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Principal's Signature</p>
                 </div>
             </div>
             <div className="flex justify-between mt-4 text-xs text-slate-500">
@@ -652,13 +653,13 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                         <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
                             {classTeacher ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p> : <div className="h-4" />}
                         </div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Class Teacher's Signature</p>
+                        <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Class Teacher's Signature</p>
                     </div>
                     <div className="text-center">
                         <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
                             <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
                         </div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold px-4">Principal's Signature</p>
+                        <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Principal's Signature</p>
                     </div>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
@@ -791,9 +792,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                                         <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
                                     </div>
                                     <div className="border-l-2 border-slate-400 flex-shrink-0 w-24 print:w-20 flex items-center justify-center p-1">
-                                        {student.photographUrl
-                                            ? <img src={student.photographUrl} alt={student.name} className="w-full h-24 print:h-20 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                            : <div className="w-full h-24 print:h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs text-center">No Photo</div>}
+                                        <PhotoWithFallback src={student.photographUrl} alt={student.name} className="rounded" />
                                     </div>
                                 </section>
 

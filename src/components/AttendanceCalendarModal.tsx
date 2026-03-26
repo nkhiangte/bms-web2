@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student, StudentAttendanceRecord, StudentAttendanceStatus, Grade } from '@/types';
 import { XIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerIcon } from '@/components/Icons';
+import PhotoWithFallback from './PhotoWithFallback';
 
 interface AttendanceCalendarModalProps {
     student: Student;
@@ -91,9 +92,14 @@ const AttendanceCalendarModal: React.FC<AttendanceCalendarModalProps> = ({ stude
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b flex justify-between items-center">
-                    <div>
-                        <h3 className="text-lg font-bold text-slate-800">Attendance for {student.name}</h3>
-                        <p className="text-sm text-slate-600">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-100">
+                            <PhotoWithFallback src={student.photographUrl} alt={student.name} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">Attendance for {student.name}</h3>
+                            <p className="text-sm text-slate-600">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                        </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-500 hover:bg-slate-100 rounded-full"><XIcon className="w-5 h-5"/></button>
                 </div>

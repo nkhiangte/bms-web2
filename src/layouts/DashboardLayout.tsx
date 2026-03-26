@@ -32,6 +32,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, stude
             <div className={`flex-1 flex flex-col overflow-hidden print:overflow-visible print:h-auto print:block ${isParentDashboard ? '' : 'bg-slate-100'}`}>
                 <Header 
                     user={user} 
+                    students={students}
                     onLogout={onLogout} 
                     onToggleSidebar={() => setIsSidebarOpen(v => !v)} 
                     className={`print-hidden ${isParentDashboard ? 'bg-white/80 backdrop-blur-sm' : 'bg-white'}`}

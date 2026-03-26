@@ -7,6 +7,7 @@ import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRA
 import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '@/components/Icons';
 import ActivityLogModal from '@/components/ActivityLogModal';
 import ExamPerformanceCard from '@/components/ExamPerformanceCard';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { normalizeSubjectName, subjectsMatch } from '@/utils';
 import { db } from '@/firebaseConfig';
 
@@ -109,9 +110,14 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
              <Link to="/portal/dashboard" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800"> <HomeIcon className="w-5 h-5" /> Home</Link>
         </div>
         <div className="mb-6 flex justify-between items-center">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900">Academic Performance</h1>
-                <p className="text-slate-700 text-lg mt-1 font-semibold">{student.name}</p>
+            <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-full shadow-lg border-2 border-white flex-shrink-0">
+                    <PhotoWithFallback src={student.photographUrl} alt={student.name} />
+                </div>
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900">Academic Performance</h1>
+                    <p className="text-slate-700 text-lg mt-1 font-semibold">{student.name}</p>
+                </div>
             </div>
             {canEdit && (
                 <button onClick={isEditing ? handleSave : () => setIsEditing(true)} className={`btn ${isEditing ? 'btn-primary bg-emerald-600 hover:bg-emerald-700' : 'btn-primary'}`}>

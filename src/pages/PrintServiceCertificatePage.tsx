@@ -14,10 +14,10 @@ interface PrintServiceCertificatePageProps {
 
 const DetailRow: React.FC<{ num: number; label: string; value?: string | number }> = ({ num, label, value }) => (
     <div className="flex">
-        <div className="w-8 flex-shrink-0">{num}.</div>
-        <div className="flex-grow border-b border-dotted border-slate-400 flex justify-between">
-            <span>{label}</span>
-            <span className="font-semibold text-slate-800 pl-2 text-right">{value || 'N/A'}</span>
+        <div className="w-8 flex-shrink-0 text-slate-900">{num}.</div>
+        <div className="flex-grow border-b border-dotted border-slate-900 flex justify-between">
+            <span className="text-slate-900">{label}</span>
+            <span className="font-semibold text-slate-900 pl-2 text-right">{value || 'N/A'}</span>
         </div>
     </div>
 );
@@ -107,7 +107,7 @@ const PrintServiceCertificatePage: React.FC<PrintServiceCertificatePageProps> = 
                 <p><strong>Employee ID:</strong> {staffDetails.staffId}</p>
             </div>
 
-            <main className="space-y-3 text-md leading-relaxed">
+            <main className="space-y-3 text-md leading-relaxed text-slate-900">
                 <DetailRow num={1} label="Name of Staff" value={staffDetails.name} />
                 <DetailRow num={2} label="Designation" value={staffDetails.designation} />
                 <DetailRow num={3} label="Date of Birth" value={formatDateForDisplay(staffDetails.dateOfBirth)} />
@@ -118,7 +118,7 @@ const PrintServiceCertificatePage: React.FC<PrintServiceCertificatePageProps> = 
                 <DetailRow num={8} label="Any other remarks" value={certData.remarks || 'None'} />
             </main>
 
-            <footer className="mt-20 text-sm">
+            <footer className="mt-20 text-sm text-slate-900">
                 <div className="flex justify-between items-end">
                     <div className="text-left">
                         <p>Date: {formatDateForDisplay(certData.issueDate)}</p>
@@ -126,7 +126,7 @@ const PrintServiceCertificatePage: React.FC<PrintServiceCertificatePageProps> = 
                     </div>
                     <div className="text-center">
                         <div className="h-16"></div>
-                        <p className="border-t-2 border-slate-500 pt-2 font-semibold">Principal's Signature</p>
+                        <p className="border-t-2 border-slate-900 pt-2 font-semibold">Principal's Signature</p>
                         <p className="text-xs">(With School Seal)</p>
                     </div>
                 </div>

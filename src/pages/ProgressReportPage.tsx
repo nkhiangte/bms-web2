@@ -4,6 +4,7 @@ import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { db } from '@/firebaseConfig';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
@@ -314,13 +315,13 @@ const MultiTermReportCard: React.FC<{
                         <div style={{ height: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minWidth: '140px' }}>
                             {classTeacher && <p style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '8pt', margin: 0 }}>{classTeacher.firstName} {classTeacher.lastName}</p>}
                         </div>
-                        <p style={{ borderTop: '2px solid #64748b', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Class Teacher's Signature</p>
+                        <p style={{ borderTop: '2px solid #0f172a', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Class Teacher's Signature</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ height: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minWidth: '140px' }}>
                             <p style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '8pt', margin: 0 }}>K Malsawmdawngi</p>
                         </div>
-                        <p style={{ borderTop: '2px solid #64748b', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Principal's Signature</p>
+                        <p style={{ borderTop: '2px solid #0f172a', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Principal's Signature</p>
                     </div>
                 </div>
                 <div style={{ marginTop: '6px', fontSize: '7pt', color: '#64748b' }}>
@@ -425,11 +426,11 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
                         <div style={{ height: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minWidth: '140px' }}>
                             {classTeacher && <p style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '8pt', margin: 0 }}>{classTeacher.firstName} {classTeacher.lastName}</p>}
                         </div>
-                        <p style={{ borderTop: '2px solid #64748b', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Class Teacher's Signature</p>
+                        <p style={{ borderTop: '2px solid #0f172a', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Class Teacher's Signature</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ height: '28px', minWidth: '140px' }}></div>
-                        <p style={{ borderTop: '2px solid #64748b', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Principal's Signature</p>
+                        <p style={{ borderTop: '2px solid #0f172a', paddingTop: '3px', fontWeight: 600, paddingLeft: '16px', paddingRight: '16px', margin: 0 }}>Principal's Signature</p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '7pt', color: '#64748b' }}>
@@ -577,12 +578,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
                             <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold">{formatStudentId(student, academicYear)}</span></div>
                         </div>
                         <div className="border-l-2 border-slate-400 flex-shrink-0 w-20 print:w-16 flex items-center justify-center p-1">
-                            {student.photographUrl ? (
-                                <img src={student.photographUrl} alt={student.name} className="w-full h-20 object-cover rounded"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            ) : (
-                                <div className="w-full h-20 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs text-center">No Photo</div>
-                            )}
+                            <PhotoWithFallback src={student.photographUrl} alt={student.name} className="rounded" />
                         </div>
                     </section>
 

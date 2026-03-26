@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User } from '@/types';
-import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon } from '@/components/Icons';
+import { User, Student } from '@/types';
+import { BackIcon, HomeIcon, UserIcon, CameraIcon, SpinnerIcon, KeyIcon, AcademicCapIcon } from '@/components/Icons';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { resizeImage, uploadToImgBB } from '@/utils';
 
@@ -10,13 +10,19 @@ const { Link } = ReactRouterDOM as any;
 
 interface UserProfilePageProps {
   currentUser: User;
+  allStudents?: Student[];
   onUpdateProfile: (updates: { photoURL?: string }) => Promise<{ success: boolean; message?: string }>;
 }
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ currentUser, onUpdateProfile }) => {
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ currentUser, allStudents = [], onUpdateProfile }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
+
+    const linkedStudents = React.useMemo(() => {
+        if (currentUser.role !== 'parent' || !currentUser.studentIds) return [];
+        return allStudents.filter(s => currentUser.studentIds!.includes(s.id));
+    }, [currentUser, allStudents]);
 
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -86,6 +92,28 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ currentUser, onUpdate
 
                     {error && <p className="text-red-600 text-sm">{error}</p>}
                 </div>
+
+                {linkedStudents.length > 0 && (
+                    <div className="mt-10 pt-8 border-t border-slate-200">
+                        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <AcademicCapIcon className="w-6 h-6 text-sky-600" />
+                            Linked Children
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {linkedStudents.map(student => (
+                                <div key={student.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                                        <PhotoWithFallback src={student.photographUrl} alt={student.name} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 leading-tight">{student.name}</p>
+                                        <p className="text-xs text-slate-600">{student.grade} • Roll: {student.rollNo}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                     <Link to="/portal/change-password" className="btn btn-secondary">

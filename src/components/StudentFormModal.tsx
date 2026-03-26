@@ -208,7 +208,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                                 <label className="block text-sm font-bold text-slate-800">Photograph</label>
                                 <div className="mt-2 flex items-center gap-4">
                                     <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border">
-                                        {formData.photographUrl ? <img src={formData.photographUrl} alt="Student preview" className="w-full h-full object-cover" /> : <UserIcon className="w-16 h-16 text-slate-500" />}
+                                        {formData.photographUrl ? <img src={formData.photographUrl} alt="Student preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <UserIcon className="w-16 h-16 text-slate-500" />}
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <input type="file" ref={fileInputRef} onChange={handlePhotoChange} accept="image/*" className="hidden" id="photo-upload-student" />

@@ -5,7 +5,9 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade, Gender } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import StudentTable from '@/components/StudentTable';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import StudentFormModal from '@/components/StudentFormModal';
+import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
 import { formatStudentId } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -24,6 +26,11 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const [searchType, setSearchType] = useState<'name' | 'pen' | 'fatherName' | 'studentId'>('name');
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [isStatsOpen, setIsStatsOpen] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportPrevYearModalOpen, setIsImportPrevYearModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
 
   const filteredStudents = useMemo(() => {
@@ -75,6 +82,43 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
     pen: 'Search by PEN...',
     fatherName: "Search by father's name...",
     studentId: 'Search by student ID (e.g., BMS250101)...',
+  };
+
+  const handleAddSubmit = async (data: Omit<Student, 'id'>) => {
+    setIsSaving(true);
+    try {
+      await onAdd(data);
+      setIsAddModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleImportPrevYearSubmit = async (data: Omit<Student, 'id'>) => {
+    setIsSaving(true);
+    try {
+      await onAdd(data);
+      setIsImportPrevYearModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (data: Omit<Student, 'id'>) => {
+    if (!selectedStudent) return;
+    setIsSaving(true);
+    try {
+      await onEdit({ ...data, id: selectedStudent.id } as Student);
+      setIsEditModalOpen(false);
+      setSelectedStudent(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -145,7 +189,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
 
           {/* Add Student Button */}
           <button
-            onClick={() => onAdd({} as Omit<Student, 'id'>)}
+            onClick={() => setIsAddModalOpen(true)}
             disabled={user.role !== 'admin'}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
             title={user.role !== 'admin' ? "Admin access required" : "Add a new student"}
@@ -153,13 +197,24 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
             <PlusIcon className="h-5 w-5" />
             Add Student
           </button>
+
+          {/* Import from Previous Year Button */}
+          <button
+            onClick={() => setIsImportPrevYearModalOpen(true)}
+            disabled={user.role !== 'admin'}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
+            title={user.role !== 'admin' ? "Admin access required" : "Import students from previous year"}
+          >
+            <ArrowUpOnSquareIcon className="h-5 w-5" />
+            Import from Prev Year
+          </button>
         </div>
       </div>
       
       <div className="mb-6">
         <StudentTable
           students={filteredStudents}
-          onEdit={onEdit}
+          onEdit={handleEditClick}
           academicYear={academicYear}
           user={user}
           assignedGrade={assignedGrade}
@@ -211,6 +266,34 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
               </div>
           )}
       </div>
+
+      <StudentFormModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddSubmit}
+        student={null}
+        academicYear={academicYear}
+        isSaving={isSaving}
+      />
+
+      <StudentFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedStudent(null);
+        }}
+        onSubmit={handleEditSubmit}
+        student={selectedStudent}
+        academicYear={academicYear}
+        isSaving={isSaving}
+      />
+
+      <ImportFromPreviousYearModal 
+        isOpen={isImportPrevYearModalOpen}
+        onClose={() => setIsImportPrevYearModalOpen(false)}
+        onImport={handleImportPrevYearSubmit}
+        currentAcademicYear={academicYear}
+      />
     </div>
   );
 };

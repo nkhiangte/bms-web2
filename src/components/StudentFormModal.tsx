@@ -73,6 +73,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
     // It deliberately excludes feePayments to prevent accidental modification.
     const [formData, setFormData] = useState(getInitialFormData());
     const [isUploading, setIsUploading] = useState(false);
+    const [isIdAuto, setIsIdAuto] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -85,26 +86,29 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                     // Ensure date is in YYYY-MM-DD format for the picker, even if stored differently
                     dateOfBirth: student.dateOfBirth, 
                 });
+                setIsIdAuto(!student.studentId);
             } else {
-                const newStudentData = getInitialFormData();
-                setFormData(newStudentData);
+                setFormData(getInitialFormData());
+                setIsIdAuto(true);
             }
         }
     }, [student, isOpen, newStudentTargetGrade]);
     
     useEffect(() => {
-        if (isOpen) { 
-            // Only auto-generate if the studentId is empty. This makes it a permanent ID.
-            if (!formData.studentId) {
-                const tempStudentForId = { ...getInitialFormData(), ...formData, id: student?.id || 'temp' } as Student;
-                const newStudentId = formatStudentId(tempStudentForId, academicYear);
+        if (isOpen && isIdAuto) { 
+            const { studentId, ...rest } = formData;
+            const newStudentId = formatStudentId(rest, academicYear);
+            if (newStudentId !== formData.studentId) {
                 setFormData(prev => ({ ...prev, studentId: newStudentId }));
             }
         }
-    }, [formData.grade, formData.rollNo, isOpen, student, academicYear]);
+    }, [formData.grade, formData.rollNo, isOpen, academicYear, isIdAuto]);
 
     const handleChange = (e: any) => {
         const { name, value, type } = e.target;
+        if (name === 'studentId') {
+            setIsIdAuto(false);
+        }
         setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
     };
     

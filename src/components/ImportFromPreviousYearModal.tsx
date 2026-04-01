@@ -172,6 +172,7 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                     student={selectedStudent}
                     academicYear={currentAcademicYear}
                     isSaving={isSaving}
+                    title="Import Student Details"
                 />
             )}
         </>

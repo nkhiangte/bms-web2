@@ -16,6 +16,7 @@ interface StudentFormModalProps {
   academicYear: string;
   isSaving: boolean;
   error?: string;
+  title?: string;
 }
 
 const AccordionSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {
@@ -37,7 +38,7 @@ const AccordionSection: React.FC<{ title: string; children: React.ReactNode; def
     );
 };
 
-const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, onSubmit, student, newStudentTargetGrade, academicYear, isSaving, error }) => {
+const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, onSubmit, student, newStudentTargetGrade, academicYear, isSaving, error, title }) => {
     const getInitialFormData = (): Omit<Student, 'id' | 'feePayments' | 'academicYear'> => ({
         rollNo: 0,
         name: '',
@@ -162,11 +163,11 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex justify-center items-center p-4" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="p-6 border-b">
-                        <h2 className="text-2xl font-bold text-slate-800">{student ? 'Edit Student Details' : 'Add New Student'}</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">{title || (student ? 'Edit Student Details' : 'Add New Student')}</h2>
                     </div>
                     <div className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
                         {error && (

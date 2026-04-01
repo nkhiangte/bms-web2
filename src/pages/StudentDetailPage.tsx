@@ -13,6 +13,7 @@ const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 interface StudentDetailPageProps {
   students: Student[];
   onEdit: (student: Student) => Promise<void>;
+  onDelete: (studentId: string) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
@@ -43,7 +44,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 )
 
 
-const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
+const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, onDelete, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
   const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
@@ -60,9 +61,10 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   const [newEntryDescription, setNewEntryDescription] = useState('');
   const [isSavingConduct, setIsSavingConduct] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<ConductEntry | null>(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
   
-  const canEdit = user.role === 'admin' || (user.role === 'user' && student && student.grade === assignedGrade);
+  const canEdit = ['admin', 'user'].includes(user.role);
   const isAdmin = user.role === 'admin';
 
   const studentConductLog = useMemo(() => {
@@ -106,6 +108,14 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
           onDeleteConductEntry(entryToDelete.id);
       }
       setEntryToDelete(null);
+  };
+
+  const handleConfirmDeleteStudent = async () => {
+    if (student && onDelete) {
+      await onDelete(student.id);
+      navigate('/portal/students');
+    }
+    setIsDeletingStudent(false);
   };
 
 
@@ -188,6 +198,15 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                 >
                   <EditIcon className="h-5 h-5" />
                   Edit Profile
+                </button>
+             )}
+             {isAdmin && (
+                <button
+                  onClick={() => setIsDeletingStudent(true)}
+                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg shadow-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition hover:-translate-y-0.5"
+                >
+                  <TrashIcon className="h-5 h-5" />
+                  Delete Student
                 </button>
              )}
             <Link
@@ -526,6 +545,26 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         <p>Are you sure you want to delete this conduct log entry? This action cannot be undone.</p>
         <div className="mt-2 p-2 bg-slate-100 rounded-md text-sm">
             <p><span className="font-semibold">{entryToDelete?.category}:</span> {entryToDelete?.description}</p>
+        </div>
+    </ConfirmationModal>
+    <ConfirmationModal
+        isOpen={isDeletingStudent}
+        onClose={() => setIsDeletingStudent(null as any)}
+        onConfirm={handleConfirmDeleteStudent}
+        title="Confirm Permanent Deletion"
+    >
+        <div className="space-y-3">
+          <p className="text-slate-700">
+            Are you sure you want to <span className="font-bold text-rose-600">permanently delete</span> the record for <span className="font-bold">{student?.name}</span>?
+          </p>
+          <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-800 text-sm">
+            <p className="font-bold mb-1">Warning:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>This action cannot be undone.</li>
+              <li>All student data, including academic records and fee history, will be lost.</li>
+              <li>If the student is just leaving, consider marking them as "Dropped" instead of deleting.</li>
+            </ul>
+          </div>
         </div>
     </ConfirmationModal>
     </>

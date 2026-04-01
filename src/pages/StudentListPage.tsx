@@ -16,12 +16,13 @@ interface StudentListPageProps {
   students: Student[];
   onAdd: (studentData: Omit<Student, 'id'>) => Promise<void>;
   onEdit: (student: Student) => Promise<void>;
+  onDelete: (studentId: string) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
 }
 
-const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEdit, academicYear, user, assignedGrade }) => {
+const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEdit, onDelete, academicYear, user, assignedGrade }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'pen' | 'fatherName' | 'studentId'>('name');
   const [gradeFilter, setGradeFilter] = useState<string>('');
@@ -190,9 +191,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
           {/* Add Student Button */}
           <button
             onClick={() => setIsAddModalOpen(true)}
-            disabled={user.role !== 'admin'}
+            disabled={!['admin', 'user'].includes(user.role)}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
-            title={user.role !== 'admin' ? "Admin access required" : "Add a new student"}
+            title={!['admin', 'user'].includes(user.role) ? "Staff access required" : "Add a new student"}
           >
             <PlusIcon className="h-5 w-5" />
             Add Student
@@ -201,9 +202,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
           {/* Import from Previous Year Button */}
           <button
             onClick={() => setIsImportPrevYearModalOpen(true)}
-            disabled={user.role !== 'admin'}
+            disabled={!['admin', 'user'].includes(user.role)}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
-            title={user.role !== 'admin' ? "Admin access required" : "Import students from previous year"}
+            title={!['admin', 'user'].includes(user.role) ? "Staff access required" : "Import students from previous year"}
           >
             <ArrowUpOnSquareIcon className="h-5 w-5" />
             Import from Prev Year
@@ -215,6 +216,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
         <StudentTable
           students={filteredStudents}
           onEdit={handleEditClick}
+          onDelete={onDelete}
           academicYear={academicYear}
           user={user}
           assignedGrade={assignedGrade}

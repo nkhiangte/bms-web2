@@ -240,6 +240,15 @@ const App: React.FC = () => {
     catch (error: any) { addNotification('Failed to drop student.', 'error'); }
   };
 
+  const handlePermanentDeleteStudent = async (studentId: string) => {
+    try {
+      await db.collection('students').doc(studentId).delete();
+      addNotification('Student record permanently deleted.', 'success');
+    } catch (error: any) {
+      addNotification('Failed to delete student record.', 'error');
+    }
+  };
+
   const handleUpdateFeePayments = async (studentId: string, payments: FeePayments) => {
     try { await db.collection('students').doc(studentId).update({ feePayments: payments }); addNotification('Fee payments updated successfully!', 'success'); }
     catch (error: any) { addNotification('Failed to update fee payments.', 'error'); }
@@ -859,8 +868,8 @@ const App: React.FC = () => {
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} />} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} allStudents={students} onUpdateProfile={handleUpdateUserProfile} />} />
           <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
-          <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />
-          <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
+          <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} onDelete={handlePermanentDeleteStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} />} />
+          <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} onDelete={handlePermanentDeleteStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
           <Route path="student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
           <Route path="student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user!} calendarEvents={calendarEvents} />} />
           <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={async () => {}} user={user!} />} />

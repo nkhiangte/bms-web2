@@ -1,21 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, User, Grade } from '@/types';
-import { EditIcon, UserIcon } from '@/components/Icons';
+import { EditIcon, UserIcon, TrashIcon } from '@/components/Icons';
 import { formatStudentId } from '@/utils';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { Link } = ReactRouterDOM as any;
 
 interface StudentTableProps {
   students: Student[];
   onEdit: (student: Student) => void;
+  onDelete?: (studentId: string) => void;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
 }
 
-const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicYear, user, assignedGrade }) => {
+const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, onDelete, academicYear, user, assignedGrade }) => {
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+
   if (students.length === 0) {
     return (
       <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg">
@@ -25,7 +29,15 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicY
     );
   }
 
-  const canEdit = (student: Student) => user.role === 'admin' || student.grade === assignedGrade;
+  const canEdit = (student: Student) => ['admin', 'user'].includes(user.role);
+  const isAdmin = user.role === 'admin';
+
+  const handleConfirmDelete = () => {
+    if (studentToDelete && onDelete) {
+      onDelete(studentToDelete.id);
+    }
+    setStudentToDelete(null);
+  };
 
   return (
     <>
@@ -54,9 +66,16 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicY
                 </div>
             </div>
             {canEdit(student) && (
-              <button onClick={() => onEdit(student)} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full flex-shrink-0 self-start" title="Edit">
-                <EditIcon className="w-5 h-5" />
-              </button>
+              <div className="flex flex-col gap-2">
+                <button onClick={() => onEdit(student)} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full flex-shrink-0 self-start" title="Edit">
+                  <EditIcon className="w-5 h-5" />
+                </button>
+                {isAdmin && onDelete && (
+                  <button onClick={() => setStudentToDelete(student)} className="p-2 text-rose-600 hover:bg-rose-100 rounded-full flex-shrink-0 self-start" title="Delete">
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         ))}
@@ -91,12 +110,17 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicY
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{student.grade}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{student.fatherName}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{student.contact}</td>
-                {(user.role === 'admin' || assignedGrade) && (
+                {(user.role === 'admin' || user.role === 'user') && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-4">
                       {canEdit(student) && (
                         <button onClick={() => onEdit(student)} className="text-sky-600 hover:text-sky-800 transition-colors" title="Edit">
                           <EditIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                      {isAdmin && onDelete && (
+                        <button onClick={() => setStudentToDelete(student)} className="text-rose-600 hover:text-rose-800 transition-colors" title="Delete">
+                          <TrashIcon className="w-5 h-5" />
                         </button>
                       )}
                     </div>
@@ -107,6 +131,27 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, academicY
           </tbody>
         </table>
       </div>
+      
+      <ConfirmationModal
+        isOpen={!!studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Permanent Deletion"
+      >
+        <div className="space-y-3">
+          <p className="text-slate-700">
+            Are you sure you want to <span className="font-bold text-rose-600">permanently delete</span> the record for <span className="font-bold">{studentToDelete?.name}</span>?
+          </p>
+          <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-800 text-sm">
+            <p className="font-bold mb-1">Warning:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>This action cannot be undone.</li>
+              <li>All student data, including academic records and fee history, will be lost.</li>
+              <li>If the student is just leaving, consider marking them as "Dropped" instead of deleting.</li>
+            </ul>
+          </div>
+        </div>
+      </ConfirmationModal>
     </>
   );
 };

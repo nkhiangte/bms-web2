@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { Student, Grade } from '@/types';
+import { Student, Grade, GradeDefinition } from '@/types';
 import { db } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getNextGrade, formatStudentId } from '@/utils';
-import { XIcon, SearchIcon, SpinnerIcon, UserIcon } from '@/components/Icons';
+import { getNextGrade, formatStudentId, calculateStudentResult } from '@/utils';
+import { XIcon, SearchIcon, SpinnerIcon, UserIcon, CheckCircleIcon, XCircleIcon } from '@/components/Icons';
 import StudentFormModal from './StudentFormModal';
 
 interface ImportFromPreviousYearModalProps {
@@ -12,13 +12,15 @@ interface ImportFromPreviousYearModalProps {
     onClose: () => void;
     onImport: (studentData: Omit<Student, 'id'>) => Promise<void>;
     currentAcademicYear: string;
+    gradeDefinitions: Record<Grade, GradeDefinition>;
 }
 
 const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = ({
     isOpen,
     onClose,
     onImport,
-    currentAcademicYear
+    currentAcademicYear,
+    gradeDefinitions
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<Student[]>([]);
@@ -59,15 +61,15 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         }
     };
 
-    const handleSelectStudent = (student: Student) => {
+    const handleSelectStudent = (student: Student, isPromoted: boolean) => {
         // Prepare student for current year
-        const nextGrade = getNextGrade(student.grade) || student.grade;
+        const targetGrade = isPromoted ? (getNextGrade(student.grade) || student.grade) : student.grade;
         
         // We reset rollNo and studentId to let the user edit them for the new year
         // We also reset feePayments and academicPerformance
         const preparedStudent: Student = {
             ...student,
-            grade: nextGrade,
+            grade: targetGrade,
             academicYear: currentAcademicYear,
             rollNo: 0, 
             studentId: '', 
@@ -142,13 +144,32 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                                                 {student.grade} ({student.academicYear}) • Roll No: {student.rollNo}
                                             </p>
                                             <p className="text-xs text-slate-400">Father: {student.fatherName}</p>
+                                            
+                                            {/* Result Display */}
+                                            {(() => {
+                                                const result = calculateStudentResult(student, gradeDefinitions[student.grade]);
+                                                return (
+                                                    <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${result === 'PASS' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                                                        {result === 'PASS' ? <CheckCircleIcon className="w-3 h-3" /> : <XCircleIcon className="w-3 h-3" />}
+                                                        Result: {result}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
-                                        <button 
-                                            onClick={() => handleSelectStudent(student)}
-                                            className="bg-sky-50 text-sky-700 px-4 py-2 rounded-lg font-semibold hover:bg-sky-100 transition-colors"
-                                        >
-                                            Promote to {getNextGrade(student.grade) || 'Next Class'}
-                                        </button>
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <button 
+                                                onClick={() => handleSelectStudent(student, true)}
+                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'PASS' ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                                            >
+                                                Promote to {getNextGrade(student.grade) || 'Next Class'}
+                                            </button>
+                                            <button 
+                                                onClick={() => handleSelectStudent(student, false)}
+                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'FAIL' ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
+                                            >
+                                                Detain in {student.grade}
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             ) : searchTerm && !isSearching ? (

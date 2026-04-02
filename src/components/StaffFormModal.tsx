@@ -229,7 +229,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
             <div className="p-6 border-b">
                 <h2 className="text-2xl font-bold text-slate-800">{staffMember ? 'Edit Staff Details' : 'Add New Staff Member'}</h2>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
+            <div className="p-6 pb-40 space-y-4 overflow-y-auto max-h-[75vh]">
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md animate-fade-in" role="alert">
                         <p className="font-bold">Error</p>

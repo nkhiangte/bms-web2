@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, Gender } from '@/types';
+import { Student, User, Grade, Gender, GradeDefinition } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import StudentTable from '@/components/StudentTable';
 import StudentFormModal from '@/components/StudentFormModal';
@@ -20,9 +20,10 @@ interface StudentListPageProps {
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
+  gradeDefinitions: Record<Grade, GradeDefinition>;
 }
 
-const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEdit, onDelete, academicYear, user, assignedGrade }) => {
+const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEdit, onDelete, academicYear, user, assignedGrade, gradeDefinitions }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'pen' | 'fatherName' | 'studentId'>('name');
   const [gradeFilter, setGradeFilter] = useState<string>('');
@@ -295,6 +296,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
         onClose={() => setIsImportPrevYearModalOpen(false)}
         onImport={handleImportPrevYearSubmit}
         currentAcademicYear={academicYear}
+        gradeDefinitions={gradeDefinitions}
       />
     </div>
   );

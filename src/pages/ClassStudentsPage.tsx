@@ -9,6 +9,7 @@ import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
 import StudentFormModal from '@/components/StudentFormModal';
+import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -51,6 +52,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+    const [isImportPrevYearModalOpen, setIsImportPrevYearModalOpen] = useState(false);
     const [isSavingStudent, setIsSavingStudent] = useState(false);
     const [isExamFeeModalOpen, setIsExamFeeModalOpen] = useState(false);
 
@@ -81,6 +83,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     }, [classStudents]);
 
     const isAdmin = user.role === 'admin';
+    const isStaff = isAdmin || user.role === 'user';
     const isClassTeacher = isAdmin || (user.role === 'user' && assignedGrade === grade);
 
     if (!grade) return <div>Invalid Class</div>;
@@ -180,12 +183,17 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                         className="form-input w-full sm:w-64"
                     />
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
-                        {isAdmin && (
-                            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary whitespace-nowrap">
-                                <ArrowUpOnSquareIcon className="w-5 h-5"/> Import
-                            </button>
+                        {isStaff && (
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary whitespace-nowrap" title="Import from CSV/Excel">
+                                    <ArrowUpOnSquareIcon className="w-5 h-5"/> Import
+                                </button>
+                                <button onClick={() => setIsImportPrevYearModalOpen(true)} className="btn btn-secondary whitespace-nowrap bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="Import from Previous Year">
+                                    <UserIcon className="w-5 h-5"/> From Prev Year
+                                </button>
+                            </div>
                         )}
-                        {(isAdmin || isClassTeacher) && (
+                        {isStaff && (
                             <>
                                 <button onClick={() => setIsExamFeeModalOpen(true)} className="btn btn-secondary whitespace-nowrap">
                                     <CurrencyDollarIcon className="w-5 h-5"/> Exam Fees
@@ -246,7 +254,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                                     </a>
                                                  </>
                                              )}
-                                             {isAdmin && (
+                                             {isStaff && (
                                                 <button onClick={() => handleDeleteClick(student)} className="p-2 text-red-600 hover:bg-red-100 rounded-full">
                                                     <TrashIcon className="w-5 h-5"/>
                                                 </button>
@@ -260,6 +268,13 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 )}
             </div>
 
+            <ImportFromPreviousYearModal 
+                isOpen={isImportPrevYearModalOpen}
+                onClose={() => setIsImportPrevYearModalOpen(false)}
+                onImport={handleAddStudentSubmit}
+                currentAcademicYear={academicYear}
+                gradeDefinitions={gradeDefinitions}
+            />
             <ImportStudentsModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}

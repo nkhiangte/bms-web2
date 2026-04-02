@@ -1,16 +1,18 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, Grade, GradeDefinition, EmploymentStatus, SubjectAssignment } from '@/types';
+import { Staff, Grade, GradeDefinition, EmploymentStatus, SubjectAssignment, User } from '@/types';
 import { BackIcon, EditIcon, UserIcon, HomeIcon, MailIcon, PhoneIcon, BriefcaseIcon, AcademicCapIcon, CurrencyDollarIcon, BookOpenIcon } from '@/components/Icons';
 import { formatDateForDisplay } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
+import StaffFormModal from '@/components/StaffFormModal';
 
 const { useParams, useNavigate, Link } = ReactRouterDOM as any;
 
 interface StaffDetailPageProps {
   staff: Staff[];
-  onEdit: (staffMember: Staff) => void;
+  onEdit: (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGrade: Grade | null) => Promise<void>;
   gradeDefinitions: Record<Grade, GradeDefinition>;
+  user: User;
 }
 
 const DetailItem: React.FC<{label: string, value?: string | number | null, children?: React.ReactNode}> = ({ label, value, children }) => {
@@ -33,10 +35,13 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 )
 
 
-const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeDefinitions }) => {
+const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeDefinitions, user }) => {
   const { staffId } = useParams();
   const navigate = useNavigate();
   
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const staffMember = staff.find(s => s.id === staffId);
 
   const assignedClass = useMemo(() => {
@@ -56,6 +61,20 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
       }, {} as Record<Grade, string[]>);
   }, [staffMember]);
 
+
+  const handleEditSubmit = async (staffData: Omit<Staff, 'id'>, assignedGradeKey: Grade | null) => {
+    if (!staffMember) return;
+    setIsSaving(true);
+    try {
+        await onEdit(staffData, staffMember.id, assignedGradeKey);
+        setIsEditModalOpen(false);
+    } catch (error) {
+        console.error("Error updating staff:", error);
+        alert("Failed to update staff profile. Please try again.");
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   if (!staffMember) {
     return (
@@ -80,6 +99,9 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
     [EmploymentStatus.RETIRED]: 'bg-slate-200 text-slate-700',
   };
   const statusStyle = statusStyles[staffMember.status] || statusStyles[EmploymentStatus.RETIRED];
+
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const canEdit = isAdmin || (user?.email && staffMember.emailAddress && user.email.trim().toLowerCase() === staffMember.emailAddress.trim().toLowerCase());
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
@@ -112,13 +134,15 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
             {staffMember.status}
           </div>
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-             <button
-                onClick={() => onEdit(staffMember)}
-                className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition"
-              >
-                <EditIcon className="h-5 h-5" />
-                Edit Profile
-              </button>
+             {canEdit && (
+               <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition"
+                >
+                  <EditIcon className="h-5 h-5" />
+                  Edit Profile
+                </button>
+             )}
            </div>
         </div>
       </div>
@@ -197,6 +221,15 @@ const StaffDetailPage: React.FC<StaffDetailPageProps> = ({ staff, onEdit, gradeD
           </DetailSection>
       </div>
 
+      <StaffFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        staffMember={staffMember}
+        allStaff={staff}
+        gradeDefinitions={gradeDefinitions}
+        isSaving={isSaving}
+      />
     </div>
   );
 };

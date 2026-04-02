@@ -7,6 +7,7 @@ import { formatStudentId, calculateDues, formatDateForDisplay, formatPhoneNumber
 import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } from '@/constants';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
+import StudentFormModal from '@/components/StudentFormModal';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -63,6 +64,8 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   const [entryToDelete, setEntryToDelete] = useState<ConductEntry | null>(null);
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const canEdit = ['admin', 'user'].includes(user.role);
   const isAdmin = user.role === 'admin';
@@ -116,6 +119,20 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
       navigate('/portal/students');
     }
     setIsDeletingStudent(false);
+  };
+
+  const handleEditSubmit = async (data: Omit<Student, 'id'>) => {
+    if (!student) return;
+    setIsSaving(true);
+    try {
+      await onEdit({ ...data, id: student.id } as Student);
+      setIsEditModalOpen(false);
+    } catch (error) {
+        console.error("Error updating student:", error);
+        alert("Failed to update student profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
@@ -193,7 +210,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
              {canEdit && (
                 <button
-                  onClick={() => onEdit(student)}
+                  onClick={() => setIsEditModalOpen(true)}
                   className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5"
                 >
                   <EditIcon className="h-5 h-5" />
@@ -567,6 +584,14 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
           </div>
         </div>
     </ConfirmationModal>
+    <StudentFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        student={student}
+        academicYear={academicYear}
+        isSaving={isSaving}
+    />
     </>
   );
 };

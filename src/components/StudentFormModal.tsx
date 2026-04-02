@@ -23,17 +23,17 @@ const AccordionSection: React.FC<{ title: string; children: React.ReactNode; def
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg">
             <button
                 type="button"
-                className="w-full flex justify-between items-center p-3 bg-slate-50 hover:bg-slate-100 focus:outline-none"
+                className={`w-full flex justify-between items-center p-3 bg-slate-50 hover:bg-slate-100 focus:outline-none ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
             >
                 <h3 className="font-semibold text-slate-800">{title}</h3>
                 {isOpen ? <ChevronUpIcon className="w-5 h-5 text-slate-700" /> : <ChevronDownIcon className="w-5 h-5 text-slate-700" />}
             </button>
-            {isOpen && <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>}
+            {isOpen && <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t">{children}</div>}
         </div>
     );
 };

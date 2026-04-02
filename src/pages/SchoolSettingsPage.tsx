@@ -7,13 +7,14 @@ import { resizeImage, uploadToImgBB } from '@/utils';
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface SchoolSettingsPageProps {
-    config: { paymentQRCodeUrl?: string; upiId?: string };
-    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string }) => Promise<boolean>;
+    config: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string };
+    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string }) => Promise<boolean>;
 }
 
 const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdate }) => {
     const navigate = useNavigate();
     const [upiId, setUpiId] = useState('');
+    const [udiseCode, setUdiseCode] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -21,6 +22,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
 
     useEffect(() => {
         setUpiId(config.upiId || 'nkhiangte@oksbi');
+        setUdiseCode(config.udiseCode || '');
         // Use a safe placeholder if no config is set
         setQrCodeUrl(config.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set');
     }, [config]);
@@ -45,7 +47,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        const success = await onUpdate({ upiId, paymentQRCodeUrl: qrCodeUrl });
+        const success = await onUpdate({ upiId, udiseCode, paymentQRCodeUrl: qrCodeUrl });
         setIsSaving(false);
     };
 
@@ -63,6 +65,24 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
             <h1 className="text-3xl font-bold text-slate-800 mb-6">School Settings</h1>
             
             <form onSubmit={handleSave} className="space-y-8">
+                <section className="p-6 bg-slate-50 border rounded-lg">
+                    <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">School Information</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700">UDISE Code</label>
+                                <input 
+                                    type="text" 
+                                    value={udiseCode} 
+                                    onChange={e => setUdiseCode(e.target.value)} 
+                                    className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" 
+                                    placeholder="e.g., 15040100101"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <section className="p-6 bg-slate-50 border rounded-lg">
                     <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Payment Details (Online Admissions)</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

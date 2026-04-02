@@ -123,6 +123,7 @@ import InsightsPage from '@/pages/InsightsPage';
 import ManageNavigationPage from '@/pages/ManageNavigationPage';
 import TextbooksPage from '@/pages/public/TextbooksPage';
 import ManageTextbooksPage from '@/pages/ManageTextbooksPage';
+import LetterGeneratorPage from '@/pages/LetterGeneratorPage';
 
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -152,7 +153,7 @@ const App: React.FC = () => {
   const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
   const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
   const [admissionSettings, setAdmissionSettings] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
-  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '' });
+  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '' });
   const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
   const [tcRecords, setTcRecords] = useState<TcRecord[]>([]);
   const [serviceCerts, setServiceCerts] = useState<ServiceCertificateRecord[]>([]);
@@ -903,6 +904,7 @@ const App: React.FC = () => {
           <Route path="hostel/settings" element={<HostelSettingsPage />} />
           <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (e, id) => { await handleSaveCalendarEvent(e, id); }} onEdit={async (e) => { await handleSaveCalendarEvent(e, e.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
           <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
+          <Route path="letters" element={<LetterGeneratorPage user={user!} schoolConfig={schoolConfig} />} />
           <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
           <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
           <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />

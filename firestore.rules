@@ -234,7 +234,8 @@ service cloud.firestore {
     // Inventory System
     // ---------------------------
     match /inventory/{docId} {
-      allow read, write, delete: if isStaff();
+      allow read, list, write: if isStaff() || (isSignedIn() && request.auth.token.email == "nkhiangte@gmail.com");
+      allow delete: if isAdmin();
     }
 
     // ---------------------------

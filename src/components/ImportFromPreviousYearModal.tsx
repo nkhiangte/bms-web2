@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Student, Grade, GradeDefinition } from '@/types';
 import { db } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -25,8 +25,8 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
     currentStudents
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState<Student[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
+    const [previousYearStudents, setPreviousYearStudents] = useState<Student[]>([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -39,6 +39,38 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         if (isNaN(start) || isNaN(end)) return "2025-26";
         return `${start - 1}-${String(end - 1).padStart(2, '0')}`;
     }, [currentAcademicYear]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSearchTerm('');
+            return;
+        }
+        
+        const fetchPreviousYearStudents = async () => {
+            setIsLoadingStudents(true);
+            try {
+                const q = query(
+                    collection(db, 'students'),
+                    where('academicYear', '==', previousYear)
+                );
+                const snapshot = await getDocs(q);
+                const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+                setPreviousYearStudents(results);
+            } catch (error) {
+                console.error("Failed to fetch previous year students:", error);
+            } finally {
+                setIsLoadingStudents(false);
+            }
+        };
+
+        fetchPreviousYearStudents();
+    }, [isOpen, previousYear]);
+
+    const searchResults = useMemo(() => {
+        if (!searchTerm.trim()) return [];
+        const lowerTerm = searchTerm.toLowerCase();
+        return previousYearStudents.filter(s => s.name.toLowerCase().includes(lowerTerm));
+    }, [searchTerm, previousYearStudents]);
 
     const getImportedClass = (student: Student) => {
         const isInvalidIdentifier = (val?: string) => {
@@ -54,29 +86,6 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             return false;
         });
         return imported ? imported.grade : null;
-    };
-
-    const handleSearch = async () => {
-        if (!searchTerm.trim()) return;
-        setIsSearching(true);
-        try {
-            // Fetch students from the previous year
-            const q = query(
-                collection(db, 'students'),
-                where('academicYear', '==', previousYear)
-            );
-            const snapshot = await getDocs(q);
-            
-            const results = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Student))
-                .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-            
-            setSearchResults(results);
-        } catch (error) {
-            console.error("Search failed:", error);
-        } finally {
-            setIsSearching(false);
-        }
     };
 
     const handleSelectStudent = (student: Student, isPromoted: boolean) => {
@@ -134,20 +143,14 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                                 <input 
                                     type="text" 
                                     placeholder="Search student name..." 
-                                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none"
+                                    className="w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
                                 />
+                                {isLoadingStudents && (
+                                    <SpinnerIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-sky-500 animate-spin" />
+                                )}
                             </div>
-                            <button 
-                                onClick={handleSearch}
-                                disabled={isSearching}
-                                className="bg-sky-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-sky-700 disabled:bg-slate-400 flex items-center gap-2"
-                            >
-                                {isSearching ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : <SearchIcon className="w-5 h-5" />}
-                                Search
-                            </button>
                         </div>
 
                         <div className="space-y-2">
@@ -198,8 +201,10 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                                         </div>
                                     </div>
                                 )})
-                            ) : searchTerm && !isSearching ? (
+                            ) : searchTerm && !isLoadingStudents ? (
                                 <p className="text-center text-slate-500 py-8">No students found for "{searchTerm}" in {previousYear}.</p>
+                            ) : isLoadingStudents ? (
+                                <p className="text-center text-slate-500 py-8">Loading previous year records...</p>
                             ) : (
                                 <p className="text-center text-slate-500 py-8 italic">Enter a name to search students from the previous academic year.</p>
                             )}

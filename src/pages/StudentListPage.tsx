@@ -297,6 +297,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
         onImport={handleImportPrevYearSubmit}
         currentAcademicYear={academicYear}
         gradeDefinitions={gradeDefinitions}
+        currentStudents={students}
       />
     </div>
   );

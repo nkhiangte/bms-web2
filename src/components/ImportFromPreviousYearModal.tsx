@@ -13,6 +13,7 @@ interface ImportFromPreviousYearModalProps {
     onImport: (studentData: Omit<Student, 'id'>) => Promise<void>;
     currentAcademicYear: string;
     gradeDefinitions: Record<Grade, GradeDefinition>;
+    currentStudents: Student[];
 }
 
 const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = ({
@@ -20,7 +21,8 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
     onClose,
     onImport,
     currentAcademicYear,
-    gradeDefinitions
+    gradeDefinitions,
+    currentStudents
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<Student[]>([]);
@@ -37,6 +39,16 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         if (isNaN(start) || isNaN(end)) return "2025-26";
         return `${start - 1}-${String(end - 1).padStart(2, '0')}`;
     }, [currentAcademicYear]);
+
+    const getImportedClass = (student: Student) => {
+        const imported = currentStudents.find(cs => {
+            if (student.aadhaarNumber && cs.aadhaarNumber === student.aadhaarNumber) return true;
+            if (student.pen && cs.pen === student.pen) return true;
+            if (student.name === cs.name && student.fatherName === cs.fatherName && student.dateOfBirth === cs.dateOfBirth) return true;
+            return false;
+        });
+        return imported ? imported.grade : null;
+    };
 
     const handleSearch = async () => {
         if (!searchTerm.trim()) return;
@@ -136,8 +148,10 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
 
                         <div className="space-y-2">
                             {searchResults.length > 0 ? (
-                                searchResults.map(student => (
-                                    <div key={student.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                                searchResults.map(student => {
+                                    const importedClass = getImportedClass(student);
+                                    return (
+                                    <div key={student.id} className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${importedClass ? 'bg-slate-50 opacity-75' : 'hover:bg-slate-50'}`}>
                                         <div>
                                             <h4 className="font-bold text-slate-800">{student.name}</h4>
                                             <p className="text-sm text-slate-500">
@@ -156,22 +170,30 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                                                 );
                                             })()}
                                         </div>
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <button 
-                                                onClick={() => handleSelectStudent(student, true)}
-                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'PASS' ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
-                                            >
-                                                Promote to {getNextGrade(student.grade) || 'Next Class'}
-                                            </button>
-                                            <button 
-                                                onClick={() => handleSelectStudent(student, false)}
-                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'FAIL' ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
-                                            >
-                                                Detain in {student.grade}
-                                            </button>
+                                        <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                            {importedClass ? (
+                                                <span className="text-sm font-semibold text-slate-500 bg-slate-200 px-3 py-1.5 rounded-lg">
+                                                    Already imported to {importedClass}
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleSelectStudent(student, true)}
+                                                        className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'PASS' ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                                                    >
+                                                        Promote to {getNextGrade(student.grade) || 'Next Class'}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleSelectStudent(student, false)}
+                                                        className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${calculateStudentResult(student, gradeDefinitions[student.grade]) === 'FAIL' ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
+                                                    >
+                                                        Detain in {student.grade}
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
-                                ))
+                                )})
                             ) : searchTerm && !isSearching ? (
                                 <p className="text-center text-slate-500 py-8">No students found for "{searchTerm}" in {previousYear}.</p>
                             ) : (

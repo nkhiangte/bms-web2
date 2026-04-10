@@ -274,6 +274,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 onImport={handleAddStudentSubmit}
                 currentAcademicYear={academicYear}
                 gradeDefinitions={gradeDefinitions}
+                currentStudents={students}
             />
             <ImportStudentsModal
                 isOpen={isImportModalOpen}

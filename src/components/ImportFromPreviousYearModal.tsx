@@ -41,9 +41,15 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
     }, [currentAcademicYear]);
 
     const getImportedClass = (student: Student) => {
+        const isInvalidIdentifier = (val?: string) => {
+            if (!val) return true;
+            const lower = val.trim().toLowerCase();
+            return lower === '' || lower === 'n/a' || lower === 'na' || lower === '-' || lower === '0' || lower === 'none';
+        };
+
         const imported = currentStudents.find(cs => {
-            if (student.aadhaarNumber && cs.aadhaarNumber === student.aadhaarNumber) return true;
-            if (student.pen && cs.pen === student.pen) return true;
+            if (!isInvalidIdentifier(student.aadhaarNumber) && cs.aadhaarNumber === student.aadhaarNumber) return true;
+            if (!isInvalidIdentifier(student.pen) && cs.pen === student.pen) return true;
             if (student.name === cs.name && student.fatherName === cs.fatherName && student.dateOfBirth === cs.dateOfBirth) return true;
             return false;
         });
@@ -77,14 +83,12 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         // Prepare student for current year
         const targetGrade = isPromoted ? (getNextGrade(student.grade) || student.grade) : student.grade;
         
-        // We reset rollNo and studentId to let the user edit them for the new year
-        // We also reset feePayments and academicPerformance
+        // We keep rollNo and studentId from the previous year
+        // We only reset feePayments and academicPerformance
         const preparedStudent: Student = {
             ...student,
             grade: targetGrade,
             academicYear: currentAcademicYear,
-            rollNo: 0, 
-            studentId: '', 
             feePayments: {
                 admissionFeePaid: true, // Assuming they are existing students
                 tuitionFeesPaid: {},

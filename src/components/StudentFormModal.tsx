@@ -88,28 +88,29 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({ isOpen, onClose, on
                 });
                 setIsIdAuto(!student.studentId);
             } else {
-                setFormData(getInitialFormData());
+                const initialData = getInitialFormData();
+                const newStudentId = formatStudentId(initialData, academicYear);
+                setFormData({ ...initialData, studentId: newStudentId });
                 setIsIdAuto(true);
             }
         }
-    }, [student, isOpen, newStudentTargetGrade]);
-    
-    useEffect(() => {
-        if (isOpen && isIdAuto) { 
-            const { studentId, ...rest } = formData;
-            const newStudentId = formatStudentId(rest, academicYear);
-            if (newStudentId !== formData.studentId) {
-                setFormData(prev => ({ ...prev, studentId: newStudentId }));
-            }
-        }
-    }, [formData.grade, formData.rollNo, isOpen, academicYear, isIdAuto]);
+    }, [student, isOpen, newStudentTargetGrade, academicYear]);
 
     const handleChange = (e: any) => {
         const { name, value, type } = e.target;
-        if (name === 'studentId') {
-            setIsIdAuto(false);
-        }
-        setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) || 0 : value }));
+        const parsedValue = type === 'number' ? parseInt(value, 10) || 0 : value;
+        
+        setFormData(prev => {
+            const newData = { ...prev, [name]: parsedValue };
+            
+            if (name === 'studentId') {
+                setIsIdAuto(false);
+            } else if (isIdAuto && (name === 'grade' || name === 'rollNo')) {
+                newData.studentId = formatStudentId(newData, academicYear);
+            }
+            
+            return newData;
+        });
     };
     
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

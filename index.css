@@ -371,7 +371,51 @@ input[type=number] { -moz-appearance: textfield; }
   box-shadow: 0 12px 40px rgba(0,0,0,0.5);
 }
 
-/* ─── Admission banner ─── */
+/* ─── React Quill Overrides ─── */
+.quill-editor-container .ql-toolbar {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-color) !important;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+.quill-editor-container .ql-container {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-color) !important;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  min-height: 200px;
+  font-family: var(--font-body);
+}
+.quill-editor-container .ql-editor {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+.quill-editor-container .ql-editor.ql-blank::before {
+  color: var(--text-muted);
+  font-style: normal;
+}
+.quill-editor-container .ql-snow .ql-stroke {
+  stroke: var(--text-secondary);
+}
+.quill-editor-container .ql-snow .ql-fill {
+  fill: var(--text-secondary);
+}
+.quill-editor-container .ql-snow .ql-picker {
+  color: var(--text-secondary);
+}
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-stroke,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--gold);
+}
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-fill,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: var(--gold);
+}
+.quill-editor-container .ql-snow.ql-toolbar button:hover,
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active {
+  color: var(--gold);
+}
+
 .admission-banner {
   background: linear-gradient(90deg, #7A4800, var(--gold-dark), var(--gold), var(--gold-dark), #7A4800);
   background-size: 300% 100%;

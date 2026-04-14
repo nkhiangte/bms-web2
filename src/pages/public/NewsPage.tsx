@@ -69,6 +69,23 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
         });
     };
 
+    const renderContent = (content: string) => {
+        const isHtml = /<[a-z][\s\S]*>/i.test(content);
+        if (isHtml) {
+            return (
+                <div 
+                    className="mt-3 text-slate-600 prose prose-slate max-w-none"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
+            );
+        }
+        return (
+            <div className="mt-3 text-slate-600 whitespace-pre-wrap">
+                {renderRichContent(content)}
+            </div>
+        );
+    };
+
     return (
         <div className="bg-slate-50 min-h-screen py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -93,9 +110,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
                                 )}
                                 <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
                                 <h2 className="mt-2 text-2xl font-bold text-slate-800">{item.title}</h2>
-                                <div className="mt-3 text-slate-600 whitespace-pre-wrap">
-                                    {renderRichContent(item.content)}
-                                </div>
+                                {renderContent(item.content)}
                             </div>
                         ))
                     ) : (

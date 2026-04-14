@@ -634,3 +634,10 @@ export const uploadToImgBB = async (base64Image: string): Promise<string> => {
         throw new Error(data.error?.message || 'Failed to upload image to ImgBB');
     }
 };
+
+export const stripHtml = (html: string): string => {
+    if (!html) return '';
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+};

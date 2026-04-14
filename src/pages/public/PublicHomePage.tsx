@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '@/components/Icons';
 import { NewsItem, User } from '@/types';
-import { formatDateForNews } from '@/utils';
+import { formatDateForNews, stripHtml } from '@/utils';
 import EditableContent from '@/components/EditableContent';
 
 const { Link } = ReactRouterDOM as any;
@@ -166,7 +166,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 <p className="text-xs font-semibold text-sky-600 uppercase tracking-wide">{formatDateForNews(item.date)}</p>
                                 <h3 className="mt-2 text-lg font-bold text-slate-800">{item.title}</h3>
                                 <p className="mt-2 text-slate-600 text-sm leading-relaxed flex-grow">
-                                    {item.content.substring(0, 150)}{item.content.length > 150 ? '...' : ''}
+                                    {stripHtml(item.content).substring(0, 150)}{stripHtml(item.content).length > 150 ? '...' : ''}
                                 </p>
                                 <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start">
                                     Read More &rarr;

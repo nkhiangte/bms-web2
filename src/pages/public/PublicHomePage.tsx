@@ -159,7 +159,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                     </div>
                     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         {latestNews.length > 0 ? latestNews.map(item => (
-                            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 flex flex-col">
+                            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 flex flex-col group">
                                 {item.imageUrls && item.imageUrls.length > 0 && (
                                     <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover rounded-lg mb-4" />
                                 )}
@@ -168,7 +168,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 <p className="mt-2 text-slate-600 text-sm leading-relaxed flex-grow">
                                     {stripHtml(item.content).substring(0, 150)}{stripHtml(item.content).length > 150 ? '...' : ''}
                                 </p>
-                                <Link to="/news" className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start">
+                                <Link to={`/news/${item.id}`} className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start group-hover:translate-x-1 transition-transform">
                                     Read More &rarr;
                                 </Link>
                             </div>

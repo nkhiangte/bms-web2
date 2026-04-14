@@ -50,6 +50,7 @@ import CalendarPage from '@/pages/CalendarPage';
 import CommunicationPage from '@/pages/CommunicationPage';
 import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
+import NewsDetailPage from '@/pages/public/NewsDetailPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
 import GalleryManagerPage from '@/pages/GalleryManagerPage';
 import WebsiteMediaManagerPage from '@/pages/WebsiteMediaManagerPage';
@@ -846,6 +847,7 @@ const App: React.FC = () => {
           <Route path="disclosure" element={<MandatoryDisclosurePage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
+          <Route path="news/:newsId" element={<NewsDetailPage news={news} user={user} />} />
         
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />

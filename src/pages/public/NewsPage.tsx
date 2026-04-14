@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { NewsItem, User } from '@/types';
 import { formatDateForNews } from '@/utils';
 import EditableContent from '@/components/EditableContent';
@@ -72,23 +73,14 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
     const renderContent = (content: string) => {
         if (!content) return null;
         
-        // More robust HTML detection: check for common tags or if it starts with <
-        const trimmed = content.trim();
-        const isHtml = trimmed.startsWith('<') || /<[a-z][\s\S]*>/i.test(content) || content.includes('</');
-        
-        if (isHtml) {
-            return (
-                <div 
-                    className="mt-4 text-slate-700 prose prose-slate max-w-none prose-p:leading-relaxed prose-headings:text-slate-900 prose-a:text-sky-600 prose-img:rounded-xl"
-                    dangerouslySetInnerHTML={{ __html: content }}
-                />
-            );
-        }
+        // Strip HTML for summary
+        const stripped = content.replace(/<[^>]*>?/gm, '');
+        const summary = stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
         
         return (
-            <div className="mt-4 text-slate-700 whitespace-pre-wrap leading-relaxed">
-                {renderRichContent(content)}
-            </div>
+            <p className="mt-3 text-slate-600 line-clamp-3">
+                {summary}
+            </p>
         );
     };
 
@@ -103,21 +95,38 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
                         <EditableContent id="news_page_subtitle" defaultContent="Stay updated with the latest happenings at Bethel Mission School." type="text" user={user} />
                     </div>
                 </div>
-                <div className="max-w-3xl mx-auto space-y-8">
+                <div className="max-w-3xl mx-auto space-y-6">
                     {sortedNews.length > 0 ? (
                         sortedNews.map(item => (
-                            <div key={item.id} className="p-6 border-l-4 border-sky-500 bg-white rounded-r-lg shadow-sm">
-                                {item.imageUrls && item.imageUrls.length > 0 && (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                                        {item.imageUrls.map((url, index) => (
-                                            <img key={index} src={url} alt={`${item.title} - image ${index + 1}`} className="w-full h-auto object-cover rounded-lg shadow-sm" />
-                                        ))}
+                            <Link 
+                                key={item.id} 
+                                to={`/news/${item.id}`}
+                                className="block p-6 border-l-4 border-sky-500 bg-white rounded-r-xl shadow-sm hover:shadow-md transition-all group"
+                            >
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    {item.imageUrls && item.imageUrls.length > 0 && (
+                                        <div className="w-full md:w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                                            <img 
+                                                src={item.imageUrls[0]} 
+                                                alt={item.title} 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex-grow">
+                                        <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
+                                        <h2 className="mt-1 text-xl font-bold text-slate-800 group-hover:text-sky-600 transition-colors">{item.title}</h2>
+                                        {renderContent(item.content)}
+                                        <div className="mt-4 flex items-center text-sky-600 font-medium text-sm">
+                                            Read More
+                                            <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
                                     </div>
-                                )}
-                                <p className="text-sm font-semibold text-sky-700">{formatDateForNews(item.date)}</p>
-                                <h2 className="mt-2 text-2xl font-bold text-slate-800">{item.title}</h2>
-                                {renderContent(item.content)}
-                            </div>
+                                </div>
+                            </Link>
                         ))
                     ) : (
                         <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-lg bg-white">

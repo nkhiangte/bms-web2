@@ -383,12 +383,16 @@ input[type=number] { -moz-appearance: textfield; }
   border-color: var(--border-color) !important;
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  min-height: 200px;
   font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
 }
 .quill-editor-container .ql-editor {
   color: var(--text-primary);
   font-size: 1rem;
+  min-height: 200px;
+  max-height: 350px;
+  overflow-y: auto;
 }
 .quill-editor-container .ql-editor.ql-blank::before {
   color: var(--text-muted);

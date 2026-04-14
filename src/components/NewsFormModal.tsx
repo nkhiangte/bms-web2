@@ -97,13 +97,13 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-6 border-b">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-start sm:items-center p-4 overflow-y-auto" onClick={onClose}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-auto flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+                    <div className="p-6 border-b flex-shrink-0">
                         <h2 className="text-2xl font-bold text-slate-800">{item ? 'Edit News Item' : 'Add New News Item'}</h2>
                     </div>
-                    <div className="p-6 space-y-4 overflow-y-auto">
+                    <div className="p-6 space-y-4 overflow-y-auto flex-grow">
                         {error && (
                             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
                                 <p className="font-bold">Error</p>
@@ -178,7 +178,7 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSubmit
                             </div>
                         </div>
                     </div>
-                    <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl border-t">
+                    <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl border-t flex-shrink-0">
                         <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving || isUploading}>
                             Cancel
                         </button>

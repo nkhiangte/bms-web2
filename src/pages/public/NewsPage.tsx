@@ -70,17 +70,23 @@ const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
     };
 
     const renderContent = (content: string) => {
-        const isHtml = /<[a-z][\s\S]*>/i.test(content);
+        if (!content) return null;
+        
+        // More robust HTML detection: check for common tags or if it starts with <
+        const trimmed = content.trim();
+        const isHtml = trimmed.startsWith('<') || /<[a-z][\s\S]*>/i.test(content) || content.includes('</');
+        
         if (isHtml) {
             return (
                 <div 
-                    className="mt-3 text-slate-600 prose prose-slate max-w-none"
+                    className="mt-4 text-slate-700 prose prose-slate max-w-none prose-p:leading-relaxed prose-headings:text-slate-900 prose-a:text-sky-600 prose-img:rounded-xl"
                     dangerouslySetInnerHTML={{ __html: content }}
                 />
             );
         }
+        
         return (
-            <div className="mt-3 text-slate-600 whitespace-pre-wrap">
+            <div className="mt-4 text-slate-700 whitespace-pre-wrap leading-relaxed">
                 {renderRichContent(content)}
             </div>
         );

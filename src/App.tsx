@@ -655,6 +655,21 @@ const App: React.FC = () => {
     return () => unsub();
   }, []);
 
+  // ── Auto-set Academic Year for New Session ──
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'user' || user.role === 'warden')) {
+      const targetYear = getCurrentAcademicYear();
+      db.collection('config').doc('academic').get().then(doc => {
+        if (doc.exists && doc.data()?.currentAcademicYear !== targetYear) {
+          db.collection('config').doc('academic').update({ currentAcademicYear: targetYear });
+          addNotification(`Academic year successfully updated to ${targetYear} for the new session.`, 'success');
+        } else if (!doc.exists) {
+          db.collection('config').doc('academic').set({ currentAcademicYear: targetYear });
+        }
+      }).catch(err => console.error("Error auto-setting academic year:", err));
+    }
+  }, [user]);
+
   // ── Staff (isolated — needed by public FacultyPage) ───────────────────────
   useEffect(() => {
     const unsub = db.collection('staff').onSnapshot(

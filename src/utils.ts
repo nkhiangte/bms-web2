@@ -212,8 +212,11 @@ export const getNextGrade = (currentGrade: Grade): Grade | null => {
 
 export const getNextAcademicYear = (currentYear: string): string => {
     const [start, end] = currentYear.split('-').map(Number);
-    if (!start || !end) return "2026-2027"; // Fallback
-    return `${start + 1}-${end + 1}`;
+    if (!start || !end) return "2026-27"; // Fallback
+    // Handle both YYYY-YYYY and YYYY-YY formats
+    const startYear = start + 1;
+    const endYearStr = String(end).length === 2 ? String(end + 1).padStart(2, '0') : String(end + 1);
+    return `${startYear}-${endYearStr}`;
 };
 
 /**
@@ -572,7 +575,8 @@ export const getCurrentAcademicYear = (): string => {
     const currentMonth = now.getMonth(); 
     const currentYear = now.getFullYear();
     const startYear = currentMonth < 3 ? currentYear - 1 : currentYear;
-    return `${startYear}-${startYear + 1}`;
+    const endYear = (startYear + 1) % 100;
+    return `${startYear}-${String(endYear).padStart(2, '0')}`;
 };
 
 export const resizeImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {

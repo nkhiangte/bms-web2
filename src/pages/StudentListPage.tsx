@@ -8,7 +8,7 @@ import StudentTable from '@/components/StudentTable';
 import StudentFormModal from '@/components/StudentFormModal';
 import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
 import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
-import { formatStudentId } from '@/utils';
+import { formatStudentId, normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -38,9 +38,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const filteredStudents = useMemo(() => {
     return students
       .filter(student => {
-        // Strict check for academic year. If student has no year, fallback to 2025-2026 legacy.
-        const studentYear = student.academicYear || '2025-2026';
-        return studentYear === academicYear;
+          // Strict check for academic year. If student has no year, fallback to 2025-2026 legacy.
+          const studentYear = normalizeAcademicYear(student.academicYear || '2025-26');
+          return studentYear === normalizeAcademicYear(academicYear);
       })
       .filter(student => {
         if (!searchTerm) return true;

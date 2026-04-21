@@ -219,6 +219,15 @@ export const getNextAcademicYear = (currentYear: string): string => {
     return `${startYear}-${endYearStr}`;
 };
 
+export const normalizeAcademicYear = (year?: string): string => {
+    if (!year) return '2025-26';
+    const parts = year.split('-');
+    if (parts.length === 2 && parts[1].length === 4) {
+        return `${parts[0]}-${parts[1].substring(2)}`;
+    }
+    return year;
+};
+
 /**
  * Aggressive normalization: strips ALL non-alphanumeric characters, including spaces.
  * This ensures "English I" and "English" or "English - I" can be compared reliably.

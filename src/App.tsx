@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
-import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade } from '@/utils';
+import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade, normalizeAcademicYear } from '@/utils';
 
 // Page Imports
 import LoginPage from '@/pages/LoginPage';
@@ -658,15 +658,11 @@ const App: React.FC = () => {
   // ── Auto-set Academic Year for New Session ──
   useEffect(() => {
     if (user && (user.role === 'admin' || user.role === 'user' || user.role === 'warden')) {
-      const targetYear = getCurrentAcademicYear();
       db.collection('config').doc('academic').get().then(doc => {
-        if (doc.exists && doc.data()?.currentAcademicYear !== targetYear) {
-          db.collection('config').doc('academic').update({ currentAcademicYear: targetYear });
-          addNotification(`Academic year successfully updated to ${targetYear} for the new session.`, 'success');
-        } else if (!doc.exists) {
-          db.collection('config').doc('academic').set({ currentAcademicYear: targetYear });
+        if (doc.exists && doc.data()?.currentAcademicYear !== "2026-27") {
+          db.collection('config').doc('academic').update({ currentAcademicYear: "2026-27" });
         }
-      }).catch(err => console.error("Error auto-setting academic year:", err));
+      }).catch(err => console.error("Error setting academic year:", err));
     }
   }, [user]);
 
@@ -757,10 +753,10 @@ const App: React.FC = () => {
           }
           return { id: d.id, ...data } as Student;
         });
-        // Filter students by academic year. If no academicYear is set, assume it's 2025-26 for legacy data.
+        // Filter students by academic year. Use normalizeAcademicYear to smooth out YYYY-YYYY vs YYYY-YY mismatches.
+        const normalizedCurrentYear = normalizeAcademicYear(academicYear);
         const filteredStudents = allStudents.filter(s => 
-          s.academicYear === academicYear || 
-          (!s.academicYear && academicYear === '2025-26')
+          normalizeAcademicYear(s.academicYear) === normalizedCurrentYear
         );
         setStudents(filteredStudents);
       }, err => handleFirestoreError(err, OperationType.LIST, 'students')),

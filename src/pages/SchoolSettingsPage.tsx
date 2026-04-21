@@ -7,14 +7,15 @@ import { resizeImage, uploadToImgBB } from '@/utils';
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface SchoolSettingsPageProps {
-    config: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string };
-    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string }) => Promise<boolean>;
+    config: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string };
+    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string }) => Promise<boolean>;
 }
 
 const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdate }) => {
     const navigate = useNavigate();
     const [upiId, setUpiId] = useState('');
     const [udiseCode, setUdiseCode] = useState('');
+    const [academicYear, setAcademicYear] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -23,6 +24,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
     useEffect(() => {
         setUpiId(config.upiId || 'nkhiangte@oksbi');
         setUdiseCode(config.udiseCode || '');
+        setAcademicYear(config.currentAcademicYear || '2025-26');
         // Use a safe placeholder if no config is set
         setQrCodeUrl(config.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set');
     }, [config]);
@@ -47,7 +49,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        const success = await onUpdate({ upiId, udiseCode, paymentQRCodeUrl: qrCodeUrl });
+        const success = await onUpdate({ upiId, udiseCode, paymentQRCodeUrl: qrCodeUrl, currentAcademicYear: academicYear });
         setIsSaving(false);
     };
 
@@ -78,6 +80,18 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                                     className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" 
                                     placeholder="e.g., 15040100101"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700">Current Academic Year</label>
+                                <input 
+                                    type="text" 
+                                    value={academicYear} 
+                                    onChange={e => setAcademicYear(e.target.value)} 
+                                    className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" 
+                                    placeholder="e.g., 2025-26"
+                                    required
+                                />
+                                <p className="text-xs text-rose-500 mt-1">WARNING: Only change this manually if you missed the Promotion tool and need to fix the year, or if it's incorrect. Must format as YYYY-YY.</p>
                             </div>
                         </div>
                     </div>

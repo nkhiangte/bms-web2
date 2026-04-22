@@ -10,7 +10,6 @@ import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculate
 // Page Imports
 import LoginPage from '@/pages/LoginPage';
 import SignUpPage from '@/pages/SignUpPage';
-import ParentSignUpPage from '@/pages/ParentSignUpPage';
 import ManageAchievementsPage from '@/pages/ManageAchievementsPage';
 import ParentRegistrationPage from '@/pages/ParentRegistrationPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
@@ -125,6 +124,7 @@ import ManageNavigationPage from '@/pages/ManageNavigationPage';
 import TextbooksPage from '@/pages/public/TextbooksPage';
 import ManageTextbooksPage from '@/pages/ManageTextbooksPage';
 import LetterGeneratorPage from '@/pages/LetterGeneratorPage';
+import TestimonialGeneratorPage from '@/pages/admin/TestimonialGeneratorPage';
 
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -373,6 +373,11 @@ const App: React.FC = () => {
   const handleGenerateTc = async (tcData: Omit<TcRecord, 'id'>) => {
     try { await db.collection('tcRecords').add(tcData); await db.collection('students').doc(tcData.studentDbId).update({ status: StudentStatus.TRANSFERRED }); addNotification('Transfer Certificate generated.', 'success'); return true; }
     catch (error: any) { addNotification('Failed to generate Transfer Certificate.', 'error'); return false; }
+  };
+
+  const handleUpdateTc = async (tcId: string, tcData: Partial<TcRecord>) => {
+    try { await db.collection('tcRecords').doc(tcId).update(tcData); addNotification('Transfer Certificate updated.', 'success'); return true; }
+    catch (error: any) { addNotification('Failed to update Transfer Certificate.', 'error'); return false; }
   };
 
   const handleGenerateServiceCertificate = async (certData: Omit<ServiceCertificateRecord, 'id'>) => {
@@ -638,7 +643,7 @@ const App: React.FC = () => {
           const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
           const isAdminEmail = firebaseUser.email === 'nkhiangte@gmail.com';
           if (userDoc.exists) { setUser({ uid: firebaseUser.uid, ...userDoc.data() } as User); }
-          else { setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending' }); }
+          else { setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending', isNewUser: true } as User & { isNewUser?: boolean }); }
         } catch { setUser(null); }
       } else { setUser(null); }
       setAuthLoading(false);
@@ -872,11 +877,10 @@ const App: React.FC = () => {
         <Route path="/login" element={authLoading ? <LoadingScreen /> : user ? <Navigate to="/portal/dashboard" replace /> : <LoginPage onLogin={handleLogin} onGoogleSignIn={handleGoogleSignIn} error="" notification="" />} />
         <Route path="/signup" element={<SignUpPage onSignUp={async (n, e, p) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if (c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending' }); return { success: true, message: 'Awaiting approval.' }; } return { success: false }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
         <Route path="/parent-registration" element={<ParentRegistrationPage />} />
-        <Route path="/parent-signup" element={<ParentSignUpPage onSignUp={async (n, e, p, sid, dob, sname, rel) => { try { const c = await auth.createUserWithEmailAndPassword(e, p); if (c.user) { await c.user.updateProfile({ displayName: n }); await db.collection('users').doc(c.user.uid).set({ displayName: n, email: e, role: 'pending_parent', claimedStudents: [{ fullName: sname, studentId: sid, dob, relationship: rel }], registrationDetails: { fullName: n, relationship: rel } }); return { success: true, message: 'Awaiting approval.' }; } return { success: false }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage onForgotPassword={async (e) => { try { await auth.sendPasswordResetEmail(e); return { success: true, message: 'Password reset email sent! Check your inbox.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
         <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async (newPassword) => { try { const actionCode = new URLSearchParams(window.location.search).get('oobCode'); if (!actionCode) throw new Error('Missing action code.'); await auth.confirmPasswordReset(actionCode, newPassword); return { success: true, message: 'Password reset! You can now log in.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
 
-        <Route path="/portal" element={authLoading ? <LoadingScreen /> : (user ? <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} /> : <Navigate to="/login" replace />)}>
+        <Route path="/portal" element={authLoading ? <LoadingScreen /> : (user ? ((user as any).isNewUser ? <Navigate to="/parent-registration" replace /> : <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} />) : <Navigate to="/login" replace />)}>
           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} />} />
@@ -897,8 +901,9 @@ const App: React.FC = () => {
           <Route path="staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={handleGenerateServiceCertificate} user={user!} />} />
           <Route path="staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />
           <Route path="transfers" element={<TransferManagementPage />} />
-          <Route path="transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} isSaving={false} />} />
-          <Route path="transfers/generate/:studentId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} isSaving={false} />} />
+          <Route path="transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
+          <Route path="transfers/generate/:studentId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
+          <Route path="transfers/edit/:tcId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
           <Route path="transfers/records" element={<TcRecordsPage tcRecords={tcRecords} />} />
           <Route path="transfers/print/:tcId" element={<PrintTcPage tcRecords={tcRecords} />} />
           <Route path="inventory" element={<InventoryPage inventory={inventory} onAdd={handleAddInventoryItem} onEdit={handleEditInventoryItem} onDelete={handleDeleteInventoryItem} user={user!} />} />
@@ -918,6 +923,7 @@ const App: React.FC = () => {
           <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (e, id) => { await handleSaveCalendarEvent(e, id); }} onEdit={async (e) => { await handleSaveCalendarEvent(e, e.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
           <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
           <Route path="letters" element={<LetterGeneratorPage user={user!} schoolConfig={schoolConfig} />} />
+          <Route path="testimonials" element={<TestimonialGeneratorPage />} />
           <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
           <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
           <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />

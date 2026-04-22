@@ -14,6 +14,7 @@ interface GenerateTcPageProps {
   tcRecords: TcRecord[];
   academicYear: string;
   onGenerateTc: (tcData: Omit<TcRecord, 'id'>) => Promise<boolean>;
+  onUpdateTc?: (tcId: string, tcData: Partial<TcRecord>) => Promise<boolean>;
   isSaving: boolean;
   error?: string;
 }
@@ -51,11 +52,10 @@ const REASON_FOR_LEAVING_OPTIONS = [
     "Minor reasons",
 ];
 
-export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, isSaving, error }) => {
+export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcRecords, academicYear, onGenerateTc, onUpdateTc, isSaving, error }) => {
     const navigate = useNavigate();
-    const { studentId: paramStudentId } = useParams() as { studentId: string };
+    const { studentId: paramStudentId, tcId: paramTcId } = useParams() as { studentId?: string; tcId?: string };
 
-    // --- CHANGED: name search state instead of ID input ---
     const [nameInput, setNameInput] = useState<string>('');
     const [suggestions, setSuggestions] = useState<Student[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -166,8 +166,35 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     useEffect(() => {
         if (paramStudentId) {
             findStudentById(paramStudentId);
+        } else if (paramTcId) {
+            const tc = tcRecords.find(r => r.id === paramTcId);
+            if (tc) {
+                const student = students.find(s => s.id === tc.studentDbId);
+                if (student) {
+                    setFoundStudent(student);
+                    setNameInput(student.name);
+                    setExistingTc(tc);
+                }
+            }
         }
-    }, [paramStudentId, students, tcRecords]);
+    }, [paramStudentId, paramTcId, students, tcRecords]);
+
+    useEffect(() => {
+        if (paramTcId && existingTc) {
+            // Load existing TC data into form when in edit mode
+            setFormData({
+                dateOfBirthInWords: existingTc.dateOfBirthInWords || '',
+                schoolDuesIfAny: existingTc.schoolDuesIfAny || 'None',
+                qualifiedForPromotion: existingTc.qualifiedForPromotion || 'Not Applicable',
+                dateOfLastAttendance: existingTc.dateOfLastAttendance || '',
+                dateOfApplicationOfTc: existingTc.dateOfApplicationOfTc || new Date().toISOString().split('T')[0],
+                dateOfIssueOfTc: existingTc.dateOfIssueOfTc || new Date().toISOString().split('T')[0],
+                reasonForLeaving: existingTc.reasonForLeaving || REASON_FOR_LEAVING_OPTIONS[0],
+                generalConduct: existingTc.generalConduct || 'Good',
+                anyOtherRemarks: existingTc.anyOtherRemarks || 'None',
+            });
+        }
+    }, [existingTc, paramTcId]);
 
     const handleGenerateDateInWords = async () => {
         if (!foundStudent) return;
@@ -209,25 +236,37 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     const handleConfirmSave = async () => {
         if (!foundStudent) return;
 
-        const tcData: Omit<TcRecord, 'id'> = {
-            refNo: `BMS/TC/${academicYear.split('-')[0]}/${foundStudent.rollNo}`,
-            studentDbId: foundStudent.id,
-            studentDisplayId: formatStudentId(foundStudent, academicYear),
-            nameOfStudent: foundStudent.name,
-            gender: foundStudent.gender,
-            fatherName: foundStudent.fatherName,
-            motherName: foundStudent.motherName,
-            currentClass: foundStudent.grade,
-            rollNo: foundStudent.rollNo,
-            dateOfBirth: foundStudent.dateOfBirth,
-            category: foundStudent.category,
-            religion: foundStudent.religion,
-            ...formData,
-        };
+        let success = false;
+        
+        if (paramTcId && existingTc && onUpdateTc) {
+            const tcData: Partial<TcRecord> = {
+                ...formData,
+            };
+            success = await onUpdateTc(paramTcId, tcData);
+        } else {
+            const tcData: Omit<TcRecord, 'id'> = {
+                refNo: `BMS/TC/${academicYear.split('-')[0]}/${foundStudent.rollNo}`,
+                studentDbId: foundStudent.id,
+                studentDisplayId: formatStudentId(foundStudent, academicYear),
+                nameOfStudent: foundStudent.name,
+                gender: foundStudent.gender,
+                fatherName: foundStudent.fatherName,
+                motherName: foundStudent.motherName,
+                currentClass: foundStudent.grade,
+                rollNo: foundStudent.rollNo,
+                dateOfBirth: foundStudent.dateOfBirth,
+                category: foundStudent.category,
+                religion: foundStudent.religion,
+                ...formData,
+            };
+            success = await onGenerateTc(tcData);
+        }
 
-        const success = await onGenerateTc(tcData);
         if (success) {
             setIsConfirmModalOpen(false);
+            if (paramTcId) {
+                navigate('/portal/transfers/records');
+            }
         }
     };
     
@@ -300,17 +339,22 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             </div>
             {/* ---------------------------------------------------- */}
 
-            {existingTc && (
-                 <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+            {existingTc && !paramTcId && (
+                 <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg mb-6">
                     <h3 className="font-bold text-amber-800">TC Already Exists</h3>
                     <p className="text-amber-900 text-sm mt-1">A Transfer Certificate with Ref No. <span className="font-mono">{existingTc.refNo}</span> has already been generated for this student.</p>
-                    <Link to={`/portal/transfers/print/${existingTc.id}`} className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:underline">
-                        <PrinterIcon className="w-4 h-4" /> Print Existing Certificate
-                    </Link>
+                    <div className="flex gap-4 mt-2">
+                        <Link to={`/portal/transfers/print/${existingTc.id}`} className="inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:underline">
+                            <PrinterIcon className="w-4 h-4" /> Print Existing Certificate
+                        </Link>
+                        <Link to={`/portal/transfers/edit/${existingTc.id}`} className="inline-flex items-center gap-2 text-sm font-bold text-indigo-700 hover:underline">
+                            <DocumentPlusIcon className="w-4 h-4" /> Edit Transfer Certificate
+                        </Link>
+                    </div>
                 </div>
             )}
             
-            {foundStudent && !existingTc && (
+            {foundStudent && (!existingTc || paramTcId) && (
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-6">
                         <fieldset className="border p-4 rounded-lg">
@@ -358,7 +402,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                     <div className="mt-8 flex justify-end">
                         <button type="submit" disabled={isSaving} className="btn btn-primary">
                             {isSaving ? <SpinnerIcon className="w-5 h-5" /> : <DocumentPlusIcon className="w-5 h-5" />}
-                            <span>{isSaving ? 'Saving...' : 'Generate & Save TC'}</span>
+                            <span>{isSaving ? 'Saving...' : (paramTcId ? 'Update & Save TC' : 'Generate & Save TC')}</span>
                         </button>
                     </div>
                 </form>
@@ -368,10 +412,14 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={handleConfirmSave}
-                title="Confirm TC Generation"
+                title={paramTcId ? "Confirm TC Update" : "Confirm TC Generation"}
                 confirmDisabled={isSaving}
             >
-                <p>Are you sure you want to generate a Transfer Certificate for <span className="font-bold">{foundStudent?.name}</span>? This will also update the student's status to 'Transferred'.</p>
+                {paramTcId ? (
+                    <p>Are you sure you want to update the Transfer Certificate for <span className="font-bold">{foundStudent?.name}</span>?</p>
+                ) : (
+                    <p>Are you sure you want to generate a Transfer Certificate for <span className="font-bold">{foundStudent?.name}</span>? This will also update the student's status to 'Taken TC'.</p>
+                )}
             </ConfirmationModal>
         </div>
     </>

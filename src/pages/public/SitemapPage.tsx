@@ -59,7 +59,7 @@ const SitemapPage: React.FC = () => {
                     <div>
                         <Section title="Portal Access">
                             <SiteLink to="/login">Portal Login</SiteLink>
-                            <SiteLink to="/parent-signup">Parent/Student Registration</SiteLink>
+                            <SiteLink to="/parent-registration">Parent/Student Registration</SiteLink>
                             <SiteLink to="/signup">Staff Registration</SiteLink>
                             <SiteLink to="/forgot-password">Forgot Password</SiteLink>
                         </Section>

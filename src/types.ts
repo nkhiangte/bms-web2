@@ -189,7 +189,7 @@ export interface StudentClaim {
 
 export enum StudentStatus {
     ACTIVE = 'Active',
-    TRANSFERRED = 'Transferred',
+    TRANSFERRED = 'Taken TC',
     DROPPED = 'Dropped',
     GRADUATED = 'Graduated'
 }

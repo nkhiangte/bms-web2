@@ -35,6 +35,7 @@ const portalNavLinks = [
     { name: 'Chore Roster', path: '/portal/hostel/chores', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'warden'] },
     { name: 'Communication', path: '/portal/communication', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Official Letters', path: '/portal/letters', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Testimonial Generator', path: '/portal/testimonials', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Manage Notice Board', path: '/portal/manage-notices', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
    { name: 'Manage Achievements', path: '/portal/manage-achievements', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Gallery Manager', path: '/portal/gallery-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },

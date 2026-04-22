@@ -64,9 +64,14 @@ const TcRecordsPage: React.FC<TcRecordsPageProps> = ({ tcRecords }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{record.currentClass}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{formatDateForDisplay(record.dateOfIssueOfTc)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                  <Link to={`/portal/transfers/print/${record.id}`} className="inline-flex items-center gap-2 text-sky-600 hover:text-sky-800 transition-colors" title="Print Certificate">
-                    <PrinterIcon className="w-5 h-5" /> Print
-                  </Link>
+                  <div className="flex items-center justify-center gap-3">
+                    <Link to={`/portal/transfers/edit/${record.id}`} className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors" title="Edit Certificate">
+                      <DocumentPlusIcon className="w-5 h-5" /> Edit
+                    </Link>
+                    <Link to={`/portal/transfers/print/${record.id}`} className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 transition-colors" title="Print Certificate">
+                      <PrinterIcon className="w-5 h-5" /> Print
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

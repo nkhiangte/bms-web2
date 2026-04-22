@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db, firebase } from '@/firebaseConfig';
 import { 
     UserIcon, MailIcon, PhoneIcon, HomeIcon, LockClosedIcon, 
     CheckCircleIcon, BackIcon, SpinnerIcon, PlusIcon, TrashIcon
@@ -24,12 +24,19 @@ const ParentRegistrationPage: React.FC = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
+    // Auth States
+    const [otp, setOtp] = useState("");
+    const [showOtpInput, setShowOtpInput] = useState(false);
+    const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [verifyLoading, setVerifyLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         // Step 1
         fullName: '',
         relationship: 'Mother',
         contactNumber: '',
         email: '',
+        optionalPassword: '',
         address: '',
         city: '',
         state: 'Mizoram',
@@ -37,8 +44,6 @@ const ParentRegistrationPage: React.FC = () => {
         language: 'English',
         
         // Step 2
-        password: '',
-        confirmPassword: '',
         securityQuestion: SECURITY_QUESTIONS[0],
         securityAnswer: '',
         comms_sms: true,
@@ -56,6 +61,17 @@ const ParentRegistrationPage: React.FC = () => {
         agreeIdentity: false,
         agreePhoto: false
     });
+
+    // Check if user is already authenticated with Phone
+    React.useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user && user.phoneNumber) {
+                setIsPhoneVerified(true);
+                updateFormData('contactNumber', user.phoneNumber);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
     const updateFormData = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -83,32 +99,90 @@ const ParentRegistrationPage: React.FC = () => {
         }
     };
 
-    // Password Strength Logic
-    const getPasswordStrength = (pass: string) => {
-        let score = 0;
-        if (pass.length >= 8) score++;
-        if (/[A-Z]/.test(pass)) score++;
-        if (/[0-9]/.test(pass)) score++;
-        if (/[^A-Za-z0-9]/.test(pass)) score++;
-        return score;
+    // OTP Send Handler
+    const handleSendOtp = async () => {
+        if (!formData.contactNumber || formData.contactNumber.length < 10) {
+            alert("Please enter a valid 10-digit mobile number in Step 1.");
+            return;
+        }
+
+        setVerifyLoading(true);
+        try {
+            // Cross-verify with students database
+            const cleanPhone = (phone: string) => phone.replace(/\D/g, '');
+            const phoneSuffix = cleanPhone(formData.contactNumber).slice(-10);
+            
+            const studentsSnapshot = await db.collection('students').get();
+            let isVerifiedBySchool = false;
+            
+            for (const doc of studentsSnapshot.docs) {
+                const s = doc.data();
+                const studentContactSuffix = cleanPhone(s.contact || s.contactNumber || '').slice(-10);
+                if (studentContactSuffix.length === 10 && studentContactSuffix === phoneSuffix) {
+                    isVerifiedBySchool = true;
+                    break;
+                }
+            }
+
+            if (!isVerifiedBySchool) {
+                alert("This mobile number is not found in the school's student database. Please enter the number registered with the school or contact administration.");
+                setVerifyLoading(false);
+                return;
+            }
+
+            if (!(window as any).recaptchaVerifier) {
+                (window as any).recaptchaVerifier = new (window as any).firebase.auth.RecaptchaVerifier('recaptcha-container-reg', {
+                    size: 'invisible'
+                });
+            }
+            
+            const formattedPhone = formData.contactNumber.startsWith('+') ? formData.contactNumber : `+91${formData.contactNumber}`;
+            const appVerifier = (window as any).recaptchaVerifier;
+            const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, appVerifier);
+            
+            (window as any).confirmationResultReg = confirmationResult;
+            setShowOtpInput(true);
+            alert(`OTP sent to ${formattedPhone}`);
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'Failed to send OTP. Please check the phone number.');
+            if ((window as any).recaptchaVerifier) {
+                (window as any).recaptchaVerifier.clear();
+                (window as any).recaptchaVerifier = null;
+            }
+        } finally {
+            setVerifyLoading(false);
+        }
     };
-    const passStrength = getPasswordStrength(formData.password);
+
+    // OTP Verify Handler
+    const handleVerifyOtp = async () => {
+        if (!(window as any).confirmationResultReg) return;
+        
+        setVerifyLoading(true);
+        try {
+            await (window as any).confirmationResultReg.confirm(otp);
+            setIsPhoneVerified(true);
+            alert("Mobile Number successfully verified.");
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'Invalid OTP. Please try again.');
+        } finally {
+            setVerifyLoading(false);
+        }
+    };
 
     const handleNext = () => {
         // Basic validation logic per step
         if (step === 1) {
-            if (!formData.fullName || !formData.contactNumber || !formData.email || !formData.address) {
+            if (!formData.fullName || !formData.contactNumber || !formData.address) {
                 alert("Please fill in all required fields.");
                 return;
             }
         }
         if (step === 2) {
-            if (passStrength < 3) {
-                alert("Please choose a stronger password.");
-                return;
-            }
-            if (formData.password !== formData.confirmPassword) {
-                alert("Passwords do not match.");
+            if (!isPhoneVerified) {
+                alert("Please verify your mobile number with OTP to continue.");
                 return;
             }
             if (!formData.securityAnswer) {
@@ -137,19 +211,32 @@ const ParentRegistrationPage: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            // 1. Create Auth User
-            const userCredential = await auth.createUserWithEmailAndPassword(formData.email, formData.password);
-            const user = userCredential.user;
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error("User authentication failed. Please verify your mobile number again.");
+            }
 
-            if (user) {
-                // 2. Update Profile Name
-                await user.updateProfile({ displayName: formData.fullName });
+            // 2. Update Profile Name
+            await user.updateProfile({ displayName: formData.fullName });
 
-                // 3. Save detailed record to Firestore
-                await db.collection('users').doc(user.uid).set({
-                    displayName: formData.fullName,
-                    email: formData.email,
-                    role: 'pending_parent',
+            // Link email/password if provided
+            if (formData.email && formData.optionalPassword) {
+                try {
+                    const credential = firebase.auth.EmailAuthProvider.credential(formData.email, formData.optionalPassword);
+                    await user.linkWithCredential(credential);
+                } catch (linkError: any) {
+                    // Ignore error if already linked to same credential, or show warning
+                    console.warn('Could not link credential:', linkError);
+                    alert(`Note: We could not set up the Email fallback login (Error: ${linkError.message}). Your phone login is still valid.`);
+                }
+            }
+
+            // 3. Save detailed record to Firestore
+            await db.collection('users').doc(user.uid).set({
+                displayName: formData.fullName,
+                email: formData.email, // Can be empty now
+                phone: formData.contactNumber,
+                role: 'pending_parent',
                     claimedStudents: formData.students, // New structure for array of students
                     registrationDetails: {
                         fullName: formData.fullName,
@@ -179,7 +266,6 @@ const ParentRegistrationPage: React.FC = () => {
 
                 alert("Account created successfully! Please wait for admin approval. You will be notified once your account is active.");
                 navigate('/login');
-            }
         } catch (error: any) {
             console.error("Registration Error:", error);
             alert(`Registration failed: ${error.message}`);
@@ -252,16 +338,6 @@ const ParentRegistrationPage: React.FC = () => {
                                     </div>
 
                                     <div className="col-span-2 md:col-span-1">
-                                        <label className="block text-sm font-semibold text-slate-700">Primary Email (Login ID)</label>
-                                        <div className="mt-1 relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <MailIcon className="h-5 w-5 text-slate-400" />
-                                            </div>
-                                            <input type="email" value={formData.email} onChange={e => updateFormData('email', e.target.value)} className="pl-10 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="you@example.com" />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-2 md:col-span-1">
                                         <label className="block text-sm font-semibold text-slate-700">Mobile Number</label>
                                         <div className="mt-1 relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -299,46 +375,86 @@ const ParentRegistrationPage: React.FC = () => {
                         {/* STEP 2: Security */}
                         {step === 2 && (
                             <div className="space-y-6 animate-fade-in">
-                                <h2 className="text-xl font-bold text-slate-800 border-b pb-2">Security & Preferences</h2>
+                                <h2 className="text-xl font-bold text-slate-800 border-b pb-2">Verify Mobile Number & Security</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="col-span-2 md:col-span-1">
-                                        <label className="block text-sm font-semibold text-slate-700">Create Password</label>
-                                        <div className="mt-1 relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <LockClosedIcon className="h-5 w-5 text-slate-400" />
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div className="col-span-1">
+                                        <label className="block text-sm font-semibold text-slate-700">Mobile Verification</label>
+                                        
+                                        {!isPhoneVerified ? (
+                                            <div className="mt-2 border rounded-lg p-4 bg-slate-50 border-slate-200">
+                                                <p className="text-sm font-medium text-slate-700 mb-2">We will verify your mobile number: <strong>{formData.contactNumber}</strong></p>
+                                                {!showOtpInput ? (
+                                                    <>
+                                                        <div id="recaptcha-container-reg"></div>
+                                                        <button 
+                                                            type="button" 
+                                                            className="w-full btn btn-primary text-sm py-2"
+                                                            onClick={handleSendOtp}
+                                                            disabled={verifyLoading}
+                                                        >
+                                                            {verifyLoading ? "Sending OTP..." : "Get OTP"}
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        <input 
+                                                            type="text" 
+                                                            className="block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 font-mono text-center tracking-widest" 
+                                                            placeholder="6-digit OTP" 
+                                                            maxLength={6}
+                                                            value={otp}
+                                                            onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                                                        />
+                                                        <button 
+                                                            type="button" 
+                                                            className="w-full btn btn-primary bg-emerald-600 hover:bg-emerald-700 text-sm py-2"
+                                                            onClick={handleVerifyOtp}
+                                                            disabled={verifyLoading || otp.length < 6}
+                                                        >
+                                                            {verifyLoading ? "Verifying..." : "Verify OTP"}
+                                                        </button>
+                                                        <p className="text-xs text-center text-slate-500 mt-2">
+                                                            <button type="button" className="text-sky-600 hover:underline" onClick={() => { setShowOtpInput(false); setOtp(''); }}>Resend OTP / Change Number</button>
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <input type="password" value={formData.password} onChange={e => updateFormData('password', e.target.value)} className="pl-10 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" />
-                                        </div>
-                                        {/* Password Strength Meter */}
-                                        <div className="mt-2 flex gap-1 h-1.5">
-                                            <div className={`flex-1 rounded-full ${passStrength >= 1 ? 'bg-red-500' : 'bg-slate-200'}`}></div>
-                                            <div className={`flex-1 rounded-full ${passStrength >= 2 ? 'bg-amber-500' : 'bg-slate-200'}`}></div>
-                                            <div className={`flex-1 rounded-full ${passStrength >= 3 ? 'bg-sky-500' : 'bg-slate-200'}`}></div>
-                                            <div className={`flex-1 rounded-full ${passStrength >= 4 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
-                                        </div>
-                                        <p className="text-xs text-slate-500 mt-1">Min 8 chars, Upper, Number, Symbol.</p>
+                                        ) : (
+                                            <div className="mt-2 border rounded-lg p-4 bg-emerald-50 border-emerald-200 flex items-center gap-3">
+                                                <CheckCircleIcon className="w-8 h-8 text-emerald-500" />
+                                                <div>
+                                                    <p className="text-sm font-bold text-emerald-800">Verified</p>
+                                                    <p className="text-xs text-emerald-600">{formData.contactNumber}</p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="col-span-2 md:col-span-1">
-                                        <label className="block text-sm font-semibold text-slate-700">Confirm Password</label>
-                                        <div className="mt-1 relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <LockClosedIcon className="h-5 w-5 text-slate-400" />
-                                            </div>
-                                            <input type="password" value={formData.confirmPassword} onChange={e => updateFormData('confirmPassword', e.target.value)} className="pl-10 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" />
-                                        </div>
-                                    </div>
-
-                                    <div className="col-span-2">
+                                    <div className="col-span-1">
                                         <label className="block text-sm font-semibold text-slate-700">Security Question</label>
                                         <select value={formData.securityQuestion} onChange={e => updateFormData('securityQuestion', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
                                             {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
                                         </select>
                                     </div>
-                                    <div className="col-span-2">
+                                    <div className="col-span-1">
                                         <label className="block text-sm font-semibold text-slate-700">Answer</label>
-                                        <input type="text" value={formData.securityAnswer} onChange={e => updateFormData('securityAnswer', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" />
+                                        <input type="text" value={formData.securityAnswer} onChange={e => updateFormData('securityAnswer', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Your account recovery answer..." />
+                                    </div>
+                                </div>
+
+                                <div className="bg-sky-50 p-4 rounded-lg border border-sky-100">
+                                    <h3 className="font-semibold text-sky-800 mb-2">Optional Fallback Login</h3>
+                                    <p className="text-xs text-sky-700 mb-3">If you ever lose access to your phone or clear your browser cache, you can log in using an Email and Password. Highly recommended.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700">Email Address (Optional)</label>
+                                            <input type="email" value={formData.email} onChange={e => updateFormData('email', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="parent@example.com" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700">Password (Optional)</label>
+                                            <input type="password" value={formData.optionalPassword} onChange={e => updateFormData('optionalPassword', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Leave empty if not using" />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -441,9 +557,9 @@ const ParentRegistrationPage: React.FC = () => {
                                     <BackIcon className="w-5 h-5" /> Back
                                 </button>
                             ) : (
-                                <Link to="/login" className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                                <button type="button" onClick={() => { if(auth.currentUser) { auth.signOut().then(() => navigate('/login')) } else { navigate('/login') } }} className="text-sm text-slate-500 hover:text-slate-800 flex items-center gap-1">
                                     Cancel
-                                </Link>
+                                </button>
                             )}
                             
                             {step < 4 ? (

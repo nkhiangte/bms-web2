@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
+import { auth, firebase, db } from '../firebaseConfig';
 
 const { Link, useLocation } = ReactRouterDOM as any;
 
@@ -17,8 +18,12 @@ const LoginPage: React.FC<LoginPageProps> = ({
   error: authError,
   notification: propNotification,
 }) => {
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,6 +89,91 @@ const LoginPage: React.FC<LoginPageProps> = ({
     }
   };
 
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setNotification("");
+    setLoading(true);
+
+    try {
+      // Cross-verify with students database
+      const cleanPhone = (phone: string) => phone.replace(/\D/g, '');
+      const phoneSuffix = cleanPhone(phoneNumber).slice(-10);
+      
+      const studentsSnapshot = await db.collection('students').get();
+      let isVerifiedBySchool = false;
+      
+      for (const doc of studentsSnapshot.docs) {
+          const s = doc.data();
+          const studentContactSuffix = cleanPhone(s.contact || s.contactNumber || '').slice(-10);
+          if (studentContactSuffix.length === 10 && studentContactSuffix === phoneSuffix) {
+              isVerifiedBySchool = true;
+              break;
+          }
+      }
+
+      if (!isVerifiedBySchool) {
+          // Check staff just in case
+          const staffSnapshot = await db.collection('staff').get();
+          for (const doc of staffSnapshot.docs) {
+              const st = doc.data();
+              const staffContactSuffix = cleanPhone(st.contactNumber || '').slice(-10);
+              if (staffContactSuffix.length === 10 && staffContactSuffix === phoneSuffix) {
+                  isVerifiedBySchool = true;
+                  break;
+              }
+          }
+      }
+
+      if (!isVerifiedBySchool) {
+          setFormError("This mobile number is not found in the school's database. Please enter a registered number.");
+          setLoading(false);
+          return;
+      }
+
+      if (!(window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            size: 'invisible'
+        });
+      }
+      
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+      const appVerifier = (window as any).recaptchaVerifier;
+      const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, appVerifier);
+      
+      (window as any).confirmationResult = confirmationResult;
+      setShowOtpInput(true);
+      setNotification(`OTP sent to ${formattedPhone}`);
+    } catch (error: any) {
+      console.error(error);
+      setFormError(error.message || 'Failed to send OTP. Please check the phone number.');
+      if ((window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!(window as any).confirmationResult) return;
+    
+    setFormError("");
+    setLoading(true);
+
+    try {
+      await (window as any).confirmationResult.confirm(otp);
+      // Navigation is handled by App.tsx route guard once onAuthStateChanged fires
+    } catch (error: any) {
+      console.error(error);
+      setFormError(error.message || 'Invalid OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 to-amber-200 p-4">
       <div className="w-full max-w-md">
@@ -95,6 +185,21 @@ const LoginPage: React.FC<LoginPageProps> = ({
               className="mx-auto h-32 mb-4"
             />
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Portal Login</h1>
+          </div>
+          
+          <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
+              <button 
+                  onClick={() => { setLoginMethod('email'); setShowOtpInput(false); }}
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${loginMethod === 'email' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                  Email/Password
+              </button>
+              <button 
+                  onClick={() => { setLoginMethod('phone'); setShowOtpInput(false); }}
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${loginMethod === 'phone' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                  Phone OTP
+              </button>
           </div>
 
           {formError && (
@@ -114,6 +219,9 @@ const LoginPage: React.FC<LoginPageProps> = ({
             </p>
           )}
 
+          <div id="recaptcha-container"></div>
+
+          {loginMethod === 'email' ? (
           <form onSubmit={handleSubmit}>
             <fieldset disabled={loading}>
               <div className="mb-4">
@@ -171,6 +279,79 @@ const LoginPage: React.FC<LoginPageProps> = ({
               </div>
             </fieldset>
           </form>
+          ) : (
+            !showOtpInput ? (
+                  <form onSubmit={handlePhoneSubmit}>
+                      <fieldset disabled={loading}>
+                          <div className="mb-6">
+                              <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="phone">
+                                  Mobile Number
+                              </label>
+                              <div className="flex">
+                                  <span className="inline-flex items-center px-3 text-sm text-slate-900 bg-slate-200 border border-r-0 border-slate-300 rounded-l-md">
+                                      +91
+                                  </span>
+                                  <input
+                                      type="tel"
+                                      id="phone"
+                                      className="shadow-sm appearance-none border border-slate-300 rounded-r-md w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                      placeholder="10-digit mobile number"
+                                      value={phoneNumber}
+                                      onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                      maxLength={10}
+                                      required
+                                  />
+                              </div>
+                              <p className="text-xs text-slate-500 mt-2">We'll send an OTP to verify your number.</p>
+                          </div>
+                          <button
+                              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 shadow-md disabled:bg-slate-400"
+                              type="submit"
+                              disabled={loading || phoneNumber.length < 10}
+                          >
+                              {loading ? "Sending OTP..." : "Get OTP"}
+                          </button>
+                      </fieldset>
+                  </form>
+            ) : (
+                  <form onSubmit={handleOtpSubmit}>
+                      <fieldset disabled={loading}>
+                          <div className="mb-6">
+                              <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="otp">
+                                  Enter OTP
+                              </label>
+                              <input
+                                  id="otp"
+                                  type="text"
+                                  className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                  placeholder="6-digit code"
+                                  value={otp}
+                                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                  maxLength={6}
+                                  required
+                                  autoFocus
+                              />
+                               <div className="flex justify-between items-center mt-2">
+                                  <button 
+                                      type="button" 
+                                      onClick={() => setShowOtpInput(false)}
+                                      className="text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors"
+                                  >
+                                      Change Mobile Number
+                                  </button>
+                              </div>
+                          </div>
+                          <button
+                              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 shadow-md disabled:bg-slate-400"
+                              type="submit"
+                              disabled={loading || otp.length < 6}
+                          >
+                              {loading ? "Verifying..." : "Verify & Log In"}
+                          </button>
+                      </fieldset>
+                  </form>
+            )
+          )}
 
             <div className="relative flex py-5 items-center">
                 <div className="flex-grow border-t border-slate-300"></div>

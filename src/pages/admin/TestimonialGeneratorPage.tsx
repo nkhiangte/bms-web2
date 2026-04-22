@@ -3,6 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student } from '@/types';
 import { db } from '@/firebaseConfig';
 import { SearchIcon, DocumentReportIcon, PrinterIcon } from '@/components/Icons';
+import { SCHOOL_BANNER_URL } from '@/constants';
 
 const { useNavigate } = ReactRouterDOM as any;
 
@@ -213,12 +214,35 @@ const TestimonialGeneratorPage: React.FC = () => {
 
             {/* Print Area */}
             {selectedStudent && (
-                <div className="hidden print:block font-serif text-lg leading-relaxed max-w-4xl mx-auto pt-24 px-12" ref={printRef}>
-                    <h1 className="text-center text-3xl font-bold uppercase tracking-wide mb-12 underline underline-offset-8">
+                <div className="hidden print:block font-serif A4-size" id="printable-testimonial" ref={printRef}>
+                    <style>{`
+                        @page { size: A4 portrait; margin: 0; }
+                        @media print {
+                            body { margin: 0; padding: 0; background: white; }
+                            #printable-testimonial { 
+                                font-size: 13.5pt; 
+                                line-height: 2; 
+                                padding: 1.5cm 2cm; 
+                                width: 210mm;
+                                height: 297mm;
+                                box-sizing: border-box;
+                            }
+                        }
+                    `}</style>
+                
+                    <header className="text-center mb-8">
+                        <img
+                            src={SCHOOL_BANNER_URL}
+                            alt="Bethel Mission School Banner"
+                            className="w-full h-auto mb-4"
+                        />
+                    </header>
+
+                    <h1 className="text-center text-2xl font-bold uppercase tracking-wide mb-10 underline underline-offset-8">
                         Testimonial / Character Certificate
                     </h1>
                     
-                    <div className="flex justify-between items-center mb-16 text-xl">
+                    <div className="flex justify-between items-center mb-12 text-lg">
                         <div>
                             No<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[150px] text-center">{certificateId}</span>
                         </div>
@@ -248,17 +272,17 @@ const TestimonialGeneratorPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="mt-32 flex justify-between items-end">
-                        <div className="text-xl">
+                    <div className="mt-20 flex justify-between items-end text-lg">
+                        <div>
                             <div>Dated. Champhai</div>
-                            <div className="mt-2 font-bold border-b-2 border-dashed border-black min-w-[200px] text-center pb-1">
+                            <div className="mt-2 font-bold border-b-2 border-dashed border-black min-w-[180px] text-center pb-1">
                                 {formatDate(dateOfIssue)}
                             </div>
                         </div>
                         
-                        <div className="text-center text-xl">
+                        <div className="text-center">
                             <div className="font-bold">(K. MALSAWMDAWNGI)</div>
-                            <div className="mt-2">Principal</div>
+                            <div className="mt-1 pb-1">Principal</div>
                         </div>
                     </div>
                 </div>

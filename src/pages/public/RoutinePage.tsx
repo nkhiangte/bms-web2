@@ -62,7 +62,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     const parentGradeFilter = location.state?.grade;
 
     const [activeDay, setActiveDay] = useState(days[0]);
-    const [activeTab, setActiveTab] = useState('exam');
+    const [activeTab, setActiveTab] = useState('class');
     const [isExamModalOpen, setIsExamModalOpen] = useState(false);
     const [editingExamRoutine, setEditingExamRoutine] = useState<ExamRoutine|null>(null);
     const [isClassModalOpen, setIsClassModalOpen] = useState(false);
@@ -118,7 +118,7 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     };
 
     const ExamRoutineSection = () => (
-        <div className="space-y-12">
+        <div className="space-y-8 sm:space-y-12">
             {isAdmin && onSaveExamRoutine && (
                 <div className="flex justify-center">
                     <button onClick={()=>{setEditingExamRoutine(null);setIsExamModalOpen(true);}} className="btn btn-primary">
@@ -131,30 +131,30 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
             ) : examSchedules.map(routine => (
                 <div key={routine.id} className="relative group">
                     <div className="flex justify-center items-center gap-4 mb-4">
-                        <h2 className="text-2xl font-bold text-white text-center">{routine.title}</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white text-center">{routine.title}</h2>
                         {isAdmin && (
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onClick={()=>{setEditingExamRoutine(routine);setIsExamModalOpen(true);}} className="p-2 text-slate-400 hover:bg-zinc-700 rounded-full"><EditIcon className="w-5 h-5" /></button>
                                 {onDeleteExamRoutine && <button onClick={()=>onDeleteExamRoutine(routine)} className="p-2 text-red-400 hover:bg-red-950/40 rounded-full"><TrashIcon className="w-5 h-5" /></button>}
                             </div>
                         )}
                     </div>
-                    <div className="overflow-x-auto border border-zinc-700 rounded-lg shadow-md">
+                    <div className="overflow-x-auto border border-zinc-700 rounded-lg shadow-md -mx-4 sm:mx-0">
                         <table className="min-w-full divide-y divide-zinc-700">
                             <thead className="bg-zinc-800">
                                 <tr>
                                     {['Date','Day','Morning','Afternoon'].map(h => (
-                                        <th key={h} className="px-4 py-2 text-left text-sm font-bold text-slate-300 uppercase">{h}</th>
+                                        <th key={h} className="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-wider">{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="bg-zinc-900 divide-y divide-zinc-700">
                                 {routine.exams.map((exam,i) => (
                                     <tr key={i} className="hover:bg-zinc-800/50">
-                                        <td className="px-4 py-2 whitespace-nowrap text-slate-300">{exam.date}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-slate-300">{exam.day}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap font-semibold text-white">{exam.morning||'—'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap font-semibold text-white">{exam.afternoon||'—'}</td>
+                                        <td className="px-3 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm text-slate-300">{exam.date}</td>
+                                        <td className="px-3 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm text-slate-300">{exam.day}</td>
+                                        <td className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white whitespace-normal break-words max-w-[150px] sm:max-w-none">{exam.morning||'—'}</td>
+                                        <td className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white whitespace-normal break-words max-w-[150px] sm:max-w-none">{exam.afternoon||'—'}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -167,40 +167,42 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
 
     const ClassRoutineSection = () => (
         <>
-            <div className="mb-8 flex flex-wrap justify-center gap-2 items-center">
-                {days.map(day => (
-                    <button key={day} onClick={()=>setActiveDay(day)}
-                        className={`px-4 py-2 rounded-full font-semibold text-sm transition-colors ${activeDay===day?'bg-sky-600 text-white shadow-md':'bg-zinc-800 text-slate-300 hover:bg-zinc-700'}`}>
-                        {day.charAt(0).toUpperCase()+day.slice(1).toLowerCase()}
-                    </button>
-                ))}
+            <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-4 items-center">
+                <div className="flex flex-wrap justify-center gap-2">
+                    {days.map(day => (
+                        <button key={day} onClick={()=>setActiveDay(day)}
+                            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors ${activeDay===day?'bg-sky-600 text-white shadow-md':'bg-zinc-800 text-slate-300 hover:bg-zinc-700'}`}>
+                            {day.charAt(0).toUpperCase()+day.slice(1).toLowerCase()}
+                        </button>
+                    ))}
+                </div>
                 {isAdmin && onUpdateClassRoutine && (
-                    <div className="ml-4 flex gap-2">
-                        <button onClick={()=>setIsClassModalOpen(true)} className="btn btn-secondary text-xs">
+                    <div className="mt-2 sm:mt-0 ml-0 sm:ml-4 flex flex-wrap justify-center gap-2">
+                        <button onClick={()=>setIsClassModalOpen(true)} className="btn btn-secondary text-xs p-2">
                             <EditIcon className="w-4 h-4" /> Edit {activeDay}
                         </button>
                         {!hasClassData && (
-                            <button onClick={handleInitializeDefaults} disabled={isInitializing} className="btn btn-secondary text-xs bg-amber-950/30 text-amber-400 border-amber-700 hover:bg-amber-950/50">
+                            <button onClick={handleInitializeDefaults} disabled={isInitializing} className="btn btn-secondary text-xs bg-amber-950/30 text-amber-400 border-amber-700 hover:bg-amber-950/50 p-2">
                                 {isInitializing?<SpinnerIcon className="w-4 h-4" />:<SyncIcon className="w-4 h-4" />} Initialize Defaults
                             </button>
                         )}
                     </div>
                 )}
             </div>
-            <div className="overflow-x-auto border border-zinc-700 rounded-lg shadow-md mt-8">
+            <div className="overflow-x-auto border border-zinc-700 rounded-lg shadow-md mt-4 sm:mt-8 relative">
                 <table className="min-w-full divide-y divide-zinc-700">
                     <thead className="bg-zinc-800">
                         <tr>
-                            <th className="sticky left-0 bg-zinc-800 z-10 px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider align-middle">Class</th>
+                            <th className="sticky left-0 top-0 bg-zinc-800 z-20 px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider align-middle border-r border-zinc-600 min-w-[80px]">Class</th>
                             {periodTimes.slice(0,4).map((time,i) => (
-                                <th key={`h${i}`} className="px-3 py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider align-middle">
+                                <th key={`h${i}`} className="px-3 py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider align-middle min-w-[100px]">
                                     <div className="font-extrabold text-sm">{periods[i]}</div>
                                     <div className="font-medium text-slate-400">{time.label}</div>
                                 </th>
                             ))}
                             <th className="px-1 py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider bg-zinc-700 align-middle">LUNCH</th>
                             {periodTimes.slice(4,7).map((time,i) => (
-                                <th key={`h${i+4}`} className="px-3 py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider align-middle">
+                                <th key={`h${i+4}`} className="px-3 py-3 text-center text-xs font-bold text-slate-200 uppercase tracking-wider align-middle min-w-[100px]">
                                     <div className="font-extrabold text-sm">{periods[i+4]}</div>
                                     <div className="font-medium text-slate-400">{time.label}</div>
                                 </th>
@@ -243,8 +245,8 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
 
     return (
         <>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg p-6">
-                <div className="mb-6 flex justify-between items-center">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-none sm:rounded-xl shadow-lg p-3 sm:p-6 mx-auto w-full max-w-7xl overflow-hidden">
+                <div className="mb-4 sm:mb-6 flex justify-between items-center">
                     <button onClick={()=>window.history.back()} className="flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors">
                         <BackIcon className="w-5 h-5" /> Back
                     </button>
@@ -255,11 +257,11 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                 <div className="text-center mb-8">
                     <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Schedules & Routines</h1>
                 </div>
-                <div className="mb-8 flex justify-center border-b border-zinc-700">
-                    <button onClick={()=>setActiveTab('exam')} className={`px-6 py-3 font-semibold text-lg transition-colors ${activeTab==='exam'?'border-b-2 border-sky-500 text-sky-400':'text-slate-500 hover:text-slate-200'}`}>Exam Routine</button>
-                    <button onClick={()=>setActiveTab('class')} className={`px-6 py-3 font-semibold text-lg transition-colors ${activeTab==='class'?'border-b-2 border-sky-500 text-sky-400':'text-slate-500 hover:text-slate-200'}`}>Class Routine</button>
+                <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-center border-b border-zinc-700">
+                    <button onClick={()=>setActiveTab('class')} className={`px-4 sm:px-6 py-3 font-semibold text-base sm:text-lg transition-colors text-center ${activeTab==='class'?'border-b-2 border-sky-500 text-sky-400':'text-slate-500 hover:text-slate-200'}`}>Class Routine</button>
+                    <button onClick={()=>setActiveTab('exam')} className={`px-4 sm:px-6 py-3 font-semibold text-base sm:text-lg transition-colors text-center ${activeTab==='exam'?'border-b-2 border-sky-500 text-sky-400':'text-slate-500 hover:text-slate-200'}`}>Exam Routine</button>
                 </div>
-                {activeTab==='exam'?<ExamRoutineSection />:<ClassRoutineSection />}
+                {activeTab==='class'?<ClassRoutineSection />:<ExamRoutineSection />}
             </div>
 
             {isAdmin && onSaveExamRoutine && (

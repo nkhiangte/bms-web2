@@ -17,6 +17,34 @@ const TestimonialGeneratorPage: React.FC = () => {
     const [certificateId, setCertificateId] = useState('');
     const [dateOfIssue, setDateOfIssue] = useState(new Date().toISOString().split('T')[0]);
 
+    // Auto-generate certificate ID when student is selected
+    React.useEffect(() => {
+        if (selectedStudent && !certificateId) {
+            const year = new Date().getFullYear();
+            const random = Math.floor(Math.random() * 90000) + 10000; // 5 digit random
+            setCertificateId(`BMS${year}${random}`);
+        } else if (!selectedStudent) {
+            setCertificateId('');
+        }
+    }, [selectedStudent, certificateId]);
+
+    const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // Allow typing the prefix
+        if (value === '' || value === 'B' || value === 'BM' || value === 'BMS') {
+            setCertificateId(value);
+            return;
+        }
+        
+        // If it's longer than 3, it MUST start with BMS and be followed by numerals
+        if (value.startsWith('BMS')) {
+            const afterPrefix = value.substring(3);
+            if (/^\d*$/.test(afterPrefix)) {
+                setCertificateId(value);
+            }
+        }
+    };
+
     const printRef = useRef<HTMLDivElement>(null);
 
     const handleSearch = async () => {
@@ -163,10 +191,11 @@ const TestimonialGeneratorPage: React.FC = () => {
                                 <input
                                     type="text"
                                     value={certificateId}
-                                    onChange={(e) => setCertificateId(e.target.value)}
+                                    onChange={handleIdChange}
                                     className="block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
-                                    placeholder="Enter ID..."
+                                    placeholder="BMS20260001"
                                 />
+                                <p className="mt-1 text-xs text-slate-500">Format: BMS + Numbers only</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">HSLC Division Passed</label>

@@ -12,7 +12,7 @@ const TestimonialGeneratorPage: React.FC = () => {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [searchResults, setSearchResults] = useState<Student[]>([]);
     
-    const [division, setDivision] = useState('first');
+    const [division, setDivision] = useState('First');
     const [year, setYear] = useState(new Date().getFullYear().toString());
     const [certificateId, setCertificateId] = useState('');
     const [dateOfIssue, setDateOfIssue] = useState(new Date().toISOString().split('T')[0]);
@@ -199,13 +199,16 @@ const TestimonialGeneratorPage: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">HSLC Division Passed</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={division}
                                     onChange={(e) => setDivision(e.target.value)}
                                     className="block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
-                                    placeholder="e.g., first, second"
-                                />
+                                >
+                                    <option value="Distinction">Distinction</option>
+                                    <option value="First">First</option>
+                                    <option value="Second">Second</option>
+                                    <option value="Third">Third</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Examination Year</label>
@@ -249,9 +252,9 @@ const TestimonialGeneratorPage: React.FC = () => {
                         @media print {
                             body { margin: 0; padding: 0; background: white; }
                             #printable-testimonial { 
-                                font-size: 13.5pt; 
-                                line-height: 2; 
-                                padding: 1.5cm 2cm; 
+                                font-size: 13pt; 
+                                line-height: 1.6; 
+                                padding: 1cm 2cm; 
                                 width: 210mm;
                                 height: 297mm;
                                 box-sizing: border-box;
@@ -259,19 +262,19 @@ const TestimonialGeneratorPage: React.FC = () => {
                         }
                     `}</style>
                 
-                    <header className="text-center mb-8">
+                    <header className="text-center mb-6">
                         <img
                             src={SCHOOL_BANNER_URL}
                             alt="Bethel Mission School Banner"
-                            className="w-full h-auto mb-4"
+                            className="w-full h-auto mb-2"
                         />
                     </header>
 
-                    <h1 className="text-center text-2xl font-bold uppercase tracking-wide mb-10 underline underline-offset-8">
+                    <h1 className="text-center text-xl font-bold uppercase tracking-wide mb-6 underline underline-offset-8">
                         Testimonial / Character Certificate
                     </h1>
                     
-                    <div className="flex justify-between items-center mb-12 text-lg">
+                    <div className="flex justify-between items-center mb-8 text-lg">
                         <div>
                             No<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[150px] text-center">{certificateId}</span>
                         </div>
@@ -280,7 +283,7 @@ const TestimonialGeneratorPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="text-justify space-y-12">
+                    <div className="text-justify space-y-8">
                         <p className="indent-16">
                             This is to certify that <span className="font-bold border-b-2 border-dashed border-black pb-1 px-4 inline-block">{selectedStudent.name}</span> 
                             {selectedStudent.gender === 'Female' ? ' daughter of ' : ' son of '} 
@@ -301,7 +304,7 @@ const TestimonialGeneratorPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="mt-20 flex justify-between items-end text-lg">
+                    <div className="mt-12 flex justify-between items-end text-lg">
                         <div>
                             <div>Dated. Champhai</div>
                             <div className="mt-2 font-bold border-b-2 border-dashed border-black min-w-[180px] text-center pb-1">

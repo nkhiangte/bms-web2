@@ -100,9 +100,9 @@ const TestimonialGeneratorPage: React.FC = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6 px-4 md:px-0 pb-20 md:pb-0">
             <div className="print:hidden">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-6 mt-4">
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <DocumentReportIcon className="w-8 h-8 text-sky-600" />
                         Testimonial Generator

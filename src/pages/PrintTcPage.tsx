@@ -46,10 +46,22 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
     // Properties accessed directly from record below
 
     return (
-      <div className="bg-slate-200 print:bg-white flex justify-center py-8">
-        <div className="print-hidden fixed top-4 right-4 flex flex-col gap-2">
-            <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print</button>
-            <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
+      <div className="bg-slate-200 print:bg-white flex flex-col items-center py-4 print:py-0">
+        <div className="w-full max-w-[210mm] mb-4 flex justify-between items-center print:hidden px-4 md:px-0">
+            <button
+                onClick={() => navigate(-1)}
+                className="btn btn-secondary flex items-center justify-center gap-2 shadow-sm"
+            >
+                <BackIcon className="w-5 h-5" />
+                Back
+            </button>
+            <button
+                onClick={() => window.print()}
+                className="btn btn-primary flex items-center justify-center gap-2 shadow-sm"
+            >
+                <PrinterIcon className="w-5 h-5" />
+                Print Certificate
+            </button>
         </div>
 
         <div id="printable-tc" className="bg-white A4-size p-8 shadow-lg print:shadow-none font-serif text-sm">

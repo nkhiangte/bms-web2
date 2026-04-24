@@ -130,38 +130,27 @@ const TestimonialGeneratorPage: React.FC = () => {
                     </div>
 
                     {searchResults.length > 0 && !selectedStudent && (
-                        <div className="border rounded-md overflow-hidden">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Admission No</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Father's Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-slate-200">
-                                    {searchResults.map(student => (
-                                        <tr key={student.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.studentId}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{student.name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{student.fatherName || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedStudent(student);
-                                                        setSearchResults([]);
-                                                        setSearchTerm('');
-                                                    }}
-                                                    className="text-sky-600 hover:text-sky-900"
-                                                >
-                                                    Select
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="border rounded-md overflow-hidden bg-white">
+                            <ul className="divide-y divide-slate-200">
+                                {searchResults.map(student => (
+                                    <li key={student.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-900">{student.name}</p>
+                                            <p className="text-sm text-slate-500">Add No: {student.studentId} • Father: {student.fatherName || 'N/A'}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedStudent(student);
+                                                setSearchResults([]);
+                                                setSearchTerm('');
+                                            }}
+                                            className="btn btn-primary sm:w-auto w-full flex justify-center py-2 px-4 shadow-sm"
+                                        >
+                                            Select Student
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
 

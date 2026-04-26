@@ -34,7 +34,7 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
-    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED));
+    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id));
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -464,7 +464,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
     const classmates = useMemo(() => {
         if (!student) return [];
-        return students.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+        return students.filter(s => s.grade === student.grade && 
+            (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id) && 
+            (normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear) || !s.academicYear || s.id === student.id)
+        );
     }, [students, student, academicYear]);
 
     const gradeDef = useMemo(() => {

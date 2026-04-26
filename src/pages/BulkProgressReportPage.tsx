@@ -58,7 +58,7 @@ const calculateTermSummary = (
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
     const isNurseryToII = NURSERY_TO_II.includes(student.grade);
-    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED));
+    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id));
     const numericSubjects = activeSubjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = activeSubjects.filter(sd => sd.gradingSystem === 'OABC');
 

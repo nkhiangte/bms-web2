@@ -7,6 +7,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '@/components/Icons';
+import { normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -15,6 +16,7 @@ interface InsightsPageProps {
     gradeDefinitions: Record<Grade, GradeDefinition>;
     conductLog: ConductEntry[];
     user: User;
+    academicYear: string;
 }
 
 interface AnalysisResult {
@@ -67,7 +69,7 @@ const AnalysisCard: React.FC<{ result: AnalysisResult }> = ({ result }) => {
 };
 
 
-const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions, conductLog, user }) => {
+const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions, conductLog, user, academicYear }) => {
     const navigate = useNavigate();
     const [selectedGrade, setSelectedGrade] = useState<Grade | ''>('');
     const [analyses, setAnalyses] = useState<Record<string, AnalysisResult | { error: string }>>({});
@@ -75,8 +77,10 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
 
     const classStudents = useMemo(() => {
         if (!selectedGrade) return [];
-        return students.filter(s => s.grade === selectedGrade).sort((a, b) => a.rollNo - b.rollNo);
-    }, [students, selectedGrade]);
+        return students
+            .filter(s => s.grade === selectedGrade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
+            .sort((a, b) => a.rollNo - b.rollNo);
+    }, [students, selectedGrade, academicYear]);
     
     const generateAnalysis = async (studentToAnalyze: Student) => {
         setLoadingStates(prev => ({ ...prev, [studentToAnalyze.id]: true }));

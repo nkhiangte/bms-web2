@@ -4,7 +4,7 @@ import { Student, Grade, GradeDefinition, StudentStatus, User } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import { BackIcon, HomeIcon, AcademicCapIcon } from '@/components/Icons';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import { calculateStudentResult, getNextGrade, getNextAcademicYear } from '@/utils';
+import { calculateStudentResult, getNextGrade, getNextAcademicYear, normalizeAcademicYear } from '@/utils';
 
 const { useNavigate, Link } = ReactRouterDOM as any;
 
@@ -34,7 +34,7 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
         return GRADES_LIST.map(grade => {
             const gradeDef = gradeDefinitions[grade];
             const classStudents = students.filter(
-                s => s.status === StudentStatus.ACTIVE && s.grade === grade
+                s => s.status === StudentStatus.ACTIVE && s.grade === grade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)
             );
 
             if (!gradeDef || !Array.isArray(gradeDef.subjects)) {
@@ -54,7 +54,7 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
 
             return { grade, total: classStudents.length, toPromote, toDetain, toGraduate, nextGrade: getNextGrade(grade) };
         });
-    }, [students, gradeDefinitions]);
+    }, [students, gradeDefinitions, academicYear]);
 
     const totalStudents  = promotionSummary.reduce((s, r) => s + r.total, 0);
     const totalPromoted  = promotionSummary.reduce((s, r) => s + r.toPromote, 0);

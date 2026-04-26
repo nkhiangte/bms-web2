@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
@@ -680,7 +680,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
     const isNurseryToII = NURSERY_TO_II.includes(grade);
     const isIIItoVIII = CLASS_III_TO_VIII.includes(grade);
 
-    const classStudents = useMemo(() => students.filter(s => s.grade === grade).sort((a, b) => a.rollNo - b.rollNo), [students, grade]);
+    const classStudents = useMemo(() => students.filter(s => s.grade === grade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear]);
 
     const gradeDef = useMemo(() => {
         if (!gradeDefinitions[grade]) return null;

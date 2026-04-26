@@ -4,16 +4,17 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { BackIcon, HomeIcon, MessageIcon, WhatsappIcon, SpinnerIcon } from '@/components/Icons';
 import { Student, Grade, StudentStatus, User } from '@/types';
 import { GRADES_LIST } from '@/constants';
-import { formatPhoneNumberForWhatsApp } from '@/utils';
+import { formatPhoneNumberForWhatsApp, normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface CommunicationPageProps {
     students: Student[];
     user: User;
+    academicYear: string;
 }
 
-const CommunicationPage: React.FC<CommunicationPageProps> = ({ students, user }) => {
+const CommunicationPage: React.FC<CommunicationPageProps> = ({ students, user, academicYear }) => {
     const navigate = useNavigate();
     const [selectedGrades, setSelectedGrades] = useState<Grade[]>([]);
     const [messageType, setMessageType] = useState<'sms' | 'whatsapp'>('whatsapp');
@@ -33,8 +34,8 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({ students, user })
 
     const recipients = useMemo(() => {
         if (selectedGrades.length === 0) return [];
-        return students.filter(s => s.status === StudentStatus.ACTIVE && selectedGrades.includes(s.grade) && s.contact);
-    }, [students, selectedGrades]);
+        return students.filter(s => s.status === StudentStatus.ACTIVE && selectedGrades.includes(s.grade) && s.contact && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+    }, [students, selectedGrades, academicYear]);
 
     const handleSend = async () => {
         if (recipients.length === 0) {

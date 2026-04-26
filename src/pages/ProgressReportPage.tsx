@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { db } from '@/firebaseConfig';
 
@@ -469,11 +469,15 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
             const unsubscribe = db.collection('students')
                 .where('grade', '==', student.grade)
                 .onSnapshot(snapshot => {
-                    setClassmates(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
+                    setClassmates(
+                        snapshot.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() } as Student))
+                            .filter(s => normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
+                    );
                 });
             return () => unsubscribe();
         }
-    }, [student]);
+    }, [student, academicYear]);
 
     const gradeDef = useMemo(() => {
         if (!student || !gradeDefinitions[student.grade]) return null;

@@ -758,12 +758,7 @@ const App: React.FC = () => {
           }
           return { id: d.id, ...data } as Student;
         });
-        // Filter students by academic year. Use normalizeAcademicYear to smooth out YYYY-YYYY vs YYYY-YY mismatches.
-        const normalizedCurrentYear = normalizeAcademicYear(academicYear);
-        const filteredStudents = allStudents.filter(s => 
-          normalizeAcademicYear(s.academicYear) === normalizedCurrentYear
-        );
-        setStudents(filteredStudents);
+        setStudents(allStudents);
       }, err => handleFirestoreError(err, OperationType.LIST, 'students')),
       db.collection('calendarEvents').onSnapshot(s => setCalendarEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent))), err => handleFirestoreError(err, OperationType.LIST, 'calendarEvents')),
     ];
@@ -921,7 +916,7 @@ const App: React.FC = () => {
           <Route path="hostel/communication" element={<HostelCommunicationPage />} />
           <Route path="hostel/settings" element={<HostelSettingsPage />} />
           <Route path="calendar" element={<CalendarPage events={calendarEvents} user={user!} onAdd={async (e, id) => { await handleSaveCalendarEvent(e, id); }} onEdit={async (e) => { await handleSaveCalendarEvent(e, e.id); }} onDelete={handleDeleteCalendarEvent} notificationDaysBefore={-1} onUpdatePrefs={async () => { addNotification('Notification preferences saved.', 'success'); }} />} />
-          <Route path="communication" element={<CommunicationPage students={students} user={user!} />} />
+          <Route path="communication" element={<CommunicationPage students={students} user={user!} academicYear={academicYear} />} />
           <Route path="letters" element={<LetterGeneratorPage user={user!} schoolConfig={schoolConfig} />} />
           <Route path="testimonials" element={<TestimonialGeneratorPage />} />
           <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
@@ -949,7 +944,7 @@ const App: React.FC = () => {
           <Route path="syllabus" element={<TextbooksPage />} />
           <Route path="manage-textbooks" element={<ManageTextbooksPage />} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
-          <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} />} />
+          <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} academicYear={academicYear} />} />
           <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
           <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
           <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />

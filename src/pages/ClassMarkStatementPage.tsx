@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
 import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
 import { ImportMarksModal } from '@/components/ImportMarksModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import EditSubjectsModal from '@/components/EditSubjectsModal';
@@ -53,8 +53,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const classStudents = useMemo(() => {
     if (!grade) return [];
-    return students.filter(s => s.grade === grade).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade]);
+    return students.filter(s => s.grade === grade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo);
+  }, [students, grade, academicYear]);
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];

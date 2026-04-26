@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '@/types';
 import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
-import { exportAttendanceToCsv } from '@/utils';
+import { exportAttendanceToCsv, normalizeAcademicYear } from '@/utils';
 import { db } from '@/firebaseConfig';
 import DateRangeExportModal from '@/components/DateRangeExportModal';
 
@@ -71,9 +71,9 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
     const classStudents = useMemo(() => {
         if (!grade) return [];
         return students
-            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE)
+            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
             .sort((a, b) => a.rollNo - b.rollNo);
-    }, [students, grade]);
+    }, [students, grade, academicYear]);
 
     const toYYYYMMDD = (date: Date) => date.toISOString().split('T')[0];
     const todayStr = useMemo(() => toYYYYMMDD(new Date()), []);

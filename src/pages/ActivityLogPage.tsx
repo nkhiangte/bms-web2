@@ -5,7 +5,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, User, SubjectAssignment, ActivityLog, Assessment } from '@/types';
 import { BackIcon, HomeIcon, ClipboardDocumentListIcon, SaveIcon, SpinnerIcon, PlusIcon } from '@/components/Icons';
 import { GRADES_LIST, TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES } from '@/constants';
-import { normalizeSubjectName } from '@/utils';
+import { normalizeSubjectName, normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -88,8 +88,10 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({
   
   const studentsInClass = useMemo(() => {
     if (!selectedGrade) return [];
-    return students.filter(s => s.grade === selectedGrade).sort((a,b) => a.rollNo - b.rollNo);
-  }, [students, selectedGrade]);
+    return students
+        .filter(s => s.grade === selectedGrade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
+        .sort((a,b) => a.rollNo - b.rollNo);
+  }, [students, selectedGrade, academicYear]);
   
   useEffect(() => {
     if (availableGrades.length === 1 && !selectedGrade) {

@@ -8,7 +8,7 @@ import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '@/c
 import ActivityLogModal from '@/components/ActivityLogModal';
 import ExamPerformanceCard from '@/components/ExamPerformanceCard';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
-import { normalizeSubjectName, subjectsMatch } from '@/utils';
+import { normalizeSubjectName, subjectsMatch, normalizeAcademicYear } from '@/utils';
 import { db } from '@/firebaseConfig';
 
 const { useParams, Link } = ReactRouterDOM as any;
@@ -44,13 +44,15 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
       const unsubscribe = db.collection('students')
         .where('grade', '==', student.grade)
         .onSnapshot(snapshot => {
-          const fetchedClassmates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+          const fetchedClassmates = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Student))
+            .filter(s => normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
           setClassmates(fetchedClassmates);
         });
       
       return () => unsubscribe();
     }
-  }, [student]);
+  }, [student, academicYear]);
 
   useEffect(() => {
     if (!student) return;

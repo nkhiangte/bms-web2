@@ -151,7 +151,10 @@ const App: React.FC = () => {
   const [hostelAdmissions, setHostelAdmissions] = useState<OnlineAdmission[]>([]);
   const [navigation, setNavigation] = useState<NavMenuItem[]>([]);
   const [disclosureData, setDisclosureData] = useState<DisclosureData>(DEFAULT_DISCLOSURE_DATA);
-  const [academicYear, setAcademicYear] = useState(getCurrentAcademicYear());
+  const [academicYear, setAcademicYear] = useState(() => {
+    const saved = localStorage.getItem('selectedAcademicYear');
+    return saved || getCurrentAcademicYear();
+  });
   const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
   const [admissionSettings, setAdmissionSettings] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
   const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '' });
@@ -279,7 +282,12 @@ const App: React.FC = () => {
   };
 
   const handleUpdateAcademicYear = async (year: string) => {
-    try { await db.collection('config').doc('academic').set({ currentAcademicYear: year }); setAcademicYear(year); addNotification(`Academic year set to ${year}.`, 'success'); }
+    try { 
+      await db.collection('config').doc('academic').set({ currentAcademicYear: year }); 
+      setAcademicYear(year); 
+      localStorage.setItem('selectedAcademicYear', year);
+      addNotification(`Academic year set to ${year}.`, 'success'); 
+    }
     catch (error: any) { addNotification('Failed to set academic year.', 'error'); }
   };
 
@@ -629,7 +637,11 @@ const App: React.FC = () => {
 
     const unsubs = [
       db.collection('config').doc('academic').onSnapshot(doc => {
-        if (doc.exists) setAcademicYear(doc.data()?.currentAcademicYear || getCurrentAcademicYear());
+        if (doc.exists) {
+          const year = doc.data()?.currentAcademicYear || getCurrentAcademicYear();
+          setAcademicYear(year);
+          localStorage.setItem('selectedAcademicYear', year);
+        }
       }, err => handleFirestoreError(err, OperationType.GET, 'config/academic')),
     ];
     return () => unsubs.forEach(u => u());
@@ -660,18 +672,7 @@ const App: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // ── Auto-set Academic Year for New Session ──
-  useEffect(() => {
-    if (user && (user.role === 'admin' || user.role === 'user' || user.role === 'warden')) {
-      db.collection('config').doc('academic').get().then(doc => {
-        if (doc.exists && doc.data()?.currentAcademicYear !== "2026-27") {
-          db.collection('config').doc('academic').update({ currentAcademicYear: "2026-27" });
-        }
-      }).catch(err => console.error("Error setting academic year:", err));
-    }
-  }, [user]);
-
-  // ── Staff (isolated — needed by public FacultyPage) ───────────────────────
+  // ── Staff (isolated — needed by public FacultyPage) ──
   useEffect(() => {
     const unsub = db.collection('staff').onSnapshot(
       s => setStaff(s.docs.map(d => ({ id: d.id, ...d.data() } as Staff))),

@@ -220,12 +220,20 @@ export const getNextAcademicYear = (currentYear: string): string => {
 };
 
 export const normalizeAcademicYear = (year?: string): string => {
-    if (!year || year.trim() === '') return '2025-26';
-    const parts = year.split('-');
-    if (parts.length === 2 && parts[1].length === 4) {
-        return `${parts[0]}-${parts[1].substring(2)}`;
+    if (!year) return '2025-26';
+    // Remove all whitespace
+    const cleanYear = year.trim().replace(/\s/g, '');
+    if (cleanYear === '') return '2025-26';
+    
+    const parts = cleanYear.split('-');
+    if (parts.length === 2) {
+        let [start, end] = parts;
+        // Normalize YYYY-YYYY or YY-YY to YYYY-YY
+        if (start.length === 2) start = '20' + start;
+        if (end.length === 4) end = end.substring(2);
+        return `${start}-${end}`;
     }
-    return year;
+    return cleanYear;
 };
 
 /**

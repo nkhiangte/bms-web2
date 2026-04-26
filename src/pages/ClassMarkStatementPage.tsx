@@ -73,14 +73,19 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   }, [students, grade, academicYear]);
 
   // For diagnostics: find students in this grade but different years
-  const otherYearCount = useMemo(() => {
-    if (!grade) return 0;
-    return students.filter(s => 
-        s.grade === grade && 
-        s.academicYear && 
-        normalizeAcademicYear(s.academicYear) !== normalizeAcademicYear(academicYear)
-    ).length;
+  const otherYearStats = useMemo(() => {
+    if (!grade) return {};
+    const stats: Record<string, number> = {};
+    students.filter(s => s.grade === grade && s.academicYear).forEach(s => {
+       const norm = normalizeAcademicYear(s.academicYear);
+       if (norm !== normalizeAcademicYear(academicYear)) {
+          stats[norm] = (stats[norm] || 0) + 1;
+       }
+    });
+    return stats;
   }, [students, grade, academicYear]);
+
+  const otherYearCount = Object.values(otherYearStats).reduce((a, b) => a + b, 0);
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
@@ -593,15 +598,23 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
 
         {otherYearCount > 0 && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 print-hidden">
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 print-hidden shadow-sm">
             <span className="text-2xl">⚠️</span>
             <div>
               <p className="font-bold text-amber-800">
                 {otherYearCount} students in {grade} are hidden
               </p>
-              <p className="text-sm text-amber-700 mt-0.5 font-medium">
-                These students belong to other academic years. Change the year toggle in the dashboard to see them.
-              </p>
+              <div className="text-sm text-amber-700 mt-1 space-y-1">
+                <p>The students you are looking for might be tagged with different academic years:</p>
+                <ul className="list-disc list-inside mt-1 font-medium">
+                  {Object.entries(otherYearStats).map(([year, count]) => (
+                    <li key={year}>{count} students are in "{year}"</li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wider opacity-75">
+                  How to fix: Use the selection toggle on the Dashboard to change your viewing year, or update student records in the Student List.
+                </p>
+              </div>
             </div>
           </div>
         )}

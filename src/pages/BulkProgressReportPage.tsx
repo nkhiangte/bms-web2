@@ -680,7 +680,18 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
     const isNurseryToII = NURSERY_TO_II.includes(grade);
     const isIIItoVIII = CLASS_III_TO_VIII.includes(grade);
 
-    const classStudents = useMemo(() => students.filter(s => s.grade === grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear]);
+    const classStudents = useMemo(() => students.filter(s => {
+        const matchesGrade = s.grade === grade;
+        const matchesStatus = s.status === StudentStatus.ACTIVE || 
+                              s.status === StudentStatus.TRANSFERRED || 
+                              s.status === StudentStatus.GRADUATED || 
+                              s.status === StudentStatus.DROPPED;
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
+        
+        return matchesGrade && matchesStatus && matchesYear;
+    }).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear]);
 
     const gradeDef = useMemo(() => {
         if (!gradeDefinitions[grade]) return null;

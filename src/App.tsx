@@ -639,8 +639,11 @@ const App: React.FC = () => {
       db.collection('config').doc('academic').onSnapshot(doc => {
         if (doc.exists) {
           const year = doc.data()?.currentAcademicYear || getCurrentAcademicYear();
-          setAcademicYear(year);
-          localStorage.setItem('selectedAcademicYear', year);
+          // Only override local year if no preference is saved
+          if (!localStorage.getItem('selectedAcademicYear')) {
+            setAcademicYear(year);
+            localStorage.setItem('selectedAcademicYear', year);
+          }
         }
       }, err => handleFirestoreError(err, OperationType.GET, 'config/academic')),
     ];

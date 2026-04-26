@@ -34,7 +34,19 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
-    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id));
+    const classmates = allStudents.filter(s => {
+        const matchesGrade = s.grade === student.grade;
+        const matchesStatus = s.status === StudentStatus.ACTIVE || 
+                              s.status === StudentStatus.TRANSFERRED || 
+                              s.status === StudentStatus.GRADUATED || 
+                              s.status === StudentStatus.DROPPED || 
+                              s.id === student.id;
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
+        
+        return matchesGrade && matchesStatus && matchesYear;
+    });
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 

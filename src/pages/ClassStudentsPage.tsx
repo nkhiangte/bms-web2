@@ -60,8 +60,11 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
         if (!grade) return [];
         return students
             .filter(s => {
-                const studentYear = normalizeAcademicYear(s.academicYear || '2025-26');
-                return s.grade === grade && studentYear === normalizeAcademicYear(academicYear);
+                const matchesGrade = s.grade === grade;
+                const studentYearNorm = normalizeAcademicYear(s.academicYear);
+                const selectedYearNorm = normalizeAcademicYear(academicYear);
+                const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
+                return matchesGrade && matchesYear;
             })
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);

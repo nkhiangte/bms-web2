@@ -53,7 +53,33 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const classStudents = useMemo(() => {
     if (!grade) return [];
-    return students.filter(s => s.grade === grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo);
+    
+    return students.filter(s => {
+        const matchesGrade = s.grade === grade;
+        const matchesStatus = s.status === StudentStatus.ACTIVE || 
+                              s.status === StudentStatus.TRANSFERRED || 
+                              s.status === StudentStatus.GRADUATED || 
+                              s.status === StudentStatus.DROPPED;
+        
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        
+        // If student has no academic year explicitly set, assume they belong to the current viewing year
+        // This prevents legacy students from disappearing until they are explicitly processed/promoted.
+        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
+        
+        return matchesGrade && matchesStatus && matchesYear;
+    }).sort((a, b) => a.rollNo - b.rollNo);
+  }, [students, grade, academicYear]);
+
+  // For diagnostics: find students in this grade but different years
+  const otherYearCount = useMemo(() => {
+    if (!grade) return 0;
+    return students.filter(s => 
+        s.grade === grade && 
+        s.academicYear && 
+        normalizeAcademicYear(s.academicYear) !== normalizeAcademicYear(academicYear)
+    ).length;
   }, [students, grade, academicYear]);
 
   const subjectDefinitions = useMemo(() => {
@@ -565,6 +591,20 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <h1 className="text-3xl font-bold text-slate-800">Mark Entry</h1>
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name} | <span className="font-semibold">Academic Year:</span> {academicYear}</p>
         </div>
+
+        {otherYearCount > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 print-hidden">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <p className="font-bold text-amber-800">
+                {otherYearCount} students in {grade} are hidden
+              </p>
+              <p className="text-sm text-amber-700 mt-0.5 font-medium">
+                These students belong to other academic years. Change the year toggle in the dashboard to see them.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>

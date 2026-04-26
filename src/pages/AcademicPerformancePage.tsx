@@ -30,7 +30,18 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   
   const classmates = useMemo(() => {
     if (!student) return [];
-    return students.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+    return students.filter(s => {
+        const matchesGrade = s.grade === student.grade;
+        const matchesStatus = s.status === StudentStatus.ACTIVE || 
+                              s.status === StudentStatus.TRANSFERRED || 
+                              s.status === StudentStatus.GRADUATED || 
+                              s.status === StudentStatus.DROPPED;
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
+        
+        return matchesGrade && matchesStatus && matchesYear;
+    });
   }, [students, student, academicYear]);
 
   const [isEditing, setIsEditing] = useState(false);

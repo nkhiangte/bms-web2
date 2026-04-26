@@ -34,7 +34,7 @@ const PromotionPage: React.FC<PromotionPageProps> = ({ students, gradeDefinition
         return GRADES_LIST.map(grade => {
             const gradeDef = gradeDefinitions[grade];
             const classStudents = students.filter(
-                s => s.status === StudentStatus.ACTIVE && s.grade === grade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)
+                s => s.status === StudentStatus.ACTIVE && s.grade === grade
             );
 
             if (!gradeDef || !Array.isArray(gradeDef.subjects)) {

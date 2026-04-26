@@ -36,13 +36,10 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                               s.status === StudentStatus.TRANSFERRED || 
                               s.status === StudentStatus.GRADUATED || 
                               s.status === StudentStatus.DROPPED;
-        const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
-        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
         
-        return matchesGrade && matchesStatus && matchesYear;
+        return matchesGrade && matchesStatus;
     });
-  }, [students, student, academicYear]);
+  }, [students, student]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [performanceData, setPerformanceData] = useState<Exam[]>([]);

@@ -61,31 +61,16 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                               s.status === StudentStatus.GRADUATED || 
                               s.status === StudentStatus.DROPPED;
         
-        const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
-        
-        // If student has no academic year explicitly set, assume they belong to the current viewing year
-        // This prevents legacy students from disappearing until they are explicitly processed/promoted.
-        const matchesYear = !s.academicYear || studentYearNorm === selectedYearNorm;
-        
-        return matchesGrade && matchesStatus && matchesYear;
+        return matchesGrade && matchesStatus;
     }).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade, academicYear]);
+  }, [students, grade]);
 
-  // For diagnostics: find students in this grade but different years
+  // For diagnostics: find students in this grade (removed filtering)
   const otherYearStats = useMemo(() => {
-    if (!grade) return {};
-    const stats: Record<string, number> = {};
-    students.filter(s => s.grade === grade && s.academicYear).forEach(s => {
-       const norm = normalizeAcademicYear(s.academicYear);
-       if (norm !== normalizeAcademicYear(academicYear)) {
-          stats[norm] = (stats[norm] || 0) + 1;
-       }
-    });
-    return stats;
-  }, [students, grade, academicYear]);
+    return {};
+  }, []);
 
-  const otherYearCount = Object.values(otherYearStats).reduce((a, b) => a + b, 0);
+  const otherYearCount = 0;
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
@@ -597,27 +582,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name} | <span className="font-semibold">Academic Year:</span> {academicYear}</p>
         </div>
 
-        {otherYearCount > 0 && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 print-hidden shadow-sm">
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <p className="font-bold text-amber-800">
-                {otherYearCount} students in {grade} are hidden
-              </p>
-              <div className="text-sm text-amber-700 mt-1 space-y-1">
-                <p>The students you are looking for might be tagged with different academic years:</p>
-                <ul className="list-disc list-inside mt-1 font-medium">
-                  {Object.entries(otherYearStats).map(([year, count]) => (
-                    <li key={year}>{count} students are in "{year}"</li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wider opacity-75">
-                  How to fix: Use the selection toggle on the Dashboard to change your viewing year, or update student records in the Student List.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* diagnostic hidden */}
 
         <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>

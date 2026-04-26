@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, Grade, Gender, GradeDefinition } from '@/types';
+import { Student, User, Grade, Gender, GradeDefinition, StudentStatus } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import StudentTable from '@/components/StudentTable';
 import StudentFormModal from '@/components/StudentFormModal';
@@ -40,11 +40,6 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
       .filter(student => {
           // Only show active students by default in the main list
           return student.status === StudentStatus.ACTIVE;
-      })
-      .filter(student => {
-          // Strict check for academic year. If student has no year, fallback to 2025-2026 legacy.
-          const studentYear = normalizeAcademicYear(student.academicYear || '2025-26');
-          return studentYear === normalizeAcademicYear(academicYear);
       })
       .filter(student => {
         if (!searchTerm) return true;

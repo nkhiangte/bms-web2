@@ -34,7 +34,7 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({ students, user, a
 
     const recipients = useMemo(() => {
         if (selectedGrades.length === 0) return [];
-        return students.filter(s => s.status === StudentStatus.ACTIVE && selectedGrades.includes(s.grade) && s.contact && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+        return students.filter(s => s.status === StudentStatus.ACTIVE && selectedGrades.includes(s.grade) && s.contact);
     }, [students, selectedGrades, academicYear]);
 
     const handleSend = async () => {

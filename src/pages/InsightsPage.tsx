@@ -78,7 +78,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
     const classStudents = useMemo(() => {
         if (!selectedGrade) return [];
         return students
-            .filter(s => s.grade === selectedGrade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
+            .filter(s => s.grade === selectedGrade)
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, selectedGrade, academicYear]);
     

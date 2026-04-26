@@ -34,7 +34,7 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
-    const classmates = allStudents.filter(s => s.grade === student.grade && s.status === StudentStatus.ACTIVE);
+    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED));
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -468,7 +468,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
         if (student) {
             const unsubscribe = db.collection('students')
                 .where('grade', '==', student.grade)
-                .where('status', '==', StudentStatus.ACTIVE)
+                .where('status', 'in', [StudentStatus.ACTIVE, StudentStatus.TRANSFERRED])
                 .onSnapshot(snapshot => {
                     setClassmates(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
                 });

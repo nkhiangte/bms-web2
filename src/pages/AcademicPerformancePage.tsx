@@ -43,7 +43,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
     if (student) {
       const unsubscribe = db.collection('students')
         .where('grade', '==', student.grade)
-        .where('status', '==', StudentStatus.ACTIVE)
+        .where('status', 'in', [StudentStatus.ACTIVE, StudentStatus.TRANSFERRED])
         .onSnapshot(snapshot => {
           const fetchedClassmates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
           setClassmates(fetchedClassmates);

@@ -50,7 +50,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
     const linkedStudents = useMemo(() => {
         if (!user.studentIds || user.studentIds.length === 0) return [];
         return allStudents
-            .filter(s => user.studentIds!.includes(s.id) && s.status === StudentStatus.ACTIVE)
+            .filter(s => user.studentIds!.includes(s.id) && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED))
             .sort((a,b) => a.name.localeCompare(b.name));
     }, [user, allStudents]);
 

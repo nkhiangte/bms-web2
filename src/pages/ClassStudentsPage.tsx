@@ -61,7 +61,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
         return students
             .filter(s => {
                 const studentYear = normalizeAcademicYear(s.academicYear || '2025-26');
-                return s.grade === grade && s.status === StudentStatus.ACTIVE && studentYear === normalizeAcademicYear(academicYear);
+                return s.grade === grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && studentYear === normalizeAcademicYear(academicYear);
             })
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);
@@ -229,7 +229,14 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                             <PhotoWithFallback src={student.photographUrl} alt={student.name} />
                                         </div>
                                         <div>
-                                            <Link to={`/portal/student/${student.id}`} className="font-bold text-base sm:text-lg text-sky-700 hover:underline block">{student.name}</Link>
+                                            <div className="flex items-center gap-2">
+                                                <Link to={`/portal/student/${student.id}`} className="font-bold text-base sm:text-lg text-sky-700 hover:underline block">{student.name}</Link>
+                                                {student.status === StudentStatus.TRANSFERRED && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800 border border-rose-200">
+                                                        Taken TC
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="text-xs sm:text-sm text-slate-500 flex flex-col sm:flex-row sm:gap-4">
                                                 <span>ID: {formatStudentId(student, academicYear)}</span>
                                                 <span>Parent: {student.fatherName}</span>

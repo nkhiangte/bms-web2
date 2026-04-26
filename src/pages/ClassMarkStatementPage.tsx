@@ -53,7 +53,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const classStudents = useMemo(() => {
     if (!grade) return [];
-    return students.filter(s => s.grade === grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED)).sort((a, b) => a.rollNo - b.rollNo);
+    return students.filter(s => s.grade === grade).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade]);
 
   const subjectDefinitions = useMemo(() => {
@@ -432,7 +432,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       });
 
       return [
-        student.rollNo, student.status === StudentStatus.TRANSFERRED ? `${student.name} (Taken TC)` : student.name, ...subjectMarks,
+        student.rollNo, student.status !== StudentStatus.ACTIVE ? `${student.name} (${student.status})` : student.name, ...subjectMarks,
         student.grandTotal, student.percentage.toFixed(2),
         student.rank, student.division, student.result, student.remark
       ];
@@ -476,7 +476,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
       });
 
       return [
-        student.rollNo, student.status === StudentStatus.TRANSFERRED ? `${student.name} (Taken TC)` : student.name, ...subjectMarks,
+        student.rollNo, student.status !== StudentStatus.ACTIVE ? `${student.name} (${student.status})` : student.name, ...subjectMarks,
         student.grandTotal, student.percentage.toFixed(2),
         student.rank, student.division, student.result
       ];
@@ -511,7 +511,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     headers.push('Grand Total', 'Percentage', 'Rank', 'Division', 'Result', 'Remark', 'Working Days', 'Days Present');
 
     const rows = processedData.map(student => {
-      const row: any[] = [student.rollNo, student.status === StudentStatus.TRANSFERRED ? `${student.name} (Taken TC)` : student.name];
+      const row: any[] = [student.rollNo, student.status !== StudentStatus.ACTIVE ? `${student.name} (${student.status})` : student.name];
       
       subjectDefinitions.forEach(sd => {
         if (sd.gradingSystem === 'OABC') {
@@ -646,9 +646,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             {/* FIX: Added text-slate-800 to make student names visible */}
                             <td className="px-2 py-1 font-medium text-slate-800 border-r whitespace-nowrap">
                                 {student.name}
-                                {student.status === StudentStatus.TRANSFERRED && (
+                                {student.status !== StudentStatus.ACTIVE && (
                                     <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">
-                                        Taken TC
+                                        {student.status}
                                     </span>
                                 )}
                             </td>

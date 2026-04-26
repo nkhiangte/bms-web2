@@ -27,7 +27,12 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   const { studentId } = useParams() as { studentId: string };
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
-  const [classmates, setClassmates] = useState<Student[]>([]);
+  
+  const classmates = useMemo(() => {
+    if (!student) return [];
+    return students.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+  }, [students, student, academicYear]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [performanceData, setPerformanceData] = useState<Exam[]>([]);
   const [editingActivityLogFor, setEditingActivityLogFor] = useState<{ examId: string, subjectName: string } | null>(null);
@@ -40,23 +45,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   const canEdit = user.role === 'admin' || (student && student.grade === assignedGrade) || isSubjectTeacherForThisClass;
 
   useEffect(() => {
-    if (student) {
-      const unsubscribe = db.collection('students')
-        .where('grade', '==', student.grade)
-        .onSnapshot(snapshot => {
-          const fetchedClassmates = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Student))
-            .filter(s => normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
-          setClassmates(fetchedClassmates);
-        });
-      
-      return () => unsubscribe();
-    }
-  }, [student, academicYear]);
-
-  useEffect(() => {
     if (!student) return;
-    
     const gradeDef = gradeDefinitions[student.grade];
     if (!gradeDef || !Array.isArray(gradeDef.subjects)) return;
 

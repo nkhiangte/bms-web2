@@ -53,7 +53,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const classStudents = useMemo(() => {
     if (!grade) return [];
-    return students.filter(s => s.grade === grade && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo);
+    return students.filter(s => s.grade === grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade, academicYear]);
 
   const subjectDefinitions = useMemo(() => {

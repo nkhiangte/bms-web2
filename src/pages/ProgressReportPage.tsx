@@ -34,7 +34,7 @@ const calculateTermSummary = (
     const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
-    const classmates = allStudents.filter(s => s.grade === student.grade);
+    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED));
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -462,22 +462,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const navigate = useNavigate();
 
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
-    const [classmates, setClassmates] = useState<Student[]>([]);
-
-    useEffect(() => {
-        if (student) {
-            const unsubscribe = db.collection('students')
-                .where('grade', '==', student.grade)
-                .onSnapshot(snapshot => {
-                    setClassmates(
-                        snapshot.docs
-                            .map(doc => ({ id: doc.id, ...doc.data() } as Student))
-                            .filter(s => normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
-                    );
-                });
-            return () => unsubscribe();
-        }
-    }, [student, academicYear]);
+    const classmates = useMemo(() => {
+        if (!student) return [];
+        return students.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
+    }, [students, student, academicYear]);
 
     const gradeDef = useMemo(() => {
         if (!student || !gradeDefinitions[student.grade]) return null;

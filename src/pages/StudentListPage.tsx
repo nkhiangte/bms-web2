@@ -38,6 +38,10 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const filteredStudents = useMemo(() => {
     return students
       .filter(student => {
+          // Only show active students by default in the main list
+          return student.status === StudentStatus.ACTIVE;
+      })
+      .filter(student => {
           // Strict check for academic year. If student has no year, fallback to 2025-2026 legacy.
           const studentYear = normalizeAcademicYear(student.academicYear || '2025-26');
           return studentYear === normalizeAcademicYear(academicYear);

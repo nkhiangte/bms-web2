@@ -220,7 +220,7 @@ export const getNextAcademicYear = (currentYear: string): string => {
 };
 
 export const normalizeAcademicYear = (year?: string): string => {
-    if (!year) return '';
+    if (!year || year.trim() === '') return '2025-26';
     const parts = year.split('-');
     if (parts.length === 2 && parts[1].length === 4) {
         return `${parts[0]}-${parts[1].substring(2)}`;

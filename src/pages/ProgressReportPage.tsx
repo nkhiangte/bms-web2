@@ -119,12 +119,12 @@ const calculateTermSummary = (
             examTotal += examMark;
             activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
+            subjectFullMarks = (sd.examFullMarks || (isClassIXorX ? 100 : 0)) + (sd.activityFullMarks || 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks;
+            subjectFullMarks = sd.examFullMarks || (isClassIXorX ? 100 : 0);
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }
@@ -465,7 +465,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const classmates = useMemo(() => {
         if (!student) return [];
         return students.filter(s => s.grade === student.grade && 
-            (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id) && 
+            (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED || s.id === student.id) && 
             (normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear) || !s.academicYear || s.id === student.id)
         );
     }, [students, student, academicYear]);

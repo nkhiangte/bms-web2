@@ -58,7 +58,7 @@ const calculateTermSummary = (
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
     const isNurseryToII = NURSERY_TO_II.includes(student.grade);
-    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.id === student.id));
+    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED || s.id === student.id));
     const numericSubjects = activeSubjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = activeSubjects.filter(sd => sd.gradingSystem === 'OABC');
 
@@ -132,7 +132,7 @@ const calculateTermSummary = (
             const activityMark = Number(result?.activityMarks ?? 0);
             examTotal += examMark; activityTotal += activityMark;
             totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = (sd.examFullMarks ?? 0) + (sd.activityFullMarks ?? 0);
+            subjectFullMarks = (sd.examFullMarks || (isClassIXorX ? 100 : 0)) + (sd.activityFullMarks || 0);
             if (examMark < 20) failedSubjects.push(sd.name);
         } else if (isClassIXorX && examId === 'terminal3') {
             const saMark = Number(result?.saMarks ?? result?.marks ?? 0);
@@ -145,7 +145,7 @@ const calculateTermSummary = (
         } else {
             totalSubjectMark = Number(result?.marks ?? 0);
             examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks;
+            subjectFullMarks = sd.examFullMarks || (isClassIXorX ? 100 : 0);
             const failLimit = isClassIXorX ? 33 : 35;
             if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
         }

@@ -688,7 +688,8 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                               s.status === StudentStatus.DROPPED;
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
         const selectedYearNorm = normalizeAcademicYear(academicYear);
-        const matchesYear = studentYearNorm === selectedYearNorm;
+        const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
+        const matchesYear = effectiveYear === selectedYearNorm;
         
         return matchesGrade && matchesStatus && matchesYear;
     }).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear]);

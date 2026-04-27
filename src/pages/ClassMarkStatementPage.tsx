@@ -56,6 +56,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     
     return students.filter(s => {
         const matchesGrade = s.grade === grade;
+        // The user specifically mentioned students with 'Taken TC' (which is mapped to TRANSFERRED) are missing.
+        // We include all statuses that are common for academic reports.
         const matchesStatus = s.status === StudentStatus.ACTIVE || 
                               s.status === StudentStatus.TRANSFERRED || 
                               s.status === StudentStatus.GRADUATED || 
@@ -63,7 +65,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
         const selectedYearNorm = normalizeAcademicYear(academicYear);
-        const matchesYear = studentYearNorm === selectedYearNorm;
+        
+        // If a student has no academic year explicitly set, we include them in 2025-26 as it was the default session.
+        // This ensures the count (42) matches the user's records for that session.
+        const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
+        const matchesYear = effectiveYear === selectedYearNorm;
         
         return matchesGrade && matchesStatus && matchesYear;
     }).sort((a, b) => a.rollNo - b.rollNo);
@@ -74,9 +80,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     if (!grade) return {};
     const stats: Record<string, number> = {};
     students.filter(s => s.grade === grade).forEach(s => {
-       const norm = normalizeAcademicYear(s.academicYear);
-       if (norm !== normalizeAcademicYear(academicYear)) {
-          stats[norm] = (stats[norm] || 0) + 1;
+       const effectiveYear = s.academicYear ? normalizeAcademicYear(s.academicYear) : normalizeAcademicYear('2025-26');
+       if (effectiveYear !== normalizeAcademicYear(academicYear)) {
+          stats[effectiveYear] = (stats[effectiveYear] || 0) + 1;
        }
     });
     return stats;

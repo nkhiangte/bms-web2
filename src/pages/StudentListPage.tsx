@@ -43,7 +43,9 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
       })
       .filter(student => {
           const studentYear = normalizeAcademicYear(student.academicYear);
-          return studentYear === normalizeAcademicYear(academicYear);
+          // If a student has no academic year explicitly set, we include them in 2025-26 as it was the default session.
+          const effectiveYear = student.academicYear ? studentYear : normalizeAcademicYear('2025-26');
+          return effectiveYear === normalizeAcademicYear(academicYear);
       })
       .filter(student => {
         if (!searchTerm) return true;

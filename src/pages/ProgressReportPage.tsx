@@ -43,7 +43,9 @@ const calculateTermSummary = (
                               s.id === student.id;
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
         const selectedYearNorm = normalizeAcademicYear(academicYear);
-        const matchesYear = studentYearNorm === selectedYearNorm;
+        // If a student has no academic year explicitly set, we include them in 2025-26 as it was the default session.
+        const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
+        const matchesYear = effectiveYear === selectedYearNorm;
         
         return matchesGrade && matchesStatus && matchesYear;
     });
@@ -476,10 +478,22 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
     const classmates = useMemo(() => {
         if (!student) return [];
-        return students.filter(s => s.grade === student.grade && 
-            (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED || s.id === student.id) && 
-            (normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear) || !s.academicYear || s.id === student.id)
-        );
+        return students.filter(s => {
+            const matchesGrade = s.grade === student.grade;
+            const matchesStatus = s.status === StudentStatus.ACTIVE || 
+                                  s.status === StudentStatus.TRANSFERRED || 
+                                  s.status === StudentStatus.GRADUATED || 
+                                  s.status === StudentStatus.DROPPED || 
+                                  s.id === student.id;
+            
+            const studentYearNorm = normalizeAcademicYear(s.academicYear);
+            const selectedYearNorm = normalizeAcademicYear(academicYear);
+            // Default students with no academic year to 2025-26
+            const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
+            const matchesYear = effectiveYear === selectedYearNorm;
+            
+            return matchesGrade && matchesStatus && matchesYear;
+        });
     }, [students, student, academicYear]);
 
     const gradeDef = useMemo(() => {

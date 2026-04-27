@@ -61,16 +61,28 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                               s.status === StudentStatus.GRADUATED || 
                               s.status === StudentStatus.DROPPED;
         
-        return matchesGrade && matchesStatus;
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const matchesYear = studentYearNorm === selectedYearNorm;
+        
+        return matchesGrade && matchesStatus && matchesYear;
     }).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade]);
+  }, [students, grade, academicYear]);
 
-  // For diagnostics: find students in this grade (removed filtering)
+  // For diagnostics: find students in this grade but different years
   const otherYearStats = useMemo(() => {
-    return {};
-  }, []);
+    if (!grade) return {};
+    const stats: Record<string, number> = {};
+    students.filter(s => s.grade === grade).forEach(s => {
+       const norm = normalizeAcademicYear(s.academicYear);
+       if (norm !== normalizeAcademicYear(academicYear)) {
+          stats[norm] = (stats[norm] || 0) + 1;
+       }
+    });
+    return stats;
+  }, [students, grade, academicYear]);
 
-  const otherYearCount = 0;
+  const otherYearCount = Object.values(otherYearStats).reduce((a, b) => a + b, 0);
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
@@ -582,7 +594,50 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             <p className="text-slate-600 mt-1 text-lg"><span className="font-semibold">Class:</span> {grade} | <span className="font-semibold">Exam:</span> {examDetails.name} | <span className="font-semibold">Academic Year:</span> {academicYear}</p>
         </div>
 
-        {/* diagnostic hidden */}
+        {otherYearCount > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 print-hidden shadow-sm">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <p className="font-bold text-amber-800">
+                {otherYearCount} students in {grade} are hidden
+              </p>
+              <div className="text-sm text-amber-700 mt-1 space-y-1">
+                <p>These students belong to other academic years:</p>
+                <ul className="list-disc list-inside mt-1 font-medium">
+                  {Object.entries(otherYearStats).map(([year, count]) => (
+                    <li key={year}>{count} students are in "{year}"</li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex gap-3">
+                  <button 
+                    onClick={async () => {
+                        if (!grade || !window.confirm(`Move ${otherYearCount} students to ${academicYear}?`)) return;
+                        setIsSaving(true);
+                        try {
+                            const toUpdate = students.filter(s => s.grade === grade && normalizeAcademicYear(s.academicYear) !== normalizeAcademicYear(academicYear));
+                            await Promise.all(toUpdate.map(s => {
+                                return db.collection('students').doc(s.id).update({ academicYear: academicYear });
+                            }));
+                            alert("Success! Students updated.");
+                            window.location.reload();
+                        } catch (e) {
+                            console.error(e);
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 text-white rounded-lg font-bold text-xs shadow hover:bg-amber-700 transition"
+                  >
+                    Move all to {academicYear}
+                  </button>
+                  <p className="flex-1 text-xs font-semibold uppercase tracking-wider opacity-75 self-center">
+                    Check the toggle on the Dashboard to change your viewing year.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
             <span className="text-sm font-semibold text-slate-600">Sort by:</span>

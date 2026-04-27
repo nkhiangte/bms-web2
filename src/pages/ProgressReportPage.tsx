@@ -41,8 +41,11 @@ const calculateTermSummary = (
                               s.status === StudentStatus.GRADUATED || 
                               s.status === StudentStatus.DROPPED || 
                               s.id === student.id;
+        const studentYearNorm = normalizeAcademicYear(s.academicYear);
+        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const matchesYear = studentYearNorm === selectedYearNorm;
         
-        return matchesGrade && matchesStatus;
+        return matchesGrade && matchesStatus && matchesYear;
     });
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');

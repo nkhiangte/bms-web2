@@ -71,7 +71,7 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
     const classStudents = useMemo(() => {
         if (!grade) return [];
         return students
-            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE)
+            .filter(s => s.grade === grade && s.status === StudentStatus.ACTIVE && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear))
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);
 

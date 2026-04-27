@@ -42,6 +42,10 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
           return student.status === StudentStatus.ACTIVE;
       })
       .filter(student => {
+          const studentYear = normalizeAcademicYear(student.academicYear);
+          return studentYear === normalizeAcademicYear(academicYear);
+      })
+      .filter(student => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         switch (searchType) {

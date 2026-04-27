@@ -59,7 +59,13 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const classStudents = useMemo(() => {
         if (!grade) return [];
         return students
-            .filter(s => s.grade === grade)
+            .filter(s => {
+                const matchesGrade = s.grade === grade;
+                const studentYearNorm = normalizeAcademicYear(s.academicYear);
+                const selectedYearNorm = normalizeAcademicYear(academicYear);
+                const matchesYear = studentYearNorm === selectedYearNorm;
+                return matchesGrade && matchesYear;
+            })
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);
 

@@ -190,7 +190,7 @@ const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ students, academi
         return;
     }
 
-    const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE);
+    const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear));
     const student = activeStudents.find(s => formatStudentId(s, academicYear).toLowerCase() === studentIdInput.toLowerCase());
 
     if (student) {

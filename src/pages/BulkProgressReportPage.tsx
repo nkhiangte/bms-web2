@@ -690,9 +690,16 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         const selectedYearNorm = normalizeAcademicYear(academicYear);
         const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
         const matchesYear = effectiveYear === selectedYearNorm;
+
+        // NEW: Inclusively check if student has ANY marks for this specific exam
+        const hasMarksForExam = s.academicPerformance?.some(exam => 
+            exam.id === examId && 
+            exam.results && 
+            exam.results.length > 0
+        );
         
-        return matchesGrade && matchesStatus && matchesYear;
-    }).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear]);
+        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam);
+    }).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear, examId]);
 
     const gradeDef = useMemo(() => {
         if (!gradeDefinitions[grade]) return null;

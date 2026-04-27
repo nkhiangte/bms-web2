@@ -51,13 +51,14 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const grade = useMemo(() => encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined, [encodedGrade]);
   const examDetails = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
 
+  const [statusFilter, setStatusFilter] = useState<StudentStatus | 'ALL'>('ALL');
+  const [showAllYears, setShowAllYears] = useState(false);
+
   const classStudents = useMemo(() => {
     if (!grade) return [];
     
     return students.filter(s => {
         const matchesGrade = s.grade === grade;
-        // The user specifically mentioned students with 'Taken TC' (which is mapped to TRANSFERRED) are missing.
-        // We include all statuses that are common for academic reports.
         const matchesStatus = s.status === StudentStatus.ACTIVE || 
                               s.status === StudentStatus.TRANSFERRED || 
                               s.status === StudentStatus.GRADUATED || 
@@ -66,29 +67,42 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
         const selectedYearNorm = normalizeAcademicYear(academicYear);
         
-        // If a student has no academic year explicitly set, we include them in 2025-26 as it was the default session.
-        // This ensures the count (42) matches the user's records for that session.
+        // Default students with no academic year to 2025-26
         const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
         const matchesYear = effectiveYear === selectedYearNorm;
-        
-        return matchesGrade && matchesStatus && matchesYear;
-    }).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade, academicYear]);
 
-  // For diagnostics: find students in this grade but different years
-  const otherYearStats = useMemo(() => {
+        // Inclusively check if student has ANY marks for this specific exam
+        const hasMarksForExam = s.academicPerformance?.some(exam => 
+            exam.id === examId && 
+            exam.results && 
+            exam.results.length > 0
+        );
+        
+        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam || showAllYears);
+    }).sort((a, b) => a.rollNo - b.rollNo);
+  }, [students, grade, academicYear, examId, showAllYears]);
+
+  // For diagnostics: find students in this grade but different years who DON'T have marks yet
+  const otherYearStats = useMemo<Record<string, number>>(() => {
     if (!grade) return {};
     const stats: Record<string, number> = {};
-    students.filter(s => s.grade === grade).forEach(s => {
+    students.filter(s => {
+        const matchesGrade = s.grade === grade;
+        const effectiveYear = s.academicYear ? normalizeAcademicYear(s.academicYear) : normalizeAcademicYear('2025-26');
+        const isSelectedYear = effectiveYear === normalizeAcademicYear(academicYear);
+        const hasMarks = s.academicPerformance?.some(exam => exam.id === examId && exam.results && exam.results.length > 0);
+        
+        return matchesGrade && !isSelectedYear && !hasMarks;
+    }).forEach(s => {
        const effectiveYear = s.academicYear ? normalizeAcademicYear(s.academicYear) : normalizeAcademicYear('2025-26');
-       if (effectiveYear !== normalizeAcademicYear(academicYear)) {
-          stats[effectiveYear] = (stats[effectiveYear] || 0) + 1;
-       }
+       stats[effectiveYear] = (stats[effectiveYear] || 0) + 1;
     });
     return stats;
-  }, [students, grade, academicYear]);
+  }, [students, grade, academicYear, examId]);
 
-  const otherYearCount = Object.values(otherYearStats).reduce((a, b) => a + b, 0);
+  const otherYearCount = useMemo(() => {
+    return Object.values(otherYearStats).reduce((acc: number, curr) => acc + (curr as number), 0);
+  }, [otherYearStats]);
 
   const subjectDefinitions = useMemo(() => {
     if (!grade) return [];
@@ -614,13 +628,24 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                     <li key={year}>{count} students are in "{year}"</li>
                   ))}
                 </ul>
-                <div className="mt-4 flex gap-3">
+                <div className="mt-4 flex gap-3 flex-wrap">
+                  <button 
+                    onClick={() => setShowAllYears(true)}
+                    className="px-3 py-1.5 bg-sky-600 text-white rounded-lg font-bold text-xs shadow hover:bg-sky-700 transition"
+                  >
+                    Show hidden students in list
+                  </button>
                   <button 
                     onClick={async () => {
                         if (!grade || !window.confirm(`Move ${otherYearCount} students to ${academicYear}?`)) return;
                         setIsSaving(true);
                         try {
-                            const toUpdate = students.filter(s => s.grade === grade && normalizeAcademicYear(s.academicYear) !== normalizeAcademicYear(academicYear));
+                            const toUpdate = students.filter(s => {
+                                const matchesGrade = s.grade === grade;
+                                const effectiveYear = s.academicYear ? normalizeAcademicYear(s.academicYear) : normalizeAcademicYear('2025-26');
+                                const isSelectedYear = effectiveYear === normalizeAcademicYear(academicYear);
+                                return matchesGrade && !isSelectedYear;
+                            });
                             await Promise.all(toUpdate.map(s => {
                                 return db.collection('students').doc(s.id).update({ academicYear: academicYear });
                             }));
@@ -634,9 +659,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                     }}
                     className="px-3 py-1.5 bg-amber-600 text-white rounded-lg font-bold text-xs shadow hover:bg-amber-700 transition"
                   >
-                    Move all to {academicYear}
+                    Permanently move all to {academicYear}
                   </button>
-                  <p className="flex-1 text-xs font-semibold uppercase tracking-wider opacity-75 self-center">
+                  <p className="flex-1 text-xs font-semibold uppercase tracking-wider opacity-75 self-center min-w-[200px]">
                     Check the toggle on the Dashboard to change your viewing year.
                   </p>
                 </div>
@@ -645,9 +670,21 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
           </div>
         )}
 
-        <div className="mt-6 flex justify-end items-center gap-2 print-hidden flex-wrap">
-            <span className="text-sm font-semibold text-slate-600">Sort by:</span>
-            <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
+        <div className="mt-6 flex justify-between items-center gap-2 print-hidden flex-wrap">
+            <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                        type="checkbox" 
+                        checked={showAllYears} 
+                        onChange={(e) => setShowAllYears(e.target.checked)}
+                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300 transition-colors"
+                    />
+                    <span className="text-sm font-semibold text-slate-700 group-hover:text-sky-700 transition-colors">Show students from all years</span>
+                </label>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-600">Sort by:</span>
+                <div className="flex rounded-lg border border-slate-300 p-0.5 bg-slate-100">
                 <button 
                     onClick={() => setSortCriteria('rollNo')}
                     className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${sortCriteria === 'rollNo' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:bg-white'}`}
@@ -667,9 +704,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                     Total Marks
                 </button>
             </div>
+        </div>
+        <div className="flex items-center gap-2">
             <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition">Export Excel</button>
             <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition">Export PDF</button>
         </div>
+    </div>
         
         <div className="mt-2 overflow-x-auto border rounded-lg" ref={tableRef}>
             <table id="mark-statement-table" className="min-w-[2000px] text-sm">
@@ -725,6 +765,11 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             {/* FIX: Added text-slate-800 to make student names visible */}
                             <td className="px-2 py-1 font-medium text-slate-800 border-r whitespace-nowrap">
                                 {student.name}
+                                {normalizeAcademicYear(student.academicYear) !== normalizeAcademicYear(academicYear) && (
+                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                        Year: {student.academicYear || 'None'}
+                                    </span>
+                                )}
                                 {student.status !== StudentStatus.ACTIVE && (
                                     <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">
                                         {student.status}

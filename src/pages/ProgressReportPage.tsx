@@ -26,7 +26,8 @@ const calculateTermSummary = (
     exam: Exam | undefined,
     examId: 'terminal1' | 'terminal2' | 'terminal3',
     gradeDef: GradeDefinition,
-    allStudents: Student[]
+    allStudents: Student[],
+    academicYear: string
 ) => {
     if (!gradeDef || !gradeDef.subjects) return null;
 
@@ -47,7 +48,10 @@ const calculateTermSummary = (
         const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
         const matchesYear = effectiveYear === selectedYearNorm;
         
-        return matchesGrade && matchesStatus && matchesYear;
+        // Inclusively include students who have marks for this exam even if year mismatch
+        const hasMarksForExam = s.academicPerformance?.some(e => e.id === examId && e.results && e.results.length > 0);
+
+        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam);
     });
     const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
     const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
@@ -352,7 +356,7 @@ const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allS
     const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
 
     const processedReportData = useMemo(() => {
-        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents);
+        return calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents, academicYear);
     }, [student, exam, examTemplate.id, gradeDef, allStudents]);
 
     const classTeacher = useMemo(() => {
@@ -514,9 +518,9 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     }), [student?.academicPerformance]);
 
     const summaries = {
-        terminal1: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal1, 'terminal1', gradeDef, classmates) : null, [student, exams.terminal1, gradeDef, classmates]),
-        terminal2: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal2, 'terminal2', gradeDef, classmates) : null, [student, exams.terminal2, gradeDef, classmates]),
-        terminal3: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal3, 'terminal3', gradeDef, classmates) : null, [student, exams.terminal3, gradeDef, classmates]),
+        terminal1: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal1, 'terminal1', gradeDef, classmates, academicYear) : null, [student, exams.terminal1, gradeDef, classmates, academicYear]),
+        terminal2: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal2, 'terminal2', gradeDef, classmates, academicYear) : null, [student, exams.terminal2, gradeDef, classmates, academicYear]),
+        terminal3: useMemo(() => student && gradeDef && classmates.length > 0 ? calculateTermSummary(student, exams.terminal3, 'terminal3', gradeDef, classmates, academicYear) : null, [student, exams.terminal3, gradeDef, classmates, academicYear]),
     };
 
     const singleExam = useMemo(() => exams[examId as 'terminal1' | 'terminal2' | 'terminal3'], [exams, examId]);

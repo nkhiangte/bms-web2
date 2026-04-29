@@ -236,13 +236,33 @@ export const normalizeAcademicYear = (year?: string): string => {
     return cleanYear;
 };
 
+const SUBJECT_ALIASES: string[][] = [
+    ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl'],
+    ['englishii', 'english2', 'engii', 'eng2'],
+    ['math', 'maths', 'mathematics'],
+    ['socialstudies', 'socialscience', 'socstudies', 'evs'],
+    ['mizo', 'lushei'],
+    ['drawing', 'art'],
+    ['cursive', 'writing', 'handwriting'],
+    ['spelling', 'spellings']
+];
+
 /**
  * Aggressive normalization: strips ALL non-alphanumeric characters, including spaces.
  * This ensures "English I" and "English" or "English - I" can be compared reliably.
+ * Also canonicalizes known subject aliases.
  */
 export const normalizeSubjectName = (name: string): string => {
     if (!name) return '';
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    for (const group of SUBJECT_ALIASES) {
+        if (group.includes(normalized)) {
+            return group[0];
+        }
+    }
+    
+    return normalized;
 };
 
 /**
@@ -253,22 +273,7 @@ export const subjectsMatch = (name1: string, name2: string): boolean => {
     const n2 = normalizeSubjectName(name2);
     
     if (!n1 || !n2) return false;
-    if (n1 === n2) return true;
-
-    // Mapping for common subject aliases to handle inconsistencies in data entry.
-    // Since normalizeSubjectName strips spaces, "English I" becomes "englishi".
-    const aliases: string[][] = [
-        ['english', 'englishi', 'english1', 'engi', 'eng1', 'englishl'],
-        ['englishii', 'english2', 'engii', 'eng2'],
-        ['math', 'maths', 'mathematics'],
-        ['socialscience', 'socialstudies', 'socstudies', 'evs'],
-        ['mizo', 'lushei'],
-        ['drawing', 'art'],
-        ['cursive', 'writing', 'handwriting'],
-        ['spelling', 'spellings']
-    ];
-
-    return aliases.some(group => group.includes(n1) && group.includes(n2));
+    return n1 === n2;
 };
 
 export const calculateStudentResult = (student: Student, gradeDef: GradeDefinition): 'PASS' | 'FAIL' => {

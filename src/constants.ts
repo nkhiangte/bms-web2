@@ -345,7 +345,7 @@ export const examRoutines: Routine[] = [
         exams: [
             { date: "06/11/2025", day: "Thursday", morning: "Mathematics" },
             { date: "07/11/2025", day: "Friday", morning: "English" },
-            { date: "10/11/2025", day: "Monday", morning: "Social Science" },
+            { date: "10/11/2025", day: "Monday", morning: "Social Studies" },
             { date: "11/11/2025", day: "Tuesday", morning: "Mizo" },
             { date: "12/11/2025", day: "Wednesday", morning: "Science" },
         ]
@@ -355,7 +355,7 @@ export const examRoutines: Routine[] = [
         exams: [
             { date: "06/11/2025", day: "Thursday", morning: "Mathematics" },
             { date: "07/11/2025", day: "Friday", morning: "English I", afternoon: "English II" },
-            { date: "10/11/2025", day: "Monday", morning: "Social Science" },
+            { date: "10/11/2025", day: "Monday", morning: "Social Studies" },
             { date: "11/11/2025", day: "Tuesday", morning: "Mizo" },
             { date: "12/11/2025", day: "Wednesday", morning: "Science" },
         ]

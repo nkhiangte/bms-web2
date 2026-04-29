@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, User } from '@/types';
-import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon } from '@/components/Icons';
+import { BackIcon, PrinterIcon, SpinnerIcon, SaveIcon, InboxArrowDownIcon, EditIcon, CogIcon, HomeIcon, SearchIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
 import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
 import { ImportMarksModal } from '@/components/ImportMarksModal';
@@ -59,10 +59,8 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     
     return students.filter(s => {
         const matchesGrade = s.grade === grade;
-        const matchesStatus = s.status === StudentStatus.ACTIVE || 
-                              s.status === StudentStatus.TRANSFERRED || 
-                              s.status === StudentStatus.GRADUATED || 
-                              s.status === StudentStatus.DROPPED;
+        // Inclusively include ALL students in this grade for now, regardless of status.
+        // The user is having trouble finding students.
         
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
         const selectedYearNorm = normalizeAcademicYear(academicYear);
@@ -78,7 +76,9 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             exam.results.length > 0
         );
         
-        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam || showAllYears);
+        // If showAllYears is ON, we show everything in the grade.
+        // If OFF, we show only this year or those with existing marks.
+        return matchesGrade && (matchesYear || hasMarksForExam || showAllYears);
     }).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, grade, academicYear, examId, showAllYears]);
 
@@ -637,7 +637,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                   </button>
                   <button 
                     onClick={async () => {
-                        if (!grade || !window.confirm(`Move ${otherYearCount} students to ${academicYear}?`)) return;
+                        if (!grade || !window.confirm(`Restore and move ${otherYearCount} students to ${academicYear} and set status to Active?`)) return;
                         setIsSaving(true);
                         try {
                             const toUpdate = students.filter(s => {
@@ -647,25 +647,162 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 return matchesGrade && !isSelectedYear;
                             });
                             await Promise.all(toUpdate.map(s => {
-                                return db.collection('students').doc(s.id).update({ academicYear: academicYear });
+                                return db.collection('students').doc(s.id).update({ 
+                                    academicYear: academicYear,
+                                    status: StudentStatus.ACTIVE
+                                });
                             }));
-                            alert("Success! Students updated.");
+                            alert(`Success! ${toUpdate.length} students updated to ${academicYear} and status set to Active.`);
                             window.location.reload();
                         } catch (e) {
                             console.error(e);
+                            alert("Failed to update students.");
                         } finally {
                             setIsSaving(false);
                         }
                     }}
-                    className="px-3 py-1.5 bg-amber-600 text-white rounded-lg font-bold text-xs shadow hover:bg-amber-700 transition"
+                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-xs shadow hover:bg-emerald-700 transition"
                   >
-                    Permanently move all to {academicYear}
+                    Restore & Move all to {academicYear}
                   </button>
                   <p className="flex-1 text-xs font-semibold uppercase tracking-wider opacity-75 self-center min-w-[200px]">
                     Check the toggle on the Dashboard to change your viewing year.
                   </p>
                 </div>
               </div>
+            </div>
+            
+            <div className="mb-4 bg-sky-50 border border-sky-200 rounded-xl p-4 print-hidden shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-sky-800 flex items-center gap-2">
+                        <SearchIcon className="w-5 h-5" />
+                        Locate Missing Students
+                    </h3>
+                    <button 
+                        onClick={() => {
+                            const nameList = prompt("Paste student names (one per line or comma separated):");
+                            if (!nameList) return;
+                            
+                            const names = nameList.split(/[\n,]/).map(n => n.trim().toLowerCase()).filter(n => n.length > 2);
+                            if (names.length === 0) return;
+                            
+                            const found = students.filter(s => {
+                                const sName = s.name.toLowerCase();
+                                return names.some(name => sName.includes(name));
+                            });
+                            
+                            if (found.length === 0) {
+                                alert("No students found matching those names in the system.");
+                            } else {
+                                const details = found.map(s => `• ${s.name} (Now in: ${s.grade}, Year: ${s.academicYear || 'None'}, Status: ${s.status}) - ID: ${s.id}`).join('\n');
+                                if (window.confirm(`Found ${found.length} student(s):\n\n${details}\n\nWould you like to MOVE all these students to Class ${grade} for ${academicYear} and set them to Active?`)) {
+                                    setIsSaving(true);
+                                    Promise.all(found.map(s => {
+                                        return db.collection('students').doc(s.id).update({
+                                            grade: grade,
+                                            academicYear: academicYear,
+                                            status: StudentStatus.ACTIVE
+                                        });
+                                    })).then(() => {
+                                        alert(`Success! ${found.length} students moved to ${grade} (${academicYear}).`);
+                                        window.location.reload();
+                                    }).catch(err => {
+                                        console.error(err);
+                                        alert("Failed to update some students.");
+                                    }).finally(() => setIsSaving(false));
+                                }
+                            }
+                        }}
+                        className="text-xs bg-sky-600 text-white px-3 py-1 rounded shadow hover:bg-sky-700 font-bold"
+                    >
+                        Bulk Search & Restore
+                    </button>
+                    <button 
+                        onClick={() => {
+                            const userNames = [
+                                "Lalhlupuii Renthlei", "JH Jenny Lalhmachhuani", "Nangbiaksianmunga", "Vanpengcung", 
+                                "Elisha Lalzuilawmkima", "Sarah Dimbiakmuani", "L.Deihsiani", "Tingngaihkimi", 
+                                "Sarah Lallawmawmi", "Lalrinhlua", "Esther Vanlalchawipuii", "BS Thangmuanlian", 
+                                "Lawmsangzuali Hmar", "JC Rolungmuana", "Lalhmingmawii", "Lalvenhima", 
+                                "Liansiankhual", "Zingtinpar", "N.Nunpuii", "Philip Nangkhawthawn", 
+                                "JH Lalruatsangi", "Kamzakapa", "Chingsawmmangi", "Vanlalvenhimi", 
+                                "Golden mawii", "Elimore Rualthanchhingi", "Reuben Lalruatfela", 
+                                "Jedidia Lalhnehpuii", "C.Romawii", "Lalramngheti", "Lalpekhlui", 
+                                "Lalruatkima", "Vanlalramnghaki", "Pricilla Zambiaksiami", "Vanlallawma", 
+                                "Lalhmingliana", "Lalpekpari"
+                            ];
+                            
+                            const found = students.filter(s => {
+                                const sName = s.name.toLowerCase();
+                                return userNames.some(name => sName.includes(name.toLowerCase()) || name.toLowerCase().includes(sName));
+                            });
+                            
+                            if (found.length === 0) {
+                                alert("Could not find any of these students in the current database. They may have been deleted or archived.");
+                            } else {
+                                const details = found.map(s => `• ${s.name} (Class: ${s.grade}, Year: ${s.academicYear}, Status: ${s.status})`).join('\n');
+                                if (window.confirm(`Found ${found.length} of the requested students in the system:\n\n${details}\n\nMove all of them to ${grade} for ${academicYear} and set to Active?`)) {
+                                    setIsSaving(true);
+                                    Promise.all(found.map(s => {
+                                        return db.collection('students').doc(s.id).update({
+                                            grade: grade,
+                                            academicYear: academicYear,
+                                            status: StudentStatus.ACTIVE
+                                        });
+                                    })).then(() => {
+                                        alert("Success! Students restored.");
+                                        window.location.reload();
+                                    }).finally(() => setIsSaving(false));
+                                }
+                            }
+                        }}
+                        className="text-xs bg-amber-600 text-white px-3 py-1 rounded shadow hover:bg-amber-700 font-bold"
+                    >
+                        Fix Missing List (37 names)
+                    </button>
+                </div>
+                <p className="text-sm text-sky-700 mb-3">If a student is missing, search for them here. Use "Bulk Search & Restore" to fix many names at once.</p>
+                <div className="flex gap-2">
+                    <input 
+                        type="text" 
+                        placeholder="Quick search by name..." 
+                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500"
+                        onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                                const term = e.currentTarget.value.toLowerCase();
+                                if (!term) return;
+                                const matches = students.filter(s => s.name.toLowerCase().includes(term));
+                                if (matches.length === 0) {
+                                    alert(`No student found matching "${term}"`);
+                                } else {
+                                    const student = matches[0];
+                                    const details = matches.map(s => `${s.name}: ${s.grade} (${s.academicYear || 'No Year'}) - Status: ${s.status}`).join('\n');
+                                    
+                                    if (matches.length === 1 && student.grade !== grade) {
+                                        if (window.confirm(`Found ${student.name} in ${student.grade} (${student.academicYear}).\n\nMove them to Class ${grade} for ${academicYear}?`)) {
+                                            setIsSaving(true);
+                                            try {
+                                                await db.collection('students').doc(student.id).update({
+                                                    grade: grade,
+                                                    academicYear: academicYear,
+                                                    status: StudentStatus.ACTIVE
+                                                });
+                                                alert("Success!");
+                                                window.location.reload();
+                                            } catch (err) {
+                                                alert("Update failed.");
+                                            } finally {
+                                                setIsSaving(false);
+                                            }
+                                        }
+                                    } else {
+                                        alert(`Found ${matches.length} student(s):\n\n${details}\n\nYou can update them using the Bulk tool if needed.`);
+                                    }
+                                }
+                            }
+                        }}
+                    />
+                </div>
             </div>
           </div>
         )}

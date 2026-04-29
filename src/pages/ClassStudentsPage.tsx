@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
-import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon } from '@/components/Icons';
+import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon, CheckCircleIcon } from '@/components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp, normalizeAcademicYear } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { ImportStudentsModal } from '@/components/ImportStudentsModal';
@@ -21,6 +21,7 @@ interface ClassStudentsPageProps {
   academicYear: string;
   onOpenImportModal: (grade: Grade | null) => void;
   onDelete: (student: Student) => Promise<void>;
+  onReinstate?: (student: Student) => Promise<void>;
   user: User;
   assignedGrade: Grade | null;
   onAddStudentToClass: (studentData: Omit<Student, 'id'>) => Promise<void>;
@@ -36,6 +37,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     academicYear,
     onOpenImportModal,
     onDelete,
+    onReinstate,
     user,
     assignedGrade,
     onAddStudentToClass,
@@ -254,6 +256,19 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                             </Link>
                                         )}
                                          <div className="flex items-center gap-2">
+                                             {student.status === StudentStatus.DROPPED && isStaff && onReinstate && (
+                                                 <button 
+                                                    onClick={() => {
+                                                        if (window.confirm(`Are you sure you want to reinstate ${student.name}?`)) {
+                                                            onReinstate(student);
+                                                        }
+                                                    }}
+                                                    className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full"
+                                                    title="Reinstate Student"
+                                                 >
+                                                     <CheckCircleIcon className="w-5 h-5"/>
+                                                 </button>
+                                             )}
                                              {student.contact && (
                                                  <>
                                                     <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full">

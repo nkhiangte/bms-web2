@@ -362,8 +362,22 @@ export const getProcessedClassData = (
   } = {}
 ): ProcessedStudent[] => {
   const { showAllYears = false, marksOverride } = options;
-  const gradeDef = gradeDefinitions[grade];
+  let gradeDef = gradeDefinitions[grade];
   if (!gradeDef) return [];
+
+  const isClassIXorX = grade === Grade.IX || grade === Grade.X;
+  
+  // Normalize IX/X definitions for consistent reporting
+  if (isClassIXorX) {
+    gradeDef = {
+      ...gradeDef,
+      subjects: gradeDef.subjects.map(sd => ({
+        ...sd,
+        examFullMarks: sd.examFullMarks || 100,
+        activityFullMarks: 0
+      }))
+    };
+  }
 
   const selectedYearNorm = normalizeAcademicYear(academicYear);
 
@@ -434,8 +448,7 @@ export const getProcessedClassData = (
   const gradedSubjects = Array.from(subjectsMap.values()).filter(s => s.gradingSystem === 'OABC');
 
   const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(grade);
-  const isClassIXorX = grade === Grade.IX || grade === Grade.X;
-  const isIXTerminal3 = (grade === Grade.IX || grade === Grade.X) && examId === 'terminal3';
+  const isIXTerminal3 = isClassIXorX && examId === 'terminal3';
   const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade);
 
   // 3. Process marks
@@ -526,11 +539,11 @@ export const getProcessedClassData = (
   });
 
   // 4. Ranking
-  const passedStudents = studentData.filter(s => s.result === 'PASS');
+  const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS');
   
   return studentData.map(s => {
     let rank: number | '-' = '-';
-    if (s.result === 'PASS') {
+    if (s.result === 'PASS' || s.result === 'SIMPLE PASS') {
       // Standard Competition Ranking: 1 + number of students with strictly higher marks
       const higherCount = passedStudents.filter(other => other.grandTotal > s.grandTotal).length;
       rank = higherCount + 1;

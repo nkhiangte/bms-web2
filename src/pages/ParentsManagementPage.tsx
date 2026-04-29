@@ -40,7 +40,7 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
 
     const parentUsers = useMemo(() => {
         return allUsers
-            .filter(user => ['parent', 'pending_parent'].includes(user.role))
+            .filter(user => ['parent', 'pending_parent'].includes(user.role) || user.isParentPending)
             .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
     }, [allUsers]);
 
@@ -60,9 +60,12 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
             const existingIds = reviewingUser.studentIds || [];
             const newStudentIds = [...new Set([...existingIds, ...studentIdsToLink])];
 
+            const isAlreadyStaff = ['admin', 'user', 'warden'].includes(reviewingUser.role);
+
             await onUpdateUser(reviewingUser.uid, {
-                role: 'parent',
+                role: isAlreadyStaff ? reviewingUser.role : 'parent',
                 studentIds: newStudentIds,
+                isParentPending: firebase.firestore.FieldValue.delete() as any,
                 claimedStudents: firebase.firestore.FieldValue.delete(),
                 claimedStudentId: firebase.firestore.FieldValue.delete(),
                 claimedDateOfBirth: firebase.firestore.FieldValue.delete(),
@@ -112,7 +115,7 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{user.email}</td>
                                         <td className="px-6 py-4 text-sm">
-                                            {user.role === 'pending_parent' ? (
+                                            {user.role === 'pending_parent' || user.isParentPending ? (
                                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Pending Approval</span>
                                             ) : (
                                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">Active</span>
@@ -129,7 +132,7 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                                 <button onClick={() => toggleExpand(user.uid)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-full" title="More Info">
                                                     <ChevronUpIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                 </button>
-                                                {user.role === 'pending_parent' && (
+                                                {(user.role === 'pending_parent' || user.isParentPending) && (
                                                     <button onClick={() => setReviewingUser(user)} className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700">
                                                         <CheckIcon className="w-4 h-4" /> Review & Approve
                                                     </button>

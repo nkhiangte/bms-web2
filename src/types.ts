@@ -306,6 +306,8 @@ export interface User {
     claimedDateOfBirth?: string;
     claimedStudents?: StudentClaim[];
     registrationDetails?: any;
+    isParentPending?: boolean; // For users who are already staff but also want to be parents
+    secondaryEmails?: string[]; // Support for multiple emails
 }
 
 export interface SubjectDefinition {
@@ -398,7 +400,7 @@ export interface Staff {
     bloodGroup: BloodGroup;
     aadhaarNumber: string;
     contactNumber: string;
-    emailAddress: string;
+    emailAddress: string; // Can contain multiple emails comma-separated
     permanentAddress: string;
     currentAddress: string;
     educationalQualification: Qualification;

@@ -231,38 +231,50 @@ const ParentRegistrationPage: React.FC = () => {
                 }
             }
 
+            // Handle multiple emails
+            const emailList = formData.email ? formData.email.split(',').map(e => e.trim()).filter(e => e.length > 0) : [];
+            const primaryEmail = emailList.length > 0 ? emailList[0] : '';
+            const secondaryEmails = emailList.length > 1 ? emailList.slice(1) : [];
+
             // 3. Save detailed record to Firestore
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const existingData = userDoc.exists ? userDoc.data() as any : {};
+            const isAlreadyStaff = ['admin', 'user', 'warden'].includes(existingData.role);
+            
             await db.collection('users').doc(user.uid).set({
                 displayName: formData.fullName,
-                email: formData.email, // Can be empty now
+                email: primaryEmail || user.email || '', 
+                secondaryEmails: secondaryEmails,
                 phone: formData.contactNumber,
-                role: 'pending_parent',
-                    claimedStudents: formData.students, // New structure for array of students
-                    registrationDetails: {
-                        fullName: formData.fullName,
-                        relationship: formData.relationship,
-                        contactNumber: formData.contactNumber,
-                        address: formData.address,
-                        city: formData.city,
-                        state: formData.state,
-                        zip: formData.zip,
-                        language: formData.language,
-                        communicationPreferences: {
-                            sms: formData.comms_sms,
-                            email: formData.comms_email,
-                            push: formData.comms_push
-                        },
-                        securityQuestion: formData.securityQuestion,
-                        securityAnswer: formData.securityAnswer,
-                        agreements: {
-                            terms: formData.agreeTerms,
-                            privacy: formData.agreePrivacy,
-                            identity: formData.agreeIdentity,
-                            photoRelease: formData.agreePhoto
-                        }
+                role: isAlreadyStaff ? existingData.role : 'pending_parent',
+                isParentPending: isAlreadyStaff ? true : false,
+                claimedStudents: formData.students, // New structure for array of students
+                registrationDetails: {
+                    fullName: formData.fullName,
+                    relationship: formData.relationship,
+                    contactNumber: formData.contactNumber,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    zip: formData.zip,
+                    language: formData.language,
+                    communicationPreferences: {
+                        sms: formData.comms_sms,
+                        email: formData.comms_email,
+                        push: formData.comms_push
                     },
-                    createdAt: new Date().toISOString()
-                });
+                    securityQuestion: formData.securityQuestion,
+                    securityAnswer: formData.securityAnswer,
+                    agreements: {
+                        terms: formData.agreeTerms,
+                        privacy: formData.agreePrivacy,
+                        identity: formData.agreeIdentity,
+                        photoRelease: formData.agreePhoto
+                    }
+                },
+                updatedAt: new Date().toISOString(),
+                createdAt: existingData.createdAt || new Date().toISOString()
+            }, { merge: true });
 
                 alert("Account created successfully! Please wait for admin approval. You will be notified once your account is active.");
                 navigate('/login');
@@ -319,7 +331,7 @@ const ParentRegistrationPage: React.FC = () => {
                                     auth.signOut().then(() => navigate('/login'));
                                 }
                             }}
-                            className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-100 shadow-sm"
                          >
                             Sign Out
                          </button>
@@ -461,8 +473,9 @@ const ParentRegistrationPage: React.FC = () => {
                                     <p className="text-xs text-sky-700 mb-3">If you ever lose access to your phone or clear your browser cache, you can log in using an Email and Password. Highly recommended.</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700">Email Address (Optional)</label>
-                                            <input type="email" value={formData.email} onChange={e => updateFormData('email', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="parent@example.com" />
+                                            <label className="block text-sm font-semibold text-slate-700">Email Address(es) (Optional)</label>
+                                            <input type="text" value={formData.email} onChange={e => updateFormData('email', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="e.g. parent1@mail.com, parent2@mail.com" />
+                                            <p className="text-[10px] text-slate-500 mt-1">Separate multiple emails with commas.</p>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-slate-700">Password (Optional)</label>

@@ -14,6 +14,7 @@ interface SidebarProps {
 
 const portalNavLinks = [
     { name: 'Portal Home', path: '/portal/dashboard', parentPath: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden', 'pending_parent'] },
+    { name: 'Parent Dashboard', path: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'warden'], hidden: (user: User) => !(user.studentIds && user.studentIds.length > 0) },
     { name: 'Admin Panel', path: '/portal/admin', icon: <CogIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'My Profile', path: '/portal/profile', icon: <UserIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'warden'] },
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -77,13 +78,17 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
             <nav className="flex-1 px-2 space-y-1" aria-label="Sidebar">
                 <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Portal Menu</h3>
                 {portalNavLinks
-                    .filter(link => link.roles.includes(user.role))
+                    .filter(link => {
+                        const hasRole = link.roles.includes(user.role) || (link.roles.includes('parent') && Array.isArray(user.studentIds) && user.studentIds.length > 0);
+                        const isHidden = (link as any).hidden ? (link as any).hidden(user) : false;
+                        return hasRole && !isHidden;
+                    })
                     .map(item => {
                         let path = item.path;
 
                         // Handle parent-specific paths
-                        if (user.role === 'parent') {
-                            if ((item as any).parentPath) {
+                        if (user.role === 'parent' || (user.studentIds && user.studentIds.length > 0)) {
+                            if ((item as any).parentPath && user.role === 'parent') {
                                 path = (item as any).parentPath;
                             } else if (item.name === 'Attendance Log') {
                                 // Only show this link if the parent has exactly ONE child.
@@ -91,7 +96,6 @@ const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user
                                     path = `/portal/student/${user.studentIds[0]}/attendance-log`;
                                 } else {
                                     // If 0 or >1 children, don't render this sidebar item.
-                                    // They can access logs from the parent dashboard.
                                     return null;
                                 }
                             }

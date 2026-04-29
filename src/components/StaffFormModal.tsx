@@ -300,8 +300,17 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({ isOpen, onClose, onSubm
                         <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-800">Email</label>
-                        <input type="email" name="emailAddress" value={formData.emailAddress} onChange={handleChange} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" required />
+                        <label className="block text-sm font-bold text-slate-800">Email(s)</label>
+                        <input 
+                            type="text" 
+                            name="emailAddress" 
+                            value={formData.emailAddress} 
+                            onChange={handleChange} 
+                            className="mt-1 block w-full border-slate-300 rounded-md shadow-sm h-[42px] px-4" 
+                            placeholder="e.g., mail1@bms.com, mail2@gmail.com"
+                            required 
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">Separate multiple emails with commas.</p>
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-800">Current Address</label>

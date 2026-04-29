@@ -15,6 +15,7 @@ interface StudentDetailPageProps {
   students: Student[];
   onEdit: (student: Student) => Promise<void>;
   onDelete: (studentId: string) => Promise<void>;
+  onReinstate?: (student: Student) => Promise<void>;
   academicYear: string;
   user: User;
   assignedGrade: Grade | null;
@@ -45,7 +46,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 )
 
 
-const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, onDelete, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
+const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, onDelete, onReinstate, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
   const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
@@ -135,6 +136,14 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
     }
   };
 
+  const handleReinstate = async () => {
+    if (student && onReinstate) {
+        if (window.confirm(`Are you sure you want to reinstate ${student.name}?`)) {
+            await onReinstate(student);
+        }
+    }
+  };
+
 
   if (!student) {
     return (
@@ -205,9 +214,25 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
             <PhotoWithFallback src={student.photographUrl} alt={`${student.name}'s photograph`} />
         </div>
         <div className="text-center md:text-left flex-grow">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">{student.name}</h1>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
+             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">{student.name}</h1>
+             {student.status !== StudentStatus.ACTIVE && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wider">
+                    {student.status}
+                </span>
+             )}
+          </div>
           <p className="text-slate-700 text-lg mt-1">{student.grade} - ID: <span className="font-semibold">{formattedStudentId}</span></p>
            <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
+             {student.status === StudentStatus.DROPPED && isAdmin && onReinstate && (
+                <button
+                    onClick={handleReinstate}
+                    className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition hover:-translate-y-0.5"
+                >
+                    <CheckCircleIcon className="h-5 w-5" />
+                    Reinstate Student
+                </button>
+             )}
              {canEdit && (
                 <button
                   onClick={() => setIsEditModalOpen(true)}

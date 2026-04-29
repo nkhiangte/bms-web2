@@ -12,6 +12,7 @@ interface HomeResultPopupProps {
 const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEnabled, setIsEnabled] = useState(false);
     const [imageUrl, setImageUrl] = useState<string>('');
 
     useEffect(() => {
@@ -19,26 +20,29 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
         const hasShown = sessionStorage.getItem('hasShownHomePopup');
         const isAdmin = user?.role === 'admin';
         
-        // Fetch the popup config from Firestore
-        const unsubscribe = db.collection('website_content').doc('home_popup_config').onSnapshot((doc) => {
+        // 1. Fetch the image URL from its dedicated document
+        const unsubImage = db.collection('website_content').doc('home_popup_image').onSnapshot((doc) => {
+            if (doc.exists) {
+                setImageUrl(doc.data()?.value || '');
+            }
+        });
+
+        // 2. Fetch the popup config (enabled status)
+        const unsubConfig = db.collection('website_content').doc('home_popup_config').onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
                 if (data) {
-                    setImageUrl(data.imageUrl || '');
-                    if (data.enabled || isAdmin) {
+                    setIsEnabled(data.enabled ?? false);
+                    if ((data.enabled || isAdmin)) {
                         if (!hasShown || isAdmin) {
-                            // Delay opening slightly for effect
-                            setTimeout(() => {
-                                setIsOpen(true);
-                            }, 1000);
+                            setTimeout(() => setIsOpen(true), 1000);
                         }
                     }
                 }
-            } else {
-                // If it doesn't exist, and user is admin, show it so they can set it up
-                if (isAdmin) {
-                    setIsOpen(true);
-                }
+            } else if (isAdmin) {
+                // If config doesn't exist and user is admin, show it to allow setup
+                setIsOpen(true);
+                setIsEnabled(false);
             }
             setIsLoading(false);
         }, (error) => {
@@ -46,18 +50,18 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
             setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubImage();
+            unsubConfig();
+        };
     }, [user]);
 
     const handleTogglePopup = async () => {
         if (!user || user.role !== 'admin') return;
         
         try {
-            const configDoc = await db.collection('website_content').doc('home_popup_config').get();
-            const currentEnabled = configDoc.exists ? configDoc.data()?.enabled : false;
-            
             await db.collection('website_content').doc('home_popup_config').set({
-                enabled: !currentEnabled,
+                enabled: !isEnabled,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.email
             }, { merge: true });
@@ -107,7 +111,7 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                             <div className="relative w-full h-full">
                                 <EditableContent 
                                     id="home_popup_image" 
-                                    defaultContent={imageUrl || "https://via.placeholder.com/1200x1600.png?text=HSLC+2026+Results+-+Upload+Here"} 
+                                    defaultContent="https://placehold.co/1200x1600/0f172a/white?text=HSLC+2026+Results\nUpload+Image+Here" 
                                     type="image" 
                                     user={user}
                                     className="w-full h-auto object-contain"
@@ -133,10 +137,10 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                                     <button 
                                         onClick={handleTogglePopup}
                                         className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                            imageUrl ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                            isEnabled ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
                                         }`}
                                     >
-                                        {imageUrl ? 'Active (Click to Disable)' : 'Inactive (Click to Enable)'}
+                                        {isEnabled ? 'Active (Click to Disable)' : 'Inactive (Click to Enable)'}
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-4">

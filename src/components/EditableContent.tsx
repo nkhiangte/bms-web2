@@ -210,25 +210,28 @@ const EditableContent: React.FC<EditableContentProps> = ({
                     src={content} 
                     alt={imgAlt} 
                     className={`w-full h-full object-cover ${isSaving ? 'opacity-50' : ''}`} 
+                    onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.jp/24/0f172a/ffffff/800x600.png?text=HSLC+Result+List+Placeholder\n(Please+Upload+Real+Image)';
+                    }}
                 />
                 
                 {isSaving && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-[120]">
                         <SpinnerIcon className="w-10 h-10 text-white" />
                     </div>
                 )}
 
                 {isAdmin && (
-                    <div className={`absolute z-20 transition-opacity ${alwaysShowButton ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${buttonClassName || 'top-4 right-4'}`}>
+                    <div className={`absolute z-[120] transition-opacity ${alwaysShowButton ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${buttonClassName || 'top-4 right-4'}`}>
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
                                 fileInputRef.current?.click();
                             }}
-                            className="bg-white text-sky-700 p-2 rounded-full shadow-lg border border-sky-100 hover:bg-sky-50 transition-transform hover:scale-110 flex items-center justify-center"
-                            title="Change Image (Admin)"
+                            className="bg-sky-600 text-white p-3 rounded-full shadow-2xl border-2 border-white hover:bg-sky-700 transition-all hover:scale-125 flex items-center justify-center"
+                            title="Upload Results Image (Admin Only)"
                         >
-                            <EditIcon className="w-5 h-5" />
+                            <EditIcon className="w-6 h-6" />
                         </button>
                         <input 
                             type="file" 

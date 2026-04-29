@@ -106,23 +106,26 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                             <XIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
 
-                        <div className="overflow-y-auto w-full h-full bg-slate-900 flex items-center justify-center">
-                            {/* The content can be an image or editable content for admin */}
-                            <div className="relative w-full h-full">
+                        <div className="flex-grow overflow-y-auto w-full bg-slate-900 flex flex-col items-center">
+                            <div className="relative w-full min-h-[400px]">
                                 <EditableContent 
                                     id="home_popup_image" 
-                                    defaultContent="https://placehold.co/1200x1600/0f172a/white?text=HSLC+2026+Results\nUpload+Image+Here" 
+                                    defaultContent="https://placehold.jp/24/0f172a/ffffff/1200x1600.png?text=HSLC+2026+Distinction+List\n(Click+the+blue+pencil+on+top+left+to+upload)" 
                                     type="image" 
                                     user={user}
-                                    className="w-full h-auto object-contain"
-                                    buttonClassName="top-4 left-4"
+                                    className="w-full h-auto"
+                                    buttonClassName="top-10 left-10"
                                     alwaysShowButton={true}
                                     imgAlt="HSLC 2026 Distinction Results"
                                 />
                                 
                                 {user?.role === 'admin' && (
-                                    <div className="absolute bottom-4 left-4 z-[110] bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-[10px] text-white/70 uppercase tracking-widest font-bold pointer-events-none">
-                                        Admin Interface: Popup Status
+                                    <div className="absolute bottom-6 left-6 z-[110] bg-black/40 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-[11px] text-white/80 uppercase tracking-widest font-black pointer-events-none flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                                            Admin Edit Mode
+                                        </div>
+                                        <div className="text-[9px] opacity-60 font-normal">Popup will only show to visitors if Enabled</div>
                                     </div>
                                 )}
                             </div>

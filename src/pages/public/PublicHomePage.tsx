@@ -4,6 +4,7 @@ import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeI
 import { NewsItem, User } from '@/types';
 import { formatDateForNews, stripHtml } from '@/utils';
 import EditableContent from '@/components/EditableContent';
+import HomeResultPopup from '@/components/HomeResultPopup';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -50,6 +51,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
 
     return (
         <>
+            <HomeResultPopup user={user} />
             {/* ── HERO — MP4 Video Background ── */}
             <section
                 className="relative w-full overflow-hidden"

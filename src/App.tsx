@@ -283,10 +283,16 @@ const App: React.FC = () => {
 
   const handleUpdateAcademicYear = async (year: string) => {
     try { 
-      await db.collection('config').doc('academic').set({ currentAcademicYear: year }); 
+      // Only admins can update the global default academic year
+      if (user?.role === 'admin') {
+        await db.collection('config').doc('academic').set({ currentAcademicYear: year }); 
+        addNotification(`Global academic year set to ${year}.`, 'success'); 
+      } else {
+        addNotification(`Academic year view set to ${year} for this session.`, 'success'); 
+      }
+      
       setAcademicYear(year); 
       localStorage.setItem('selectedAcademicYear', year);
-      addNotification(`Academic year set to ${year}.`, 'success'); 
     }
     catch (error: any) { addNotification('Failed to set academic year.', 'error'); }
   };
@@ -657,10 +663,26 @@ const App: React.FC = () => {
         try {
           const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
           const isAdminEmail = firebaseUser.email === 'nkhiangte@gmail.com';
-          if (userDoc.exists) { setUser({ uid: firebaseUser.uid, ...userDoc.data() } as User); }
-          else { setUser({ uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending', isNewUser: true } as User & { isNewUser?: boolean }); }
-        } catch { setUser(null); }
-      } else { setUser(null); }
+          const userData = userDoc.exists ? { uid: firebaseUser.uid, ...userDoc.data() } as User : { uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending', isNewUser: true } as User & { isNewUser?: boolean };
+          
+          setUser(userData);
+
+          // Whenever a teacher (role 'user') logs in, reset the academic year to the system current year
+          if (userData.role === 'user' || userData.role === 'warden' || userData.role === 'admin') {
+             const configDoc = await db.collection('config').doc('academic').get();
+             const systemYear = configDoc.exists ? configDoc.data()?.currentAcademicYear : getCurrentAcademicYear();
+             if (systemYear) {
+                setAcademicYear(systemYear);
+                localStorage.setItem('selectedAcademicYear', systemYear);
+             }
+          }
+        } catch (error) { 
+          console.error("Auth error:", error);
+          setUser(null); 
+        }
+      } else { 
+        setUser(null); 
+      }
       setAuthLoading(false);
     });
     return () => unsubscribe();

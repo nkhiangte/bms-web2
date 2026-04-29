@@ -203,14 +203,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                  {user.role === 'user' && assignedGrade && (
                     <span>Class Teacher of: <span className="font-semibold text-indigo-600">{assignedGrade}</span></span>
                 )}
-                {isAdmin && (
+                {(isAdmin || user.role === 'user' || user.role === 'warden') && (
                     <button 
                         onClick={() => setIsChangingYear(true)} 
                         className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-semibold rounded-full shadow-sm hover:bg-slate-50 transition"
-                        title="Change the currently active academic year"
+                        title={isAdmin ? "Change the currently active global academic year" : "Change academic year for your current session"}
                     >
                         <SyncIcon className="w-4 h-4"/>
-                        Change Year
+                        {isAdmin ? 'Change Global Year' : 'Change session Year'}
                     </button>
                 )}
             </p>

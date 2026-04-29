@@ -56,6 +56,23 @@
         "imageUrl": { "type": "string" }
       },
       "required": ["title", "content", "date"]
+    },
+    "HSLCResultSummary": {
+      "title": "HSLC Result Summary",
+      "description": "Yearly HSLC performance statistics",
+      "type": "object",
+      "properties": {
+        "year": { "type": "number" },
+        "appeared": { "type": "number" },
+        "passed": { "type": "number" },
+        "passPercentage": { "type": "string" },
+        "distinction": { "type": "number" },
+        "firstDivision": { "type": "number" },
+        "secondDivision": { "type": "number" },
+        "thirdDivision": { "type": "number" },
+        "distinctionListImageUrl": { "type": "string" }
+      },
+      "required": ["year", "appeared", "passed"]
     }
   },
   "firestore": {
@@ -74,6 +91,10 @@
     "/news/{newsId}": {
       "schema": "NewsItem",
       "description": "Public news items"
+    },
+    "/hslc_results/{resultId}": {
+      "schema": "HSLCResultSummary",
+      "description": "Yearly HSLC results statistics"
     }
   }
 }

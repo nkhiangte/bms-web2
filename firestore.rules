@@ -152,6 +152,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /hslc_results/{resultId} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
     // ---------------------------
     // Settings & Config
     // ---------------------------

@@ -1,5 +1,5 @@
-import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet, SubjectMark, SubjectDefinition } from '@/types';
-import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
+import { Student, Staff, Grade, FeePayments, GradeDefinition, StaffAttendanceRecord, StudentAttendanceRecord, AttendanceStatus, StudentAttendanceStatus, FeeStructure, HostelDisciplineEntry, HostelResident, CalendarEvent, FeeSet, SubjectMark, SubjectDefinition, Exam, ProcessedStudent } from '@/types';
+import { academicMonths, GRADES_LIST, FEE_SET_GRADES, IMGBB_API_KEY, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, TERMINAL_EXAMS } from '@/constants';
 import { useState, useEffect } from 'react';
 
 // Custom hook to dynamically load an external script
@@ -326,6 +326,217 @@ export const calculateStudentResult = (student: Student, gradeDef: GradeDefiniti
     }
 
     return 'PASS';
+};
+
+export const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
+  if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
+  return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
+};
+
+export const getStudentExam = (student: Student, examId: string): Exam | undefined => {
+  return student.academicPerformance?.find(e => {
+    if (e.id === examId) return true;
+    if (!e.name) return false;
+    const eName = e.name.trim().toLowerCase();
+    const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
+    if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
+    
+    const legacyNames: Record<string, string[]> = {
+      terminal1: ['first terminal examination', 'i terminal examination'],
+      terminal2: ['second terminal examination', 'ii terminal examination'],
+      terminal3: ['third terminal examination', 'iii terminal examination'],
+    };
+    return (legacyNames[examId] || []).includes(eName);
+  });
+};
+
+export const getProcessedClassData = (
+  students: Student[],
+  grade: Grade,
+  examId: string,
+  gradeDefinitions: Record<Grade, GradeDefinition>,
+  academicYear: string,
+  options: { 
+    showAllYears?: boolean,
+    marksOverride?: Record<string, Record<string, string | number>>
+  } = {}
+): ProcessedStudent[] => {
+  const { showAllYears = false, marksOverride } = options;
+  const gradeDef = gradeDefinitions[grade];
+  if (!gradeDef) return [];
+
+  const selectedYearNorm = normalizeAcademicYear(academicYear);
+
+  // 1. Filter students
+  const classStudents = students.filter(s => {
+    const matchesGrade = s.grade === grade;
+    const studentYearNorm = normalizeAcademicYear(s.academicYear);
+    const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
+    const matchesYear = effectiveYear === selectedYearNorm;
+    const hasMarksForExam = s.academicPerformance?.some(exam => {
+        if (exam.id === examId) return true;
+        if (!exam.name) return false;
+        const eName = exam.name.trim().toLowerCase();
+        const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
+        if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
+        const legacyNames: Record<string, string[]> = {
+            terminal1: ['first terminal examination', 'i terminal examination'],
+            terminal2: ['second terminal examination', 'ii terminal examination'],
+            terminal3: ['third terminal examination', 'iii terminal examination'],
+        };
+        return (legacyNames[examId] || []).includes(eName);
+    });
+    return matchesGrade && (matchesYear || hasMarksForExam || showAllYears);
+  });
+
+  // 2. Determine subjects
+  const subjectsMap = new Map<string, SubjectDefinition>();
+  (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+  
+  classStudents.forEach(student => {
+    const studentExam = getStudentExam(student, examId);
+    let results = studentExam?.results || [];
+    
+    // Also include subjects from marksOverride if present
+    const override = marksOverride?.[student.id];
+    if (override) {
+        Object.keys(override).forEach(key => {
+            const rawSubj = key.replace(/_(exam|activity|sa|fa)$/, '');
+            const normalized = normalizeSubjectName(rawSubj);
+            if (!subjectsMap.has(normalized)) {
+                // Heuristic for new subjects in override
+                subjectsMap.set(normalized, {
+                    name: rawSubj,
+                    examFullMarks: 100,
+                    activityFullMarks: 0,
+                    gradingSystem: 'Numerical'
+                });
+            }
+        });
+    }
+
+    if (results) {
+      results.forEach(res => {
+        const normalized = normalizeSubjectName(res.subject);
+        if (!subjectsMap.has(normalized)) {
+          subjectsMap.set(normalized, {
+            name: res.subject,
+            examFullMarks: 100,
+            activityFullMarks: 0,
+            gradingSystem: res.grade ? 'OABC' : 'Numerical'
+          });
+        }
+      });
+    }
+  });
+
+  const numericSubjects = Array.from(subjectsMap.values()).filter(s => s.gradingSystem !== 'OABC');
+  const gradedSubjects = Array.from(subjectsMap.values()).filter(s => s.gradingSystem === 'OABC');
+
+  const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(grade);
+  const isClassIXorX = grade === Grade.IX || grade === Grade.X;
+  const isIXTerminal3 = (grade === Grade.IX || grade === Grade.X) && examId === 'terminal3';
+  const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(grade);
+
+  // 3. Process marks
+  const studentData = classStudents.map(student => {
+    const studentExam = getStudentExam(student, examId);
+    const override = marksOverride?.[student.id];
+
+    let localGrandTotal = 0;
+    let localExamTotal = 0;
+    let localActivityTotal = 0;
+    let localFullMarksTotal = 0;
+    let failedSubjectsCount = 0;
+    let failedSubjectsList: string[] = [];
+    let gradedSubjectsPassed = 0;
+
+    numericSubjects.forEach(sd => {
+      let result = findResultWithAliases(studentExam?.results, sd);
+      let currentSubjMarkValue = 0;
+      let currentSubjFMValue = 0;
+
+      if (hasActivities) {
+        const examMark = override?.[sd.name + '_exam'] !== undefined ? Number(override[sd.name + '_exam']) : Number(result?.examMarks ?? 0);
+        const activityMark = override?.[sd.name + '_activity'] !== undefined ? Number(override[sd.name + '_activity']) : Number(result?.activityMarks ?? 0);
+        
+        localExamTotal += examMark;
+        localActivityTotal += activityMark;
+        currentSubjMarkValue = examMark + activityMark;
+        currentSubjFMValue = Number(sd.examFullMarks || (isClassIXorX ? 100 : 0)) + Number(sd.activityFullMarks || 0);
+        if (examMark < 20) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+      } else if (isIXTerminal3) {
+        const saMark = override?.[sd.name + '_sa'] !== undefined ? Number(override[sd.name + '_sa']) : Number(result?.saMarks ?? result?.marks ?? 0);
+        const faMark = override?.[sd.name + '_fa'] !== undefined ? Number(override[sd.name + '_fa']) : Number(result?.faMarks ?? 0);
+        
+        currentSubjMarkValue = saMark + faMark;
+        localExamTotal += currentSubjMarkValue;
+        currentSubjFMValue = 100;
+        if (currentSubjMarkValue < 33) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+      } else {
+        currentSubjMarkValue = override?.[sd.name] !== undefined ? Number(override[sd.name]) : Number(result?.marks ?? 0);
+        localExamTotal += currentSubjMarkValue;
+        currentSubjFMValue = Number(sd.examFullMarks || (isClassIXorX ? 100 : 0));
+        const failLimit = isClassIXorX ? 33 : isNurseryToII ? 35 : 33;
+        if (currentSubjMarkValue < failLimit) { failedSubjectsCount++; failedSubjectsList.push(sd.name); }
+      }
+      localGrandTotal += currentSubjMarkValue;
+      localFullMarksTotal += currentSubjFMValue;
+    });
+
+    gradedSubjects.forEach(sd => {
+      const result = findResultWithAliases(studentExam?.results, sd);
+      const gradeValue = override?.[sd.name] !== undefined ? override[sd.name] : result?.grade;
+      if (gradeValue && OABC_GRADES.includes(gradeValue as any)) gradedSubjectsPassed++;
+    });
+
+    const percentage = localFullMarksTotal > 0 ? (localGrandTotal / localFullMarksTotal) * 100 : 0;
+    let result: 'PASS' | 'FAIL' | 'SIMPLE PASS' = (gradedSubjectsPassed < gradedSubjects.length || failedSubjectsCount > 1) ? 'FAIL' : failedSubjectsCount === 1 ? 'SIMPLE PASS' : 'PASS';
+    if (isNurseryToII && failedSubjectsCount > 0) result = 'FAIL';
+
+    let division = isClassIXorX && result === 'PASS' ? (percentage >= 75 ? 'Distinction' : percentage >= 60 ? 'I Div' : percentage >= 45 ? 'II Div' : percentage >= 35 ? 'III Div' : '-') : '-';
+    let academicGrade = result === 'FAIL' ? 'E' : (percentage > 89 ? 'O' : percentage > 79 ? 'A' : percentage > 69 ? 'B' : percentage > 59 ? 'C' : 'D');
+
+    let remark = '';
+    if (result === 'FAIL') {
+      remark = `Needs improvement in ${failedSubjectsList.join(', ')}`;
+    } else if (result === 'SIMPLE PASS') {
+      remark = `Focus on ${failedSubjectsList.join(', ')}`;
+    } else {
+      if (percentage >= 90) remark = "Outstanding performance!";
+      else if (percentage >= 75) remark = "Excellent progress. Keep up the great work.";
+      else if (percentage >= 60) remark = "Good progress. Well done.";
+      else if (percentage >= 45) remark = "Satisfactory performance. Consistent effort will lead to better results.";
+      else remark = "Passed. Consistent effort is needed to improve scores.";
+    }
+
+    return {
+      ...student,
+      grandTotal: localGrandTotal,
+      examTotal: localExamTotal,
+      activityTotal: localActivityTotal,
+      percentage,
+      result,
+      division,
+      academicGrade,
+      remark,
+      rank: '-',
+      failedSubjects: failedSubjectsList
+    } as ProcessedStudent;
+  });
+
+  // 4. Ranking
+  const passedStudents = studentData.filter(s => s.result === 'PASS');
+  
+  return studentData.map(s => {
+    let rank: number | '-' = '-';
+    if (s.result === 'PASS') {
+      // Standard Competition Ranking: 1 + number of students with strictly higher marks
+      const higherCount = passedStudents.filter(other => other.grandTotal > s.grandTotal).length;
+      rank = higherCount + 1;
+    }
+    return { ...s, rank };
+  });
 };
 
 export const formatDateForDisplay = (isoDate?: string): string => {

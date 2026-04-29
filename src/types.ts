@@ -282,6 +282,19 @@ export interface Student {
     academicYear?: string;
 }
 
+export interface ProcessedStudent extends Student {
+    grandTotal: number;
+    examTotal: number;
+    activityTotal: number;
+    percentage: number;
+    result: 'PASS' | 'FAIL' | 'SIMPLE PASS';
+    division: string;
+    academicGrade: string;
+    remark: string;
+    rank: number | '-';
+    failedSubjects: string[];
+}
+
 export interface User {
     uid: string;
     email: string;

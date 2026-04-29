@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, ProcessedStudent } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear, getProcessedClassData, findResultWithAliases } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import { db } from '@/firebaseConfig';
 
@@ -16,11 +16,6 @@ interface ProgressReportPageProps {
   academicYear: string;
 }
 
-const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
-    if (!results || !Array.isArray(results) || !subjectDef?.name) return undefined;
-    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
-};
-
 const calculateTermSummary = (
     student: Student,
     exam: Exam | undefined,
@@ -31,164 +26,10 @@ const calculateTermSummary = (
 ) => {
     if (!gradeDef || !gradeDef.subjects) return null;
 
-    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = student.grade === Grade.IX || student.grade === Grade.X;
-    const isNurseryToII = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II].includes(student.grade);
-
-    const classmates = allStudents.filter(s => {
-        const matchesGrade = s.grade === student.grade;
-        const matchesStatus = s.status === StudentStatus.ACTIVE || 
-                              s.status === StudentStatus.TRANSFERRED || 
-                              s.status === StudentStatus.GRADUATED || 
-                              s.status === StudentStatus.DROPPED || 
-                              s.id === student.id;
-        const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
-        // If a student has no academic year explicitly set, we include them in 2025-26 as it was the default session.
-        const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
-        const matchesYear = effectiveYear === selectedYearNorm;
-        
-        // Inclusively include students who have marks for this exam even if year mismatch
-        const hasMarksForExam = s.academicPerformance?.some(e => e.id === examId && e.results && e.results.length > 0);
-
-        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam);
-    });
-    const numericSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem !== 'OABC');
-    const gradedSubjects = gradeDef.subjects.filter(sd => sd.gradingSystem === 'OABC');
-
-    const studentData = classmates.map(s => {
-        const studentExam = s.academicPerformance?.find((e) => {
-            if (e.id === examId) return true;
-            if (!e.name) return false;
-            const eName = e.name.trim().toLowerCase();
-            const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
-            if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
-            const legacyNames: Record<string, string[]> = {
-                terminal1: ['first terminal examination', 'i terminal examination'],
-                terminal2: ['second terminal examination', 'ii terminal examination'],
-                terminal3: ['third terminal examination', 'iii terminal examination'],
-            };
-            return (legacyNames[examId] || []).includes(eName);
-        });
-
-        let gTotal = 0;
-        let fSubjects = 0;
-        let gSubjectsPassed = 0;
-
-        numericSubjects.forEach(sd => {
-            const r = findResultWithAliases(studentExam?.results, sd);
-            let totalMark = 0;
-            if (hasActivities) {
-                const eMark = Number(r?.examMarks ?? 0);
-                const aMark = Number(r?.activityMarks ?? 0);
-                totalMark = eMark + aMark;
-                if (eMark < 20) fSubjects++;
-            } else if (isClassIXorX && examId === 'terminal3') {
-                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-                const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-                if (totalMark < 33) fSubjects++;
-            } else {
-                totalMark = Number(r?.marks ?? 0);
-                const limit = isClassIXorX ? 33 : 35;
-                if (totalMark < limit) fSubjects++;
-            }
-            gTotal += totalMark;
-        });
-
-        gradedSubjects.forEach(sd => {
-            const r = findResultWithAliases(studentExam?.results, sd);
-            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gSubjectsPassed++;
-        });
-
-        let res = 'PASS';
-        if (gSubjectsPassed < gradedSubjects.length) res = 'FAIL';
-        else if (fSubjects > 1) res = 'FAIL';
-        else if (fSubjects === 1) res = 'SIMPLE PASS';
-        if (isNurseryToII && fSubjects > 0) res = 'FAIL';
-
-        return { id: s.id, grandTotal: gTotal, result: res };
-    });
-
-    const passedStudents = studentData.filter(s => s.result === 'PASS');
-    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
-
-    const currentStudentStats = studentData.find(s => s.id === student.id);
-    if (!currentStudentStats) return null;
-
-    let rank: number | '-' = '-';
-    if (currentStudentStats.result === 'PASS') {
-        const rankIndex = uniqueScores.indexOf(currentStudentStats.grandTotal);
-        rank = rankIndex !== -1 ? rankIndex + 1 : '-';
-    }
-
-    let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
-    const failedSubjects: string[] = [];
-    let gradedSubjectsPassed = 0;
-
-    numericSubjects.forEach(sd => {
-        const result = findResultWithAliases(exam?.results, sd);
-        let totalSubjectMark = 0;
-        let subjectFullMarks = 0;
-
-        if (hasActivities) {
-            const examMark = Number(result?.examMarks ?? 0);
-            const activityMark = Number(result?.activityMarks ?? 0);
-            examTotal += examMark;
-            activityTotal += activityMark;
-            totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = (sd.examFullMarks || (isClassIXorX ? 100 : 0)) + (sd.activityFullMarks || 0);
-            if (examMark < 20) failedSubjects.push(sd.name);
-        } else {
-            totalSubjectMark = Number(result?.marks ?? 0);
-            examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks || (isClassIXorX ? 100 : 0);
-            const failLimit = isClassIXorX ? 33 : 35;
-            if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
-        }
-        grandTotal += totalSubjectMark;
-        fullMarksTotal += subjectFullMarks;
-    });
-
-    gradedSubjects.forEach(sd => {
-        const result = findResultWithAliases(exam?.results, sd);
-        if (result?.grade && OABC_GRADES.includes(result.grade as any)) gradedSubjectsPassed++;
-    });
-
-    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
-
-    let division = '-';
-    if (isClassIXorX && currentStudentStats.result === 'PASS') {
-        if (percentage >= 75) division = 'Distinction';
-        else if (percentage >= 60) division = 'I Div';
-        else if (percentage >= 45) division = 'II Div';
-        else if (percentage >= 35) division = 'III Div';
-    }
-
-    let academicGrade = '-';
-    if (currentStudentStats.result === 'FAIL') academicGrade = 'E';
-    else {
-        if (percentage > 89) academicGrade = 'O';
-        else if (percentage > 79) academicGrade = 'A';
-        else if (percentage > 69) academicGrade = 'B';
-        else if (percentage > 59) academicGrade = 'C';
-        else academicGrade = 'D';
-    }
-
-    let remark = '';
-    if (currentStudentStats.result === 'FAIL') {
-        remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
-    } else if (currentStudentStats.result === 'SIMPLE PASS') {
-        remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
-    } else if (currentStudentStats.result === 'PASS') {
-        if (percentage >= 90) remark = "Outstanding performance!";
-        else if (percentage >= 75) remark = "Excellent performance.";
-        else if (percentage >= 60) remark = "Good performance.";
-        else if (percentage >= 45) remark = "Satisfactory performance.";
-        else remark = "Passed. Needs to work harder.";
-    }
-
-    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: currentStudentStats.result, division, academicGrade, remark, rank };
+    const processedClass = getProcessedClassData(allStudents, student.grade, examId, { [student.grade]: gradeDef } as any, academicYear);
+    const summary = processedClass.find(s => s.id === student.id);
+    
+    return summary || null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -482,23 +323,9 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff
     const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
     const classmates = useMemo(() => {
         if (!student) return [];
-        return students.filter(s => {
-            const matchesGrade = s.grade === student.grade;
-            const matchesStatus = s.status === StudentStatus.ACTIVE || 
-                                  s.status === StudentStatus.TRANSFERRED || 
-                                  s.status === StudentStatus.GRADUATED || 
-                                  s.status === StudentStatus.DROPPED || 
-                                  s.id === student.id;
-            
-            const studentYearNorm = normalizeAcademicYear(s.academicYear);
-            const selectedYearNorm = normalizeAcademicYear(academicYear);
-            // Default students with no academic year to 2025-26
-            const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
-            const matchesYear = effectiveYear === selectedYearNorm;
-            
-            return matchesGrade && matchesStatus && matchesYear;
-        });
-    }, [students, student, academicYear]);
+        // Only narrow down by grade. getProcessedClassData will handle status and year/exam filtering.
+        return students.filter(s => s.grade === student.grade);
+    }, [students, student]);
 
     const gradeDef = useMemo(() => {
         if (!student || !gradeDefinitions[student.grade]) return null;

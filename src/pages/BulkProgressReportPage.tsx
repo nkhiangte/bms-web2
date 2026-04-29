@@ -1,9 +1,9 @@
 import React, { useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition } from '@/types';
+import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, ProcessedStudent } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear, getProcessedClassData, findResultWithAliases } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
@@ -28,156 +28,19 @@ const getExamLabel = (grade: Grade, n: 1 | 2 | 3): string => {
 };
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
-const findResultWithAliases = (results: SubjectMark[] | undefined, subjectDef: SubjectDefinition) => {
-    if (!subjectDef?.name || !results || !Array.isArray(results)) return undefined;
-    return results.find(r => r?.subject != null && subjectsMatch(r.subject, subjectDef.name));
-};
 
 const calculateTermSummary = (
     student: Student,
     exam: Exam | undefined,
     examId: 'terminal1' | 'terminal2' | 'terminal3',
     gradeDef: GradeDefinition,
-    allStudents: Student[]
+    allStudents: Student[],
+    academicYear: string
 ) => {
     if (!gradeDef) return null;
-
-    const subjectsMap = new Map<string, SubjectDefinition>();
-    (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
-  if (exam?.results) {
-        exam.results.forEach(res => {
-            const alreadyExists = Array.from(subjectsMap.keys()).some(existingKey =>
-                subjectsMatch(existingKey, res.subject)
-            );
-            if (!alreadyExists) {
-                subjectsMap.set(normalizeSubjectName(res.subject), { name: res.subject, examFullMarks: 100, activityFullMarks: 0, gradingSystem: res.grade ? 'OABC' : 'Numerical' });
-            }
-        });
-    }
-  const activeSubjects = Array.from(subjectsMap.values());
-    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
-    const isNurseryToII = NURSERY_TO_II.includes(student.grade);
-    const classmates = allStudents.filter(s => s.grade === student.grade && (s.status === StudentStatus.ACTIVE || s.status === StudentStatus.TRANSFERRED || s.status === StudentStatus.GRADUATED || s.id === student.id));
-    const numericSubjects = activeSubjects.filter(sd => sd.gradingSystem !== 'OABC');
-    const gradedSubjects = activeSubjects.filter(sd => sd.gradingSystem === 'OABC');
-
-    const studentData = classmates.map(s => {
-        const sExam = s.academicPerformance?.find((e) => {
-            if (e.id === examId) return true;
-            if (!e.name) return false;
-            const eName = e.name.trim().toLowerCase();
-            const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
-            if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
-            const legacyNames: Record<string, string[]> = {
-                terminal1: ['first terminal examination', 'i terminal examination'],
-                terminal2: ['second terminal examination', 'ii terminal examination'],
-                terminal3: ['third terminal examination', 'iii terminal examination'],
-            };
-            return (legacyNames[examId] || []).includes(eName);
-        });
-        let gTotal = 0, fSubjects = 0, gSubjectsPassed = 0;
-        numericSubjects.forEach(sd => {
-            const r = findResultWithAliases(sExam?.results, sd);
-            let totalMark = 0;
-            if (hasActivities) {
-                const eMark = Number(r?.examMarks ?? 0);
-                const aMark = Number(r?.activityMarks ?? 0);
-                totalMark = eMark + aMark;
-                if (eMark < 20) fSubjects++;
-            } else if (isClassIXorX && examId === 'terminal3') {
-                const saMark = Number(r?.saMarks ?? r?.marks ?? 0);
-                const faMark = Number(r?.faMarks ?? 0);
-                totalMark = r?.saMarks != null ? saMark + faMark : Number(r?.marks ?? 0);
-                // Pass rule: SA must be >= 27. FA has no pass mark.
-                if (saMark < 27) fSubjects++;
-            } else {
-                totalMark = Number(r?.marks ?? 0);
-                const limit = isClassIXorX ? 33 : 35;
-                if (totalMark < limit) fSubjects++;
-            }
-            gTotal += totalMark;
-        });
-        gradedSubjects.forEach(sd => {
-            const r = findResultWithAliases(sExam?.results, sd);
-            if (r?.grade && OABC_GRADES.includes(r.grade as any)) gSubjectsPassed++;
-        });
-        let res = 'PASS';
-        if (gSubjectsPassed < gradedSubjects.length) res = 'FAIL';
-        else if (fSubjects > 1) res = 'FAIL';
-        else if (fSubjects === 1) res = 'SIMPLE PASS';
-        if (isNurseryToII && fSubjects > 0) res = 'FAIL';
-        return { id: s.id, grandTotal: gTotal, result: res };
-    });
-
-    const passedStudents = studentData.filter(s => s.result === 'PASS');
-    const uniqueScores = [...new Set(passedStudents.map(s => s.grandTotal))].sort((a, b) => b - a);
-    const currentStudentStats = studentData.find(s => s.id === student.id);
-    if (!currentStudentStats) return null;
-
-    let rank: number | '-' = '-';
-    if (currentStudentStats.result === 'PASS') {
-        const rankIndex = uniqueScores.indexOf(currentStudentStats.grandTotal);
-        rank = rankIndex !== -1 ? rankIndex + 1 : '-';
-    }
-
-    let grandTotal = 0, examTotal = 0, activityTotal = 0, fullMarksTotal = 0;
-    const failedSubjects: string[] = [];
-
-    numericSubjects.forEach(sd => {
-        const result = findResultWithAliases(exam?.results, sd);
-        let totalSubjectMark = 0, subjectFullMarks = 0;
-        if (hasActivities) {
-            const examMark = Number(result?.examMarks ?? 0);
-            const activityMark = Number(result?.activityMarks ?? 0);
-            examTotal += examMark; activityTotal += activityMark;
-            totalSubjectMark = examMark + activityMark;
-            subjectFullMarks = (sd.examFullMarks || (isClassIXorX ? 100 : 0)) + (sd.activityFullMarks || 0);
-            if (examMark < 20) failedSubjects.push(sd.name);
-        } else if (isClassIXorX && examId === 'terminal3') {
-            const saMark = Number(result?.saMarks ?? result?.marks ?? 0);
-            const faMark = Number(result?.faMarks ?? 0);
-            totalSubjectMark = result?.saMarks != null ? saMark + faMark : Number(result?.marks ?? 0);
-            examTotal += totalSubjectMark;
-            subjectFullMarks = 100; // SA 80 + FA 20
-            // Pass rule: SA must be >= 27. FA has no pass mark.
-            if (saMark < 27) failedSubjects.push(sd.name);
-        } else {
-            totalSubjectMark = Number(result?.marks ?? 0);
-            examTotal += totalSubjectMark;
-            subjectFullMarks = sd.examFullMarks || (isClassIXorX ? 100 : 0);
-            const failLimit = isClassIXorX ? 33 : 35;
-            if (totalSubjectMark < failLimit) failedSubjects.push(sd.name);
-        }
-        grandTotal += totalSubjectMark; fullMarksTotal += subjectFullMarks;
-    });
-
-    const percentage = fullMarksTotal > 0 ? (grandTotal / fullMarksTotal) * 100 : 0;
-    let division = '-';
-    if (isClassIXorX && currentStudentStats.result === 'PASS') {
-        if (percentage >= 75) division = 'Distinction';
-        else if (percentage >= 60) division = 'I Div';
-        else if (percentage >= 45) division = 'II Div';
-        else if (percentage >= 35) division = 'III Div';
-    }
-    let academicGrade = '-';
-    if (currentStudentStats.result === 'FAIL') academicGrade = 'E';
-    else if (percentage > 89) academicGrade = 'O';
-    else if (percentage > 79) academicGrade = 'A';
-    else if (percentage > 69) academicGrade = 'B';
-    else if (percentage > 59) academicGrade = 'C';
-    else academicGrade = 'D';
-
-    let remark = '';
-    if (currentStudentStats.result === 'FAIL') remark = `Needs significant improvement${failedSubjects.length > 0 ? ` in ${failedSubjects.join(', ')}` : ''}.`;
-    else if (currentStudentStats.result === 'SIMPLE PASS') remark = `Simple Pass. Focus on improving in ${failedSubjects.join(', ')}.`;
-    else if (percentage >= 90) remark = "Outstanding performance!";
-    else if (percentage >= 75) remark = "Excellent performance.";
-    else if (percentage >= 60) remark = "Good performance.";
-    else if (percentage >= 45) remark = "Satisfactory performance.";
-    else remark = "Passed. Needs to work harder.";
-
-    return { id: student.id, grandTotal, examTotal, activityTotal, percentage, result: currentStudentStats.result, division, academicGrade, remark, rank };
+    const processedClass = getProcessedClassData(allStudents, student.grade, examId, { [student.grade]: gradeDef } as any, academicYear);
+    const summary = processedClass.find(s => s.id === student.id);
+    return summary || null;
 };
 
 // ─── Shared UI constants ──────────────────────────────────────────────────────
@@ -551,11 +414,11 @@ const IXXMultiTermReportCard: React.FC<{
 //  Single-exam ReportCard (Terminal 1 & 2 for all classes)
 //  Uses examTemplate.name so it correctly shows "I Terminal Examination" etc.
 // ─────────────────────────────────────────────────────────────────────────────
-const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, staff }) => {
+const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
     const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
     const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
     const isNurseryToII = NURSERY_TO_II.includes(student.grade);
-    const processedReportData = useMemo(() => calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents), [student, exam, examTemplate.id, gradeDef, allStudents]);
+    const processedReportData = useMemo(() => calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents, academicYear), [student, exam, examTemplate.id, gradeDef, allStudents, academicYear]);
     const classTeacher = useMemo(() => staff?.find((s: Staff) => s.id === gradeDef?.classTeacherId), [staff, gradeDef]);
 
     return (
@@ -756,9 +619,9 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
                 terminal3: student?.academicPerformance?.find(e => e.id === 'terminal3'),
             };
             map[student.id] = {
-                terminal1: calculateTermSummary(student, ex.terminal1, 'terminal1', gradeDef, classStudents),
-                terminal2: calculateTermSummary(student, ex.terminal2, 'terminal2', gradeDef, classStudents),
-                terminal3: calculateTermSummary(student, ex.terminal3, 'terminal3', gradeDef, classStudents),
+                terminal1: calculateTermSummary(student, ex.terminal1, 'terminal1', gradeDef, classStudents, academicYear),
+                terminal2: calculateTermSummary(student, ex.terminal2, 'terminal2', gradeDef, classStudents, academicYear),
+                terminal3: calculateTermSummary(student, ex.terminal3, 'terminal3', gradeDef, classStudents, academicYear),
             };
         });
         return map;

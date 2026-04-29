@@ -115,6 +115,8 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                                     type="image" 
                                     user={user}
                                     className="w-full h-auto object-contain"
+                                    buttonClassName="top-4 left-4"
+                                    alwaysShowButton={true}
                                     imgAlt="HSLC 2026 Distinction Results"
                                 />
                                 

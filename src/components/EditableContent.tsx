@@ -14,6 +14,8 @@ interface EditableContentProps {
     imgAlt?: string; // Alt text for images
     placeholder?: string;
     tagName?: keyof React.JSX.IntrinsicElements; // Root element tag
+    buttonClassName?: string; // Custom positioning for the edit button
+    alwaysShowButton?: boolean; // If true, button is always visible for admins
 }
 
 const EditableContent: React.FC<EditableContentProps> = ({ 
@@ -25,7 +27,9 @@ const EditableContent: React.FC<EditableContentProps> = ({
     style = {},
     imgAlt = 'Website image',
     placeholder = 'Enter content...',
-    tagName = 'div'
+    tagName = 'div',
+    buttonClassName = '',
+    alwaysShowButton = false
 }) => {
     const [content, setContent] = useState<string>(defaultContent);
     const [isEditing, setIsEditing] = useState(false);
@@ -215,7 +219,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 )}
 
                 {isAdmin && (
-                    <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={`absolute z-20 transition-opacity ${alwaysShowButton ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${buttonClassName || 'top-4 right-4'}`}>
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();

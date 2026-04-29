@@ -600,6 +600,19 @@ export interface DistinctionHolder {
     imageUrl: string;
 }
 
+export interface HSLCResultSummary {
+    id: string;
+    year: number;
+    appeared: number;
+    passed: number;
+    passPercentage: string;
+    distinction: number;
+    firstDivision: number;
+    secondDivision: number;
+    thirdDivision: number;
+    distinctionListImageUrl?: string;
+}
+
 export interface FeeSet {
     heads: FeeHead[];
 }

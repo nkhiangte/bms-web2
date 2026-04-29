@@ -39,6 +39,7 @@ const portalNavLinks = [
     { name: 'Testimonial Generator', path: '/portal/testimonials', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Manage Notice Board', path: '/portal/manage-notices', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
    { name: 'Manage Achievements', path: '/portal/manage-achievements', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin'] },
+   { name: 'Manage HSLC Results', path: '/portal/manage-hslc', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Gallery Manager', path: '/portal/gallery-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Website Media', path: '/portal/media-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },

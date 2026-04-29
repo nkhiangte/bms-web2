@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { DistinctionHolder } from '@/types';
+import { db } from '@/firebaseConfig';
+import { HSLCResultSummary } from '@/types';
 
 const { Link } = ReactRouterDOM as any;
 
-const hslcResults = [
+const STATIC_HSLC_RESULTS = [
   { year: 2025, appeared: 41, passed: 38, passPercentage: '92.68%', distinction: 9, firstDivision: 15, secondDivision: 13, thirdDivision: 1 },
   { year: 2024, appeared: 37, passed: 36, passPercentage: '97.30%', distinction: 17, firstDivision: 18, secondDivision: 1, thirdDivision: 0 },
   { year: 2023, appeared: 46, passed: 43, passPercentage: '93.48%', distinction: 11, firstDivision: 14, secondDivision: 16, thirdDivision: 2 },
@@ -38,11 +39,11 @@ const DarkCard: React.FC<{ children: React.ReactNode; className?: string }> = ({
     </div>
 );
 
-const ResultChart: React.FC = () => {
-    const reversedResults = [...hslcResults].reverse();
+const ResultChart: React.FC<{ results: HSLCResultSummary[] }> = ({ results }) => {
+    const reversedResults = [...results].reverse();
     return (
         <DarkCard>
-            <h3 className="text-xl font-bold text-center mb-6" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>HSLC Results Analysis (2008–2025)</h3>
+            <h3 className="text-xl font-bold text-center mb-6" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>HSLC Results Analysis (2008–{results[0]?.year || 'Present'})</h3>
             <div className="flex justify-center flex-wrap gap-x-4 gap-y-2 mb-8 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {[['bg-amber-400','Distinction'],['bg-sky-500','I Division'],['bg-emerald-500','II Division'],['bg-slate-500','III Division'],['bg-rose-500','Failed']].map(([color, label]) => (
                     <div key={label} className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded ${color}`}/><span>{label}</span></div>
@@ -59,7 +60,7 @@ const ResultChart: React.FC = () => {
                     ];
                     let offset = 0;
                     return (
-                        <div key={result.year} className="flex flex-col items-center flex-shrink-0 text-center w-12">
+                        <div key={result.year} className="flex flex-col items-center flex-shrink-0 text-center w-12 text-blue-50">
                             <div className="text-xs font-semibold mb-1" style={{ color: 'var(--gold)', fontSize: '0.6rem' }}>{result.passPercentage}</div>
                             <div className="w-full h-56 rounded-t-lg relative group" style={{ background: 'var(--bg-elevated)' }}>
                                 {segments.map((seg, i) => { const b = offset; offset += seg.h; return seg.h > 0 ? <div key={i} style={{ height: `${seg.h}%`, bottom: `${b}%` }} className={`absolute w-full ${seg.color}`} /> : null; })}
@@ -84,7 +85,29 @@ const ResultChart: React.FC = () => {
 };
 
 const AcademicAchievementsPage: React.FC = () => {
+    const [hslcResults, setHslcResults] = useState<HSLCResultSummary[]>([]);
+    
+    useEffect(() => {
+        const unsub = db.collection('hslc_results')
+            .orderBy('year', 'desc')
+            .onSnapshot(snap => {
+                const results = snap.docs.map(d => ({ id: d.id, ...d.data() } as HSLCResultSummary));
+                
+                // Merge static and dynamic results
+                const merged = [...results];
+                STATIC_HSLC_RESULTS.forEach(sr => {
+                    if (!merged.find(m => m.year === sr.year)) {
+                        merged.push({ id: `static-${sr.year}`, ...sr } as HSLCResultSummary);
+                    }
+                });
+                
+                setHslcResults(merged.sort((a,b) => b.year - a.year));
+            });
+        return () => unsub();
+    }, []);
+
     const distinctionYears = hslcResults.filter(r => r.distinction > 0);
+
     return (
         <div className="py-20" style={{ background: 'var(--bg-base)' }}>
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -110,7 +133,7 @@ const AcademicAchievementsPage: React.FC = () => {
                         </div>
                     </DarkCard>
 
-                    <ResultChart />
+                    <ResultChart results={hslcResults} />
 
                     {/* Distinction year cards */}
                     <DarkCard>

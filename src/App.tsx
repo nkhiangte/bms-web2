@@ -11,6 +11,7 @@ import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculate
 import LoginPage from '@/pages/LoginPage';
 import SignUpPage from '@/pages/SignUpPage';
 import ManageAchievementsPage from '@/pages/ManageAchievementsPage';
+import ManageHSLCResultsPage from '@/pages/ManageHSLCResultsPage';
 import ParentRegistrationPage from '@/pages/ParentRegistrationPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
@@ -984,6 +985,7 @@ const App: React.FC = () => {
           <Route path="insights" element={<InsightsPage students={students} gradeDefinitions={gradeDefinitions} conductLog={conductLog} user={user!} academicYear={academicYear} />} />
           <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
           <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
+          <Route path="manage-hslc" element={<ManageHSLCResultsPage user={user!} />} />
           <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

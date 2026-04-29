@@ -35,6 +35,18 @@ const DistinctionHoldersPage: React.FC = () => {
         const fetchHolders = async () => {
             setLoading(true); setError(null); setHolders([]);
             try {
+                // FIRST: Check if there's a dynamic HSLC result with a distinction list image
+                const hslcSnap = await db.collection('hslc_results').where('year', '==', parseInt(year)).get();
+                if (!hslcSnap.empty) {
+                    const resultData = hslcSnap.docs[0].data();
+                    if (resultData.distinctionListImageUrl) {
+                        setHolders([{ name: `Distinction List ${year}`, imageUrl: resultData.distinctionListImageUrl }]);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // SECOND: Fallback to existing logic
                 const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
                 const folderRef = storage.ref(folderPath);
                 const result = await folderRef.listAll();

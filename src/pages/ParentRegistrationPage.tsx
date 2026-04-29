@@ -311,6 +311,19 @@ const ParentRegistrationPage: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6 sm:p-10 relative">
+                    <div className="absolute top-4 right-4 z-20">
+                         <button 
+                            type="button" 
+                            onClick={() => {
+                                if (window.confirm("Are you sure you want to sign out? Your current progress will be lost.")) {
+                                    auth.signOut().then(() => navigate('/login'));
+                                }
+                            }}
+                            className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors"
+                         >
+                            Sign Out
+                         </button>
+                    </div>
                     {renderStepIndicator()}
 
                     <form onSubmit={handleSubmit}>

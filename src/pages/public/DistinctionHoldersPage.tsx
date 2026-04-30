@@ -20,26 +20,26 @@ interface HolderImage {
 
 const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-2 hover:border-sky-500/50 hover:shadow-sky-900/20 group">
-        <div className="aspect-[3/4] sm:aspect-square md:aspect-[3/4] bg-zinc-800 flex items-center justify-center overflow-hidden">
+        <div className="aspect-[3/4] bg-zinc-950 flex items-center justify-center overflow-hidden p-2">
             <img 
                 src={holder.imageUrl} 
                 alt={holder.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" 
                 referrerPolicy="no-referrer"
-                onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-700'); (e.target as HTMLImageElement).style.display = 'none'; }} 
+                onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-900'); (e.target as HTMLImageElement).style.display = 'none'; }} 
             />
         </div>
-        <div className="p-5 border-t border-zinc-800/50">
-            <div className="flex justify-between items-start gap-2 mb-1">
-                <h3 className="text-lg font-bold text-white leading-tight">{holder.name}</h3>
+        <div className="p-4 border-t border-zinc-800/50">
+            <div className="flex justify-between items-center gap-2 mb-2">
+                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide truncate">{holder.name}</h3>
                 {holder.percentage !== undefined && holder.percentage > 0 && (
-                    <span className="flex-shrink-0 bg-sky-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                    <span className="flex-shrink-0 bg-sky-600/20 text-sky-400 text-[10px] font-bold px-2 py-0.5 rounded border border-sky-500/30">
                         {holder.percentage}%
                     </span>
                 )}
             </div>
             {holder.caption && (
-                <p className="text-sm text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed italic">
                     {holder.caption}
                 </p>
             )}
@@ -81,11 +81,15 @@ const DistinctionHoldersPage: React.FC = () => {
                     const filteredItems = items.filter((item: any) => 
                         String(item.year) === String(year) && item.type === 'image'
                     ).map((item: any) => {
+                        const title = item.title || '';
                         const caption = item.caption || '';
-                        const percentMatch = caption.match(/(\d+(?:\.\d+)?)\s*%/);
+                        // Combined text to search for percentage
+                        const combinedText = `${title} ${caption}`;
+                        const percentMatch = combinedText.match(/(\d+(?:\.\d+)?)\s*%/);
                         const percentage = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                        
                         return {
-                            name: item.title,
+                            name: title,
                             imageUrl: item.imageSrc,
                             caption: caption,
                             percentage: percentage

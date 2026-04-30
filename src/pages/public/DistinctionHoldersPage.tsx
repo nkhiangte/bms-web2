@@ -46,7 +46,27 @@ const DistinctionHoldersPage: React.FC = () => {
                     }
                 }
 
-                // SECOND: Fallback to existing logic
+                // SECOND: Check if they are in the parent Achievements folder but tagged with the year
+                const achievementsDocRef = db.collection('website_content').doc('gallery_by_category_achievements');
+                const achievementsDoc = await achievementsDocRef.get();
+                if (achievementsDoc.exists) {
+                    const data = achievementsDoc.data();
+                    const items: any[] = data?.items || [];
+                    const filteredItems = items.filter((item: any) => 
+                        String(item.year) === String(year) && item.type === 'image'
+                    ).map((item: any) => ({
+                        name: item.title,
+                        imageUrl: item.imageSrc
+                    }));
+
+                    if (filteredItems.length > 0) {
+                        setHolders(filteredItems);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // THIRD: Fallback to existing logic (specific subfolder)
                 const folderPath = `gallery/by_category/achievements/distinguished_hslc_graduate/${year}`;
                 const folderRef = storage.ref(folderPath);
                 const result = await folderRef.listAll();

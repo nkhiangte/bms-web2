@@ -7,7 +7,7 @@ import { GRADES_LIST } from '@/constants';
 import StudentTable from '@/components/StudentTable';
 import StudentFormModal from '@/components/StudentFormModal';
 import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon } from '@/components/Icons';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon, TrashIcon } from '@/components/Icons';
 import { formatStudentId, normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -217,6 +217,23 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
             <PlusIcon className="h-5 w-5" />
             Add Student
           </button>
+
+          {/* Bulk Delete for Dropped students */}
+          {statusFilter === StudentStatus.DROPPED && filteredStudents.length > 0 && user.role === 'admin' && (
+            <button
+                onClick={async () => {
+                    if (window.confirm(`Are you sure you want to PERMANENTLY delete ALL ${filteredStudents.length} dropped students for ${academicYear}? This cannot be undone.`)) {
+                        for (const s of filteredStudents) {
+                            await onDelete(s.id);
+                        }
+                    }
+                }}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg shadow-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition hover:-translate-y-0.5"
+            >
+                <TrashIcon className="h-5 w-5" />
+                Empty Dropped List
+            </button>
+          )}
 
           {/* Import from Previous Year Button */}
           <button

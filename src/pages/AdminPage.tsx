@@ -623,10 +623,53 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 const correctId = formatStudentId({ ...s, studentId: undefined }, academicYear);
                 if (!s.studentId || s.studentId !== correctId) updates.studentId = correctId;
                 if (!s.academicYear) updates.academicYear = academicYear;
+                
+                // Specific fix for Jennifer C. Ngaihzuali as requested
+                if (s.name === 'Jennifer C. Ngaihzuali' && s.academicYear === academicYear && s.grade === 'Class IX') {
+                    updates.grade = 'Class X';
+                    updates.status = 'Active';
+                }
+
                 if (Object.keys(updates).length > 0) { batch.update(doc.ref, updates); count++; }
             });
             await batch.commit();
-            setMigrateResult(`✅ Done! Updated ${count} student records.`);
+            setMigrateResult(`✅ Done! Updated ${count} student records (including specific enrollment fixes).`);
+        } catch (err: any) {
+            setMigrateResult(`❌ Error: ${err.message}`);
+        } finally {
+            setMigrating(false);
+        }
+    };
+
+    const handleSpecificEnrollmentFixes = async () => {
+        setMigrating(true);
+        setMigrateResult(null);
+        try {
+            const studentsToFix = ['Jennifer C. Ngaihzuali', 'Vanlalduhsaki'];
+            const batch = db.batch();
+            let count = 0;
+
+            for (const name of studentsToFix) {
+                const snapshot = await db.collection('students')
+                    .where('name', '==', name)
+                    .get();
+                
+                snapshot.docs.forEach(doc => {
+                    const s = doc.data() as Student;
+                    // If they are in Class IX for the current year, move them to X
+                    if (s.academicYear === academicYear && s.grade === 'Class IX') {
+                        batch.update(doc.ref, { grade: 'Class X', status: 'Active' });
+                        count++;
+                    }
+                });
+            }
+
+            if (count > 0) {
+                await batch.commit();
+                setMigrateResult(`✅ Successfully fixed enrollment for ${count} students (moved to Class X for ${academicYear}).`);
+            } else {
+                setMigrateResult('ℹ️ Targeted students are already in Class X or not in Class IX for this year.');
+            }
         } catch (err: any) {
             setMigrateResult(`❌ Error: ${err.message}`);
         } finally {
@@ -685,12 +728,23 @@ const AdminPage: React.FC<AdminPageProps> = ({
                 </div>
             )}
 
-            <div className="mt-10 p-6 bg-amber-50 border border-amber-200 rounded-xl">
-                <h2 className="text-lg font-bold text-amber-800 mb-1">🔧 Data Maintenance</h2>
-                <p className="text-sm text-amber-700 mb-4">Run this once to write correct <code>studentId</code> and <code>academicYear</code> fields into all student records. Safe to run multiple times.</p>
-                <button onClick={handleMigrateStudentIds} disabled={migrating} className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50">
-                    {migrating ? 'Updating...' : 'Fix Student IDs in Database'}
-                </button>
+            <div className="mt-10 p-6 bg-amber-50 border border-amber-200 rounded-xl space-y-4">
+                <div>
+                    <h2 className="text-lg font-bold text-amber-800 mb-1">🔧 Data Maintenance</h2>
+                    <p className="text-sm text-amber-700 mb-2">Run this once to write correct <code>studentId</code> and <code>academicYear</code> fields into all student records. Safe to run multiple times.</p>
+                    <button onClick={handleMigrateStudentIds} disabled={migrating} className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+                        {migrating ? 'Updating...' : 'Fix Student IDs in Database'}
+                    </button>
+                </div>
+
+                <div className="pt-4 border-t border-amber-200">
+                    <h2 className="text-lg font-bold text-amber-800 mb-1">👩‍🎓 Specific Student Fixes</h2>
+                    <p className="text-sm text-amber-700 mb-2">Correction for Jennifer C. Ngaihzuali & Vanlalduhsaki: Move from Class IX to Class X for {academicYear}.</p>
+                    <button onClick={handleSpecificEnrollmentFixes} disabled={migrating} className="btn btn-secondary border-amber-400 text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+                        {migrating ? 'Processing...' : 'Fix Enrollment Issues'}
+                    </button>
+                </div>
+                
                 {migrateResult && <p className="mt-3 text-sm font-semibold text-slate-700">{migrateResult}</p>}
             </div>
         </div>

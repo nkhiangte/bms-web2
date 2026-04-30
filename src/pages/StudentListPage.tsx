@@ -27,6 +27,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'pen' | 'fatherName' | 'studentId'>('name');
   const [gradeFilter, setGradeFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<StudentStatus>(StudentStatus.ACTIVE);
   const [isStatsOpen, setIsStatsOpen] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -38,8 +39,8 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
   const filteredStudents = useMemo(() => {
     return students
       .filter(student => {
-          // Only show active students by default in the main list
-          return student.status === StudentStatus.ACTIVE;
+          // Show students based on status filter (Active, Dropped, or Transferred)
+          return student.status === statusFilter;
       })
       .filter(student => {
           const studentYear = normalizeAcademicYear(student.academicYear);
@@ -150,9 +151,21 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
 
       <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
         <h2 className="text-2xl font-bold text-slate-800 md:flex-grow">
-          Active Students ({filteredStudents.length}) <span className="text-sm font-normal text-slate-500">for {academicYear}</span>
+          {statusFilter === StudentStatus.ACTIVE ? 'Active' : statusFilter === StudentStatus.DROPPED ? 'Dropped' : 'Transferred'} Students ({filteredStudents.length}) <span className="text-sm font-normal text-slate-500">for {academicYear}</span>
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as StudentStatus)}
+            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition font-semibold text-slate-700 bg-slate-50"
+            aria-label="Filter by student status"
+          >
+            <option value={StudentStatus.ACTIVE}>Active</option>
+            <option value={StudentStatus.DROPPED}>Dropped</option>
+            <option value={StudentStatus.TRANSFERRED}>Transferred</option>
+          </select>
+
           {/* Search Type Selector */}
           <select
             value={searchType}

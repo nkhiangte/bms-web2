@@ -645,30 +645,46 @@ const AdminPage: React.FC<AdminPageProps> = ({
         setMigrating(true);
         setMigrateResult(null);
         try {
-            const studentsToFix = ['Jennifer C. Ngaihzuali', 'Vanlalduhsaki'];
+            const targets = [
+                { search: 'Jennifer', expected: 'Jennifer C. Ngaihzuali' },
+                { search: 'Vanlalduhsaki', expected: 'Vanlalduhsaki' }
+            ];
             const batch = db.batch();
             let count = 0;
+            let foundCount = 0;
+            let details: string[] = [];
 
-            for (const name of studentsToFix) {
-                const snapshot = await db.collection('students')
-                    .where('name', '==', name)
-                    .get();
+            // Get all students and filter in memory to avoid index issues with partial matches
+            const snapshot = await db.collection('students').get();
+            
+            snapshot.docs.forEach(doc => {
+                const s = doc.data() as Student;
+                const name = s.name || '';
                 
-                snapshot.docs.forEach(doc => {
-                    const s = doc.data() as Student;
-                    // If they are in Class IX for the current year, move them to X
-                    if (s.academicYear === academicYear && s.grade === 'Class IX') {
-                        batch.update(doc.ref, { grade: 'Class X', status: 'Active' });
+                const match = targets.find(t => name.includes(t.search));
+                if (match) {
+                    foundCount++;
+                    // If they are in Class IX (or any IX) in ANY year (to be safe, though usually we want current)
+                    // We move them to Class X for the current academic year if they match the result PASS or just generally
+                    if (s.grade.includes('IX')) {
+                        batch.update(doc.ref, { 
+                            grade: 'Class X', 
+                            status: 'Active',
+                            academicYear: academicYear // Ensure they are in the current year
+                        });
                         count++;
+                        details.push(`${name} moved to Class X`);
+                    } else {
+                        details.push(`${name} is in ${s.grade}`);
                     }
-                });
-            }
+                }
+            });
 
             if (count > 0) {
                 await batch.commit();
-                setMigrateResult(`✅ Successfully fixed enrollment for ${count} students (moved to Class X for ${academicYear}).`);
+                setMigrateResult(`✅ Success: ${count} updated. ${details.join(', ')}`);
             } else {
-                setMigrateResult('ℹ️ Targeted students are already in Class X or not in Class IX for this year.');
+                setMigrateResult(`ℹ️ Found ${foundCount} records for targets, but none in Class IX. Details: ${details.join(', ')}`);
             }
         } catch (err: any) {
             setMigrateResult(`❌ Error: ${err.message}`);

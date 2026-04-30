@@ -11,12 +11,38 @@ const parseNameFromFilename = (filename: string): string => {
     return withoutTimestamp.replace(/_/g, ' ');
 };
 
-interface HolderImage { name: string; imageUrl: string; }
+interface HolderImage { 
+    name: string; 
+    imageUrl: string; 
+    caption?: string; 
+    percentage?: number;
+}
 
 const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-md overflow-hidden text-center transition-transform transform hover:-translate-y-2 hover:border-sky-700">
-        <div className="w-full h-72 bg-zinc-800 flex items-center justify-center overflow-hidden">
-            <img src={holder.imageUrl} alt={holder.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-2 hover:border-sky-500/50 hover:shadow-sky-900/20 group">
+        <div className="aspect-[3/4] sm:aspect-square md:aspect-[3/4] bg-zinc-800 flex items-center justify-center overflow-hidden">
+            <img 
+                src={holder.imageUrl} 
+                alt={holder.name} 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                referrerPolicy="no-referrer"
+                onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-700'); (e.target as HTMLImageElement).style.display = 'none'; }} 
+            />
+        </div>
+        <div className="p-5 border-t border-zinc-800/50">
+            <div className="flex justify-between items-start gap-2 mb-1">
+                <h3 className="text-lg font-bold text-white leading-tight">{holder.name}</h3>
+                {holder.percentage !== undefined && holder.percentage > 0 && (
+                    <span className="flex-shrink-0 bg-sky-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                        {holder.percentage}%
+                    </span>
+                )}
+            </div>
+            {holder.caption && (
+                <p className="text-sm text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    {holder.caption}
+                </p>
+            )}
         </div>
     </div>
 );
@@ -54,12 +80,21 @@ const DistinctionHoldersPage: React.FC = () => {
                     const items: any[] = data?.items || [];
                     const filteredItems = items.filter((item: any) => 
                         String(item.year) === String(year) && item.type === 'image'
-                    ).map((item: any) => ({
-                        name: item.title,
-                        imageUrl: item.imageSrc
-                    }));
+                    ).map((item: any) => {
+                        const caption = item.caption || '';
+                        const percentMatch = caption.match(/(\d+(?:\.\d+)?)\s*%/);
+                        const percentage = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                        return {
+                            name: item.title,
+                            imageUrl: item.imageSrc,
+                            caption: caption,
+                            percentage: percentage
+                        };
+                    });
 
                     if (filteredItems.length > 0) {
+                        // Sort by percentage descending
+                        filteredItems.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
                         setHolders(filteredItems);
                         setLoading(false);
                         return;
@@ -74,7 +109,7 @@ const DistinctionHoldersPage: React.FC = () => {
                     const holderData: HolderImage[] = await Promise.all(result.items.map(async (itemRef) => {
                         const url = await itemRef.getDownloadURL();
                         const name = parseNameFromFilename(itemRef.name);
-                        return { name, imageUrl: url };
+                        return { name, imageUrl: url, percentage: 0 };
                     }));
                     holderData.sort((a, b) => a.name.localeCompare(b.name));
                     setHolders(holderData);
@@ -83,7 +118,18 @@ const DistinctionHoldersPage: React.FC = () => {
                     const doc = await docRef.get();
                     if (doc.exists) {
                         const data = doc.data();
-                        const items: HolderImage[] = Object.values(data || {}).filter((item: any) => item.type === 'image').map((item: any) => ({ name: item.title, imageUrl: item.imageSrc }));
+                        const items: HolderImage[] = Object.values(data || {}).filter((item: any) => item.type === 'image').map((item: any) => {
+                            const caption = item.caption || '';
+                            const percentMatch = caption.match(/(\d+(?:\.\d+)?)\s*%/);
+                            const percentage = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                            return { 
+                                name: item.title, 
+                                imageUrl: item.imageSrc,
+                                caption: caption,
+                                percentage: percentage
+                            };
+                        });
+                        items.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
                         setHolders(items);
                     } else { setHolders([]); }
                 }

@@ -20,29 +20,24 @@ interface HolderImage {
 
 const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-2 hover:border-sky-500/50 hover:shadow-sky-900/20 group">
-        <div className="aspect-[3/4] bg-zinc-950 flex items-center justify-center overflow-hidden p-2">
+        <div className="w-full bg-zinc-950 flex flex-col items-center justify-center overflow-hidden">
             <img 
                 src={holder.imageUrl} 
                 alt={holder.name} 
-                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" 
+                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105" 
                 referrerPolicy="no-referrer"
                 onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-900'); (e.target as HTMLImageElement).style.display = 'none'; }} 
             />
         </div>
-        <div className="p-4 border-t border-zinc-800/50">
-            <div className="flex justify-between items-center gap-2 mb-2">
-                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide truncate">{holder.name}</h3>
+        <div className="p-3 border-t border-zinc-800/50 bg-black/40">
+            <div className="flex justify-between items-center gap-2">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{holder.name}</h3>
                 {holder.percentage !== undefined && holder.percentage > 0 && (
                     <span className="flex-shrink-0 bg-sky-600/20 text-sky-400 text-[10px] font-bold px-2 py-0.5 rounded border border-sky-500/30">
                         {holder.percentage}%
                     </span>
                 )}
             </div>
-            {holder.caption && (
-                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed italic">
-                    {holder.caption}
-                </p>
-            )}
         </div>
     </div>
 );
@@ -83,8 +78,8 @@ const DistinctionHoldersPage: React.FC = () => {
                     ).map((item: any) => {
                         const title = item.title || '';
                         const caption = item.caption || '';
-                        // Combined text to search for percentage
-                        const combinedText = `${title} ${caption}`;
+                        // Search for percentage in Title, Caption or Year (sometimes people put it there)
+                        const combinedText = `${title} ${caption} ${item.year || ''}`;
                         const percentMatch = combinedText.match(/(\d+(?:\.\d+)?)\s*%/);
                         const percentage = percentMatch ? parseFloat(percentMatch[1]) : 0;
                         

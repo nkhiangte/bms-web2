@@ -257,50 +257,41 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
         'EmergencyContactRelationship', 'EmergencyContactNumber', 'MedicalConditions'
     ];
 
-    const escapeCsvField = (field: any): string => {
-        if (field === null || field === undefined) return '';
-        const stringField = String(field);
-        if (/[",\n\r]/.test(stringField)) {
-            return `"${stringField.replace(/"/g, '""')}"`;
-        }
-        return stringField;
-    };
-
     const rows = dataToExport.map(member => [
-        escapeCsvField(member.employeeId),
-        escapeCsvField(member.staffType),
-        escapeCsvField(member.firstName),
-        escapeCsvField(member.lastName),
-        escapeCsvField(member.gender),
-        escapeCsvField(member.dateOfBirth),
-        escapeCsvField(member.nationality),
-        escapeCsvField(member.maritalStatus),
-        escapeCsvField(member.bloodGroup),
-        escapeCsvField(member.aadhaarNumber),
-        escapeCsvField(member.contactNumber),
-        escapeCsvField(member.emailAddress),
-        escapeCsvField(member.permanentAddress),
-        escapeCsvField(member.currentAddress),
-        escapeCsvField(member.educationalQualification),
-        escapeCsvField(member.specialization),
-        escapeCsvField(member.yearsOfExperience),
-        escapeCsvField(member.previousExperience),
-        escapeCsvField(member.dateOfJoining),
-        escapeCsvField(member.department),
-        escapeCsvField(member.designation),
-        escapeCsvField(member.employeeType),
-        escapeCsvField(member.status),
-        escapeCsvField((member.assignedSubjects || []).map(a => `${a.grade}: ${a.subject}`).join(' | ')),
-        escapeCsvField(member.teacherLicenseNumber),
-        escapeCsvField(member.salaryGrade),
-        escapeCsvField(member.basicSalary),
-        escapeCsvField(member.bankAccountNumber),
-        escapeCsvField(member.bankName),
-        escapeCsvField(member.panNumber),
-        escapeCsvField(member.emergencyContactName),
-        escapeCsvField(member.emergencyContactRelationship),
-        escapeCsvField(member.emergencyContactNumber),
-        escapeCsvField(member.medicalConditions)
+        member.employeeId || '',
+        member.staffType || '',
+        member.firstName || '',
+        member.lastName || '',
+        member.gender || '',
+        member.dateOfBirth || '',
+        member.nationality || '',
+        member.maritalStatus || '',
+        member.bloodGroup || '',
+        member.aadhaarNumber || '',
+        member.contactNumber || '',
+        member.emailAddress || '',
+        member.permanentAddress || '',
+        member.currentAddress || '',
+        member.educationalQualification || '',
+        member.specialization || '',
+        member.yearsOfExperience || '',
+        member.previousExperience || '',
+        member.dateOfJoining || '',
+        member.department || '',
+        member.designation || '',
+        member.employeeType || '',
+        member.status || '',
+        (member.assignedSubjects || []).map(a => `${a.grade}: ${a.subject}`).join(' | '),
+        member.teacherLicenseNumber || '',
+        member.salaryGrade || '',
+        member.basicSalary || '',
+        member.bankAccountNumber || '',
+        member.bankName || '',
+        member.panNumber || '',
+        member.emergencyContactName || '',
+        member.emergencyContactRelationship || '',
+        member.emergencyContactNumber || '',
+        member.medicalConditions || ''
     ]);
     
     return { headers, rows };
@@ -313,10 +304,54 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
         return;
     }
     const { headers, rows } = getExportData(dataToExport);
+
+    const escapeCsvField = (field: any): string => {
+        if (field === null || field === undefined) return '';
+        const stringField = String(field);
+        if (/[",\n\r]/.test(stringField)) {
+            return `"${stringField.replace(/"/g, '""')}"`;
+        }
+        return stringField;
+    };
+
     const csvContent = [
-  headers.join(','),
-  ...rows.map(row => row.join(','))
-].join('\n');
+        headers.map(h => escapeCsvField(h)).join(','),
+        ...rows.map(row => row.map(f => escapeCsvField(f)).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `BMS_Staff_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsExportMenuOpen(false);
+  };
+
+  const handleDownloadXlsx = () => {
+    const dataToExport = activeTab === 'teaching' ? teachingStaff : nonTeachingStaff;
+    if (dataToExport.length === 0) {
+        alert("No staff data available to download for the current view.");
+        return;
+    }
+
+    const { headers, rows } = getExportData(dataToExport);
+    
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Create a worksheet from headers and rows
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(wb, ws, activeTab === 'teaching' ? 'Teaching Staff' : 'Non-Teaching Staff');
+    
+    // Generate buffer and trigger download
+    XLSX.writeFile(wb, `BMS_Staff_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    setIsExportMenuOpen(false);
   };
 
   return (
@@ -361,7 +396,7 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
                                   <div className="py-1">
                                       <button onClick={() => window.print()} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as PDF</button>
-                                      {/* <button onClick={handleDownloadXlsx} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as XLSX</button> */}
+                                      <button onClick={handleDownloadXlsx} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as XLSX</button>
                                       <button onClick={handleDownloadCsv} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as CSV</button>
                                   </div>
                               </div>

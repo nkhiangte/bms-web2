@@ -69,6 +69,15 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     const [existingTc, setExistingTc] = useState<TcRecord | null>(null);
     
     const [formData, setFormData] = useState({
+        nameOfStudent: '',
+        gender: '' as Gender | string,
+        fatherName: '',
+        motherName: '',
+        currentClass: '' as Grade | string,
+        rollNo: 0,
+        dateOfBirth: '',
+        category: '' as Category | string,
+        religion: '',
         dateOfBirthInWords: '',
         schoolDuesIfAny: 'None',
         qualifiedForPromotion: 'Not Applicable' as 'Yes' | 'No' | 'Not Applicable',
@@ -93,6 +102,20 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         const tc = tcRecords.find(r => r.studentDbId === student.id);
         if (tc) {
             setExistingTc(tc);
+        } else {
+            // Populate formData with student details for a new TC
+            setFormData(prev => ({
+                ...prev,
+                nameOfStudent: student.name,
+                gender: student.gender,
+                fatherName: student.fatherName,
+                motherName: student.motherName,
+                currentClass: student.grade,
+                rollNo: student.rollNo,
+                dateOfBirth: student.dateOfBirth,
+                category: student.category,
+                religion: student.religion,
+            }));
         }
     };
 
@@ -157,6 +180,19 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             const tc = tcRecords.find(r => r.studentDbId === student.id);
             if (tc) {
                 setExistingTc(tc);
+            } else {
+                setFormData(prev => ({
+                    ...prev,
+                    nameOfStudent: student.name,
+                    gender: student.gender,
+                    fatherName: student.fatherName,
+                    motherName: student.motherName,
+                    currentClass: student.grade,
+                    rollNo: student.rollNo,
+                    dateOfBirth: student.dateOfBirth,
+                    category: student.category,
+                    religion: student.religion,
+                }));
             }
         } else {
             setSearchError('Student not found.');
@@ -180,9 +216,18 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     }, [paramStudentId, paramTcId, students, tcRecords]);
 
     useEffect(() => {
-        if (paramTcId && existingTc) {
-            // Load existing TC data into form when in edit mode
+        if (existingTc) {
+            // Load existing TC data into form when in edit mode or when student has a TC
             setFormData({
+                nameOfStudent: existingTc.nameOfStudent || '',
+                gender: existingTc.gender || '',
+                fatherName: existingTc.fatherName || '',
+                motherName: existingTc.motherName || '',
+                currentClass: existingTc.currentClass || '',
+                rollNo: existingTc.rollNo || 0,
+                dateOfBirth: existingTc.dateOfBirth || '',
+                category: existingTc.category || '',
+                religion: existingTc.religion || '',
                 dateOfBirthInWords: existingTc.dateOfBirthInWords || '',
                 schoolDuesIfAny: existingTc.schoolDuesIfAny || 'None',
                 qualifiedForPromotion: existingTc.qualifiedForPromotion || 'Not Applicable',
@@ -194,13 +239,13 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                 anyOtherRemarks: existingTc.anyOtherRemarks || 'None',
             });
         }
-    }, [existingTc, paramTcId]);
+    }, [existingTc]);
 
     const handleGenerateDateInWords = async () => {
-        if (!foundStudent) return;
+        if (!formData.dateOfBirth) return;
         setIsGeneratingWords(true);
         try {
-            const prompt = `Convert the date ${formatDateForDisplay(foundStudent.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
+            const prompt = `Convert the date ${formatDateForDisplay(formData.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
             
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const response = await ai.models.generateContent({
@@ -221,7 +266,10 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value as any }));
+        setFormData(prev => ({ 
+            ...prev, 
+            [name]: name === 'rollNo' ? parseInt(value) || 0 : value as any 
+        }));
     };
 
     const handleSubmit = (e: FormEvent) => {
@@ -239,24 +287,12 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         let success = false;
         
         if (paramTcId && existingTc && onUpdateTc) {
-            const tcData: Partial<TcRecord> = {
-                ...formData,
-            };
-            success = await onUpdateTc(paramTcId, tcData);
+            success = await onUpdateTc(paramTcId, formData);
         } else {
             const tcData: Omit<TcRecord, 'id'> = {
-                refNo: `BMS/TC/${academicYear.split('-')[0]}/${foundStudent.rollNo}`,
+                refNo: `BMS/TC/${academicYear.split('-')[0]}/${formData.rollNo}`,
                 studentDbId: foundStudent.id,
                 studentDisplayId: formatStudentId(foundStudent, academicYear),
-                nameOfStudent: foundStudent.name,
-                gender: foundStudent.gender,
-                fatherName: foundStudent.fatherName,
-                motherName: foundStudent.motherName,
-                currentClass: foundStudent.grade,
-                rollNo: foundStudent.rollNo,
-                dateOfBirth: foundStudent.dateOfBirth,
-                category: foundStudent.category,
-                religion: foundStudent.religion,
                 ...formData,
             };
             success = await onGenerateTc(tcData);
@@ -360,14 +396,14 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                         <fieldset className="border p-4 rounded-lg">
                             <legend className="text-lg font-bold text-slate-800 px-2">Student Details</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                                <ReadonlyField label="Student Name" value={foundStudent.name} />
-                                <ReadonlyField label="Father's Name" value={foundStudent.fatherName} />
-                                <ReadonlyField label="Mother's Name" value={foundStudent.motherName} />
-                                <ReadonlyField label="Current Class" value={foundStudent.grade} />
-                                <ReadonlyField label="Roll No" value={foundStudent.rollNo} />
-                                <ReadonlyField label="Date of Birth" value={formatDateForDisplay(foundStudent.dateOfBirth)} />
-                                <ReadonlyField label="Category" value={foundStudent.category} />
-                                <ReadonlyField label="Religion" value={foundStudent.religion} />
+                                <FormField label="Student Name" name="nameOfStudent" value={formData.nameOfStudent} onChange={handleChange} />
+                                <FormField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} />
+                                <FormField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} />
+                                <FormField label="Current Class" name="currentClass" value={formData.currentClass} onChange={handleChange} />
+                                <FormField label="Roll No" name="rollNo" value={formData.rollNo.toString()} onChange={handleChange} />
+                                <FormField label="Date of Birth" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} type="date" />
+                                <FormField label="Category" name="category" value={formData.category} onChange={handleChange} />
+                                <FormField label="Religion" name="religion" value={formData.religion} onChange={handleChange} />
                             </div>
                         </fieldset>
                         

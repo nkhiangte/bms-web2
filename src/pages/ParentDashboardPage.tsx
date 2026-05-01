@@ -64,7 +64,7 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
         const isExpanded = expandedChild === student.id;
         
         const attendanceStatus = currentAttendance?.[student.grade]?.[student.id];
-        const dues = getDuesSummary(student, feeStructure);
+        const duesSummary = getDuesSummary(student, feeStructure);
         
         const childHomework = useMemo(() => {
             return homework.filter(h => h.grade === student.grade).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
@@ -127,16 +127,27 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                     <div className="p-4 border-t border-white/30 space-y-6 animate-fade-in">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <ActionCard title="Student Profile" link={`/portal/student/${student.id}/profile`} icon={<UserIcon className="w-6 h-6 text-indigo-600"/>} />
-                            <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
-                            <ActionCard title="Today's Attendance" onClick={() => setViewingAttendanceFor(student)} icon={<CalendarDaysIcon className="w-6 h-6 text-sky-600"/>}>
-                                {attendanceStatus ? (<span className={`font-bold ${(attendanceStatus as unknown as string) === 'Present' ? 'text-emerald-700' : 'text-red-700'}`}>{(attendanceStatus as unknown as string)}</span>) : (<span className="text-slate-600">Not Marked</span>)}
+                            <ActionCard title="Fees & Payments" link={`/portal/fees/${student.id}`} icon={<CurrencyDollarIcon className="w-6 h-6 text-emerald-600"/>}>
+                                {duesSummary.total > 0 ? (
+                                    <span className="text-rose-600 font-bold">₹{duesSummary.total} Due</span>
+                                ) : (
+                                    <span className="text-emerald-600 font-bold">Paid</span>
+                                )}
                             </ActionCard>
+                            <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <ActionCard title="Today's Attendance" onClick={() => setViewingAttendanceFor(student)} icon={<CalendarDaysIcon className="w-6 h-6 text-sky-600"/>}>
+                                {attendanceStatus ? (<span className={`font-bold ${(attendanceStatus as unknown as string) === 'Present' ? 'text-emerald-700' : 'text-red-700'}`}>{(attendanceStatus as unknown as string)}</span>) : (<span className="text-slate-600">Not Marked</span>)}
+                            </ActionCard>
+                            <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
+                            <ActionCard title="Contact School" link="/portal/messages" icon={<MessageIcon className="w-6 h-6 text-emerald-600"/>} />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ActionCard title="Class Timetable" link="/portal/routine" state={{ grade: student.grade }} icon={<BookOpenIcon className="w-6 h-6 text-indigo-600"/>} />
                             <ActionCard title="Academic Calendar" link="/portal/calendar" icon={<CalendarDaysIcon className="w-6 h-6 text-teal-600"/>} />
-                            <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
                         </div>
                         
                         <div>

@@ -668,6 +668,20 @@ export enum StudentAttendanceStatus {
     HOLIDAY = 'Holiday'
 }
 
+export interface PaymentRecord {
+    id: string;
+    studentId: string;
+    studentName: string;
+    amount: number;
+    date: string;
+    month?: string; // For tuition fees
+    feeType: 'Tuition' | 'Admission' | 'Exam' | 'Other';
+    paymentMethod: 'Cash' | 'UPI' | 'Bank Transfer';
+    transactionId?: string;
+    status: 'Success' | 'Pending' | 'Failed';
+    remark?: string;
+}
+
 export type StaffAttendanceRecord = Record<string, AttendanceStatus>;
 export type StudentAttendanceRecord = Record<string, StudentAttendanceStatus>;
 export type DailyStudentAttendance = Record<Grade, Record<string, StudentAttendanceRecord>>;

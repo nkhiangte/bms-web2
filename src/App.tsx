@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem } from '@/types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem, PaymentRecord } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
 import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade, normalizeAcademicYear } from '@/utils';
@@ -108,6 +108,7 @@ import HomeworkScannerPage from '@/pages/HomeworkScannerPage';
 import ActivityLogPage from '@/pages/ActivityLogPage';
 import AnnouncementsPage from '@/pages/portal/AnnouncementsPage';
 import StudentProfilePage from '@/pages/portal/StudentProfilePage';
+import ParentFeePortalPage from '@/pages/portal/ParentFeePortalPage';
 import SchoolSettingsPage from '@/pages/SchoolSettingsPage';
 import ManageHomeworkPage from '@/pages/ManageHomeworkPage';
 import ManageSyllabusPage from '@/pages/ManageSyllabusPage';
@@ -184,6 +185,7 @@ const App: React.FC = () => {
     GRADES_LIST.reduce((acc, grade) => ({ ...acc, [grade]: {} }), {}) as Record<Grade, Record<string, StudentAttendanceRecord>>
   );
   const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
   const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string }[]>([]);
 
   const assignedGrade: Grade | null = useMemo(() => {
@@ -812,6 +814,7 @@ const App: React.FC = () => {
         db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))), err => handleFirestoreError(err, OperationType.LIST, 'notices')),
         db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework))), err => handleFirestoreError(err, OperationType.LIST, 'homework')),
         db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))), err => handleFirestoreError(err, OperationType.LIST, 'conductLog')),
+        db.collection('paymentHistory').onSnapshot(s => setPaymentRecords(s.docs.map(d => ({ id: d.id, ...d.data() } as PaymentRecord))), err => handleFirestoreError(err, OperationType.LIST, 'paymentHistory')),
         db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => {
           const newItems = s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission));
           // Filter out hostel admissions that might be in here or merging differently
@@ -921,6 +924,7 @@ const App: React.FC = () => {
           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
           <Route path="announcements" element={<AnnouncementsPage user={user!} notices={notices} />} />
           <Route path="student/:studentId/profile" element={<StudentProfilePage user={user!} students={students} admissions={onlineAdmissions} />} />
+          <Route path="fees/:studentId" element={<ParentFeePortalPage user={user!} students={students} feeStructure={feeStructure} paymentRecords={paymentRecords} schoolConfig={schoolConfig} />} />
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} />} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} allStudents={students} onUpdateProfile={handleUpdateUserProfile} />} />
           <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />

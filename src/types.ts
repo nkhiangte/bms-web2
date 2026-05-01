@@ -239,6 +239,18 @@ export interface Attendance {
 
 export type ConductGrade = 'Excellent' | 'Good' | 'Satisfactory' | 'Needs Improvement';
 
+export type SchoolLevel = 'all' | 'primary' | 'middle' | 'high';
+
+export interface SchoolCalendarEntry {
+    id: string;
+    date: string;
+    endDate?: string;
+    title: string;
+    type: CalendarEventType;
+    levels: SchoolLevel[];
+    description?: string;
+}
+
 export interface Exam {
     id: 'terminal1' | 'terminal2' | 'terminal3';
     name: string;
@@ -645,13 +657,15 @@ export enum AttendanceStatus {
     PRESENT = 'Present',
     ABSENT = 'Absent',
     LATE = 'Late',
-    LEAVE = 'Leave'
+    LEAVE = 'Leave',
+    HOLIDAY = 'Holiday'
 }
 
 export enum StudentAttendanceStatus {
     PRESENT = 'Present',
     ABSENT = 'Absent',
-    LEAVE = 'Leave'
+    LEAVE = 'Leave',
+    HOLIDAY = 'Holiday'
 }
 
 export type StaffAttendanceRecord = Record<string, AttendanceStatus>;

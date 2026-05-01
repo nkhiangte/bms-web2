@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent } from '@/types';
-import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import { Student, Grade, DailyStudentAttendance, StudentAttendanceRecord, StudentAttendanceStatus, User, StudentStatus, CalendarEvent, CalendarEventType } from '@/types';
+import { BackIcon, HomeIcon, CheckIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, ChevronDownIcon, ChevronUpIcon, CalendarDaysIcon } from '@/components/Icons';
 import { exportAttendanceToCsv, normalizeAcademicYear } from '@/utils';
 import { db } from '@/firebaseConfig';
 import DateRangeExportModal from '@/components/DateRangeExportModal';
+import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -92,30 +93,76 @@ const StudentAttendancePage: React.FC<StudentAttendancePageProps> = ({ students,
 
     const isToday = selectedDate === todayStr;
 
-useEffect(() => {
+    const isDateHoliday = (dateStr: string) => {
+        const date = new Date(`${dateStr}T00:00:00`);
+        const dayOfWeek = date.getDay();
+        
+        // 1. Check Weekends (Saturday = 6, Sunday = 0)
+        if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+
+        // 2. Check SCHOOL_CALENDAR_2026_2027 (Hardcoded holidays)
+        const inSchoolCalendar = SCHOOL_CALENDAR_2026_2027.some(entry => {
+            if (entry.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(entry.date + 'T00:00:00');
+            const end = entry.endDate ? new Date(entry.endDate + 'T00:00:00') : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+        if (inSchoolCalendar) return true;
+
+        // 3. Check calendarEvents (Dynamically added holidays)
+        const inCalendarEvents = calendarEvents.some(ev => {
+            if (ev.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(ev.date);
+            const end = ev.endDate ? new Date(ev.endDate) : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+
+        return inCalendarEvents;
+    };
+
+    const isHoliday = useMemo(() => isDateHoliday(selectedDate), [selectedDate, calendarEvents]);
+
+    useEffect(() => {
         const fetchDataForDate = async (dateStr: string) => {
             if (!grade) return;
             setIsLoading(true);
 
             let attendanceData: StudentAttendanceRecord = {};
-            const isFetchingToday = dateStr === todayStr;
-            const todayDataFromProp = allAttendance?.[grade]?.[dateStr];
+            const isTargetHoliday = isDateHoliday(dateStr);
 
-            if (isFetchingToday) {
-                if (todayDataFromProp) {
-                    attendanceData = todayDataFromProp;
-                } else if (classStudents.length > 0) {
-                    const defaultRecords: StudentAttendanceRecord = {};
-                    classStudents.forEach(s => { defaultRecords[s.id] = StudentAttendanceStatus.PRESENT; });
-                    attendanceData = defaultRecords;
-                }
+            if (isTargetHoliday) {
+                // If it's a holiday, all students are marked as HOLIDAY status
+                const holidayRecords: StudentAttendanceRecord = {};
+                classStudents.forEach(s => { holidayRecords[s.id] = StudentAttendanceStatus.HOLIDAY; });
+                attendanceData = holidayRecords;
             } else {
-                const [year, month] = dateStr.split('-').map(Number);
-                try {
-                    const monthlyData = await fetchStudentAttendanceForMonth(grade, year, month);
-                    attendanceData = (monthlyData[dateStr] as StudentAttendanceRecord) || {};
-                } catch (e) {
-                    console.error("Error fetching historical attendance", e);
+                const isFetchingToday = dateStr === todayStr;
+                const todayDataFromProp = allAttendance?.[grade]?.[dateStr];
+
+                if (isFetchingToday) {
+                    if (todayDataFromProp) {
+                        attendanceData = todayDataFromProp;
+                    } else if (classStudents.length > 0) {
+                        const defaultRecords: StudentAttendanceRecord = {};
+                        classStudents.forEach(s => { defaultRecords[s.id] = StudentAttendanceStatus.PRESENT; });
+                        attendanceData = defaultRecords;
+                    }
+                } else {
+                    const [year, month] = dateStr.split('-').map(Number);
+                    try {
+                        const monthlyData = await fetchStudentAttendanceForMonth(grade, year, month);
+                        attendanceData = (monthlyData[dateStr] as StudentAttendanceRecord) || {};
+                    } catch (e) {
+                        console.error("Error fetching historical attendance", e);
+                    }
                 }
             }
             
@@ -124,17 +171,20 @@ useEffect(() => {
         };
 
         fetchDataForDate(selectedDate);
-    }, [selectedDate, grade, classStudents.length, fetchStudentAttendanceForMonth, todayStr]);
+    }, [selectedDate, grade, classStudents, fetchStudentAttendanceForMonth, todayStr, allAttendance, calendarEvents]);
 
     useEffect(() => {
         const getPreviousWorkingDays = (count: number): Date[] => {
             const dates: Date[] = [];
             let currentDate = new Date();
+            currentDate.setHours(0,0,0,0);
             
-            while (dates.length < count) {
+            let attempts = 0;
+            while (dates.length < count && attempts < 30) { // Safety break
+                attempts++;
                 currentDate.setDate(currentDate.getDate() - 1);
-                const dayOfWeek = currentDate.getDay();
-                if (dayOfWeek !== 0) { // 0 is Sunday
+                const ds = currentDate.toISOString().split('T')[0];
+                if (!isDateHoliday(ds)) {
                     dates.push(new Date(currentDate));
                 }
             }
@@ -197,12 +247,12 @@ useEffect(() => {
 
 
     const handleStatusChange = (studentId: string, status: StudentAttendanceStatus) => {
-        if (!isToday) return;
+        if (!isToday || isHoliday) return;
         setRecords(prev => ({ ...prev, [studentId]: status }));
     };
 
     const handleMarkAll = (status: StudentAttendanceStatus) => {
-        if (!isToday) return;
+        if (!isToday || isHoliday) return;
         const newRecords: StudentAttendanceRecord = {};
         classStudents.forEach(student => {
             newRecords[student.id] = status;
@@ -213,7 +263,7 @@ useEffect(() => {
     const [toastKey, setToastKey] = useState<number>(0);
 
     const handleSave = async () => {
-    if (!grade || !isToday) return;
+    if (!grade || !isToday || isHoliday) return;
     setShowSuccessToast(false); // Add this line to reset any existing toast
     setIsSaving(true);
     await onUpdateAttendance(grade, selectedDate, records);
@@ -251,17 +301,19 @@ useEffect(() => {
             [StudentAttendanceStatus.PRESENT]: 'bg-emerald-100 text-emerald-800 border-emerald-300',
             [StudentAttendanceStatus.ABSENT]: 'bg-rose-100 text-rose-800 border-rose-300',
             [StudentAttendanceStatus.LEAVE]: 'bg-amber-100 text-amber-800 border-amber-300',
+            [StudentAttendanceStatus.HOLIDAY]: 'bg-red-100 text-red-800 border-red-300',
         };
         const activeColors = {
             [StudentAttendanceStatus.PRESENT]: 'bg-emerald-500 text-white',
             [StudentAttendanceStatus.ABSENT]: 'bg-rose-500 text-white',
             [StudentAttendanceStatus.LEAVE]: 'bg-amber-500 text-white',
+            [StudentAttendanceStatus.HOLIDAY]: 'bg-red-500 text-white',
         }
 
         return (
             <button
                 onClick={() => handleStatusChange(studentId, status)}
-                disabled={!isClassTeacher || !isToday}
+                disabled={!isClassTeacher || !isToday || isHoliday}
                 className={`px-3 py-1.5 text-sm font-bold rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${isActive ? activeColors[status] : `hover:bg-slate-200 ${colors[status]}`}`}
             >
                 {label}
@@ -289,9 +341,24 @@ useEffect(() => {
                 <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between mb-4">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-800">Student Attendance - {grade}</h1>
-                        <p className="text-slate-600 mt-1">{formattedSelectedDate}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-slate-600">{formattedSelectedDate}</p>
+                            {isHoliday && <span className="px-3 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200 uppercase tracking-wider">Holiday</span>}
+                        </div>
                     </div>
                 </div>
+
+                {isHoliday && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                            <CalendarDaysIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-red-800">Today is a Holiday / Weekend</h3>
+                            <p className="text-sm text-red-700">Attendance marking is not required for school holidays and weekends.</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="my-6 p-4 bg-slate-50 border rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
@@ -350,7 +417,7 @@ useEffect(() => {
                     )}
                 </div>
 
-                {isClassTeacher && isToday && (
+                {isClassTeacher && isToday && !isHoliday && (
                      <div className="flex flex-wrap gap-2 mb-4">
                         <button onClick={() => handleMarkAll(StudentAttendanceStatus.PRESENT)} className="text-xs font-semibold text-emerald-700 bg-emerald-100 rounded-full px-3 py-1 hover:bg-emerald-200">Mark All Present</button>
                         <button onClick={() => handleMarkAll(StudentAttendanceStatus.ABSENT)} className="text-xs font-semibold text-rose-700 bg-rose-100 rounded-full px-3 py-1 hover:bg-rose-200">Mark All Absent</button>

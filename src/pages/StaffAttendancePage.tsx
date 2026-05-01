@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, Staff, StaffAttendanceRecord, AttendanceStatus, CalendarEvent } from '@/types';
+import { User, Staff, StaffAttendanceRecord, AttendanceStatus, CalendarEvent, CalendarEventType } from '@/types';
 import { BackIcon, HomeIcon, CalendarDaysIcon, CheckIcon, XIcon, SpinnerIcon, CheckCircleIcon, InboxArrowDownIcon, DocumentReportIcon } from '@/components/Icons';
 import { getDistanceFromLatLonInM, exportAttendanceToCsv } from '@/utils';
+import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -46,6 +47,43 @@ const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, 
     
     const currentUserStaffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase()), [staff, user.email]);
 
+    const isDateHoliday = (date: Date) => {
+        const dayOfWeek = date.getDay();
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // 1. Check Weekends (Saturday = 6, Sunday = 0)
+        if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+
+        // 2. Check SCHOOL_CALENDAR_2026_2027 (Hardcoded holidays)
+        const inSchoolCalendar = SCHOOL_CALENDAR_2026_2027.some(entry => {
+            if (entry.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(entry.date + 'T00:00:00');
+            const end = entry.endDate ? new Date(entry.endDate + 'T00:00:00') : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+        if (inSchoolCalendar) return true;
+
+        // 3. Check calendarEvents (Dynamically added holidays)
+        const inCalendarEvents = calendarEvents.some(ev => {
+            if (ev.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(ev.date);
+            const end = ev.endDate ? new Date(ev.endDate) : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+
+        return inCalendarEvents;
+    };
+
+    const isHoliday = useMemo(() => isDateHoliday(today), [today, calendarEvents]);
+
     const staffToDisplay = useMemo(() => {
         if (user.role === 'admin') {
             return staff;
@@ -56,6 +94,11 @@ const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, 
     const handleMarkSelfAttendance = () => {
         if (!currentUserStaffProfile) {
             setNotification({ message: 'Your staff profile could not be found.', type: 'error' });
+            return;
+        }
+
+        if (isHoliday) {
+            setNotification({ message: 'Today is a holiday/weekend. Attendance marking is not required.', type: 'error' });
             return;
         }
 
@@ -135,18 +178,21 @@ const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, 
             [AttendanceStatus.ABSENT]: 'bg-rose-100 text-rose-800 border-rose-300',
             [AttendanceStatus.LEAVE]: 'bg-slate-100 text-slate-800 border-slate-300',
             [AttendanceStatus.LATE]: 'bg-amber-100 text-amber-800 border-amber-300',
+            [AttendanceStatus.HOLIDAY]: 'bg-red-100 text-red-800 border-red-300'
         };
         const activeColors = {
             [AttendanceStatus.PRESENT]: 'bg-emerald-500 text-white',
             [AttendanceStatus.ABSENT]: 'bg-rose-500 text-white',
             [AttendanceStatus.LEAVE]: 'bg-slate-500 text-white',
             [AttendanceStatus.LATE]: 'bg-amber-500 text-white',
+            [AttendanceStatus.HOLIDAY]: 'bg-red-500 text-white'
         }
 
         return (
             <button
                 onClick={() => onMarkAttendance(staffId, status)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-colors ${isActive ? activeColors[status] : `hover:bg-slate-200 ${colors[status]}`}`}
+                disabled={isHoliday}
+                className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${isActive ? activeColors[status] : `hover:bg-slate-200 ${colors[status]}`}`}
             >
                 {label}
             </button>
@@ -169,19 +215,34 @@ const StaffAttendancePage: React.FC<StaffAttendancePageProps> = ({ user, staff, 
                 <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between mb-4">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-800">Staff Attendance</h1>
-                        <p className="text-slate-600 mt-1">{formattedDate}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-slate-600">{formattedDate}</p>
+                            {isHoliday && <span className="px-3 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200 uppercase tracking-wider">Holiday</span>}
+                        </div>
                     </div>
                     {currentUserStaffProfile && (
                         <button
                             onClick={handleMarkSelfAttendance}
-                            disabled={isLoadingLocation || !!attendance?.[currentUserStaffProfile.id]}
+                            disabled={isLoadingLocation || !!attendance?.[currentUserStaffProfile.id] || isHoliday}
                             className="btn btn-primary text-base px-6 py-3 disabled:bg-slate-400 disabled:cursor-not-allowed"
                         >
                             {isLoadingLocation ? <SpinnerIcon className="w-5 h-5"/> : <CalendarDaysIcon className="w-5 h-5" />}
-                            <span>{attendance?.[currentUserStaffProfile.id] ? "Attendance Marked" : "Mark My Attendance"}</span>
+                            <span>{isHoliday ? "Holiday/Weekend" : (attendance?.[currentUserStaffProfile.id] ? "Attendance Marked" : "Mark My Attendance")}</span>
                         </button>
                     )}
                 </div>
+
+                {isHoliday && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                            <CalendarDaysIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-red-800">Today is a Holiday / Weekend</h3>
+                            <p className="text-sm text-red-700">Attendance marking is not required for school holidays and weekends.</p>
+                        </div>
+                    </div>
+                )}
                 
                  {user.role === 'admin' && (
                     <div className="my-6 p-4 bg-slate-50 border rounded-lg">

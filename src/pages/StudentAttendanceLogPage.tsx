@@ -1,11 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade, CalendarEvent } from '@/types';
+import { Student, User, StudentAttendanceRecord, StudentAttendanceStatus, Grade, CalendarEvent, CalendarEventType } from '@/types';
 import { BackIcon, HomeIcon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerIcon } from '@/components/Icons';
 import { exportAttendanceToCsv } from '@/utils';
 import { db } from '@/firebaseConfig';
 import DateRangeExportModal from '@/components/DateRangeExportModal';
+import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -74,11 +75,47 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
     });
   };
   
+  const isDateHoliday = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // 1. Check Weekends (Saturday = 6, Sunday = 0)
+    if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+
+    // 2. Check SCHOOL_CALENDAR_2026_2027 (Hardcoded holidays)
+    const inSchoolCalendar = SCHOOL_CALENDAR_2026_2027.some(entry => {
+        if (entry.type !== CalendarEventType.HOLIDAY) return false;
+        const start = new Date(entry.date + 'T00:00:00');
+        const end = entry.endDate ? new Date(entry.endDate + 'T00:00:00') : start;
+        start.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+        const target = new Date(dateStr + 'T00:00:00');
+        target.setHours(0,0,0,0);
+        return target >= start && target <= end;
+    });
+    if (inSchoolCalendar) return true;
+
+    // 3. Check calendarEvents (Dynamically added holidays)
+    const inCalendarEvents = calendarEvents.some(ev => {
+        if (ev.type !== CalendarEventType.HOLIDAY) return false;
+        const start = new Date(ev.date);
+        const end = ev.endDate ? new Date(ev.endDate) : start;
+        start.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+        const target = new Date(dateStr + 'T00:00:00');
+        target.setHours(0,0,0,0);
+        return target >= start && target <= end;
+    });
+
+    return inCalendarEvents;
+  };
+
   const attendanceSummary = useMemo(() => {
     const summary = {
         [StudentAttendanceStatus.PRESENT]: 0,
         [StudentAttendanceStatus.ABSENT]: 0,
         [StudentAttendanceStatus.LEAVE]: 0,
+        [StudentAttendanceStatus.HOLIDAY]: 0,
         totalWorkingDays: 0,
     };
     
@@ -88,18 +125,18 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        if (date.getDay() !== 0) { // Sunday is 0, not a working day
+        if (!isDateHoliday(date)) {
             const dateStr = date.toISOString().split('T')[0];
             const status = monthlyAttendance[dateStr];
+            summary.totalWorkingDays++;
             if(status) {
-                summary.totalWorkingDays++;
                 summary[status]++;
             }
         }
     }
     
     return summary;
-  }, [monthlyAttendance, currentDate]);
+  }, [monthlyAttendance, currentDate, calendarEvents]);
 
   const renderCalendar = () => {
     const year = currentDate.getFullYear();
@@ -115,27 +152,27 @@ const StudentAttendanceLogPage: React.FC<StudentAttendanceLogPageProps> = ({ stu
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 0; // Only Sunday is a holiday
+        const isHoliday = isDateHoliday(date);
 
         const status = monthlyAttendance[dateStr];
         let statusClass = 'bg-white';
-        let statusText = isWeekend ? 'Holiday' : 'Not Marked';
+        let statusText = isHoliday ? 'Holiday' : 'Not Marked';
 
-        if (isWeekend) {
+        if (isHoliday) {
             statusClass = 'bg-slate-100';
         } else if (status) {
             switch(status) {
                 case StudentAttendanceStatus.PRESENT: statusClass = 'bg-emerald-100 text-emerald-800'; statusText = 'Present'; break;
                 case StudentAttendanceStatus.ABSENT: statusClass = 'bg-rose-100 text-rose-800'; statusText = 'Absent'; break;
                 case StudentAttendanceStatus.LEAVE: statusClass = 'bg-amber-100 text-amber-800'; statusText = 'On Leave'; break;
+                case StudentAttendanceStatus.HOLIDAY: statusClass = 'bg-red-100 text-red-800'; statusText = 'Holiday'; break;
             }
         }
 
         calendarDays.push(
             <div key={day} className={`p-2 border h-24 flex flex-col ${statusClass}`}>
-                <span className={`font-bold ${isWeekend ? 'text-slate-400' : 'text-slate-800'}`}>{day}</span>
-                {!isWeekend && status && <span className="text-xs font-semibold mt-auto">{statusText}</span>}
+                <span className={`font-bold ${isHoliday ? 'text-slate-400' : 'text-slate-800'}`}>{day}</span>
+                <span className="text-xs font-semibold mt-auto">{statusText}</span>
             </div>
         );
     }

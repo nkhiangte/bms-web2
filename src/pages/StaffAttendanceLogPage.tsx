@@ -1,10 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade, CalendarEvent } from '@/types';
+import { Staff, StaffAttendanceRecord, AttendanceStatus, User, Student, GradeDefinition, Grade, CalendarEvent, CalendarEventType } from '@/types';
 import { BackIcon, HomeIcon, SpinnerIcon, InboxArrowDownIcon, DocumentReportIcon } from '@/components/Icons';
 import { exportAttendanceToCsv, getHolidayDates } from '@/utils';
 import DateRangeExportModal from '@/components/DateRangeExportModal';
+import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -104,32 +105,77 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
         }
     };
     
-    const getStatusIndicator = (status?: AttendanceStatus) => {
+    const isDateHoliday = (dateStr: string) => {
+        const date = new Date(`${dateStr}T00:00:00`);
+        const dayOfWeek = date.getDay();
+        
+        // 1. Check Weekends (Saturday = 6, Sunday = 0)
+        if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+
+        // 2. Check SCHOOL_CALENDAR_2026_2027 (Hardcoded holidays)
+        const inSchoolCalendar = SCHOOL_CALENDAR_2026_2027.some(entry => {
+            if (entry.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(entry.date + 'T00:00:00');
+            const end = entry.endDate ? new Date(entry.endDate + 'T00:00:00') : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+        if (inSchoolCalendar) return true;
+
+        // 3. Check calendarEvents (Dynamically added holidays)
+        const inCalendarEvents = calendarEvents.some(ev => {
+            if (ev.type !== CalendarEventType.HOLIDAY) return false;
+            const start = new Date(ev.date);
+            const end = ev.endDate ? new Date(ev.endDate) : start;
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+            const target = new Date(dateStr + 'T00:00:00');
+            target.setHours(0,0,0,0);
+            return target >= start && target <= end;
+        });
+
+        return inCalendarEvents;
+    };
+
+    const getStatusIndicator = (status?: AttendanceStatus, isHoliday?: boolean) => {
+        if (isHoliday) {
+            return <span className="flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">H</span>;
+        }
         if (!status) return <span className="text-slate-400">-</span>;
         const styles = {
             [AttendanceStatus.PRESENT]: { text: 'P', color: 'bg-emerald-400 text-white' },
             [AttendanceStatus.ABSENT]: { text: 'A', color: 'bg-rose-500 text-white' },
             [AttendanceStatus.LATE]: { text: 'L', color: 'bg-amber-400 text-black' },
             [AttendanceStatus.LEAVE]: { text: 'LV', color: 'bg-slate-300 text-slate-800' },
+            [AttendanceStatus.HOLIDAY]: { text: 'H', color: 'bg-red-100 text-red-700' },
         };
-        const style = styles[status];
+        const style = styles[status] || { text: '-', color: 'text-slate-400' };
         return <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${style.color}`}>{style.text}</span>;
     };
 
     const attendanceSummary = useMemo(() => {
         return staffToDisplay.map(member => {
-            const summary = { P: 0, A: 0, L: 0, LV: 0 };
+            const summary = { P: 0, A: 0, L: 0, LV: 0, H: 0 };
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const status = attendanceData[dateStr]?.[member.id];
-                if (status === AttendanceStatus.PRESENT) summary.P++;
-                else if (status === AttendanceStatus.ABSENT) summary.A++;
-                else if (status === AttendanceStatus.LATE) summary.L++;
-                else if (status === AttendanceStatus.LEAVE) summary.LV++;
+                const isHoliday = isDateHoliday(dateStr);
+                
+                if (isHoliday) {
+                    summary.H++;
+                } else {
+                    if (status === AttendanceStatus.PRESENT) summary.P++;
+                    else if (status === AttendanceStatus.ABSENT) summary.A++;
+                    else if (status === AttendanceStatus.LATE) summary.L++;
+                    else if (status === AttendanceStatus.LEAVE) summary.LV++;
+                }
             }
             return { staffId: member.id, summary };
         });
-    }, [staffToDisplay, attendanceData, daysInMonth, year, month]);
+    }, [staffToDisplay, attendanceData, daysInMonth, year, month, calendarEvents]);
     
     if (user.role === 'parent') {
         return (
@@ -208,7 +254,8 @@ const StaffAttendanceLogPage: React.FC<StaffAttendanceLogPageProps> = ({ staff, 
                                         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                                             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                             const status = attendanceData[dateStr]?.[member.id];
-                                            return <td key={day} className="p-1 border-l text-center">{getStatusIndicator(status)}</td>;
+                                            const isHoliday = isDateHoliday(dateStr);
+                                            return <td key={day} className="p-1 border-l text-center">{getStatusIndicator(status, isHoliday)}</td>;
                                         })}
                                         <td className="p-2 border-l text-center font-bold text-emerald-700">{summary?.P || 0}</td>
                                         <td className="p-2 border-l text-center font-bold text-rose-700">{summary?.A || 0}</td>

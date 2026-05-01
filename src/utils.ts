@@ -97,6 +97,34 @@ export const getFeeDetails = (grade: Grade, feeStructure: FeeStructure): FeeSet 
     return set || { heads: [] };
 };
 
+export const getDueMonths = (): string[] => {
+    const now = new Date();
+    const currentMonth = now.getMonth(); // 0-11 (Jan-Dec)
+    
+    // Academic year logic: Starts in April
+    // April(3), May(4), June(5), July(6), Aug(7), Sept(8), Oct(9), Nov(10), Dec(11), Jan(0), Feb(1), March(2)
+    const monthOrder = [3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2];
+    const currentIndex = monthOrder.indexOf(currentMonth);
+    
+    if (currentIndex === -1) return []; // Should not happen
+    
+    const dueIndices = monthOrder.slice(0, currentIndex + 1);
+    const dueMonths: string[] = [];
+    
+    dueIndices.forEach(idx => {
+        // Find which name in academicMonths matches this JS month index
+        // JS Month indices: Jan=0...Dec=11
+        // academicMonths: ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"]
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const name = monthNames[idx];
+        if (academicMonths.includes(name)) {
+            dueMonths.push(name);
+        }
+    });
+    
+    return dueMonths;
+};
+
 export const calculateDues = (student: Student, feeStructure: FeeStructure): string[] => {
     const defaultPayments: FeePayments = {
         admissionFeePaid: false,
@@ -118,7 +146,8 @@ export const calculateDues = (student: Student, feeStructure: FeeStructure): str
         duesMessages.push(`${names}: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(totalOneTime)}`);
     }
 
-    const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
+    const dueMonths = getDueMonths();
+    const unpaidTuitionMonths = dueMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0 && monthlyFees.length > 0) {
         const monthlyTotal = monthlyFees.reduce((sum, h) => sum + h.amount, 0);
         const totalDue = unpaidTuitionMonths.length * monthlyTotal;
@@ -172,7 +201,8 @@ export const getDuesSummary = (student: Student, feeStructure: FeeStructure): Du
         });
     }
 
-    const unpaidTuitionMonths = academicMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
+    const dueMonths = getDueMonths();
+    const unpaidTuitionMonths = dueMonths.filter(month => !feePayments.tuitionFeesPaid?.[month]);
     if (unpaidTuitionMonths.length > 0) {
         monthlyFees.forEach(head => {
             const totalForHead = unpaidTuitionMonths.length * head.amount;

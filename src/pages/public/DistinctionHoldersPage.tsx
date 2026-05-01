@@ -29,15 +29,20 @@ const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
                 onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-900'); (e.target as HTMLImageElement).style.display = 'none'; }} 
             />
         </div>
-        <div className="p-3 border-t border-zinc-800/50 bg-black/40">
-            <div className="flex justify-between items-center gap-2">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{holder.name}</h3>
+        <div className="p-4 border-t border-zinc-800/50 bg-black/60 backdrop-blur-sm">
+            <div className="flex justify-between items-start gap-2 mb-2">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider line-clamp-1 flex-1">{holder.name}</h3>
                 {holder.percentage !== undefined && holder.percentage > 0 && (
-                    <span className="flex-shrink-0 bg-sky-600/20 text-sky-400 text-[10px] font-bold px-2 py-0.5 rounded border border-sky-500/30">
+                    <span className="flex-shrink-0 bg-sky-500 text-white text-[11px] font-black px-2 py-0.5 rounded shadow-[0_0_10px_rgba(14,165,233,0.3)] border border-sky-400/50">
                         {holder.percentage}%
                     </span>
                 )}
             </div>
+            {holder.caption && (
+                <p className="text-[11px] text-zinc-400 line-clamp-2 leading-tight uppercase font-medium italic">
+                    {holder.caption}
+                </p>
+            )}
         </div>
     </div>
 );
@@ -67,34 +72,68 @@ const DistinctionHoldersPage: React.FC = () => {
                     }
                 }
 
-                // SECOND: Check if they are in the parent Achievements folder but tagged with the year
-                const achievementsDocRef = db.collection('website_content').doc('gallery_by_category_achievements');
-                const achievementsDoc = await achievementsDocRef.get();
-                if (achievementsDoc.exists) {
-                    const data = achievementsDoc.data();
-                    const items: any[] = data?.items || [];
-                    const filteredItems = items.filter((item: any) => 
-                        String(item.year) === String(year) && item.type === 'image'
-                    ).map((item: any) => {
-                        const title = item.title || '';
-                        const caption = item.caption || '';
-                        // Search for percentage in Title, Caption or Year (sometimes people put it there)
-                        const combinedText = `${title} ${caption} ${item.year || ''}`;
-                        const percentMatch = combinedText.match(/(\d+(?:\.\d+)?)\s*%/);
-                        const percentage = percentMatch ? parseFloat(percentMatch[1]) : 0;
-                        
-                        return {
-                            name: title,
-                            imageUrl: item.imageSrc,
-                            caption: caption,
-                            percentage: percentage
-                        };
-                    });
+                // SECOND: Check multiple potential documents for items
+                const potentialDocs = [
+                    'gallery_by_category_achievements',
+                    'gallery_by_category_achievements_distinguished_hslc_graduate',
+                    `gallery_by_category_achievements_distinguished_hslc_graduate_${year}`
+                ];
 
-                    if (filteredItems.length > 0) {
-                        // Sort by percentage descending
-                        filteredItems.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
-                        setHolders(filteredItems);
+                let allItemsFetched: any[] = [];
+                for (const docId of potentialDocs) {
+                    const doc = await db.collection('website_content').doc(docId).get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const items = data?.items || (Array.isArray(data) ? data : Object.values(data || {}));
+                        if (Array.isArray(items)) {
+                            allItemsFetched = [...allItemsFetched, ...items];
+                        }
+                    }
+                }
+
+                if (allItemsFetched.length > 0) {
+                    const filteredHolders = allItemsFetched
+                        .filter((item: any) => {
+                            const itemYear = String(item.year || '').trim();
+                            const targetYear = String(year).trim();
+                            // If it matches the target year OR if it was found in a year-specific doc
+                            return itemYear === targetYear; 
+                        })
+                        .filter((item: any) => item.imageSrc && (item.type === 'image' || !item.type))
+                        .map((item: any) => {
+                            const title = item.title || '';
+                            const caption = item.caption || '';
+                            const combinedText = `${title} ${caption} ${item.year || ''}`;
+                            
+                            // More robust percentage parsing: find all numbers followed by % and take the max
+                            const matches = combinedText.matchAll(/(\d+(?:\.\d+)?)\s*%/g);
+                            let maxPercent = 0;
+                            for (const match of matches) {
+                                const val = parseFloat(match[1]);
+                                if (val > maxPercent) maxPercent = val;
+                            }
+                            
+                            return {
+                                name: title || parseNameFromFilename(item.imageSrc.split('/').pop() || 'Student'),
+                                imageUrl: item.imageSrc,
+                                caption: caption,
+                                percentage: maxPercent
+                            };
+                        });
+
+                    if (filteredHolders.length > 0) {
+                        // Remove duplicates by imageUrl
+                        const uniqueHolders = Array.from(new Map(filteredHolders.map(h => [h.imageUrl, h])).values());
+                        
+                        // Sort by percentage descending, then by name
+                        uniqueHolders.sort((a, b) => {
+                            const pA = a.percentage || 0;
+                            const pB = b.percentage || 0;
+                            if (Math.abs(pB - pA) > 0.01) return pB - pA;
+                            return a.name.localeCompare(b.name);
+                        });
+                        
+                        setHolders(uniqueHolders);
                         setLoading(false);
                         return;
                     }

@@ -130,8 +130,12 @@ const ParentRegistrationPage: React.FC = () => {
                 return;
             }
 
+            if (!firebase.auth.RecaptchaVerifier) {
+                console.error("RecaptchaVerifier not found on firebase.auth");
+            }
+
             if (!(window as any).recaptchaVerifier) {
-                (window as any).recaptchaVerifier = new (window as any).firebase.auth.RecaptchaVerifier('recaptcha-container-reg', {
+                (window as any).recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container-reg', {
                     size: 'invisible'
                 });
             }

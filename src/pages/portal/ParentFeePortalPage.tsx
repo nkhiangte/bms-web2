@@ -43,21 +43,22 @@ const ParentFeePortalPage: React.FC<ParentFeePortalPageProps> = ({ user, student
     }, [student, feeStructure]);
 
     const monthlyFeesTotal = useMemo(() => {
-        if (!fees) return 0;
-        return fees.monthly.reduce((sum, h) => sum + h.amount, 0);
+        if (!fees || !fees.heads) return 0;
+        return fees.heads.filter(h => h.type === 'monthly').reduce((sum, h) => sum + h.amount, 0);
     }, [fees]);
 
     const oneTimeFeesTotal = useMemo(() => {
-        if (!fees) return 0;
-        return fees.oneTime.reduce((sum, h) => sum + h.amount, 0);
+        if (!fees || !fees.heads) return 0;
+        return fees.heads.filter(h => h.type === 'one-time').reduce((sum, h) => sum + h.amount, 0);
     }, [fees]);
 
     // Initialize selection with all current dues
     useEffect(() => {
-        if (student) {
+        if (student && student.feePayments) {
             const initial: string[] = [];
             dueMonthsList.forEach(m => {
-                if (!student.feePayments.tuitionFeesPaid[m]) initial.push(m);
+                const feesPaid = student.feePayments?.tuitionFeesPaid || {};
+                if (!feesPaid[m]) initial.push(m);
             });
             if (!student.feePayments.admissionFeePaid) initial.push('admission');
             setSelectedItems(initial);
@@ -262,7 +263,8 @@ const ParentFeePortalPage: React.FC<ParentFeePortalPageProps> = ({ user, student
                                 </tr>
                                 {/* Tuition Fees */}
                                 {academicMonths.map(month => {
-                                    const isPaid = student.feePayments.tuitionFeesPaid[month];
+                                    const feesPaid = student.feePayments?.tuitionFeesPaid || {};
+                                    const isPaid = feesPaid[month];
                                     const isDue = dueMonthsList.includes(month);
                                     
                                     return (

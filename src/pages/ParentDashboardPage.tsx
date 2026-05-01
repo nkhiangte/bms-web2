@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, Student, StudentStatus, StudentClaim, Grade, DailyStudentAttendance, NewsItem, Staff, GradeDefinition, Homework, Syllabus, StudentAttendanceRecord, FeeStructure } from '@/types';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
-import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon, PlusIcon, SparklesIcon, ChevronDownIcon, MessageIcon, ArrowRightIcon, SpinnerIcon, ClockIcon, ExclamationTriangleIcon } from '@/components/Icons';
+import { BookOpenIcon, CalendarDaysIcon, CurrencyDollarIcon, AcademicCapIcon, PlusIcon, SparklesIcon, ChevronDownIcon, MessageIcon, ArrowRightIcon, SpinnerIcon, ClockIcon, ExclamationTriangleIcon, UserIcon, MegaphoneIcon } from '@/components/Icons';
 import LinkChildModal from '@/components/LinkChildModal';
 import { getDuesSummary } from '@/utils';
 import AttendanceCalendarModal from '@/components/AttendanceCalendarModal';
@@ -126,22 +126,16 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                 {isExpanded && (
                     <div className="p-4 border-t border-white/30 space-y-6 animate-fade-in">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <ActionCard title="Student Profile" link={`/portal/student/${student.id}/profile`} icon={<UserIcon className="w-6 h-6 text-indigo-600"/>} />
+                            <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
                             <ActionCard title="Today's Attendance" onClick={() => setViewingAttendanceFor(student)} icon={<CalendarDaysIcon className="w-6 h-6 text-sky-600"/>}>
                                 {attendanceStatus ? (<span className={`font-bold ${(attendanceStatus as unknown as string) === 'Present' ? 'text-emerald-700' : 'text-red-700'}`}>{(attendanceStatus as unknown as string)}</span>) : (<span className="text-slate-600">Not Marked</span>)}
                             </ActionCard>
-                            <ActionCard title="Class Timetable" link="/portal/routine" state={{ grade: student.grade }} icon={<BookOpenIcon className="w-6 h-6 text-indigo-600"/>} />
-                            <ActionCard title="Academic Calendar" link="/portal/calendar" icon={<CalendarDaysIcon className="w-6 h-6 text-teal-600"/>} />
                         </div>
                         
-                        <div>
-                            <h4 className="font-bold text-slate-900 mb-2">Digital Diary (Recent Homework)</h4>
-                            {childHomework.length > 0 ? (
-                                <div className="space-y-2">{childHomework.map(hw => (<div key={hw.id} className="p-3 bg-white/80 border border-white/40 rounded-md text-sm"><p className="font-semibold text-slate-800">{hw.subject} <span className="text-xs text-slate-600 font-normal ml-2">({hw.date})</span></p><p className="text-slate-700">{hw.assignmentDetails}</p></div>))}</div>
-                            ) : <p className="text-sm text-slate-600 italic">No recent homework posted.</p>}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <ActionCard title="Academic Progress" link={`/portal/student/${student.id}/academics`} icon={<AcademicCapIcon className="w-6 h-6 text-rose-600"/>} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <ActionCard title="Class Timetable" link="/portal/routine" state={{ grade: student.grade }} icon={<BookOpenIcon className="w-6 h-6 text-indigo-600"/>} />
+                            <ActionCard title="Academic Calendar" link="/portal/calendar" icon={<CalendarDaysIcon className="w-6 h-6 text-teal-600"/>} />
                             <ActionCard title="Syllabus Tracker" link={`/portal/syllabus/${student.grade}`} icon={<SparklesIcon className="w-6 h-6 text-violet-600"/>} />
                         </div>
                         
@@ -178,9 +172,26 @@ const ParentDashboardPage: React.FC<ParentDashboardPageProps> = ({ user, allStud
                 </div>
                 
                 <div className="bg-white/70 backdrop-blur-xl border border-white/20 shadow-lg p-6 rounded-2xl">
-                    <h2 className="text-xl font-bold text-slate-900 mb-3">Notice Board</h2>
-                    {news.slice(0, 3).map(item => (<div key={item.id} className="border-b border-white/30 last:border-b-0 py-2"><p className="text-sm text-slate-600">{item.date}</p><p className="font-semibold text-slate-800">{item.title}</p></div>))}
-                    <Link to="/news" className="text-sm font-semibold text-sky-700 hover:underline mt-3 inline-block">View All News &rarr;</Link>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                             <MegaphoneIcon className="w-6 h-6 text-rose-600"/> Notice Board
+                        </h2>
+                        <Link to="/portal/announcements" className="text-sm font-semibold text-sky-700 hover:scale-105 transition-transform flex items-center gap-1 bg-sky-50 px-3 py-1.5 rounded-full border border-sky-100">
+                            View All <ArrowRightIcon className="w-4 h-4"/>
+                        </Link>
+                    </div>
+                    {news.length === 0 ? (
+                        <p className="text-sm text-slate-500 italic py-4 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">No active notices found.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {news.slice(0, 3).map(item => (
+                                <Link key={item.id} to={`/news/${item.id}`} className="block p-3 bg-white/60 border border-white/40 rounded-xl hover:bg-white hover:shadow-md transition-all group">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.date}</p>
+                                    <p className="font-bold text-slate-800 group-hover:text-sky-700 transition-colors">{item.title}</p>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {linkedStudents.length > 0 ? (

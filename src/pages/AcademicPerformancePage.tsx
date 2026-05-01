@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Exam, SubjectMark, Grade, GradeDefinition, User, ActivityLog, SubjectAssignment, Attendance, StudentStatus } from '@/types';
 import { TERMINAL_EXAMS, CONDUCT_GRADE_LIST, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES } from '@/constants';
-import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon } from '@/components/Icons';
+import { BackIcon, EditIcon, CheckIcon, XIcon, HomeIcon, SpinnerIcon, PrinterIcon, AwardIcon, TrendingUpIcon } from '@/components/Icons';
 import ActivityLogModal from '@/components/ActivityLogModal';
 import ExamPerformanceCard from '@/components/ExamPerformanceCard';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
-import { normalizeSubjectName, subjectsMatch, normalizeAcademicYear } from '@/utils';
+import { normalizeSubjectName, subjectsMatch, normalizeAcademicYear, getProcessedClassData } from '@/utils';
 import { db } from '@/firebaseConfig';
 
 const { useParams, Link } = ReactRouterDOM as any;
@@ -129,20 +129,57 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
         </div>
 
         <div className="space-y-8">
-            {performanceData.map(exam => (
-                <ExamPerformanceCard
-                    key={exam.id}
-                    exam={exam}
-                    student={student}
-                    gradeDefinitions={gradeDefinitions}
-                    allStudents={classmates}
-                    isEditing={isEditing}
-                    canEdit={canEdit}
-                    onUpdateExamData={handleUpdateExamData}
-                    onOpenActivityLog={(examId, subj) => setEditingActivityLogFor({examId, subjectName: subj})}
-                    academicYear={academicYear}
-                />
-            ))}
+            {performanceData.map(exam => {
+                const processedClass = getProcessedClassData(classmates, student.grade, exam.id as any, gradeDefinitions, academicYear);
+                const studentSummary = processedClass.find(s => s.id === student.id);
+                const classAvg = processedClass.length > 0 
+                    ? (processedClass.reduce((acc, curr) => acc + curr.percentage, 0) / processedClass.length).toFixed(1)
+                    : '0.0';
+
+                return (
+                    <div key={exam.id} className="space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-sky-50 rounded-xl border border-sky-100">
+                             <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white rounded-xl shadow-sm">
+                                    <AwardIcon className="w-6 h-6 text-sky-600"/>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">{exam.name} - Summary</h3>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                         <p className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                                             Rank: <span className="text-sky-700">{studentSummary?.rank || '-'}</span>
+                                         </p>
+                                         <p className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                                             Percentage: <span className="text-sky-700">{studentSummary?.percentage?.toFixed(1) || '0.0'}%</span>
+                                         </p>
+                                         <p className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                                             Class Avg: <span className="text-indigo-700">{classAvg}%</span>
+                                         </p>
+                                    </div>
+                                </div>
+                             </div>
+                             <Link 
+                                to={`/portal/progress-report/${student.id}/${exam.id}`}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-sky-200 text-sky-700 font-bold rounded-lg hover:bg-sky-50 transition-all shadow-sm"
+                             >
+                                <PrinterIcon className="w-5 h-5"/> Download Report Card (PDF)
+                             </Link>
+                        </div>
+
+                        <ExamPerformanceCard
+                            exam={exam}
+                            student={student}
+                            gradeDefinitions={gradeDefinitions}
+                            allStudents={classmates}
+                            isEditing={isEditing}
+                            canEdit={canEdit}
+                            onUpdateExamData={handleUpdateExamData}
+                            onOpenActivityLog={(examId, subj) => setEditingActivityLogFor({examId, subjectName: subj})}
+                            academicYear={academicYear}
+                        />
+                    </div>
+                );
+            })}
         </div>
         {editingActivityLogFor && (
             <ActivityLogModal

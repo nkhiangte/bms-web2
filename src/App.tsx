@@ -106,6 +106,8 @@ import { DisclosureData, DEFAULT_DISCLOSURE_DATA } from '@/pages/MandatoryDisclo
 import ParentDashboardPage from '@/pages/ParentDashboardPage';
 import HomeworkScannerPage from '@/pages/HomeworkScannerPage';
 import ActivityLogPage from '@/pages/ActivityLogPage';
+import AnnouncementsPage from '@/pages/portal/AnnouncementsPage';
+import StudentProfilePage from '@/pages/portal/StudentProfilePage';
 import SchoolSettingsPage from '@/pages/SchoolSettingsPage';
 import ManageHomeworkPage from '@/pages/ManageHomeworkPage';
 import ManageSyllabusPage from '@/pages/ManageSyllabusPage';
@@ -810,6 +812,11 @@ const App: React.FC = () => {
         db.collection('notices').onSnapshot(s => setNotices(s.docs.map(d => ({ id: d.id, ...d.data() } as Notice))), err => handleFirestoreError(err, OperationType.LIST, 'notices')),
         db.collection('homework').onSnapshot(s => setHomework(s.docs.map(d => ({ id: d.id, ...d.data() } as Homework))), err => handleFirestoreError(err, OperationType.LIST, 'homework')),
         db.collection('conductLog').onSnapshot(s => setConductLog(s.docs.map(d => ({ id: d.id, ...d.data() } as ConductEntry))), err => handleFirestoreError(err, OperationType.LIST, 'conductLog')),
+        db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => {
+          const newItems = s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission));
+          // Filter out hostel admissions that might be in here or merging differently
+          return newItems;
+        }), err => handleFirestoreError(err, OperationType.LIST, 'online_admissions')),
       );
     }
 
@@ -818,12 +825,8 @@ const App: React.FC = () => {
         db.collection('staffAttendance').doc(today).onSnapshot(doc => {
           setStaffAttendance(doc.exists ? doc.data() as StaffAttendanceRecord : {});
         }, err => handleFirestoreError(err, OperationType.GET, `staffAttendance/${today}`)),
-        db.collection('online_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
-          ...s.docs.map(d => ({ id: d.id, ...d.data() } as OnlineAdmission)),
-          ...prev.filter(a => a.id.startsWith('BMSHSTMM'))
-        ]), err => handleFirestoreError(err, OperationType.LIST, 'online_admissions')),
         db.collection('hostel_admissions').onSnapshot(s => setOnlineAdmissions(prev => [
-          ...prev.filter(a => !a.id.startsWith('BMSHSTMM')),
+          ...prev.filter(a => !a.id.startsWith('BMSHST')),
           ...s.docs.map(d => ({ id: d.id, ...d.data(), studentType: 'Boarder' } as any as OnlineAdmission))
         ]), err => handleFirestoreError(err, OperationType.LIST, 'hostel_admissions')),
         db.collection('users').onSnapshot(s => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as User))), err => handleFirestoreError(err, OperationType.LIST, 'users')),
@@ -916,6 +919,8 @@ const App: React.FC = () => {
         <Route path="/portal" element={authLoading ? <LoadingScreen /> : (user ? ((user as any).isNewUser ? <Navigate to="/parent-registration" replace /> : <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} />) : <Navigate to="/login" replace />)}>
           <Route path="dashboard" element={<DashboardPage user={user!} studentCount={students.filter(s => s.status === StudentStatus.ACTIVE && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
+          <Route path="announcements" element={<AnnouncementsPage user={user!} notices={notices} />} />
+          <Route path="student/:studentId/profile" element={<StudentProfilePage user={user!} students={students} admissions={onlineAdmissions} />} />
           <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} />} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} allStudents={students} onUpdateProfile={handleUpdateUserProfile} />} />
           <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />

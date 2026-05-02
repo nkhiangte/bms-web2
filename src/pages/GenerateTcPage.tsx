@@ -89,6 +89,9 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         anyOtherRemarks: 'None',
     });
 
+    const isInitialised = useRef(false);
+    const initialLoadDone = useRef<string | null>(null);
+
     const selectStudent = (student: Student) => {
         setFoundStudent(null);
         setSearchError('');
@@ -216,18 +219,19 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     }, [paramStudentId, paramTcId, students, tcRecords]);
 
     useEffect(() => {
-        if (existingTc) {
+        if (existingTc && initialLoadDone.current !== existingTc.id) {
             // Load existing TC data into form when in edit mode or when student has a TC
+            // Use fallback to student record for missing fields in legacy TC records
             setFormData({
-                nameOfStudent: existingTc.nameOfStudent || '',
-                gender: existingTc.gender || '',
-                fatherName: existingTc.fatherName || '',
-                motherName: existingTc.motherName || '',
-                currentClass: existingTc.currentClass || '',
-                rollNo: existingTc.rollNo || 0,
-                dateOfBirth: existingTc.dateOfBirth || '',
-                category: existingTc.category || '',
-                religion: existingTc.religion || '',
+                nameOfStudent: existingTc.nameOfStudent || foundStudent?.name || '',
+                gender: existingTc.gender || foundStudent?.gender || '',
+                fatherName: existingTc.fatherName || foundStudent?.fatherName || '',
+                motherName: existingTc.motherName || foundStudent?.motherName || '',
+                currentClass: existingTc.currentClass || foundStudent?.grade || '',
+                rollNo: existingTc.rollNo || foundStudent?.rollNo || 0,
+                dateOfBirth: existingTc.dateOfBirth || foundStudent?.dateOfBirth || '',
+                category: existingTc.category || foundStudent?.category || '',
+                religion: existingTc.religion || foundStudent?.religion || '',
                 dateOfBirthInWords: existingTc.dateOfBirthInWords || '',
                 schoolDuesIfAny: existingTc.schoolDuesIfAny || 'None',
                 qualifiedForPromotion: existingTc.qualifiedForPromotion || 'Not Applicable',
@@ -238,8 +242,9 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                 generalConduct: existingTc.generalConduct || 'Good',
                 anyOtherRemarks: existingTc.anyOtherRemarks || 'None',
             });
+            initialLoadDone.current = existingTc.id;
         }
-    }, [existingTc]);
+    }, [existingTc, foundStudent]);
 
     const handleGenerateDateInWords = async () => {
         if (!formData.dateOfBirth) return;
@@ -247,7 +252,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         try {
             const prompt = `Convert the date ${formatDateForDisplay(formData.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
             
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+            const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY});
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: prompt,

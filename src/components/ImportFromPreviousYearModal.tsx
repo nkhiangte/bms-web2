@@ -94,17 +94,25 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         const isInvalidId = (val?: string) => {
             if (!val) return true;
             const lower = val.trim().toLowerCase();
+            if (lower.length < 4) return true;
             return (
-                lower === '' || 
                 lower === 'n/a' || 
                 lower === 'na' || 
-                lower === '-' || 
-                lower === '0' || 
                 lower === 'none' || 
                 lower === 'pending' || 
                 lower === 'tbc' ||
                 lower === '...'
             );
+        };
+
+        const namesSimilar = (n1: string, n2: string) => {
+            const clean1 = n1.trim().toLowerCase();
+            const clean2 = n2.trim().toLowerCase();
+            if (clean1 === clean2) return true;
+            
+            const w1 = clean1.split(/\s+/).filter(w => w.length > 2);
+            const w2 = clean2.split(/\s+/).filter(w => w.length > 2);
+            return w1.some(w => w2.includes(w));
         };
 
         const targetYearNorm = normalizeAcademicYear(currentAcademicYear);
@@ -119,13 +127,18 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             if (cs.status !== StudentStatus.ACTIVE) return false;
 
             // Identity matching logic
-            const sName = student.name?.trim().toLowerCase();
-            const csName = cs.name?.trim().toLowerCase();
-            const nameMatch = sName && csName && sName === csName;
+            const sName = student.name || '';
+            const csName = cs.name || '';
+            const nameMatch = sName.trim().toLowerCase() === csName.trim().toLowerCase();
+            const isFuzzyNameMatch = namesSimilar(sName, csName);
 
             const sFather = student.fatherName?.trim().toLowerCase();
             const csFather = cs.fatherName?.trim().toLowerCase();
             const fatherMatch = sFather && csFather && sFather === csFather && !isInvalidId(sFather);
+
+            const sMother = student.motherName?.trim().toLowerCase();
+            const csMother = cs.motherName?.trim().toLowerCase();
+            const motherMatch = sMother && csMother && sMother === csMother && !isInvalidId(sMother);
 
             const sDOB = student.dateOfBirth;
             const csDOB = cs.dateOfBirth;
@@ -140,12 +153,12 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             const csPen = cs.pen;
             const penMatch = !isInvalidId(sPen) && sPen === csPen;
 
-            // 1. Strong ID matches take priority
-            if (aadhaarMatch || penMatch) return true;
+            // 1. Strong ID matches take priority, but REQUIRE some name similarity 
+            // to avoid siblings with shared parent Aadhaar matching each other
+            if ((aadhaarMatch || penMatch) && isFuzzyNameMatch) return true;
 
-            // 2. Strong triple match (Name + Father + DOB)
-            // Require all three to be valid and matching to avoid false positives with common names.
-            if (nameMatch && fatherMatch && dobMatch) return true;
+            // 2. Strong triple match (Name + Father + DOB/Mother)
+            if (nameMatch && (fatherMatch || motherMatch || dobMatch)) return true;
 
             return false;
         });

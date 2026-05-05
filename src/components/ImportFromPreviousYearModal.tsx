@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Student, Grade, GradeDefinition } from '@/types';
+import { Student, Grade, GradeDefinition, StudentStatus } from '@/types';
 import { db } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getNextGrade, formatStudentId, calculateStudentResult } from '@/utils';
+import { getNextGrade, formatStudentId, calculateStudentResult, normalizeAcademicYear } from '@/utils';
 import { XIcon, SearchIcon, SpinnerIcon, UserIcon, CheckCircleIcon, XCircleIcon } from '@/components/Icons';
 import StudentFormModal from './StudentFormModal';
 
@@ -79,14 +79,25 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             return lower === '' || lower === 'n/a' || lower === 'na' || lower === '-' || lower === '0' || lower === 'none';
         };
 
+        const targetYearNorm = normalizeAcademicYear(currentAcademicYear);
         const imported = currentStudents.find(cs => {
-            const studentYearNorm = cs.academicYear ? cs.academicYear.trim().replace(/\s/g, '') : '';
-            const targetYearNorm = currentAcademicYear.trim().replace(/\s/g, '');
-            if (studentYearNorm !== targetYearNorm) return false;
+            const csYear = normalizeAcademicYear(cs.academicYear);
+            if (csYear !== targetYearNorm) return false;
             
-            if (!isInvalidIdentifier(student.aadhaarNumber) && cs.aadhaarNumber === student.aadhaarNumber) return true;
-            if (!isInvalidIdentifier(student.pen) && cs.pen === student.pen) return true;
-            if (student.name === cs.name && student.fatherName === cs.fatherName && student.dateOfBirth === cs.dateOfBirth) return true;
+            // If the student was already imported but then transferred/deleted in the current year, 
+            // we should probably allow re-importing or at least not say it's already there in an active sense.
+            // But usually, 'Already imported' implies they exist in the current session.
+            if (cs.status === StudentStatus.TRANSFERRED) return false;
+
+            const nameMatch = student.name && cs.name && student.name.trim().toLowerCase() === cs.name.trim().toLowerCase();
+            const fatherMatch = student.fatherName && cs.fatherName && student.fatherName.trim().toLowerCase() === cs.fatherName.trim().toLowerCase();
+            const dobMatch = student.dateOfBirth && cs.dateOfBirth && student.dateOfBirth === cs.dateOfBirth;
+
+            if (nameMatch && fatherMatch && dobMatch) return true;
+
+            if (!isInvalidIdentifier(student.aadhaarNumber) && student.aadhaarNumber === cs.aadhaarNumber) return true;
+            if (!isInvalidIdentifier(student.pen) && student.pen === cs.pen) return true;
+
             return false;
         });
         return imported ? imported.grade : null;
@@ -96,10 +107,11 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         // Prepare student for current year
         const targetGrade = isPromoted ? (getNextGrade(student.grade) || student.grade) : student.grade;
         
-        // We keep rollNo and studentId from the previous year
-        // We only reset feePayments and academicPerformance
+        // We strip session-specific fields to allow new generation
+        const { id: _id, studentId: _sid, academicPerformance: _ap, feePayments: _fp, academicYear: _ay, ...studentBase } = student;
+
         const preparedStudent: Student = {
-            ...student,
+            ...(studentBase as Student),
             grade: targetGrade,
             academicYear: currentAcademicYear,
             feePayments: {

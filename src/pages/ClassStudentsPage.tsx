@@ -63,7 +63,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 const studentYearNorm = normalizeAcademicYear(s.academicYear);
                 const selectedYearNorm = normalizeAcademicYear(academicYear);
                 const matchesYear = studentYearNorm === selectedYearNorm;
-                return matchesGrade && matchesYear;
+                return matchesGrade && matchesYear && s.status !== StudentStatus.TRANSFERRED;
             })
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);

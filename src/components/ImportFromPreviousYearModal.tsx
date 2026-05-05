@@ -35,13 +35,16 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         const parts = currentAcademicYear.split('-');
         if (parts.length !== 2) return ["2025-26", "2025-2026"];
         const start = parseInt(parts[0], 10);
-        const end = parseInt(parts[1], 10);
-        if (isNaN(start) || isNaN(end)) return ["2025-26", "2025-2026"];
+        const endValue = parseInt(parts[1], 10);
         
-        // Return both common formats to ensure we find students regardless of how year was stored
+        if (isNaN(start) || isNaN(endValue)) return ["2025-26", "2025-2026"];
+        
+        // Handle YYYY-YYYY format by getting the last two digits
+        const end = parts[1].length === 4 ? (endValue % 100) : endValue;
+
         const y1 = `${start - 1}-${String(end - 1).padStart(2, '0')}`;
         const y2 = `${start - 1}-${start}`;
-        return [y1, y2];
+        return Array.from(new Set([y1, y2]));
     }, [currentAcademicYear]);
 
     useEffect(() => {
@@ -87,7 +90,7 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         return previousYearStudents.filter(s => s.name.toLowerCase().includes(lowerTerm));
     }, [searchTerm, previousYearStudents]);
 
-    const getImportedClass = (student: Student) => {
+    const getImportedStudent = (student: Student) => {
         const isInvalidIdentifier = (val?: string) => {
             if (!val) return true;
             const lower = val.trim().toLowerCase();
@@ -105,13 +108,15 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         };
 
         const targetYearNorm = normalizeAcademicYear(currentAcademicYear);
-        const imported = currentStudents.find(cs => {
+        return currentStudents.find(cs => {
+            // Never match against the same record from the search results
+            if (cs.id === student.id) return false;
+
             const csYear = normalizeAcademicYear(cs.academicYear);
             if (csYear !== targetYearNorm) return false;
             
-            // Only block import if the student is ACTIVE in the current year
-            // If they are Transferred/Dropped, we might want to allow re-importing or at least 
-            // not show them as "Already imported" in a way that blocks the user if they're trying to fix a record.
+            // Only block if explicitly ACTIVE in the current year.
+            // If they are Transferred/Dropped or have no status, we allow re-importing.
             if (cs.status !== StudentStatus.ACTIVE) return false;
 
             // Identity matching logic
@@ -123,11 +128,12 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             const csFather = cs.fatherName?.trim().toLowerCase();
             const fatherMatch = sFather && csFather && sFather === csFather;
 
-            const dobMatch = student.dateOfBirth && cs.dateOfBirth && student.dateOfBirth === cs.dateOfBirth;
+            const sDOB = student.dateOfBirth;
+            const csDOB = cs.dateOfBirth;
+            const dobMatch = sDOB && csDOB && sDOB === csDOB;
 
             // 1. Strong triple match (Name + Father + DOB)
-            // Require all three if IDs are missing to be absolutely sure.
-            // If any of these are missing from either side, this branch fails.
+            // Only if all three are provided and match.
             if (nameMatch && fatherMatch && dobMatch) return true;
 
             // 2. Aadhaar match (only if valid)
@@ -138,7 +144,6 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
 
             return false;
         });
-        return imported ? imported.grade : null;
     };
 
     const handleSelectStudent = (student: Student, isPromoted: boolean) => {
@@ -210,9 +215,9 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                         <div className="space-y-2">
                             {searchResults.length > 0 ? (
                                 searchResults.map(student => {
-                                    const importedClass = getImportedClass(student);
+                                    const importedMatch = getImportedStudent(student);
                                     return (
-                                    <div key={student.id} className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${importedClass ? 'bg-slate-50 opacity-75' : 'hover:bg-slate-50'}`}>
+                                    <div key={student.id} className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${importedMatch ? 'bg-slate-50 opacity-75' : 'hover:bg-slate-50'}`}>
                                         <div>
                                             <h4 className="font-bold text-slate-800">{student.name}</h4>
                                             <p className="text-sm text-slate-500">
@@ -232,10 +237,15 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
                                             })()}
                                         </div>
                                         <div className="flex flex-col sm:flex-row gap-2 items-center">
-                                            {importedClass ? (
-                                                <span className="text-sm font-semibold text-slate-500 bg-slate-200 px-3 py-1.5 rounded-lg">
-                                                    Already imported to {importedClass}
-                                                </span>
+                                            {importedMatch ? (
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-sm font-semibold text-slate-500 bg-slate-200 px-3 py-1.5 rounded-lg">
+                                                        Already in {importedMatch.grade} ({importedMatch.academicYear})
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 mt-1 italic">
+                                                        ID: {formatStudentId(importedMatch, currentAcademicYear)}
+                                                    </span>
+                                                </div>
                                             ) : (
                                                 <>
                                                     <button 

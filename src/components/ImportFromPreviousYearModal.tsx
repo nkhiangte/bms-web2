@@ -91,7 +91,7 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
     }, [searchTerm, previousYearStudents]);
 
     const getImportedStudent = (student: Student) => {
-        const isInvalidIdentifier = (val?: string) => {
+        const isInvalidId = (val?: string) => {
             if (!val) return true;
             const lower = val.trim().toLowerCase();
             return (
@@ -116,7 +116,6 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             if (csYear !== targetYearNorm) return false;
             
             // Only block if explicitly ACTIVE in the current year.
-            // If they are Transferred/Dropped or have no status, we allow re-importing.
             if (cs.status !== StudentStatus.ACTIVE) return false;
 
             // Identity matching logic
@@ -126,21 +125,27 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
 
             const sFather = student.fatherName?.trim().toLowerCase();
             const csFather = cs.fatherName?.trim().toLowerCase();
-            const fatherMatch = sFather && csFather && sFather === csFather;
+            const fatherMatch = sFather && csFather && sFather === csFather && !isInvalidId(sFather);
 
             const sDOB = student.dateOfBirth;
             const csDOB = cs.dateOfBirth;
-            const dobMatch = sDOB && csDOB && sDOB === csDOB;
+            const dobMatch = sDOB && csDOB && sDOB === csDOB && !isInvalidId(sDOB);
 
-            // 1. Strong triple match (Name + Father + DOB)
-            // Only if all three are provided and match.
+            // IDs (Aadhaar/PEN) matching
+            const sAadhaar = student.aadhaarNumber;
+            const csAadhaar = cs.aadhaarNumber;
+            const aadhaarMatch = !isInvalidId(sAadhaar) && sAadhaar === csAadhaar;
+
+            const sPen = student.pen;
+            const csPen = cs.pen;
+            const penMatch = !isInvalidId(sPen) && sPen === csPen;
+
+            // 1. Strong ID matches take priority
+            if (aadhaarMatch || penMatch) return true;
+
+            // 2. Strong triple match (Name + Father + DOB)
+            // Require all three to be valid and matching to avoid false positives with common names.
             if (nameMatch && fatherMatch && dobMatch) return true;
-
-            // 2. Aadhaar match (only if valid)
-            if (!isInvalidIdentifier(student.aadhaarNumber) && student.aadhaarNumber === cs.aadhaarNumber) return true;
-            
-            // 3. PEN match (only if valid)
-            if (!isInvalidIdentifier(student.pen) && student.pen === cs.pen) return true;
 
             return false;
         });

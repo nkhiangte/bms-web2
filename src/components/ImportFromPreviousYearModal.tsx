@@ -33,11 +33,15 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
 
     const previousYear = useMemo(() => {
         const parts = currentAcademicYear.split('-');
-        if (parts.length !== 2) return "2025-26";
+        if (parts.length !== 2) return ["2025-26", "2025-2026"];
         const start = parseInt(parts[0], 10);
         const end = parseInt(parts[1], 10);
-        if (isNaN(start) || isNaN(end)) return "2025-26";
-        return `${start - 1}-${String(end - 1).padStart(2, '0')}`;
+        if (isNaN(start) || isNaN(end)) return ["2025-26", "2025-2026"];
+        
+        // Return both common formats to ensure we find students regardless of how year was stored
+        const y1 = `${start - 1}-${String(end - 1).padStart(2, '0')}`;
+        const y2 = `${start - 1}-${start}`;
+        return [y1, y2];
     }, [currentAcademicYear]);
 
     useEffect(() => {
@@ -49,12 +53,23 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         const fetchPreviousYearStudents = async () => {
             setIsLoadingStudents(true);
             try {
-                const q = query(
-                    collection(db, 'students'),
-                    where('academicYear', '==', previousYear)
+                // Fetch students from both possible year formats
+                const promises = previousYear.map(year => 
+                    getDocs(query(collection(db, 'students'), where('academicYear', '==', year)))
                 );
-                const snapshot = await getDocs(q);
-                const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+                const snapshots = await Promise.all(promises);
+                const results: Student[] = [];
+                const seenIds = new Set();
+
+                snapshots.forEach(snapshot => {
+                    snapshot.docs.forEach(doc => {
+                        if (!seenIds.has(doc.id)) {
+                            results.push({ id: doc.id, ...doc.data() } as Student);
+                            seenIds.add(doc.id);
+                        }
+                    });
+                });
+                
                 setPreviousYearStudents(results);
             } catch (error) {
                 console.error("Failed to fetch previous year students:", error);
@@ -76,7 +91,17 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         const isInvalidIdentifier = (val?: string) => {
             if (!val) return true;
             const lower = val.trim().toLowerCase();
-            return lower === '' || lower === 'n/a' || lower === 'na' || lower === '-' || lower === '0' || lower === 'none';
+            return (
+                lower === '' || 
+                lower === 'n/a' || 
+                lower === 'na' || 
+                lower === '-' || 
+                lower === '0' || 
+                lower === 'none' || 
+                lower === 'pending' || 
+                lower === 'tbc' ||
+                lower === '...'
+            );
         };
 
         const targetYearNorm = normalizeAcademicYear(currentAcademicYear);
@@ -84,18 +109,28 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             const csYear = normalizeAcademicYear(cs.academicYear);
             if (csYear !== targetYearNorm) return false;
             
-            // If the student was already imported but then transferred/deleted in the current year, 
-            // we should probably allow re-importing or at least not say it's already there in an active sense.
-            // But usually, 'Already imported' implies they exist in the current session.
+            // Skip transferred students in current year check
             if (cs.status === StudentStatus.TRANSFERRED) return false;
 
-            const nameMatch = student.name && cs.name && student.name.trim().toLowerCase() === cs.name.trim().toLowerCase();
-            const fatherMatch = student.fatherName && cs.fatherName && student.fatherName.trim().toLowerCase() === cs.fatherName.trim().toLowerCase();
+            // Identity matching logic
+            const sName = student.name?.trim().toLowerCase();
+            const csName = cs.name?.trim().toLowerCase();
+            const nameMatch = sName && csName && sName === csName;
+
+            const sFather = student.fatherName?.trim().toLowerCase();
+            const csFather = cs.fatherName?.trim().toLowerCase();
+            const fatherMatch = sFather && csFather && sFather === csFather;
+
             const dobMatch = student.dateOfBirth && cs.dateOfBirth && student.dateOfBirth === cs.dateOfBirth;
 
-            if (nameMatch && fatherMatch && dobMatch) return true;
+            // 1. Strong triple match (Name + Father + DOB)
+            // Only if we have at least Name and (Father or DOB) to avoid generic matching
+            if (nameMatch && (fatherMatch || dobMatch)) return true;
 
+            // 2. Aadhaar match
             if (!isInvalidIdentifier(student.aadhaarNumber) && student.aadhaarNumber === cs.aadhaarNumber) return true;
+            
+            // 3. PEN match
             if (!isInvalidIdentifier(student.pen) && student.pen === cs.pen) return true;
 
             return false;
@@ -145,7 +180,7 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col h-full max-h-[80vh]" onClick={e => e.stopPropagation()}>
                     <div className="p-6 border-b flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-slate-800">Import from Previous Year ({previousYear})</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">Import from Previous Year ({previousYear.join(' / ')})</h2>
                         <button onClick={onClose} className="p-2 text-slate-600 hover:bg-slate-100 rounded-full"><XIcon className="w-5 h-5"/></button>
                     </div>
 

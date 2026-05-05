@@ -109,8 +109,10 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             const csYear = normalizeAcademicYear(cs.academicYear);
             if (csYear !== targetYearNorm) return false;
             
-            // Skip transferred students in current year check
-            if (cs.status === StudentStatus.TRANSFERRED) return false;
+            // Only block import if the student is ACTIVE in the current year
+            // If they are Transferred/Dropped, we might want to allow re-importing or at least 
+            // not show them as "Already imported" in a way that blocks the user if they're trying to fix a record.
+            if (cs.status !== StudentStatus.ACTIVE) return false;
 
             // Identity matching logic
             const sName = student.name?.trim().toLowerCase();
@@ -124,13 +126,14 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
             const dobMatch = student.dateOfBirth && cs.dateOfBirth && student.dateOfBirth === cs.dateOfBirth;
 
             // 1. Strong triple match (Name + Father + DOB)
-            // Only if we have at least Name and (Father or DOB) to avoid generic matching
-            if (nameMatch && (fatherMatch || dobMatch)) return true;
+            // Require all three if IDs are missing to be absolutely sure.
+            // If any of these are missing from either side, this branch fails.
+            if (nameMatch && fatherMatch && dobMatch) return true;
 
-            // 2. Aadhaar match
+            // 2. Aadhaar match (only if valid)
             if (!isInvalidIdentifier(student.aadhaarNumber) && student.aadhaarNumber === cs.aadhaarNumber) return true;
             
-            // 3. PEN match
+            // 3. PEN match (only if valid)
             if (!isInvalidIdentifier(student.pen) && student.pen === cs.pen) return true;
 
             return false;

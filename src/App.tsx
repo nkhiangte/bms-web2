@@ -130,6 +130,7 @@ import ManageTextbooksPage from '@/pages/ManageTextbooksPage';
 import LetterGeneratorPage from '@/pages/LetterGeneratorPage';
 import TestimonialGeneratorPage from '@/pages/admin/TestimonialGeneratorPage';
 
+import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { SpinnerIcon } from '@/components/Icons';
@@ -187,6 +188,10 @@ const App: React.FC = () => {
   const [staffAttendance, setStaffAttendance] = useState<StaffAttendanceRecord>({});
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
   const [notifications, setNotifications] = useState<{ id: string; message: string; type: NotificationType; title?: string }[]>([]);
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importTargetGrade, setImportTargetGrade] = useState<Grade | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const assignedGrade: Grade | null = useMemo(() => {
     if (!user) return null;
@@ -402,6 +407,25 @@ const App: React.FC = () => {
   const handleUpdateTc = async (tcId: string, tcData: Partial<TcRecord>) => {
     try { await db.collection('tcRecords').doc(tcId).update(tcData); addNotification('Transfer Certificate updated.', 'success'); return true; }
     catch (error: any) { addNotification('Failed to update Transfer Certificate.', 'error'); return false; }
+  };
+
+  const handleImportStudents = async (importedStudents: Omit<Student, 'id'>[], targetGrade: Grade) => {
+    setIsImporting(true);
+    try {
+      const batch = db.batch();
+      importedStudents.forEach(student => {
+        const ref = db.collection('students').doc();
+        const studentId = formatStudentId(student, academicYear);
+        batch.set(ref, { ...student, id: ref.id, grade: targetGrade, studentId, academicYear });
+      });
+      await batch.commit();
+      addNotification(`Successfully imported ${importedStudents.length} students to ${targetGrade}.`, 'success');
+      setIsImportModalOpen(false);
+    } catch (error: any) {
+      addNotification(`Import failed: ${error.message}`, 'error');
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleGenerateServiceCertificate = async (certData: Omit<ServiceCertificateRecord, 'id'>) => {
@@ -863,6 +887,18 @@ const App: React.FC = () => {
     <>
       <OfflineIndicator />
       <NotificationContainer notifications={notifications} onDismiss={removeNotification} />
+      
+      <ImportStudentsModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+        onImport={handleImportStudents}
+        grade={importTargetGrade}
+        allStudents={students}
+        allGrades={GRADES_LIST}
+        isImporting={isImporting}
+        academicYear={academicYear}
+      />
+
       <Routes>
         <Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
           <Route index element={<PublicHomePage news={news} user={user} />} />
@@ -932,8 +968,8 @@ const App: React.FC = () => {
           <Route path="student/:studentId" element={<StudentDetailPage students={students} onEdit={handleEditStudent} onDelete={handlePermanentDeleteStudent} onReinstate={handleReinstateStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} feeStructure={feeStructure} conductLog={conductLog} hostelDisciplineLog={hostelDisciplineLog} onAddConductEntry={async (e) => { await db.collection('conductLog').add(e); return true; }} onDeleteConductEntry={async (id) => { await db.collection('conductLog').doc(id).delete(); }} />} />
           <Route path="student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
           <Route path="student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user!} calendarEvents={calendarEvents} />} />
-          <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={async () => {}} user={user!} />} />
-          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={async () => {}} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
+          <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} user={user!} />} />
+          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
           <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={dailyStudentAttendance} onUpdateAttendance={handleMarkStudentAttendance} user={user!} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={fetchStudentAttendanceForRange} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} />} />
           <Route path="staff/attendance" element={<StaffAttendancePage user={user!} staff={staff} attendance={staffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} calendarEvents={calendarEvents} />} />

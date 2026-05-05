@@ -80,6 +80,10 @@ const ImportFromPreviousYearModal: React.FC<ImportFromPreviousYearModalProps> = 
         };
 
         const imported = currentStudents.find(cs => {
+            const studentYearNorm = cs.academicYear ? cs.academicYear.trim().replace(/\s/g, '') : '';
+            const targetYearNorm = currentAcademicYear.trim().replace(/\s/g, '');
+            if (studentYearNorm !== targetYearNorm) return false;
+            
             if (!isInvalidIdentifier(student.aadhaarNumber) && cs.aadhaarNumber === student.aadhaarNumber) return true;
             if (!isInvalidIdentifier(student.pen) && cs.pen === student.pen) return true;
             if (student.name === cs.name && student.fatherName === cs.fatherName && student.dateOfBirth === cs.dateOfBirth) return true;

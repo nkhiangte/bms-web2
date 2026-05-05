@@ -5,7 +5,6 @@ import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure
 import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon, CheckCircleIcon } from '@/components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp, normalizeAcademicYear } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
-import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
 import StudentFormModal from '@/components/StudentFormModal';
@@ -49,10 +48,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const navigate = useNavigate();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
-    const [isImporting, setIsImporting] = useState(false);
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isImportPrevYearModalOpen, setIsImportPrevYearModalOpen] = useState(false);
     const [isSavingStudent, setIsSavingStudent] = useState(false);
@@ -92,22 +89,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const isClassTeacher = isAdmin || (user.role === 'user' && assignedGrade === grade);
 
     if (!grade) return <div>Invalid Class</div>;
-
-    const handleImportStudents = async (importedStudents: Omit<Student, 'id'>[], targetGrade: Grade) => {
-        setIsImporting(true);
-        try {
-            // Bulk add students
-            const addPromises = importedStudents.map(s => onAddStudentToClass(s));
-            await Promise.all(addPromises);
-            alert(`Successfully imported ${importedStudents.length} students to ${targetGrade}.`);
-            setIsImportModalOpen(false);
-        } catch (error) {
-            console.error("Error importing students:", error);
-            alert("Failed to import students. Please check console for details.");
-        } finally {
-            setIsImporting(false);
-        }
-    };
 
     const handleDeleteClick = (student: Student) => {
         setStudentToDelete(student);
@@ -190,7 +171,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
                         {isStaff && (
                             <div className="flex gap-2">
-                                <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary whitespace-nowrap" title="Import from CSV/Excel">
+                                <button onClick={() => onOpenImportModal(grade)} className="btn btn-secondary whitespace-nowrap" title="Import from CSV/Excel">
                                     <ArrowUpOnSquareIcon className="w-5 h-5"/> Import
                                 </button>
                                 <button onClick={() => setIsImportPrevYearModalOpen(true)} className="btn btn-secondary whitespace-nowrap bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="Import from Previous Year">
@@ -300,16 +281,6 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 currentAcademicYear={academicYear}
                 gradeDefinitions={gradeDefinitions}
                 currentStudents={students}
-            />
-            <ImportStudentsModal
-                isOpen={isImportModalOpen}
-                onClose={() => setIsImportModalOpen(false)}
-                onImport={handleImportStudents}
-                grade={grade}
-                allStudents={classStudents}
-                allGrades={[grade]} // Only allow importing into the current grade
-                isImporting={isImporting}
-                academicYear={academicYear}
             />
             <ConfirmationModal
                 isOpen={isConfirmDeleteModalOpen}

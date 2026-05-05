@@ -181,6 +181,11 @@ service cloud.firestore {
       allow read, list, write, delete: if isStaff();
     }
 
+    match /paymentHistory/{docId} {
+      allow read, list: if isStaff() || (isParent() && resource.data.studentId in getParentStudentIds());
+      allow write, delete: if isAdmin();
+    }
+
     // ---------------------------
     // Service Certificates
     // ---------------------------

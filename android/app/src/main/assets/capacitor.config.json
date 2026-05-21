@@ -1,0 +1,6 @@
+{
+	"appId": "com.bethelmissionschool.app",
+	"appName": "Bethel Mission School",
+	"webDir": "dist",
+	"bundledWebRuntime": false
+}

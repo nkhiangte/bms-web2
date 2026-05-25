@@ -11,6 +11,7 @@ const app = firebase.initializeApp(firebaseConfig);
 // Initialize services
 const auth = firebase.auth();
 const db = firebase.firestore();
+db.settings({ experimentalForceLongPolling: true });
 const storage = firebase.storage();
 
 // Error handling for Firestore

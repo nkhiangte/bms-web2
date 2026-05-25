@@ -3,12 +3,17 @@ import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon } from '@/components/Icons';
 import AcademicYearForm from '@/components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry } from '@/types'; // FIX: Add HostelDisciplineEntry import
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry, Staff, StaffAttendanceRecord, AttendanceStatus } from '@/types';
+import { getDistanceFromLatLonInM } from '@/utils';
+import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface DashboardPageProps {
   user: User;
+  staff: Staff[];
+  todayStaffAttendance?: StaffAttendanceRecord;
+  onMarkStaffAttendance?: (staffId: string, status: AttendanceStatus) => void;
   studentCount: number;
   academicYear: string;
   assignedGrade: Grade | null;
@@ -125,7 +130,92 @@ const UpcomingEventsCard: React.FC<{ events: CalendarEvent[]; isAdmin: boolean; 
 };
 
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear, disciplineLog }) => { // FIX: Added disciplineLog prop
+const SCHOOL_COORDS = { lat: 23.484294, lon: 93.3257024 };
+const MAX_DISTANCE_METERS = 50;
+
+const StaffAttendanceWidget: React.FC<{ 
+    staffProfile?: Staff, 
+    isHoliday: boolean, 
+    todayAttendance?: AttendanceStatus,
+    onMarkAttendance: (staffId: string, status: AttendanceStatus) => void 
+}> = ({ staffProfile, isHoliday, todayAttendance, onMarkAttendance }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
+
+    if (!staffProfile) return null;
+
+    const handleMarkAttendance = () => {
+        if (isHoliday) {
+            setMessage({ text: 'Today is a holiday/weekend.', type: 'error' });
+            return;
+        }
+
+        setIsLoading(true);
+        setMessage(null);
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const distance = getDistanceFromLatLonInM(latitude, longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lon);
+
+                if (distance <= MAX_DISTANCE_METERS) {
+                    const now = new Date();
+                    const cutOff = new Date();
+                    cutOff.setHours(9, 0, 0, 0);
+
+                    const status = now > cutOff ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
+                    onMarkAttendance(staffProfile.id, status);
+
+                    setMessage({ 
+                        text: status === AttendanceStatus.LATE 
+                            ? `Marked as LATE. You are ${distance.toFixed(0)}m away.`
+                            : `Marked successfully! You are ${distance.toFixed(0)}m away.`, 
+                        type: 'success' 
+                    });
+                } else {
+                    setMessage({ text: `Failed: You are ${distance.toFixed(0)}m away. Must be within ${MAX_DISTANCE_METERS}m.`, type: 'error' });
+                }
+                setIsLoading(false);
+            },
+            (error) => {
+                let err = 'Could not get location.';
+                if (error.code === 1) err = 'Location access denied. Please allow it.';
+                setMessage({ text: err, type: 'error' });
+                setIsLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    };
+
+    return (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <CalendarDaysIcon className="w-6 h-6 text-emerald-600" />
+                    Daily Attendance
+                </h2>
+                <p className="text-slate-600 text-sm mt-1">
+                    {isHoliday ? "No attendance required today." : "You must be within 50m of the school."}
+                </p>
+                {message && (
+                    <p className={`text-sm mt-2 font-semibold ${message.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {message.text}
+                    </p>
+                )}
+            </div>
+            <button
+                onClick={handleMarkAttendance}
+                disabled={isLoading || !!todayAttendance || isHoliday}
+                className="btn btn-primary whitespace-nowrap disabled:bg-slate-300 disabled:cursor-not-allowed"
+            >
+                {isLoading ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5"/>}
+                <span>{isHoliday ? "Holiday" : (todayAttendance ? `Status: ${todayAttendance}` : "Mark Attendance")}</span>
+            </button>
+        </div>
+    );
+};
+
+const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAttendance, onMarkStaffAttendance, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear, disciplineLog }) => {
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
   
@@ -151,6 +241,36 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
         })
         .slice(0, 5); // Show up to 5 upcoming events
     }, [calendarEvents]);
+
+  const currentUserStaffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase()), [staff, user.email]);
+  
+  const isDateHoliday = (date: Date) => {
+      const dayOfWeek = date.getDay();
+      const dateStr = date.toISOString().split('T')[0];
+      if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+      const inSchoolCalendar = SCHOOL_CALENDAR_2026_2027.some(entry => {
+          if (entry.type !== CalendarEventType.HOLIDAY) return false;
+          const start = new Date(entry.date + 'T00:00:00');
+          const end = entry.endDate ? new Date(entry.endDate + 'T00:00:00') : start;
+          start.setHours(0,0,0,0);
+          end.setHours(0,0,0,0);
+          const target = new Date(dateStr + 'T00:00:00');
+          target.setHours(0,0,0,0);
+          return target >= start && target <= end;
+      });
+      if (inSchoolCalendar) return true;
+      return calendarEvents.some(ev => {
+          if (ev.type !== CalendarEventType.HOLIDAY) return false;
+          const start = new Date(ev.date);
+          const end = ev.endDate ? new Date(ev.endDate) : start;
+          start.setHours(0,0,0,0);
+          end.setHours(0,0,0,0);
+          const target = new Date(dateStr + 'T00:00:00');
+          target.setHours(0,0,0,0);
+          return target >= start && target <= end;
+      });
+  };
+  const isHoliday = useMemo(() => isDateHoliday(new Date()), [calendarEvents]);
 
   // Handle pending user state early return - This is safe because useMemo is called above
   if (user.role === 'pending' || user.role === 'pending_parent') {
@@ -215,6 +335,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, studentCount, acade
                 )}
             </p>
         </div>
+
+        {currentUserStaffProfile && onMarkStaffAttendance && (
+            <StaffAttendanceWidget 
+                staffProfile={currentUserStaffProfile} 
+                isHoliday={isHoliday} 
+                todayAttendance={todayStaffAttendance ? todayStaffAttendance[currentUserStaffProfile.id] : undefined} 
+                onMarkAttendance={onMarkStaffAttendance} 
+            />
+        )}
         
         {(isAdmin || user.role === 'user' || user.role === 'warden') &&
             <UpcomingEventsCard events={upcomingEvents} isAdmin={isAdmin} />

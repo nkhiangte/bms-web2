@@ -23,7 +23,7 @@ const SCHOOL_COORDS = {
     lat: 23.484294,
     lon: 93.3257024,
 };
-const MAX_DISTANCE_METERS = 60;
+const MAX_DISTANCE_METERS = 50;
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onDismiss: () => void; }> = ({ message, type, onDismiss }) => {
     return (

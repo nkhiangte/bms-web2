@@ -40,7 +40,7 @@ jobs:
           ENCODED_STRING: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           mkdir -p android/app/keystore
-          echo $ENCODED_STRING | base64 -d > android/app/keystore/release.keystore
+          echo "$ENCODED_STRING" | base64 --decode --ignore-garbage > android/app/keystore/release.keystore
 
       - name: Build Android App Bundle (AAB)
         env:

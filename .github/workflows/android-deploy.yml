@@ -49,6 +49,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           cd android
+          chmod +x ./gradlew
           ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file=$(pwd)/app/keystore/release.keystore \
             -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \

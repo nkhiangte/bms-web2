@@ -58,7 +58,7 @@ jobs:
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD
             
       - name: Upload to Google Play
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
           packageName: com.bethelmissionschool.app

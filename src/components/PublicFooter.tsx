@@ -20,6 +20,7 @@ const PublicFooter: React.FC = () => {
                         <h4 className="font-bold text-white text-lg mb-4">Quick Links</h4>
                         <ul className="space-y-2 text-sm">
                             <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+                            <li><Link to="/podcasts" className="hover:text-white transition-colors">Podcasts</Link></li>
                             <li><Link to="/admissions" className="hover:text-white transition-colors">Admissions</Link></li>
                             <li><Link to="/rules" className="hover:text-white transition-colors">Rules & Regulations</Link></li>
                             <li><Link to="/faculty" className="hover:text-white transition-colors">Our Faculty</Link></li>

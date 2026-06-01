@@ -2,7 +2,7 @@ import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User } from '@/types';
 // FIX: Added 'AcademicCapIcon' and 'CalendarDaysIcon' to the import list to resolve a 'Cannot find name' error.
-import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon, UserIcon } from '@/components/Icons';
+import { HomeIcon, UsersIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, DocumentReportIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, XIcon, ClipboardDocumentListIcon, CogIcon, SparklesIcon, AcademicCapIcon, TransferIcon, UserIcon, PodcastIcon } from '@/components/Icons';
 
 const { NavLink, Link } = ReactRouterDOM as any;
 
@@ -38,6 +38,7 @@ const portalNavLinks = [
     { name: 'Official Letters', path: '/portal/letters', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Testimonial Generator', path: '/portal/testimonials', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Manage Notice Board', path: '/portal/manage-notices', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Manage Podcasts', path: '/portal/manage-podcasts', icon: <PodcastIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
    { name: 'Manage Achievements', path: '/portal/manage-achievements', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin'] },
    { name: 'Manage HSLC Results', path: '/portal/manage-hslc', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'Gallery Manager', path: '/portal/gallery-manager', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin'] },
@@ -49,6 +50,7 @@ const portalNavLinks = [
 const publicNavLinks = [
     { name: 'Website Home', path: '/' },
     { name: 'Latest News & Announcements', path: '/news' },
+    { name: 'Podcasts', path: '/podcasts' },
     { name: 'About Us', path: '/about' },
     { name: 'Academics', path: '/academics' },
     { name: 'Admissions', path: '/admissions' },

@@ -37,6 +37,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ students, staff, tcRecords, s
     'homework-scanner': 'Homework Scanner',
     'activity-log': 'Activity Log',
     'news-management': 'News Management',
+    'manage-podcasts': 'Manage Podcasts',
     'users': 'User Management',
     'promotion': 'Promotion',
     'subjects': 'Manage Subjects',

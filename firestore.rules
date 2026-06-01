@@ -115,6 +115,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /podcasts/{podcastId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Config collection
     match /config/{configDoc} {
       allow read: if true;

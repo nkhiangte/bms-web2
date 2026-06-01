@@ -50,8 +50,10 @@ import CalendarPage from '@/pages/CalendarPage';
 import CommunicationPage from '@/pages/CommunicationPage';
 import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
+import PodcastsPage from '@/pages/public/PodcastsPage';
 import NewsDetailPage from '@/pages/public/NewsDetailPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
+import ManagePodcastsPage from '@/pages/ManagePodcastsPage';
 import GalleryManagerPage from '@/pages/GalleryManagerPage';
 import WebsiteMediaManagerPage from '@/pages/WebsiteMediaManagerPage';
 import UserProfilePage from '@/pages/UserProfilePage';
@@ -168,6 +170,7 @@ const App: React.FC = () => {
   const [serviceCerts, setServiceCerts] = useState<ServiceCertificateRecord[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [podcasts, setPodcasts] = useState<PodcastEpisode[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [homework, setHomework] = useState<Homework[]>([]);
   const [syllabus, setSyllabus] = useState<Syllabus[]>([]);
@@ -619,6 +622,14 @@ const App: React.FC = () => {
   };
   const handleDeleteNews = async (id: string) => { try { await db.collection('news').doc(id).delete(); addNotification('News item deleted.', 'success'); } catch { addNotification('Failed to delete news item.', 'error'); } };
 
+  const handleSavePodcast = async (item: Omit<PodcastEpisode, 'id'>, id?: string) => {
+    try {
+      if (id) { await db.collection('podcasts').doc(id).update(item); } else { await db.collection('podcasts').add(item); }
+      addNotification('Podcast episode saved.', 'success');
+    } catch { addNotification('Failed to save podcast episode.', 'error'); }
+  };
+  const handleDeletePodcast = async (id: string) => { try { await db.collection('podcasts').doc(id).delete(); addNotification('Podcast episode deleted.', 'success'); } catch { addNotification('Failed to delete podcast.', 'error'); } };
+
   const handleSaveCalendarEvent = async (event: Omit<CalendarEvent, 'id'>, id?: string) => {
     try {
       if (id) { await db.collection('calendarEvents').doc(id).update(event); } else { await db.collection('calendarEvents').add(event); }
@@ -733,6 +744,15 @@ const App: React.FC = () => {
     const unsub = db.collection('news').onSnapshot(
       s => setNews(s.docs.map(d => ({ id: d.id, ...d.data() } as NewsItem))),
       err => handleFirestoreError(err, OperationType.LIST, 'news')
+    );
+    return () => unsub();
+  }, []);
+
+  // ── Podcasts ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const unsub = db.collection('podcasts').onSnapshot(
+      s => setPodcasts(s.docs.map(d => ({ id: d.id, ...d.data() } as PodcastEpisode))),
+      err => handleFirestoreError(err, OperationType.LIST, 'podcasts')
     );
     return () => unsub();
   }, []);
@@ -938,6 +958,7 @@ const App: React.FC = () => {
           <Route path="disclosure" element={<MandatoryDisclosurePage user={user} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
+          <Route path="podcasts" element={<PodcastsPage podcasts={podcasts} />} />
           <Route path="news/:newsId" element={<NewsDetailPage news={news} user={user} />} />
         
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
@@ -1004,6 +1025,7 @@ const App: React.FC = () => {
           <Route path="testimonials" element={<TestimonialGeneratorPage />} />
           <Route path="manage-notices" element={<ManageNoticesPage user={user!} allNotices={notices} onSave={handleSaveNotice} onDelete={handleDeleteNotice} />} />
           <Route path="news-management" element={<ManageNewsPage news={news} user={user!} onSave={handleSaveNews} onDelete={handleDeleteNews} />} />
+          <Route path="manage-podcasts" element={<ManagePodcastsPage podcasts={podcasts} user={user!} onSave={handleSavePodcast} onDelete={handleDeletePodcast} />} />
           <Route path="gallery-manager" element={<GalleryManagerPage user={user!} />} />
           <Route path="media-manager" element={<WebsiteMediaManagerPage user={user!} />} />
           <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />

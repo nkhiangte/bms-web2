@@ -740,6 +740,16 @@ export interface NewsItem {
     imageUrls?: string[];
 }
 
+export interface PodcastEpisode {
+    id: string;
+    title: string;
+    date: string;
+    description: string;
+    audioUrl: string;
+    duration?: string;
+    imageUrl?: string;
+}
+
 export interface ExamScheduleItem {
     date: string;
     day: string;

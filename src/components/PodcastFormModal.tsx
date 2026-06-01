@@ -20,6 +20,8 @@ const PodcastFormModal: React.FC<PodcastFormModalProps> = ({ isOpen, onClose, on
         audioUrl: '',
         duration: '',
         imageUrl: '',
+        isLiveConference: false,
+        meetingRoomId: '',
     });
 
     const [formData, setFormData] = useState(getInitialFormData());
@@ -61,7 +63,11 @@ const PodcastFormModal: React.FC<PodcastFormModalProps> = ({ isOpen, onClose, on
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        const dataToSubmit = { ...formData };
+        if (dataToSubmit.isLiveConference && !dataToSubmit.meetingRoomId) {
+            dataToSubmit.meetingRoomId = `Meet-${Math.random().toString(36).substring(2, 10)}`;
+        }
+        onSubmit(dataToSubmit);
     };
 
     if (!isOpen) return null;
@@ -105,18 +111,46 @@ const PodcastFormModal: React.FC<PodcastFormModalProps> = ({ isOpen, onClose, on
                             />
                         </div>
                         <div>
-                            <label htmlFor="audioUrl" className="block text-sm font-bold text-slate-800">Audio URL (e.g. Spotify/Soundcloud embed link or MP3 URL)</label>
-                            <input
-                                type="url"
-                                id="audioUrl"
-                                name="audioUrl"
-                                value={formData.audioUrl}
-                                onChange={handleChange}
-                                className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="https://"
-                                required
-                            />
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="isLiveConference"
+                                    checked={formData.isLiveConference || false}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, isLiveConference: e.target.checked }))}
+                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                />
+                                <span className="text-sm font-bold text-slate-800">Is this a Live Video Conference?</span>
+                            </label>
                         </div>
+                        {formData.isLiveConference ? (
+                            <div>
+                                <label htmlFor="meetingRoomId" className="block text-sm font-bold text-slate-800">Meeting Room ID</label>
+                                <input
+                                    type="text"
+                                    id="meetingRoomId"
+                                    name="meetingRoomId"
+                                    value={formData.meetingRoomId || ''}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Enter unique room name (e.g. MyPodcastEpisode123)"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">If left blank, one will be generated.</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <label htmlFor="audioUrl" className="block text-sm font-bold text-slate-800">Audio URL (e.g. Spotify/Soundcloud embed link or MP3 URL)</label>
+                                <input
+                                    type="url"
+                                    id="audioUrl"
+                                    name="audioUrl"
+                                    value={formData.audioUrl}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="https://"
+                                    required
+                                />
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="duration" className="block text-sm font-bold text-slate-800">Duration (optional)</label>
                             <input

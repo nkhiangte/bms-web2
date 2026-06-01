@@ -1,7 +1,10 @@
 import React from 'react';
+import * as ReactRouterDOM from 'react-router-dom';
 import { PodcastEpisode } from '@/types';
 import { formatDateForDisplay } from '@/utils';
 import { PodcastIcon } from '@/components/Icons';
+
+const { Link } = ReactRouterDOM as any;
 
 interface PodcastsPageProps {
   podcasts: PodcastEpisode[];
@@ -51,7 +54,20 @@ const PodcastsPage: React.FC<PodcastsPageProps> = ({ podcasts }) => {
                   <h3 className="text-xl font-bold text-slate-800 mb-2">{episode.title}</h3>
                   <p className="text-slate-600 mb-6 flex-grow text-sm line-clamp-3">{episode.description}</p>
                   
-                  {episode.audioUrl && (
+                  {episode.isLiveConference && episode.meetingRoomId ? (
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex justify-center">
+                        <Link 
+                            to={`/live-conference/${episode.meetingRoomId}`} 
+                            className="bg-red-600 hover:bg-red-700 text-white w-full py-3 rounded-lg font-bold text-center transition-colors flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            <span className="relative flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                            </span>
+                            Join Live Conference
+                        </Link>
+                    </div>
+                  ) : episode.audioUrl ? (
                     <div className="mt-auto pt-4 border-t border-slate-100">
                       {episode.audioUrl.includes('spotify') || episode.audioUrl.includes('soundcloud') ? (
                         <iframe 
@@ -69,7 +85,7 @@ const PodcastsPage: React.FC<PodcastsPageProps> = ({ podcasts }) => {
                         </audio>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))}

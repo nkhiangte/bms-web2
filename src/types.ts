@@ -748,6 +748,8 @@ export interface PodcastEpisode {
     audioUrl: string;
     duration?: string;
     imageUrl?: string;
+    isLiveConference?: boolean;
+    meetingRoomId?: string;
 }
 
 export interface ExamScheduleItem {

@@ -51,6 +51,7 @@ import CommunicationPage from '@/pages/CommunicationPage';
 import ManageNoticesPage from '@/pages/ManageNoticesPage';
 import NewsPage from '@/pages/public/NewsPage';
 import PodcastsPage from '@/pages/public/PodcastsPage';
+import LiveConferencePage from '@/pages/public/LiveConferencePage';
 import NewsDetailPage from '@/pages/public/NewsDetailPage';
 import ManageNewsPage from '@/pages/ManageNewsPage';
 import ManagePodcastsPage from '@/pages/ManagePodcastsPage';
@@ -959,6 +960,7 @@ const App: React.FC = () => {
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="news" element={<NewsPage news={news} user={user} />} />
           <Route path="podcasts" element={<PodcastsPage podcasts={podcasts} />} />
+          <Route path="live-conference/:roomId" element={<LiveConferencePage user={user} />} />
           <Route path="news/:newsId" element={<NewsDetailPage news={news} user={user} />} />
         
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />

@@ -1,11 +1,38 @@
-import React, { useMemo, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, ProcessedStudent } from '@/types';
-import { BackIcon, PrinterIcon } from '@/components/Icons';
-import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear, getProcessedClassData, findResultWithAliases, useHistoricalStudents, generateAcademicYearsList } from '@/utils';
-import { db } from '@/firebaseConfig';
-import PhotoWithFallback from '@/components/PhotoWithFallback';
+import React, { useMemo, useEffect } from "react";
+import * as ReactRouterDOM from "react-router-dom";
+import {
+  Student,
+  Grade,
+  GradeDefinition,
+  Exam,
+  StudentStatus,
+  Staff,
+  Attendance,
+  SubjectMark,
+  SubjectDefinition,
+  ProcessedStudent,
+} from "@/types";
+import { BackIcon, PrinterIcon } from "@/components/Icons";
+import {
+  TERMINAL_EXAMS,
+  GRADES_WITH_NO_ACTIVITIES,
+  OABC_GRADES,
+  SCHOOL_BANNER_URL,
+} from "@/constants";
+import {
+  formatDateForDisplay,
+  normalizeSubjectName,
+  formatStudentId,
+  getNextGrade,
+  subjectsMatch,
+  normalizeAcademicYear,
+  getProcessedClassData,
+  findResultWithAliases,
+  useHistoricalStudents,
+  generateAcademicYearsList,
+} from "@/utils";
+import { db } from "@/firebaseConfig";
+import PhotoWithFallback from "@/components/PhotoWithFallback";
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
 
@@ -17,31 +44,49 @@ interface ProgressReportPageProps {
 }
 
 // ─── Grade group helpers ──────────────────────────────────────────────────────
-const NURSERY_TO_II: Grade[] = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II];
-const CLASS_III_TO_VIII: Grade[] = [Grade.III, Grade.IV, Grade.V, Grade.VI, Grade.VII, Grade.VIII];
+const NURSERY_TO_II: Grade[] = [
+  Grade.NURSERY,
+  Grade.KINDERGARTEN,
+  Grade.I,
+  Grade.II,
+];
+const CLASS_III_TO_VIII: Grade[] = [
+  Grade.III,
+  Grade.IV,
+  Grade.V,
+  Grade.VI,
+  Grade.VII,
+  Grade.VIII,
+];
 const CLASS_IX_TO_X: Grade[] = [Grade.IX, Grade.X];
 
 /** Returns the exam column label depending on grade group */
 const getExamLabel = (grade: Grade, n: 1 | 2 | 3): string => {
-    const ordinal = ['I', 'II', 'III'][n - 1];
-    if (CLASS_III_TO_VIII.includes(grade)) return `${ordinal} Entry`;
-    return `${ordinal} Terminal Exam`;
+  const ordinal = ["I", "II", "III"][n - 1];
+  if (CLASS_III_TO_VIII.includes(grade)) return `${ordinal} Entry`;
+  return `${ordinal} Terminal Exam`;
 };
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
 const calculateTermSummary = (
-    student: Student,
-    exam: Exam | undefined,
-    examId: 'terminal1' | 'terminal2' | 'terminal3',
-    gradeDef: GradeDefinition,
-    allStudents: Student[],
-    academicYear: string
+  student: Student,
+  exam: Exam | undefined,
+  examId: "terminal1" | "terminal2" | "terminal3",
+  gradeDef: GradeDefinition,
+  allStudents: Student[],
+  academicYear: string
 ) => {
-    if (!gradeDef) return null;
-    const processedClass = getProcessedClassData(allStudents, student.grade, examId, { [student.grade]: gradeDef } as any, academicYear);
-    const summary = processedClass.find(s => s.id === student.id);
-    return summary || null;
+  if (!gradeDef) return null;
+  const processedClass = getProcessedClassData(
+    allStudents,
+    student.grade,
+    examId,
+    { [student.grade]: gradeDef } as any,
+    academicYear
+  );
+  const summary = processedClass.find((s) => s.id === student.id);
+  return summary || null;
 };
 
 // ─── Shared UI constants ──────────────────────────────────────────────────────
@@ -50,33 +95,54 @@ const TH = "px-1 py-0.5 border border-slate-400";
 const FS = 13;
 
 // ─── Shared footer (Final Remarks + Signatures) ───────────────────────────────
-const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({ finalRemark, classTeacher }) => (
-    <>
-        <div className="mt-6 border border-slate-400 rounded-lg p-2 break-inside-avoid" style={{ fontSize: FS }}>
-            <strong>Final Remarks:</strong> {finalRemark}
+const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
+  finalRemark,
+  classTeacher,
+}) => (
+  <>
+    <div
+      className="mt-6 border border-slate-400 rounded-lg p-2 break-inside-avoid"
+      style={{ fontSize: FS }}
+    >
+      <strong>Final Remarks:</strong> {finalRemark}
+    </div>
+    <div
+      className="mt-20 break-inside-avoid report-signatures"
+      style={{ fontSize: FS }}
+    >
+      <div className="flex justify-between items-end">
+        <div className="text-center">
+          <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
+            {classTeacher ? (
+              <p className="font-bold uppercase text-slate-900 text-xs">
+                {classTeacher.firstName} {classTeacher.lastName}
+              </p>
+            ) : (
+              <div className="h-4" />
+            )}
+          </div>
+          <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+            Class Teacher's Signature
+          </p>
         </div>
-        <div className="mt-6 break-inside-avoid report-signatures" style={{ fontSize: FS }}>
-            <div className="flex justify-between items-end">
-                <div className="text-center">
-                   <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
-                        {classTeacher
-                            ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p>
-                            : <div className="h-4" />}
-                    </div>
-                    <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Class Teacher's Signature</p>
-                </div>
-                <div className="text-center">
-                    <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
-                        <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
-                    </div>
-                    <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Principal's Signature</p>
-                </div>
-            </div>
-            <div className="flex justify-between mt-4 text-xs text-slate-500">
-                <p>Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
-            </div>
+        <div className="text-center">
+          <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
+            <p className="font-bold uppercase text-slate-900 text-xs">
+              K Malsawmdawngi
+            </p>
+          </div>
+          <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+            Principal's Signature
+          </p>
         </div>
-    </>
+      </div>
+      <div className="flex justify-between mt-4 text-xs text-slate-500">
+        <p>
+          Date : {formatDateForDisplay(new Date().toISOString().split("T")[0])}
+        </p>
+      </div>
+    </div>
+  </>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,92 +152,138 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
 //  Shows Full Marks + Pass Marks columns
 // ─────────────────────────────────────────────────────────────────────────────
 const NurseryToIIMultiTermReportCard: React.FC<{
-    student: Student;
-    gradeDef: GradeDefinition;
-    exams: Record<'terminal1' | 'terminal2' | 'terminal3', Exam | undefined>;
-    summaries: Record<'terminal1' | 'terminal2' | 'terminal3', ReturnType<typeof calculateTermSummary>>;
-    staff: Staff[];
+  student: Student;
+  gradeDef: GradeDefinition;
+  exams: Record<"terminal1" | "terminal2" | "terminal3", Exam | undefined>;
+  summaries: Record<
+    "terminal1" | "terminal2" | "terminal3",
+    ReturnType<typeof calculateTermSummary>
+  >;
+  staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
-    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
-    const getAtt = (att?: Attendance) => att && att.totalWorkingDays > 0 ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%` : '-';
+  const classTeacher = staff.find((s) => s.id === gradeDef?.classTeacherId);
+  const getAtt = (att?: Attendance) =>
+    att && att.totalWorkingDays > 0
+      ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%`
+      : "-";
 
-    const finalRemark = useMemo(() => {
-        const s3 = summaries.terminal3;
-        const e3 = exams.terminal3;
-        const nextGrade = getNextGrade(student.grade);
-        const labels: Record<string, string> = { Nursery: 'Nursery', Kindergarten: 'Kindergarten', 'Class I': 'Class I', 'Class II': 'Class II', 'Class III': 'Class III' };
-        const nl = nextGrade ? (labels[nextGrade] ?? nextGrade) : null;
-        if (s3?.result === 'PASS' || s3?.result === 'SIMPLE PASS')
-            return nl ? `Promoted to ${nl}. School reopens on April 1, 2026` : 'Promoted. School reopens on April 1, 2026';
-        if (s3?.result === 'FAIL') return 'Detained';
-        return e3?.teacherRemarks || s3?.remark || 'Awaiting final results.';
-    }, [summaries.terminal3, exams.terminal3, student.grade]);
-
-    const subjects = useMemo(() => {
-        const map = new Map<string, SubjectDefinition>();
-        (gradeDef.subjects || []).forEach(s => map.set(normalizeSubjectName(s.name), s));
-        return Array.from(map.values());
-    }, [gradeDef]);
-
-    const getSummaryVal = (s: ReturnType<typeof calculateTermSummary>, key: string) => {
-        if (!s) return '-';
-        if (key === 'percentage') return s.percentage?.toFixed(1) ?? '-';
-        return (s as any)[key] ?? '-';
+  const finalRemark = useMemo(() => {
+    const s3 = summaries.terminal3;
+    const e3 = exams.terminal3;
+    const nextGrade = getNextGrade(student.grade);
+    const labels: Record<string, string> = {
+      Nursery: "Nursery",
+      Kindergarten: "Kindergarten",
+      "Class I": "Class I",
+      "Class II": "Class II",
+      "Class III": "Class III",
     };
+    const nl = nextGrade ? labels[nextGrade] ?? nextGrade : null;
+    if (s3?.result === "PASS" || s3?.result === "SIMPLE PASS")
+      return nl
+        ? `Promoted to ${nl}. School reopens on April 1, 2026`
+        : "Promoted. School reopens on April 1, 2026";
+    if (s3?.result === "FAIL") return "Detained";
+    return e3?.teacherRemarks || s3?.remark || "Awaiting final results.";
+  }, [summaries.terminal3, exams.terminal3, student.grade]);
 
-    return (
-        <div>
-            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: FS }}>
-                <thead>
-                    <tr className="bg-slate-100 font-bold">
-                        <th className={`${TH} text-left`}>Subject</th>
-                        <th className={TH}>Full<br/>Marks</th>
-                        <th className={TH}>Pass<br/>Marks</th>
-                        <th className={TH}>I Terminal Exam</th>
-                        <th className={TH}>II Terminal Exam</th>
-                        <th className={TH}>III Terminal Exam</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {subjects.map(sd => {
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        const r1 = findResultWithAliases(exams.terminal1?.results, sd);
-                        const r2 = findResultWithAliases(exams.terminal2?.results, sd);
-                        const r3 = findResultWithAliases(exams.terminal3?.results, sd);
-                        return (
-                            <tr key={sd.name} className="border-t border-slate-200">
-                                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
-                                <td className={TD}>{isGraded ? 'Graded' : (sd.examFullMarks ?? 100)}</td>
-                                <td className={TD}>{isGraded ? '-' : 35}</td>
-                                <td className={`${TD} font-bold`}>{isGraded ? (r1?.grade ?? '-') : (r1?.marks ?? '-')}</td>
-                                <td className={`${TD} font-bold`}>{isGraded ? (r2?.grade ?? '-') : (r2?.marks ?? '-')}</td>
-                                <td className={`${TD} font-bold`}>{isGraded ? (r3?.grade ?? '-') : (r3?.marks ?? '-')}</td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-                <tfoot className="font-bold">
-                    {[['Grand Total', 'grandTotal'], ['Result', 'result'], ['Rank', 'rank'], ['Percentage', 'percentage'], ['Grade', 'academicGrade']].map(([label, key]) => (
-                        <tr key={label}>
-                            <td className={`${TD} text-left`}>{label}</td>
-                            <td className={TD} /><td className={TD} />
-                            <td className={TD}>{getSummaryVal(summaries.terminal1, key)}</td>
-                            <td className={TD}>{getSummaryVal(summaries.terminal2, key)}</td>
-                            <td className={TD}>{getSummaryVal(summaries.terminal3, key)}</td>
-                        </tr>
-                    ))}
-                    <tr>
-                        <td className={`${TD} text-left`}>Attendance %</td>
-                        <td className={TD} /><td className={TD} />
-                        <td className={TD}>{getAtt(exams.terminal1?.attendance)}</td>
-                        <td className={TD}>{getAtt(exams.terminal2?.attendance)}</td>
-                        <td className={TD}>{getAtt(exams.terminal3?.attendance)}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
-        </div>
+  const subjects = useMemo(() => {
+    const map = new Map<string, SubjectDefinition>();
+    (gradeDef.subjects || []).forEach((s) =>
+      map.set(normalizeSubjectName(s.name), s)
     );
+    return Array.from(map.values());
+  }, [gradeDef]);
+
+  const getSummaryVal = (
+    s: ReturnType<typeof calculateTermSummary>,
+    key: string
+  ) => {
+    if (!s) return "-";
+    if (key === "percentage") return s.percentage?.toFixed(1) ?? "-";
+    return (s as any)[key] ?? "-";
+  };
+
+  return (
+    <div>
+      <table
+        className="w-full border-collapse border border-slate-400"
+        style={{ fontSize: FS }}
+      >
+        <thead>
+          <tr className="bg-slate-100 font-bold">
+            <th className={`${TH} text-left`}>Subject</th>
+            <th className={TH}>
+              Full
+              <br />
+              Marks
+            </th>
+            <th className={TH}>
+              Pass
+              <br />
+              Marks
+            </th>
+            <th className={TH}>I Terminal Exam</th>
+            <th className={TH}>II Terminal Exam</th>
+            <th className={TH}>III Terminal Exam</th>
+          </tr>
+        </thead>
+        <tbody>
+          {subjects.map((sd) => {
+            const isGraded = sd.gradingSystem === "OABC";
+            const r1 = findResultWithAliases(exams.terminal1?.results, sd);
+            const r2 = findResultWithAliases(exams.terminal2?.results, sd);
+            const r3 = findResultWithAliases(exams.terminal3?.results, sd);
+            return (
+              <tr key={sd.name} className="border-t border-slate-200">
+                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
+                <td className={TD}>
+                  {isGraded ? "Graded" : sd.examFullMarks ?? 100}
+                </td>
+                <td className={TD}>{isGraded ? "-" : 35}</td>
+                <td className={`${TD} font-bold`}>
+                  {isGraded ? r1?.grade ?? "-" : r1?.marks ?? "-"}
+                </td>
+                <td className={`${TD} font-bold`}>
+                  {isGraded ? r2?.grade ?? "-" : r2?.marks ?? "-"}
+                </td>
+                <td className={`${TD} font-bold`}>
+                  {isGraded ? r3?.grade ?? "-" : r3?.marks ?? "-"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot className="font-bold">
+          {[
+            ["Grand Total", "grandTotal"],
+            ["Result", "result"],
+            ["Rank", "rank"],
+            ["Percentage", "percentage"],
+            ["Grade", "academicGrade"],
+          ].map(([label, key]) => (
+            <tr key={label}>
+              <td className={`${TD} text-left`}>{label}</td>
+              <td className={TD} />
+              <td className={TD} />
+              <td className={TD}>{getSummaryVal(summaries.terminal1, key)}</td>
+              <td className={TD}>{getSummaryVal(summaries.terminal2, key)}</td>
+              <td className={TD}>{getSummaryVal(summaries.terminal3, key)}</td>
+            </tr>
+          ))}
+          <tr>
+            <td className={`${TD} text-left`}>Attendance %</td>
+            <td className={TD} />
+            <td className={TD} />
+            <td className={TD}>{getAtt(exams.terminal1?.attendance)}</td>
+            <td className={TD}>{getAtt(exams.terminal2?.attendance)}</td>
+            <td className={TD}>{getAtt(exams.terminal3?.attendance)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -180,110 +292,196 @@ const NurseryToIIMultiTermReportCard: React.FC<{
 //  With activities — Summative /60 + Activity /40 sub-columns per exam
 // ─────────────────────────────────────────────────────────────────────────────
 const ClassIIIToVIIIMultiTermReportCard: React.FC<{
-    student: Student;
-    gradeDef: GradeDefinition;
-    exams: Record<'terminal1' | 'terminal2' | 'terminal3', Exam | undefined>;
-    summaries: Record<'terminal1' | 'terminal2' | 'terminal3', ReturnType<typeof calculateTermSummary>>;
-    staff: Staff[];
+  student: Student;
+  gradeDef: GradeDefinition;
+  exams: Record<"terminal1" | "terminal2" | "terminal3", Exam | undefined>;
+  summaries: Record<
+    "terminal1" | "terminal2" | "terminal3",
+    ReturnType<typeof calculateTermSummary>
+  >;
+  staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
-    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
-    const getAtt = (att?: Attendance) => att && att.totalWorkingDays > 0 ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%` : '-';
+  const classTeacher = staff.find((s) => s.id === gradeDef?.classTeacherId);
+  const getAtt = (att?: Attendance) =>
+    att && att.totalWorkingDays > 0
+      ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%`
+      : "-";
 
-    const finalRemark = useMemo(() => {
-        const s3 = summaries.terminal3;
-        const e3 = exams.terminal3;
-        const nextGrade = getNextGrade(student.grade);
-        const labels: Record<string, string> = {
-            'Class III': 'Class III', 'Class IV': 'Class IV', 'Class V': 'Class V',
-            'Class VI': 'Class VI', 'Class VII': 'Class VII', 'Class VIII': 'Class VIII', 'Class IX': 'Class IX',
-        };
-        const nl = nextGrade ? (labels[nextGrade] ?? nextGrade) : null;
-        if (s3?.result === 'PASS' || s3?.result === 'SIMPLE PASS')
-            return nl ? `Promoted to ${nl}. School reopens on April 1, 2026` : 'Promoted. School reopens on April 1, 2026';
-        if (s3?.result === 'FAIL') return 'Detained';
-        return e3?.teacherRemarks || s3?.remark || 'Awaiting final results.';
-    }, [summaries.terminal3, exams.terminal3, student.grade]);
-
-    const subjects = useMemo(() => {
-        const map = new Map<string, SubjectDefinition>();
-        (gradeDef.subjects || []).forEach(s => map.set(normalizeSubjectName(s.name), s));
-        return Array.from(map.values());
-    }, [gradeDef]);
-
-    const getSummaryVal = (s: ReturnType<typeof calculateTermSummary>, key: string) => {
-        if (!s) return '-';
-        if (key === 'percentage') return s.percentage?.toFixed(1) ?? '-';
-        return (s as any)[key] ?? '-';
+  const finalRemark = useMemo(() => {
+    const s3 = summaries.terminal3;
+    const e3 = exams.terminal3;
+    const nextGrade = getNextGrade(student.grade);
+    const labels: Record<string, string> = {
+      "Class III": "Class III",
+      "Class IV": "Class IV",
+      "Class V": "Class V",
+      "Class VI": "Class VI",
+      "Class VII": "Class VII",
+      "Class VIII": "Class VIII",
+      "Class IX": "Class IX",
     };
+    const nl = nextGrade ? labels[nextGrade] ?? nextGrade : null;
+    if (s3?.result === "PASS" || s3?.result === "SIMPLE PASS")
+      return nl
+        ? `Promoted to ${nl}. School reopens on April 1, 2026`
+        : "Promoted. School reopens on April 1, 2026";
+    if (s3?.result === "FAIL") return "Detained";
+    return e3?.teacherRemarks || s3?.remark || "Awaiting final results.";
+  }, [summaries.terminal3, exams.terminal3, student.grade]);
 
-    return (
-        <div>
-            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: FS }}>
-                <thead>
-                    <tr className="bg-slate-100 font-bold">
-                        <th rowSpan={2} className={`${TH} text-left align-middle`}>Subject</th>
-                        <th colSpan={2} className={TH}>I Entry</th>
-                        <th colSpan={2} className={TH}>II Entry</th>
-                        <th colSpan={2} className={TH}>III Entry</th>
-                    </tr>
-                    <tr className="bg-slate-100 text-xs font-semibold">
-                        <th className={TH}>Sum.<br/>/60</th><th className={TH}>Act.<br/>/40</th>
-                        <th className={TH}>Sum.<br/>/60</th><th className={TH}>Act.<br/>/40</th>
-                        <th className={TH}>Sum.<br/>/60</th><th className={TH}>Act.<br/>/40</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {subjects.map(sd => {
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        const r1 = findResultWithAliases(exams.terminal1?.results, sd);
-                        const r2 = findResultWithAliases(exams.terminal2?.results, sd);
-                        const r3 = findResultWithAliases(exams.terminal3?.results, sd);
-                        return (
-                            <tr key={sd.name} className="border-t border-slate-200">
-                                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
-                                {isGraded ? (
-                                    <>
-                                        <td colSpan={2} className={`${TD} font-bold`}>{r1?.grade ?? '-'}</td>
-                                        <td colSpan={2} className={`${TD} font-bold`}>{r2?.grade ?? '-'}</td>
-                                        <td colSpan={2} className={`${TD} font-bold`}>{r3?.grade ?? '-'}</td>
-                                    </>
-                                ) : (
-                                    <>
-                                        <td className={TD}>{r1?.examMarks ?? '-'}</td><td className={TD}>{r1?.activityMarks ?? '-'}</td>
-                                        <td className={TD}>{r2?.examMarks ?? '-'}</td><td className={TD}>{r2?.activityMarks ?? '-'}</td>
-                                        <td className={TD}>{r3?.examMarks ?? '-'}</td><td className={TD}>{r3?.activityMarks ?? '-'}</td>
-                                    </>
-                                )}
-                            </tr>
-                        );
-                    })}
-                </tbody>
-                <tfoot className="font-bold">
-                    <tr>
-                        <td className={`${TD} text-left`}>Sub-Total</td>
-                        <td className={TD}>{summaries.terminal1?.examTotal ?? '-'}</td><td className={TD}>{summaries.terminal1?.activityTotal ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.examTotal ?? '-'}</td><td className={TD}>{summaries.terminal2?.activityTotal ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal3?.examTotal ?? '-'}</td><td className={TD}>{summaries.terminal3?.activityTotal ?? '-'}</td>
-                    </tr>
-                    {[['Grand Total', 'grandTotal'], ['Result', 'result'], ['Rank', 'rank'], ['Percentage', 'percentage'], ['Grade', 'academicGrade']].map(([label, key]) => (
-                        <tr key={label}>
-                            <td className={`${TD} text-left`}>{label}</td>
-                            <td colSpan={2} className={TD}>{getSummaryVal(summaries.terminal1, key)}</td>
-                            <td colSpan={2} className={TD}>{getSummaryVal(summaries.terminal2, key)}</td>
-                            <td colSpan={2} className={TD}>{getSummaryVal(summaries.terminal3, key)}</td>
-                        </tr>
-                    ))}
-                    <tr>
-                        <td className={`${TD} text-left`}>Attendance %</td>
-                        <td colSpan={2} className={TD}>{getAtt(exams.terminal1?.attendance)}</td>
-                        <td colSpan={2} className={TD}>{getAtt(exams.terminal2?.attendance)}</td>
-                        <td colSpan={2} className={TD}>{getAtt(exams.terminal3?.attendance)}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
-        </div>
+  const subjects = useMemo(() => {
+    const map = new Map<string, SubjectDefinition>();
+    (gradeDef.subjects || []).forEach((s) =>
+      map.set(normalizeSubjectName(s.name), s)
     );
+    return Array.from(map.values());
+  }, [gradeDef]);
+
+  const getSummaryVal = (
+    s: ReturnType<typeof calculateTermSummary>,
+    key: string
+  ) => {
+    if (!s) return "-";
+    if (key === "percentage") return s.percentage?.toFixed(1) ?? "-";
+    return (s as any)[key] ?? "-";
+  };
+
+  return (
+    <div>
+      <table
+        className="w-full border-collapse border border-slate-400"
+        style={{ fontSize: FS }}
+      >
+        <thead>
+          <tr className="bg-slate-100 font-bold">
+            <th rowSpan={2} className={`${TH} text-left align-middle`}>
+              Subject
+            </th>
+            <th colSpan={2} className={TH}>
+              I Entry
+            </th>
+            <th colSpan={2} className={TH}>
+              II Entry
+            </th>
+            <th colSpan={2} className={TH}>
+              III Entry
+            </th>
+          </tr>
+          <tr className="bg-slate-100 text-xs font-semibold">
+            <th className={TH}>
+              Sum.
+              <br />
+              /60
+            </th>
+            <th className={TH}>
+              Act.
+              <br />
+              /40
+            </th>
+            <th className={TH}>
+              Sum.
+              <br />
+              /60
+            </th>
+            <th className={TH}>
+              Act.
+              <br />
+              /40
+            </th>
+            <th className={TH}>
+              Sum.
+              <br />
+              /60
+            </th>
+            <th className={TH}>
+              Act.
+              <br />
+              /40
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {subjects.map((sd) => {
+            const isGraded = sd.gradingSystem === "OABC";
+            const r1 = findResultWithAliases(exams.terminal1?.results, sd);
+            const r2 = findResultWithAliases(exams.terminal2?.results, sd);
+            const r3 = findResultWithAliases(exams.terminal3?.results, sd);
+            return (
+              <tr key={sd.name} className="border-t border-slate-200">
+                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
+                {isGraded ? (
+                  <>
+                    <td colSpan={2} className={`${TD} font-bold`}>
+                      {r1?.grade ?? "-"}
+                    </td>
+                    <td colSpan={2} className={`${TD} font-bold`}>
+                      {r2?.grade ?? "-"}
+                    </td>
+                    <td colSpan={2} className={`${TD} font-bold`}>
+                      {r3?.grade ?? "-"}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className={TD}>{r1?.examMarks ?? "-"}</td>
+                    <td className={TD}>{r1?.activityMarks ?? "-"}</td>
+                    <td className={TD}>{r2?.examMarks ?? "-"}</td>
+                    <td className={TD}>{r2?.activityMarks ?? "-"}</td>
+                    <td className={TD}>{r3?.examMarks ?? "-"}</td>
+                    <td className={TD}>{r3?.activityMarks ?? "-"}</td>
+                  </>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot className="font-bold">
+          <tr>
+            <td className={`${TD} text-left`}>Sub-Total</td>
+            <td className={TD}>{summaries.terminal1?.examTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal1?.activityTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.examTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.activityTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal3?.examTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal3?.activityTotal ?? "-"}</td>
+          </tr>
+          {[
+            ["Grand Total", "grandTotal"],
+            ["Result", "result"],
+            ["Rank", "rank"],
+            ["Percentage", "percentage"],
+            ["Grade", "academicGrade"],
+          ].map(([label, key]) => (
+            <tr key={label}>
+              <td className={`${TD} text-left`}>{label}</td>
+              <td colSpan={2} className={TD}>
+                {getSummaryVal(summaries.terminal1, key)}
+              </td>
+              <td colSpan={2} className={TD}>
+                {getSummaryVal(summaries.terminal2, key)}
+              </td>
+              <td colSpan={2} className={TD}>
+                {getSummaryVal(summaries.terminal3, key)}
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <td className={`${TD} text-left`}>Attendance %</td>
+            <td colSpan={2} className={TD}>
+              {getAtt(exams.terminal1?.attendance)}
+            </td>
+            <td colSpan={2} className={TD}>
+              {getAtt(exams.terminal2?.attendance)}
+            </td>
+            <td colSpan={2} className={TD}>
+              {getAtt(exams.terminal3?.attendance)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -293,301 +491,598 @@ const ClassIIIToVIIIMultiTermReportCard: React.FC<{
 //  Footer: Division (not Grade)
 // ─────────────────────────────────────────────────────────────────────────────
 const IXXMultiTermReportCard: React.FC<{
-    student: Student;
-    gradeDef: GradeDefinition;
-    exams: Record<'terminal1' | 'terminal2' | 'terminal3', Exam | undefined>;
-    summaries: Record<'terminal1' | 'terminal2' | 'terminal3', ReturnType<typeof calculateTermSummary>>;
-    staff: Staff[];
+  student: Student;
+  gradeDef: GradeDefinition;
+  exams: Record<"terminal1" | "terminal2" | "terminal3", Exam | undefined>;
+  summaries: Record<
+    "terminal1" | "terminal2" | "terminal3",
+    ReturnType<typeof calculateTermSummary>
+  >;
+  staff: Staff[];
 }> = ({ student, gradeDef, exams, summaries, staff }) => {
-    const classTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
-    const getAtt = (att?: Attendance) => att && att.totalWorkingDays > 0 ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%` : '-';
+  const classTeacher = staff.find((s) => s.id === gradeDef?.classTeacherId);
+  const getAtt = (att?: Attendance) =>
+    att && att.totalWorkingDays > 0
+      ? `${((att.daysPresent / att.totalWorkingDays) * 100).toFixed(0)}%`
+      : "-";
 
-    const finalRemark = useMemo(() => {
-        const s3 = summaries.terminal3;
-        const e3 = exams.terminal3;
-        if (s3?.result === 'PASS' || s3?.result === 'SIMPLE PASS')
-            return student.grade === Grade.X
-                ? 'Passed Class X. School reopens on April 1, 2026'
-                : 'Promoted to Class X. School reopens on April 1, 2026';
-        if (s3?.result === 'FAIL') return 'Detained';
-        return e3?.teacherRemarks || s3?.remark || 'Awaiting final results.';
-    }, [summaries.terminal3, exams.terminal3, student.grade]);
+  const finalRemark = useMemo(() => {
+    const s3 = summaries.terminal3;
+    const e3 = exams.terminal3;
+    if (s3?.result === "PASS" || s3?.result === "SIMPLE PASS")
+      return student.grade === Grade.X
+        ? "Passed Class X. School reopens on April 1, 2026"
+        : "Promoted to Class X. School reopens on April 1, 2026";
+    if (s3?.result === "FAIL") return "Detained";
+    return e3?.teacherRemarks || s3?.remark || "Awaiting final results.";
+  }, [summaries.terminal3, exams.terminal3, student.grade]);
 
-    const subjects = useMemo(() => {
-        const map = new Map<string, SubjectDefinition>();
-        (gradeDef.subjects || []).forEach(s => map.set(normalizeSubjectName(s.name), s));
-        return Array.from(map.values());
-    }, [gradeDef]);
-
-    const numSubjects = subjects.filter(s => s.gradingSystem !== 'OABC').length;
-
-    return (
-        <div>
-            <table className="w-full border-collapse border border-slate-400" style={{ fontSize: FS }}>
-                <thead>
-                    <tr className="bg-slate-100 font-bold">
-                        <th rowSpan={2} className={`${TH} text-left align-middle min-w-[120px]`}>Subject</th>
-                        <th rowSpan={2} className={`${TH} align-middle`}>Full<br/>Marks</th>
-                        <th rowSpan={2} className={`${TH} align-middle`}>I Terminal Exam<br/><span className="font-normal text-slate-500 text-xs">Marks</span></th>
-                        <th rowSpan={2} className={`${TH} align-middle`}>II Terminal Exam<br/><span className="font-normal text-slate-500 text-xs">Marks</span></th>
-                        <th colSpan={3} className={TH}>III Terminal Exam</th>
-                    </tr>
-                    <tr className="bg-slate-100 text-xs font-semibold">
-                        <th className={TH}>SA<br/><span className="font-normal text-slate-400">/80</span></th>
-                        <th className={TH}>FA<br/><span className="font-normal text-slate-400">/20</span></th>
-                        <th className={TH}>Total<br/><span className="font-normal text-slate-400">/100</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {subjects.map(sd => {
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        const r1 = findResultWithAliases(exams.terminal1?.results, sd);
-                        const r2 = findResultWithAliases(exams.terminal2?.results, sd);
-                        const r3 = findResultWithAliases(exams.terminal3?.results, sd);
-                        const sa = r3?.saMarks ?? r3?.examMarks ?? (r3?.saMarks == null && r3?.faMarks == null ? r3?.marks : null) ?? null;
-                        const fa = r3?.faMarks ?? r3?.activityMarks ?? null;
-                        const t3Total = sa != null && fa != null ? Number(sa) + Number(fa) : (r3?.marks ?? '-');
-                        return (
-                            <tr key={sd.name} className="border-t border-slate-200">
-                                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
-                                <td className={TD}>{isGraded ? 'Graded' : 100}</td>
-                                <td className={`${TD} font-bold`}>{isGraded ? (r1?.grade ?? '-') : (r1?.marks ?? '-')}</td>
-                                <td className={`${TD} font-bold`}>{isGraded ? (r2?.grade ?? '-') : (r2?.marks ?? '-')}</td>
-                                {isGraded
-                                    ? <td colSpan={3} className={`${TD} font-bold`}>{r3?.grade ?? '-'}</td>
-                                    : <>
-                                        <td className={`${TD} font-bold`}>{sa ?? '-'}</td>
-                                        <td className={`${TD} font-bold`}>{fa ?? '-'}</td>
-                                        <td className={`${TD} font-bold`}>{t3Total}</td>
-                                    </>
-                                }
-                            </tr>
-                        );
-                    })}
-                </tbody>
-                <tfoot className="font-bold">
-                    <tr>
-                        <td className={`${TD} text-left`}>Grand Total</td>
-                        <td className={TD}>{numSubjects * 100}</td>
-                        <td className={TD}>{summaries.terminal1?.grandTotal ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.grandTotal ?? '-'}</td>
-                        <td className={TD}>-</td><td className={TD}>-</td>
-                        <td className={TD}>{summaries.terminal3?.grandTotal ?? '-'}</td>
-                    </tr>
-                    <tr>
-                        <td className={`${TD} text-left`}>Result</td><td className={TD} />
-                        <td className={TD}>{summaries.terminal1?.result ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.result ?? '-'}</td>
-                        <td colSpan={3} className={TD}>{summaries.terminal3?.result ?? '-'}</td>
-                    </tr>
-                    <tr>
-                        <td className={`${TD} text-left`}>Rank</td><td className={TD} />
-                        <td className={TD}>{summaries.terminal1?.rank ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.rank ?? '-'}</td>
-                        <td colSpan={3} className={TD}>{summaries.terminal3?.rank ?? '-'}</td>
-                    </tr>
-                    <tr>
-                        <td className={`${TD} text-left`}>Percentage</td><td className={TD} />
-                        <td className={TD}>{summaries.terminal1?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.percentage?.toFixed(1) ?? '-'}</td>
-                        <td colSpan={3} className={TD}>{summaries.terminal3?.percentage?.toFixed(1) ?? '-'}</td>
-                    </tr>
-                    <tr>
-                        <td className={`${TD} text-left`}>Division</td><td className={TD} />
-                        <td className={TD}>{summaries.terminal1?.division ?? '-'}</td>
-                        <td className={TD}>{summaries.terminal2?.division ?? '-'}</td>
-                        <td colSpan={3} className={TD}>{summaries.terminal3?.division ?? '-'}</td>
-                    </tr>
-                    <tr>
-                        <td className={`${TD} text-left`}>Attendance %</td><td className={TD} />
-                        <td className={TD}>{getAtt(exams.terminal1?.attendance)}</td>
-                        <td className={TD}>{getAtt(exams.terminal2?.attendance)}</td>
-                        <td colSpan={3} className={TD}>{getAtt(exams.terminal3?.attendance)}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
-        </div>
+  const subjects = useMemo(() => {
+    const map = new Map<string, SubjectDefinition>();
+    (gradeDef.subjects || []).forEach((s) =>
+      map.set(normalizeSubjectName(s.name), s)
     );
+    return Array.from(map.values());
+  }, [gradeDef]);
+
+  const numSubjects = subjects.filter((s) => s.gradingSystem !== "OABC").length;
+
+  return (
+    <div>
+      <table
+        className="w-full border-collapse border border-slate-400"
+        style={{ fontSize: FS }}
+      >
+        <thead>
+          <tr className="bg-slate-100 font-bold">
+            <th
+              rowSpan={2}
+              className={`${TH} text-left align-middle min-w-[120px]`}
+            >
+              Subject
+            </th>
+            <th rowSpan={2} className={`${TH} align-middle`}>
+              Full
+              <br />
+              Marks
+            </th>
+            <th rowSpan={2} className={`${TH} align-middle`}>
+              I Terminal Exam
+              <br />
+              <span className="font-normal text-slate-500 text-xs">Marks</span>
+            </th>
+            <th rowSpan={2} className={`${TH} align-middle`}>
+              II Terminal Exam
+              <br />
+              <span className="font-normal text-slate-500 text-xs">Marks</span>
+            </th>
+            <th colSpan={3} className={TH}>
+              III Terminal Exam
+            </th>
+          </tr>
+          <tr className="bg-slate-100 text-xs font-semibold">
+            <th className={TH}>
+              SA
+              <br />
+              <span className="font-normal text-slate-400">/80</span>
+            </th>
+            <th className={TH}>
+              FA
+              <br />
+              <span className="font-normal text-slate-400">/20</span>
+            </th>
+            <th className={TH}>
+              Total
+              <br />
+              <span className="font-normal text-slate-400">/100</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {subjects.map((sd) => {
+            const isGraded = sd.gradingSystem === "OABC";
+            const r1 = findResultWithAliases(exams.terminal1?.results, sd);
+            const r2 = findResultWithAliases(exams.terminal2?.results, sd);
+            const r3 = findResultWithAliases(exams.terminal3?.results, sd);
+            const sa =
+              r3?.saMarks ??
+              r3?.examMarks ??
+              (r3?.saMarks == null && r3?.faMarks == null ? r3?.marks : null) ??
+              null;
+            const fa = r3?.faMarks ?? r3?.activityMarks ?? null;
+            const t3Total =
+              sa != null && fa != null
+                ? Number(sa) + Number(fa)
+                : r3?.marks ?? "-";
+            return (
+              <tr key={sd.name} className="border-t border-slate-200">
+                <td className={`${TD} text-left font-medium`}>{sd.name}</td>
+                <td className={TD}>{isGraded ? "Graded" : 100}</td>
+                <td className={`${TD} font-bold`}>
+                  {isGraded ? r1?.grade ?? "-" : r1?.marks ?? "-"}
+                </td>
+                <td className={`${TD} font-bold`}>
+                  {isGraded ? r2?.grade ?? "-" : r2?.marks ?? "-"}
+                </td>
+                {isGraded ? (
+                  <td colSpan={3} className={`${TD} font-bold`}>
+                    {r3?.grade ?? "-"}
+                  </td>
+                ) : (
+                  <>
+                    <td className={`${TD} font-bold`}>{sa ?? "-"}</td>
+                    <td className={`${TD} font-bold`}>{fa ?? "-"}</td>
+                    <td className={`${TD} font-bold`}>{t3Total}</td>
+                  </>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot className="font-bold">
+          <tr>
+            <td className={`${TD} text-left`}>Grand Total</td>
+            <td className={TD}>{numSubjects * 100}</td>
+            <td className={TD}>{summaries.terminal1?.grandTotal ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.grandTotal ?? "-"}</td>
+            <td className={TD}>-</td>
+            <td className={TD}>-</td>
+            <td className={TD}>{summaries.terminal3?.grandTotal ?? "-"}</td>
+          </tr>
+          <tr>
+            <td className={`${TD} text-left`}>Result</td>
+            <td className={TD} />
+            <td className={TD}>{summaries.terminal1?.result ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.result ?? "-"}</td>
+            <td colSpan={3} className={TD}>
+              {summaries.terminal3?.result ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td className={`${TD} text-left`}>Rank</td>
+            <td className={TD} />
+            <td className={TD}>{summaries.terminal1?.rank ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.rank ?? "-"}</td>
+            <td colSpan={3} className={TD}>
+              {summaries.terminal3?.rank ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td className={`${TD} text-left`}>Percentage</td>
+            <td className={TD} />
+            <td className={TD}>
+              {summaries.terminal1?.percentage?.toFixed(1) ?? "-"}
+            </td>
+            <td className={TD}>
+              {summaries.terminal2?.percentage?.toFixed(1) ?? "-"}
+            </td>
+            <td colSpan={3} className={TD}>
+              {summaries.terminal3?.percentage?.toFixed(1) ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td className={`${TD} text-left`}>Division</td>
+            <td className={TD} />
+            <td className={TD}>{summaries.terminal1?.division ?? "-"}</td>
+            <td className={TD}>{summaries.terminal2?.division ?? "-"}</td>
+            <td colSpan={3} className={TD}>
+              {summaries.terminal3?.division ?? "-"}
+            </td>
+          </tr>
+          <tr>
+            <td className={`${TD} text-left`}>Attendance %</td>
+            <td className={TD} />
+            <td className={TD}>{getAtt(exams.terminal1?.attendance)}</td>
+            <td className={TD}>{getAtt(exams.terminal2?.attendance)}</td>
+            <td colSpan={3} className={TD}>
+              {getAtt(exams.terminal3?.attendance)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <ReportFooter finalRemark={finalRemark} classTeacher={classTeacher} />
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Single-exam ReportCard (Terminal 1 & 2 for all classes)
 //  Uses examTemplate.name so it correctly shows "I Terminal Examination" etc.
 // ─────────────────────────────────────────────────────────────────────────────
-const ReportCard: React.FC<any> = ({ student, gradeDef, exam, examTemplate, allStudents, academicYear, staff }) => {
-    const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
-    const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
-    const isNurseryToII = NURSERY_TO_II.includes(student.grade);
-    const processedReportData = useMemo(() => calculateTermSummary(student, exam, examTemplate.id as any, gradeDef, allStudents, academicYear), [student, exam, examTemplate.id, gradeDef, allStudents, academicYear]);
-    const classTeacher = useMemo(() => staff?.find((s: Staff) => s.id === gradeDef?.classTeacherId), [staff, gradeDef]);
+const ReportCard: React.FC<any> = ({
+  student,
+  gradeDef,
+  exam,
+  examTemplate,
+  allStudents,
+  academicYear,
+  staff,
+}) => {
+  const hasActivities = !GRADES_WITH_NO_ACTIVITIES.includes(student.grade);
+  const isClassIXorX = CLASS_IX_TO_X.includes(student.grade);
+  const isNurseryToII = NURSERY_TO_II.includes(student.grade);
+  const processedReportData = useMemo(
+    () =>
+      calculateTermSummary(
+        student,
+        exam,
+        examTemplate.id as any,
+        gradeDef,
+        allStudents,
+        academicYear
+      ),
+    [student, exam, examTemplate.id, gradeDef, allStudents, academicYear]
+  );
+  const classTeacher = useMemo(
+    () => staff?.find((s: Staff) => s.id === gradeDef?.classTeacherId),
+    [staff, gradeDef]
+  );
 
-    return (
-        <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
-            <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-0.5 print:text-base print:border-b print:border-slate-400">
-                {examTemplate.name}
-            </h3>
-            <table className="min-w-full border-collapse" style={{ fontSize: FS }}>
-                <thead className="bg-slate-50 print:bg-transparent">
-                    {isNurseryToII ? (
-                        <tr className="border-b border-slate-400">
-                            <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600">Marks Obtained</th>
-                        </tr>
-                    ) : hasActivities ? (
-                        <>
-                            <tr className="border-b border-slate-400">
-                                <th rowSpan={2} className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle">Subject</th>
-                                <th colSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Summative</th>
-                                <th colSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300">Activity</th>
-                                <th rowSpan={2} className="px-1 py-0.5 text-center font-semibold text-slate-600 align-middle">Total</th>
-                            </tr>
-                            <tr className="border-b border-slate-400">
-                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
-                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
-                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full</th>
-                                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Obt.</th>
-                            </tr>
-                        </>
-                    ) : (
-                        <tr className="border-b border-slate-400">
-                            <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">Subject</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Full Marks</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">Pass Marks</th>
-                            <th className="px-1 py-0.5 text-center font-semibold text-slate-600">Marks Obtained</th>
-                        </tr>
-                    )}
-                </thead>
-                <tbody>
-                    {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
-                        const result = findResultWithAliases(exam?.results, sd);
-                        const isGraded = sd.gradingSystem === 'OABC';
-                        return (
-                            <tr key={sd.name} className="border-t border-slate-300">
-                                <td className="px-1 py-0.5 font-medium border-r border-slate-300">{sd.name}</td>
-                                {isNurseryToII ? (<>
-                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? 'Graded' : sd.examFullMarks}</td>
-                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? '-' : 35}</td>
-                                    <td className="px-1 py-0.5 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                </>) : hasActivities ? (isGraded
-                                    ? <td colSpan={5} className="px-1 py-0.5 text-center font-bold">{result?.grade || '-'}</td>
-                                    : (<>
-                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{sd.examFullMarks}</td>
-                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{result?.examMarks ?? 0}</td>
-                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{sd.activityFullMarks}</td>
-                                        <td className="px-1 py-0.5 text-center border-r border-slate-300">{result?.activityMarks ?? 0}</td>
-                                        <td className="px-1 py-0.5 text-center font-bold">{Number(result?.examMarks ?? 0) + Number(result?.activityMarks ?? 0)}</td>
-                                    </>)
-                                ) : (<>
-                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? 'Graded' : (isClassIXorX ? 100 : sd.examFullMarks)}</td>
-                                    <td className="px-1 py-0.5 text-center border-r border-slate-300">{isGraded ? '-' : 33}</td>
-                                    <td className="px-1 py-0.5 text-center font-bold">{isGraded ? (result?.grade || '-') : (result?.marks ?? 0)}</td>
-                                </>)}
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-           <div className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent" style={{ fontSize: FS }}>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                    {hasActivities && (<>
-                        <div className="font-semibold text-slate-600 text-right">Summative Total:</div><div className="font-bold text-slate-800">{processedReportData?.examTotal}</div>
-                        <div className="font-semibold text-slate-600 text-right">Activity Total:</div><div className="font-bold text-slate-800">{processedReportData?.activityTotal}</div>
-                    </>)}
-                    <div className="font-semibold text-slate-600 text-right">Grand Total:</div><div className="font-bold text-slate-800">{processedReportData?.grandTotal}</div>
-                    <div className="font-semibold text-slate-600 text-right">Percentage:</div><div className="font-bold text-slate-800">{processedReportData?.percentage?.toFixed(2) ?? '0.00'}%</div>
-                    {!isClassIXorX && (<><div className="font-semibold text-slate-600 text-right">Grade:</div><div className="font-bold text-slate-800">{processedReportData?.academicGrade}</div></>)}
-                    {isClassIXorX && (<><div className="font-semibold text-slate-600 text-right">Division:</div><div className="font-bold text-slate-800">{processedReportData?.division}</div></>)}
-                    <div className="font-semibold text-slate-600 text-right">Result:</div>
-                    <div className={`font-bold ${processedReportData?.result !== 'PASS' ? 'text-red-600' : 'text-emerald-600'}`}>{processedReportData?.result}</div>
-                    <div className="font-semibold text-slate-600 text-right">Rank:</div><div className="font-bold text-slate-800">{processedReportData?.rank}</div>
-                    <div className="font-semibold text-slate-600 text-right">Attendance %:</div>
-                    <div className="font-bold text-slate-800">{exam?.attendance && exam.attendance.totalWorkingDays > 0 ? `${((exam.attendance.daysPresent / exam.attendance.totalWorkingDays) * 100).toFixed(0)}%` : 'N/A'}</div>
-                </div>
-                <div className="pt-1.5 mt-1.5 border-t">
-                    <span className="font-semibold">Teacher's Remarks: </span>
-                    <span>{exam?.teacherRemarks || processedReportData?.remark || 'N/A'}</span>
-                </div>
-            </div>
-            <div className="mt-8 break-inside-avoid p-3">
-                <div className="flex justify-between items-end">
-                    <div className="text-center">
-                        <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
-                            {classTeacher ? <p className="font-bold uppercase text-slate-900 text-xs">{classTeacher.firstName} {classTeacher.lastName}</p> : <div className="h-4" />}
-                        </div>
-                        <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Class Teacher's Signature</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
-                            <p className="font-bold uppercase text-slate-900 text-xs">K Malsawmdawngi</p>
-                        </div>
-                        <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">Principal's Signature</p>
-                    </div>
-                </div>
-                <p className="mt-4 text-xs text-slate-500">Date : {formatDateForDisplay(new Date().toISOString().split('T')[0])}</p>
-            </div>
+  return (
+    <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
+      <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-0.5 print:text-base print:border-b print:border-slate-400">
+        {examTemplate.name}
+      </h3>
+      <table className="min-w-full border-collapse" style={{ fontSize: FS }}>
+        <thead className="bg-slate-50 print:bg-transparent">
+          {isNurseryToII ? (
+            <tr className="border-b border-slate-400">
+              <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">
+                Subject
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                Full Marks
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                Pass Marks
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600">
+                Marks Obtained
+              </th>
+            </tr>
+          ) : hasActivities ? (
+            <>
+              <tr className="border-b border-slate-400">
+                <th
+                  rowSpan={2}
+                  className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300 align-middle"
+                >
+                  Subject
+                </th>
+                <th
+                  colSpan={2}
+                  className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300"
+                >
+                  Summative
+                </th>
+                <th
+                  colSpan={2}
+                  className="px-1 py-0.5 text-center font-semibold text-slate-600 border-b border-r border-slate-300"
+                >
+                  Activity
+                </th>
+                <th
+                  rowSpan={2}
+                  className="px-1 py-0.5 text-center font-semibold text-slate-600 align-middle"
+                >
+                  Total
+                </th>
+              </tr>
+              <tr className="border-b border-slate-400">
+                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                  Full
+                </th>
+                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                  Obt.
+                </th>
+                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                  Full
+                </th>
+                <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                  Obt.
+                </th>
+              </tr>
+            </>
+          ) : (
+            <tr className="border-b border-slate-400">
+              <th className="px-1 py-0.5 text-left font-semibold text-slate-600 border-r border-slate-300">
+                Subject
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                Full Marks
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600 border-r border-slate-300">
+                Pass Marks
+              </th>
+              <th className="px-1 py-0.5 text-center font-semibold text-slate-600">
+                Marks Obtained
+              </th>
+            </tr>
+          )}
+        </thead>
+        <tbody>
+          {(gradeDef.subjects ?? []).filter(Boolean).map((sd: any) => {
+            const result = findResultWithAliases(exam?.results, sd);
+            const isGraded = sd.gradingSystem === "OABC";
+            return (
+              <tr key={sd.name} className="border-t border-slate-300">
+                <td className="px-1 py-0.5 font-medium border-r border-slate-300">
+                  {sd.name}
+                </td>
+                {isNurseryToII ? (
+                  <>
+                    <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                      {isGraded ? "Graded" : sd.examFullMarks}
+                    </td>
+                    <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                      {isGraded ? "-" : 35}
+                    </td>
+                    <td className="px-1 py-0.5 text-center font-bold">
+                      {isGraded ? result?.grade || "-" : result?.marks ?? 0}
+                    </td>
+                  </>
+                ) : hasActivities ? (
+                  isGraded ? (
+                    <td
+                      colSpan={5}
+                      className="px-1 py-0.5 text-center font-bold"
+                    >
+                      {result?.grade || "-"}
+                    </td>
+                  ) : (
+                    <>
+                      <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                        {sd.examFullMarks}
+                      </td>
+                      <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                        {result?.examMarks ?? 0}
+                      </td>
+                      <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                        {sd.activityFullMarks}
+                      </td>
+                      <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                        {result?.activityMarks ?? 0}
+                      </td>
+                      <td className="px-1 py-0.5 text-center font-bold">
+                        {Number(result?.examMarks ?? 0) +
+                          Number(result?.activityMarks ?? 0)}
+                      </td>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                      {isGraded
+                        ? "Graded"
+                        : isClassIXorX
+                        ? 100
+                        : sd.examFullMarks}
+                    </td>
+                    <td className="px-1 py-0.5 text-center border-r border-slate-300">
+                      {isGraded ? "-" : 33}
+                    </td>
+                    <td className="px-1 py-0.5 text-center font-bold">
+                      {isGraded ? result?.grade || "-" : result?.marks ?? 0}
+                    </td>
+                  </>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div
+        className="p-3 bg-slate-50 border-t border-slate-400 space-y-1 print:py-1 print:bg-transparent"
+        style={{ fontSize: FS }}
+      >
+        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+          {hasActivities && (
+            <>
+              <div className="font-semibold text-slate-600 text-right">
+                Summative Total:
+              </div>
+              <div className="font-bold text-slate-800">
+                {processedReportData?.examTotal}
+              </div>
+              <div className="font-semibold text-slate-600 text-right">
+                Activity Total:
+              </div>
+              <div className="font-bold text-slate-800">
+                {processedReportData?.activityTotal}
+              </div>
+            </>
+          )}
+          <div className="font-semibold text-slate-600 text-right">
+            Grand Total:
+          </div>
+          <div className="font-bold text-slate-800">
+            {processedReportData?.grandTotal}
+          </div>
+          <div className="font-semibold text-slate-600 text-right">
+            Percentage:
+          </div>
+          <div className="font-bold text-slate-800">
+            {processedReportData?.percentage?.toFixed(2) ?? "0.00"}%
+          </div>
+          {!isClassIXorX && (
+            <>
+              <div className="font-semibold text-slate-600 text-right">
+                Grade:
+              </div>
+              <div className="font-bold text-slate-800">
+                {processedReportData?.academicGrade}
+              </div>
+            </>
+          )}
+          {isClassIXorX && (
+            <>
+              <div className="font-semibold text-slate-600 text-right">
+                Division:
+              </div>
+              <div className="font-bold text-slate-800">
+                {processedReportData?.division}
+              </div>
+            </>
+          )}
+          <div className="font-semibold text-slate-600 text-right">Result:</div>
+          <div
+            className={`font-bold ${
+              processedReportData?.result !== "PASS"
+                ? "text-red-600"
+                : "text-emerald-600"
+            }`}
+          >
+            {processedReportData?.result}
+          </div>
+          <div className="font-semibold text-slate-600 text-right">Rank:</div>
+          <div className="font-bold text-slate-800">
+            {processedReportData?.rank}
+          </div>
+          <div className="font-semibold text-slate-600 text-right">
+            Attendance %:
+          </div>
+          <div className="font-bold text-slate-800">
+            {exam?.attendance && exam.attendance.totalWorkingDays > 0
+              ? `${(
+                  (exam.attendance.daysPresent /
+                    exam.attendance.totalWorkingDays) *
+                  100
+                ).toFixed(0)}%`
+              : "N/A"}
+          </div>
         </div>
-    );
+        <div className="pt-1.5 mt-1.5 border-t">
+          <span className="font-semibold">Teacher's Remarks: </span>
+          <span>
+            {exam?.teacherRemarks || processedReportData?.remark || "N/A"}
+          </span>
+        </div>
+      </div>
+      <div className="mt-24 break-inside-avoid p-3">
+        <div className="flex justify-between items-end">
+          <div className="text-center">
+            <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
+              {classTeacher ? (
+                <p className="font-bold uppercase text-slate-900 text-xs">
+                  {classTeacher.firstName} {classTeacher.lastName}
+                </p>
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
+            <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+              Class Teacher's Signature
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
+              <p className="font-bold uppercase text-slate-900 text-xs">
+                K Malsawmdawngi
+              </p>
+            </div>
+            <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+              Principal's Signature
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-slate-500">
+          Date : {formatDateForDisplay(new Date().toISOString().split("T")[0])}
+        </p>
+      </div>
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, staff, gradeDefinitions, academicYear }) => {
-    const { grade: encodedGrade, examId } = useParams() as { grade: string; examId: string };
-    const navigate = useNavigate();
-    const grade = decodeURIComponent(encodedGrade) as Grade;
+const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
+  students,
+  staff,
+  gradeDefinitions,
+  academicYear,
+}) => {
+  const { grade: encodedGrade, examId } = useParams() as {
+    grade: string;
+    examId: string;
+  };
+  const navigate = useNavigate();
+  const grade = decodeURIComponent(encodedGrade) as Grade;
 
-    const isIXorX = CLASS_IX_TO_X.includes(grade);
-    const isNurseryToII = NURSERY_TO_II.includes(grade);
-    const isIIItoVIII = CLASS_III_TO_VIII.includes(grade);
+  const isIXorX = CLASS_IX_TO_X.includes(grade);
+  const isNurseryToII = NURSERY_TO_II.includes(grade);
+  const isIIItoVIII = CLASS_III_TO_VIII.includes(grade);
 
-    const [selectedAcademicYear, setSelectedAcademicYear] = React.useState<string>(academicYear);
-    const { students: historicalStudents, loading: loadingHistory } = useHistoricalStudents(selectedAcademicYear, academicYear, students, db);
-    const availableAcademicYears = useMemo(() => generateAcademicYearsList(), []);
+  const [selectedAcademicYear, setSelectedAcademicYear] =
+    React.useState<string>(academicYear);
+  const { students: historicalStudents, loading: loadingHistory } =
+    useHistoricalStudents(selectedAcademicYear, academicYear, students, db);
+  const availableAcademicYears = useMemo(() => generateAcademicYearsList(), []);
 
-    const classStudents = useMemo(() => historicalStudents.filter(s => {
-        const matchesGrade = s.grade === grade;
-        const matchesStatus = s.status === StudentStatus.ACTIVE || 
-                              s.status === StudentStatus.TRANSFERRED || 
-                              s.status === StudentStatus.GRADUATED || 
-                              s.status === StudentStatus.DROPPED;
-        const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
-        const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
-        const matchesYear = effectiveYear === selectedYearNorm;
+  const classStudents = useMemo(
+    () =>
+      historicalStudents
+        .filter((s) => {
+          const matchesGrade = s.grade === grade;
+          const matchesStatus =
+            s.status === StudentStatus.ACTIVE ||
+            s.status === StudentStatus.TRANSFERRED ||
+            s.status === StudentStatus.GRADUATED ||
+            s.status === StudentStatus.DROPPED;
+          const studentYearNorm = normalizeAcademicYear(s.academicYear);
+          const selectedYearNorm = normalizeAcademicYear(academicYear);
+          const effectiveYear = s.academicYear
+            ? studentYearNorm
+            : normalizeAcademicYear("2025-26");
+          const matchesYear = effectiveYear === selectedYearNorm;
 
-        // NEW: Inclusively check if student has ANY marks for this specific exam
-        const hasMarksForExam = s.academicPerformance?.some(exam => 
-            exam.id === examId && 
-            exam.results && 
-            exam.results.length > 0
-        );
-        
-        return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam);
-    }).sort((a, b) => a.rollNo - b.rollNo), [historicalStudents, grade, academicYear, examId]);
+          // NEW: Inclusively check if student has ANY marks for this specific exam
+          const hasMarksForExam = s.academicPerformance?.some(
+            (exam) =>
+              exam.id === examId && exam.results && exam.results.length > 0
+          );
 
-    const gradeDef = useMemo(() => {
-        if (!gradeDefinitions[grade]) return null;
-        const def = gradeDefinitions[grade];
-        if (grade === Grade.IX || grade === Grade.X)
-            return { ...def, subjects: (def.subjects ?? []).map(s => ({ ...s, examFullMarks: 100, activityFullMarks: 0 })) };
-        return def;
-    }, [grade, gradeDefinitions]);
+          return (
+            matchesGrade && matchesStatus && (matchesYear || hasMarksForExam)
+          );
+        })
+        .sort((a, b) => a.rollNo - b.rollNo),
+    [historicalStudents, grade, academicYear, examId]
+  );
 
-    const examTemplate = useMemo(() => TERMINAL_EXAMS.find(e => e.id === examId), [examId]);
+  const gradeDef = useMemo(() => {
+    if (!gradeDefinitions[grade]) return null;
+    const def = gradeDefinitions[grade];
+    if (grade === Grade.IX || grade === Grade.X)
+      return {
+        ...def,
+        subjects: (def.subjects ?? []).map((s) => ({
+          ...s,
+          examFullMarks: 100,
+          activityFullMarks: 0,
+        })),
+      };
+    return def;
+  }, [grade, gradeDefinitions]);
 
-    useEffect(() => {
-        const styleId = 'progress-report-print-style';
-        let style = document.getElementById(styleId) as HTMLStyleElement | null;
-        if (!style) { style = document.createElement('style'); style.id = styleId; document.head.appendChild(style); }
-   style.textContent = `
+  const examTemplate = useMemo(
+    () => TERMINAL_EXAMS.find((e) => e.id === examId),
+    [examId]
+  );
+
+  useEffect(() => {
+    const styleId = "progress-report-print-style";
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+    style.textContent = `
     @media print {
         @page {
             size: A4 portrait;
-            margin-top: ${examId === 'terminal3' ? '9.5cm' : '1cm'};
+            margin-top: ${examId === "terminal3" ? "9.5cm" : "1cm"};
             margin-bottom: 1.5cm;
             margin-left: 0.6cm;
             margin-right: 0.6cm;
@@ -600,7 +1095,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
             zoom: 1.0;
         }
         .report-banner-placeholder {
-            display: ${examId === 'terminal3' ? 'block' : 'none'} !important;
+            display: ${examId === "terminal3" ? "block" : "none"} !important;
         }
         .report-signatures {
             break-inside: avoid !important;
@@ -611,114 +1106,239 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         }
     }
 `;
-        return () => { if (style) style.textContent = ''; };
-    }, [examId]);
+    return () => {
+      if (style) style.textContent = "";
+    };
+  }, [examId]);
 
-    const allSummaries = useMemo(() => {
-        if (examId !== 'terminal3' || !gradeDef) return null;
-        const map: Record<string, any> = {};
-        classStudents.forEach(student => {
-            const ex = {
-                terminal1: student?.academicPerformance?.find(e => e.id === 'terminal1'),
-                terminal2: student?.academicPerformance?.find(e => e.id === 'terminal2'),
-                terminal3: student?.academicPerformance?.find(e => e.id === 'terminal3'),
-            };
-            map[student.id] = {
-                terminal1: calculateTermSummary(student, ex.terminal1, 'terminal1', gradeDef, classStudents, academicYear),
-                terminal2: calculateTermSummary(student, ex.terminal2, 'terminal2', gradeDef, classStudents, academicYear),
-                terminal3: calculateTermSummary(student, ex.terminal3, 'terminal3', gradeDef, classStudents, academicYear),
-            };
-        });
-        return map;
-    }, [classStudents, gradeDef, examId]);
+  const allSummaries = useMemo(() => {
+    if (examId !== "terminal3" || !gradeDef) return null;
+    const map: Record<string, any> = {};
+    classStudents.forEach((student) => {
+      const ex = {
+        terminal1: student?.academicPerformance?.find(
+          (e) => e.id === "terminal1"
+        ),
+        terminal2: student?.academicPerformance?.find(
+          (e) => e.id === "terminal2"
+        ),
+        terminal3: student?.academicPerformance?.find(
+          (e) => e.id === "terminal3"
+        ),
+      };
+      map[student.id] = {
+        terminal1: calculateTermSummary(
+          student,
+          ex.terminal1,
+          "terminal1",
+          gradeDef,
+          classStudents,
+          academicYear
+        ),
+        terminal2: calculateTermSummary(
+          student,
+          ex.terminal2,
+          "terminal2",
+          gradeDef,
+          classStudents,
+          academicYear
+        ),
+        terminal3: calculateTermSummary(
+          student,
+          ex.terminal3,
+          "terminal3",
+          gradeDef,
+          classStudents,
+          academicYear
+        ),
+      };
+    });
+    return map;
+  }, [classStudents, gradeDef, examId]);
 
-    if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
+  if (!gradeDef || !examTemplate) return <div>Invalid Configuration</div>;
 
-    return (
-        <div className="bg-slate-100 print:bg-white min-h-screen">
-            <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm gap-2 flex-wrap">
-                <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
-                
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-600">Academic Year:</span>
-                    <select
-                        value={selectedAcademicYear}
-                        onChange={(e) => setSelectedAcademicYear(e.target.value)}
-                        className="text-sm font-medium border-slate-300 rounded-lg shadow-sm focus:border-sky-500 focus:ring focus:ring-sky-200"
-                    >
-                        {availableAcademicYears.map(year => (
-                            <option key={year} value={year}>{year}</option>
-                        ))}
-                    </select>
-                    {loadingHistory && <span className="text-sm text-sky-600 font-bold ml-2">Loading...</span>}
-                </div>
+  return (
+    <div className="bg-slate-100 print:bg-white min-h-screen">
+      <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm gap-2 flex-wrap">
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">
+          <BackIcon className="w-5 h-5" /> Back
+        </button>
 
-                <div className="text-center hidden sm:block">
-                    <h2 className="text-xl font-bold">Bulk Print Reports</h2>
-                    <p className="text-sm text-slate-600">{grade} - {examTemplate.name} ({classStudents.length} students)</p>
-                </div>
-                <button onClick={() => window.print()} className="btn btn-primary"><PrinterIcon className="w-5 h-5"/> Print All</button>
-            </div>
-
-            <div className="container mx-auto print:w-full print:max-w-none">
-                {classStudents.map(student => {
-                    const studentExams = student.academicPerformance || [];
-                    const singleExam = studentExams.find(e => e.id === examId);
-                    const exams = {
-                        terminal1: studentExams.find(e => e.id === 'terminal1'),
-                        terminal2: studentExams.find(e => e.id === 'terminal2'),
-                        terminal3: studentExams.find(e => e.id === 'terminal3'),
-                    };
-                    const summaries = allSummaries ? allSummaries[student.id] : null;
-
-                    return (
-                        <div key={student.id} className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page">
-                            <div className="font-serif print:text-xs report-inner">
-                                <header className="text-center mb-2">
-                                    {examId !== 'terminal3'
-                                        ? <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full h-auto mb-2"/>
-                                        : <div className="h-32 md:h-40 report-banner-placeholder" aria-hidden="true" />}
-                                    <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
-                                        STUDENT'S PROGRESS REPORT
-                                    </h2>
-                                    <p className="font-semibold mt-1 print:text-sm">Academic Session: {academicYear}</p>
-                                </header>
-
-                                <section className="mb-2 border-2 border-slate-400 rounded-lg text-sm print:mb-1 flex items-stretch">
-                                    <div className="flex-1 p-2 print:p-1 grid grid-cols-3 gap-x-2 gap-y-1 print:gap-y-0.5 content-start">
-                                        <div><strong className="block text-slate-600">Student's Name:</strong><span className="font-bold text-base">{student.name}</span></div>
-                                        <div><strong className="block text-slate-600">Father's Name:</strong><span className="font-bold text-base">{student.fatherName}</span></div>
-                                        <div><strong className="block text-slate-600">Date of Birth:</strong><span className="font-bold text-base">{formatDateForDisplay(student.dateOfBirth)}</span></div>
-                                        <div><strong className="block text-slate-600">Class:</strong><span className="font-bold text-base">{student.grade}</span></div>
-                                        <div><strong className="block text-slate-600">Roll No:</strong><span className="font-bold text-base">{student.rollNo}</span></div>
-                                        <div><strong className="block text-slate-600">Student ID:</strong><span className="font-bold text-base">{formatStudentId(student, academicYear)}</span></div>
-                                    </div>
-                                    <div className="border-l-2 border-slate-400 flex-shrink-0 w-24 print:w-20 flex items-center justify-center p-1">
-                                        <PhotoWithFallback src={student.photographUrl} alt={student.name} className="rounded" />
-                                    </div>
-                                </section>
-
-                                <section className="mt-4 print:mt-2">
-                                    {examId === 'terminal3' && summaries ? (
-                                        // ── Route to the correct layout based on grade group ──
-                                        isIXorX ? (
-                                            <IXXMultiTermReportCard student={student} gradeDef={gradeDef} exams={exams} summaries={summaries} staff={staff} />
-                                        ) : isIIItoVIII ? (
-                                            <ClassIIIToVIIIMultiTermReportCard student={student} gradeDef={gradeDef} exams={exams} summaries={summaries} staff={staff} />
-                                        ) : (
-                                            <NurseryToIIMultiTermReportCard student={student} gradeDef={gradeDef} exams={exams} summaries={summaries} staff={staff} />
-                                        )
-                                    ) : (
-                                        <ReportCard student={student} gradeDef={gradeDef} exam={singleExam} examTemplate={examTemplate} allStudents={classStudents} academicYear={academicYear} staff={staff} />
-                                    )}
-                                </section>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-600">
+            Academic Year:
+          </span>
+          <select
+            value={selectedAcademicYear}
+            onChange={(e) => setSelectedAcademicYear(e.target.value)}
+            className="text-sm font-medium border-slate-300 rounded-lg shadow-sm focus:border-sky-500 focus:ring focus:ring-sky-200"
+          >
+            {availableAcademicYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          {loadingHistory && (
+            <span className="text-sm text-sky-600 font-bold ml-2">
+              Loading...
+            </span>
+          )}
         </div>
-    );
+
+        <div className="text-center hidden sm:block">
+          <h2 className="text-xl font-bold">Bulk Print Reports</h2>
+          <p className="text-sm text-slate-600">
+            {grade} - {examTemplate.name} ({classStudents.length} students)
+          </p>
+        </div>
+        <button onClick={() => window.print()} className="btn btn-primary">
+          <PrinterIcon className="w-5 h-5" /> Print All
+        </button>
+      </div>
+
+      <div className="container mx-auto print:w-full print:max-w-none">
+        {classStudents.map((student) => {
+          const studentExams = student.academicPerformance || [];
+          const singleExam = studentExams.find((e) => e.id === examId);
+          const exams = {
+            terminal1: studentExams.find((e) => e.id === "terminal1"),
+            terminal2: studentExams.find((e) => e.id === "terminal2"),
+            terminal3: studentExams.find((e) => e.id === "terminal3"),
+          };
+          const summaries = allSummaries ? allSummaries[student.id] : null;
+
+          return (
+            <div
+              key={student.id}
+              className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page"
+            >
+              <div className="font-serif print:text-xs report-inner">
+                <header className="text-center mb-2">
+                  {examId !== "terminal3" ? (
+                    <img
+                      src={SCHOOL_BANNER_URL}
+                      alt="School Banner"
+                      className="w-full h-auto mb-2"
+                    />
+                  ) : (
+                    <div
+                      className="h-32 md:h-40 report-banner-placeholder"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
+                    STUDENT'S PROGRESS REPORT
+                  </h2>
+                  <p className="font-semibold mt-1 print:text-sm">
+                    Academic Session: {academicYear}
+                  </p>
+                </header>
+
+                <section className="mb-2 border-2 border-slate-400 rounded-lg text-sm print:mb-1 flex items-stretch">
+                  <div className="flex-1 p-2 print:p-1 grid grid-cols-3 gap-x-2 gap-y-1 print:gap-y-0.5 content-start">
+                    <div>
+                      <strong className="block text-slate-600">
+                        Student's Name:
+                      </strong>
+                      <span className="font-bold text-base">
+                        {student.name}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="block text-slate-600">
+                        Father's Name:
+                      </strong>
+                      <span className="font-bold text-base">
+                        {student.fatherName}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="block text-slate-600">
+                        Date of Birth:
+                      </strong>
+                      <span className="font-bold text-base">
+                        {formatDateForDisplay(student.dateOfBirth)}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="block text-slate-600">Class:</strong>
+                      <span className="font-bold text-base">
+                        {student.grade}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="block text-slate-600">Roll No:</strong>
+                      <span className="font-bold text-base">
+                        {student.rollNo}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="block text-slate-600">
+                        Student ID:
+                      </strong>
+                      <span className="font-bold text-base">
+                        {formatStudentId(student, academicYear)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="border-l-2 border-slate-400 flex-shrink-0 w-24 print:w-20 flex items-center justify-center p-1">
+                    <PhotoWithFallback
+                      src={student.photographUrl}
+                      alt={student.name}
+                      className="rounded"
+                    />
+                  </div>
+                </section>
+
+                <section className="mt-4 print:mt-2">
+                  {examId === "terminal3" && summaries ? (
+                    // ── Route to the correct layout based on grade group ──
+                    isIXorX ? (
+                      <IXXMultiTermReportCard
+                        student={student}
+                        gradeDef={gradeDef}
+                        exams={exams}
+                        summaries={summaries}
+                        staff={staff}
+                      />
+                    ) : isIIItoVIII ? (
+                      <ClassIIIToVIIIMultiTermReportCard
+                        student={student}
+                        gradeDef={gradeDef}
+                        exams={exams}
+                        summaries={summaries}
+                        staff={staff}
+                      />
+                    ) : (
+                      <NurseryToIIMultiTermReportCard
+                        student={student}
+                        gradeDef={gradeDef}
+                        exams={exams}
+                        summaries={summaries}
+                        staff={staff}
+                      />
+                    )
+                  ) : (
+                    <ReportCard
+                      student={student}
+                      gradeDef={gradeDef}
+                      exam={singleExam}
+                      examTemplate={examTemplate}
+                      allStudents={classStudents}
+                      academicYear={academicYear}
+                      staff={staff}
+                    />
+                  )}
+                </section>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 export default BulkProgressReportPage;

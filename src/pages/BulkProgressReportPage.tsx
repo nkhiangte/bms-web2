@@ -107,7 +107,7 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
       <strong>Final Remarks:</strong> {finalRemark}
     </div>
     <div
-      className="mt-20 break-inside-avoid report-signatures"
+      className="mt-[2in] break-inside-avoid report-signatures"
       style={{ fontSize: FS }}
     >
       <div className="flex justify-between items-end">
@@ -958,7 +958,7 @@ const ReportCard: React.FC<any> = ({
           </span>
         </div>
       </div>
-      <div className="mt-24 break-inside-avoid p-3">
+      <div className="mt-[2in] break-inside-avoid p-3">
         <div className="flex justify-between items-end">
           <div className="text-center">
             <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">

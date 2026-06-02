@@ -347,7 +347,7 @@ const MultiTermReportCard: React.FC<{
         <strong>Final Remarks:</strong> {finalRemark}
       </div>
 
-      <div style={{ marginTop: "40px", fontSize: "8pt" }}>
+      <div style={{ marginTop: "2in", fontSize: "8pt" }}>
         <div
           style={{
             display: "flex",
@@ -730,7 +730,7 @@ const ReportCard: React.FC<any> = ({
         </div>
       </div>
 
-      <div style={{ marginTop: "40px", fontSize: "8pt" }}>
+      <div style={{ marginTop: "2in", fontSize: "8pt" }}>
         <div
           style={{
             display: "flex",

@@ -855,6 +855,53 @@ export const getCurrentAcademicYear = (): string => {
     return `${startYear}-${String(endYear).padStart(2, '0')}`;
 };
 
+export const generateAcademicYearsList = (): string[] => {
+    const list = [];
+    const current = new Date().getFullYear();
+    for (let i = 2021; i <= current + 1; i++) {
+        list.push(`${i}-${String(i + 1).slice(-2)}`);
+    }
+    return list;
+};
+
+export const useHistoricalStudents = (selectedYear: string, globalYear: string, currentStudents: Student[], db: any): { students: Student[], loading: boolean } => {
+    const [historicalStudents, setHistoricalStudents] = useState<Student[]>(currentStudents);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (selectedYear === globalYear) {
+            setHistoricalStudents(currentStudents);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        db.collection('students_archive').doc(selectedYear).collection('students').get().then((snap: any) => {
+            if (!isMounted) return;
+            const history = snap.docs.map((d: any) => {
+                const data = d.data();
+                if (Array.isArray(data.academicPerformance)) {
+                    data.academicPerformance = data.academicPerformance.map((exam: any) => ({
+                        ...exam, results: Array.isArray(exam.results) ? exam.results : Object.values(exam.results || {}),
+                    }));
+                }
+                return { id: d.id, ...data } as Student;
+            });
+            setHistoricalStudents(history);
+        }).catch((err: any) => {
+            console.error("Failed to fetch historical students", err);
+            if (isMounted) setHistoricalStudents([]);
+        }).finally(() => {
+            if (isMounted) setLoading(false);
+        });
+
+        return () => { isMounted = false; };
+    }, [selectedYear, globalYear, currentStudents, db]);
+
+    return { students: historicalStudents, loading };
+};
+
 export const resizeImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

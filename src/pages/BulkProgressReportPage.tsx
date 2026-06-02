@@ -3,7 +3,8 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Exam, StudentStatus, Staff, Attendance, SubjectMark, SubjectDefinition, ProcessedStudent } from '@/types';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { TERMINAL_EXAMS, GRADES_WITH_NO_ACTIVITIES, OABC_GRADES, SCHOOL_BANNER_URL } from '@/constants';
-import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear, getProcessedClassData, findResultWithAliases } from '@/utils';
+import { formatDateForDisplay, normalizeSubjectName, formatStudentId, getNextGrade, subjectsMatch, normalizeAcademicYear, getProcessedClassData, findResultWithAliases, useHistoricalStudents, generateAcademicYearsList } from '@/utils';
+import { db } from '@/firebaseConfig';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 
 const { useParams, useNavigate } = ReactRouterDOM as any;
@@ -543,7 +544,11 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
     const isNurseryToII = NURSERY_TO_II.includes(grade);
     const isIIItoVIII = CLASS_III_TO_VIII.includes(grade);
 
-    const classStudents = useMemo(() => students.filter(s => {
+    const [selectedAcademicYear, setSelectedAcademicYear] = React.useState<string>(academicYear);
+    const { students: historicalStudents, loading: loadingHistory } = useHistoricalStudents(selectedAcademicYear, academicYear, students, db);
+    const availableAcademicYears = useMemo(() => generateAcademicYearsList(), []);
+
+    const classStudents = useMemo(() => historicalStudents.filter(s => {
         const matchesGrade = s.grade === grade;
         const matchesStatus = s.status === StudentStatus.ACTIVE || 
                               s.status === StudentStatus.TRANSFERRED || 
@@ -562,7 +567,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
         );
         
         return matchesGrade && matchesStatus && (matchesYear || hasMarksForExam);
-    }).sort((a, b) => a.rollNo - b.rollNo), [students, grade, academicYear, examId]);
+    }).sort((a, b) => a.rollNo - b.rollNo), [historicalStudents, grade, academicYear, examId]);
 
     const gradeDef = useMemo(() => {
         if (!gradeDefinitions[grade]) return null;
@@ -631,9 +636,24 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({ students, s
 
     return (
         <div className="bg-slate-100 print:bg-white min-h-screen">
-            <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm">
+            <div className="print-hidden container mx-auto p-4 flex justify-between items-center sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10 shadow-sm gap-2 flex-wrap">
                 <button onClick={() => navigate(-1)} className="btn btn-secondary"><BackIcon className="w-5 h-5"/> Back</button>
-                <div className="text-center">
+                
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-600">Academic Year:</span>
+                    <select
+                        value={selectedAcademicYear}
+                        onChange={(e) => setSelectedAcademicYear(e.target.value)}
+                        className="text-sm font-medium border-slate-300 rounded-lg shadow-sm focus:border-sky-500 focus:ring focus:ring-sky-200"
+                    >
+                        {availableAcademicYears.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
+                    {loadingHistory && <span className="text-sm text-sky-600 font-bold ml-2">Loading...</span>}
+                </div>
+
+                <div className="text-center hidden sm:block">
                     <h2 className="text-xl font-bold">Bulk Print Reports</h2>
                     <p className="text-sm text-slate-600">{grade} - {examTemplate.name} ({classStudents.length} students)</p>
                 </div>

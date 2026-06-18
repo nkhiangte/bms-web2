@@ -968,3 +968,89 @@ export const stripHtml = (html: string): string => {
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || "";
 };
+
+export const exportStudentsToExcel = (students: Student[], gradeLabel: string, academicYear: string) => {
+    const escapeCsvField = (field: any): string => {
+        if (field === null || field === undefined) return '';
+        const stringField = String(field);
+        if (/[",\n\r]/.test(stringField)) {
+            return `"${stringField.replace(/"/g, '""')}"`;
+        }
+        return stringField;
+    };
+
+    const headers = [
+        'Roll No',
+        'Student ID',
+        'Name',
+        'Class/Grade',
+        'Academic Year',
+        'Gender',
+        'Date of Birth',
+        'Contact Number',
+        'Aadhaar Number',
+        'PEN Number',
+        'Category',
+        'Father Name',
+        'Father Occupation',
+        'Father Aadhaar',
+        'Mother Name',
+        'Mother Occupation',
+        'Mother Aadhaar',
+        'Guardian Name',
+        'Guardian Relationship',
+        'Permanent Address',
+        'CWSN Status',
+        'Religion',
+        'Blood Group',
+        'Last School Attended',
+        'Health Conditions',
+        'Achievements',
+        'Status'
+    ];
+
+    const rows = students.map(s => {
+        return [
+            escapeCsvField(s.rollNo),
+            escapeCsvField(formatStudentId(s, s.academicYear || academicYear)),
+            escapeCsvField(s.name),
+            escapeCsvField(s.grade),
+            escapeCsvField(s.academicYear || academicYear),
+            escapeCsvField(s.gender),
+            escapeCsvField(s.dateOfBirth),
+            escapeCsvField(s.contact),
+            escapeCsvField(s.aadhaarNumber),
+            escapeCsvField(s.pen),
+            escapeCsvField(s.category),
+            escapeCsvField(s.fatherName),
+            escapeCsvField(s.fatherOccupation),
+            escapeCsvField(s.fatherAadhaar),
+            escapeCsvField(s.motherName),
+            escapeCsvField(s.motherOccupation),
+            escapeCsvField(s.motherAadhaar),
+            escapeCsvField(s.guardianName),
+            escapeCsvField(s.guardianRelationship),
+            escapeCsvField(s.address),
+            escapeCsvField(s.cwsn),
+            escapeCsvField(s.religion),
+            escapeCsvField(s.bloodGroup || ''),
+            escapeCsvField(s.lastSchoolAttended),
+            escapeCsvField(s.healthConditions),
+            escapeCsvField(s.achievements),
+            escapeCsvField(s.status)
+        ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    
+    // Clean filename
+    const cleanGrade = gradeLabel.replace(/\s+/g, '_');
+    link.download = `BMS_Students_${cleanGrade}_${academicYear.replace(/\s+/g, '_')}.csv`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};

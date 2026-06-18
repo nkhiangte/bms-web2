@@ -14,8 +14,8 @@ import {
     PlusIcon,
 } from '@/components/Icons';
 import { db } from '@/firebaseConfig';
-import { formatStudentId } from '@/utils';
-import { Student } from '@/types';
+import { formatStudentId, exportStudentsToExcel } from '@/utils';
+import { Student, Grade } from '@/types';
 import {
     DisclosureData,
     DEFAULT_DISCLOSURE_DATA,
@@ -608,6 +608,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
     const [migrating, setMigrating] = useState(false);
     const [migrateResult, setMigrateResult] = useState<string | null>(null);
     const [showDisclosure, setShowDisclosure] = useState(false);
+    const [showStudentExport, setShowStudentExport] = useState(false);
 
     const handleMigrateStudentIds = async () => {
         if (!window.confirm('This will write the correct studentId and academicYear into every student record that is missing them. Continue?')) return;
@@ -726,6 +727,13 @@ const AdminPage: React.FC<AdminPageProps> = ({
                     <AdminCard key={link.title} {...link} />
                 ))}
                 <AdminCard
+                    title="Export Student Details"
+                    description="Download registered students details for each class in Excel format."
+                    icon={<InboxArrowDownIcon className="w-7 h-7" />}
+                    accent="border-emerald-500"
+                    onClick={() => { setShowStudentExport(v => !v); window.setTimeout(() => document.getElementById('student-export-section')?.scrollIntoView({ behavior: 'smooth' }), 50); }}
+                />
+                <AdminCard
                     title="Mandatory Public Disclosure"
                     description="Edit and publish the school's mandatory public disclosure information."
                     icon={<DisclosureIcon />}
@@ -733,6 +741,73 @@ const AdminPage: React.FC<AdminPageProps> = ({
                     onClick={() => { setShowDisclosure(v => !v); window.setTimeout(() => document.getElementById('disclosure-editor')?.scrollIntoView({ behavior: 'smooth' }), 50); }}
                 />
             </div>
+
+            {showStudentExport && (
+                <div id="student-export-section" className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-md scroll-mt-6 text-slate-800">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b border-slate-200">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800">Export Class-wise Student Details</h2>
+                            <p className="text-sm text-slate-600 mt-1">Select any class to download full bio-data and registered student details in Excel format for academic year {academicYear}.</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const allMatchingStudents = students.filter(s => {
+                                    const studentYearNorm = s.academicYear ? s.academicYear.trim().toLowerCase() : '';
+                                    const selectedYearNorm = academicYear ? academicYear.trim().toLowerCase() : '';
+                                    return studentYearNorm === selectedYearNorm || !studentYearNorm;
+                                }).sort((a, b) => {
+                                    if (a.grade !== b.grade) return String(a.grade).localeCompare(String(b.grade));
+                                    return (a.rollNo || 0) - (b.rollNo || 0);
+                                });
+                                if (allMatchingStudents.length === 0) {
+                                    alert("No student records found in the current academic year.");
+                                    return;
+                                }
+                                exportStudentsToExcel(allMatchingStudents, "All_Classes_Unified", academicYear);
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-lg shadow-md hover:bg-emerald-700 hover:shadow-lg transition duration-200"
+                        >
+                            <InboxArrowDownIcon className="w-5 h-5 text-white" /> Export All Students (Unified Sheet)
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {Object.values(Grade).map(gradeValue => {
+                            const gradeStudents = students.filter(s => {
+                                const matchesGrade = s.grade === gradeValue;
+                                const studentYearNorm = s.academicYear ? s.academicYear.trim().toLowerCase() : '';
+                                const selectedYearNorm = academicYear ? academicYear.trim().toLowerCase() : '';
+                                return matchesGrade && (studentYearNorm === selectedYearNorm || !studentYearNorm);
+                            }).sort((a, b) => (a.rollNo || 0) - (b.rollNo || 0));
+
+                            const hasStudents = gradeStudents.length > 0;
+
+                            return (
+                                <div key={gradeValue} className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition">
+                                    <div>
+                                        <h3 className="text-base font-bold text-slate-800">{gradeValue}</h3>
+                                        <p className="text-xs text-slate-500 mt-1">Enrolled: <strong className="text-slate-700">{gradeStudents.length} students</strong></p>
+                                    </div>
+                                    <div className="mt-4">
+                                        <button
+                                            disabled={!hasStudents}
+                                            onClick={() => exportStudentsToExcel(gradeStudents, gradeValue, academicYear)}
+                                            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded text-sm font-semibold transition ${
+                                                hasStudents 
+                                                    ? 'bg-sky-50 text-sky-750 hover:bg-sky-100 border border-sky-200 cursor-pointer' 
+                                                    : 'bg-slate-50 text-slate-400 border border-slate-100 cursor-not-allowed'
+                                            }`}
+                                            title={hasStudents ? `Download ${gradeValue} details` : 'No students registered'}
+                                        >
+                                            <InboxArrowDownIcon className="w-4 h-4" /> Export Class
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {showDisclosure && (
                 <div id="disclosure-editor">

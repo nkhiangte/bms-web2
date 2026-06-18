@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
-import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon, CheckCircleIcon } from '@/components/Icons';
-import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp, normalizeAcademicYear } from '@/utils';
+import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon, CheckCircleIcon, InboxArrowDownIcon } from '@/components/Icons';
+import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp, normalizeAcademicYear, exportStudentsToExcel } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
@@ -168,7 +168,16 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="form-input w-full sm:w-64"
                     />
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                    <div className="flex gap-2 w-full sm:w-auto justify-end flex-wrap">
+                        {isAdmin && (
+                            <button 
+                                onClick={() => exportStudentsToExcel(classStudents, grade, academicYear)} 
+                                className="btn btn-secondary whitespace-nowrap bg-sky-50 text-sky-700 hover:bg-sky-100 border-sky-300 shadow-sm" 
+                                title="Download All Student Details to Excel"
+                            >
+                                <InboxArrowDownIcon className="w-5 h-5 text-sky-600"/> Download Excel
+                            </button>
+                        )}
                         {isStaff && (
                             <div className="flex gap-2">
                                 <button onClick={() => onOpenImportModal(grade)} className="btn btn-secondary whitespace-nowrap" title="Import from CSV/Excel">

@@ -52,6 +52,7 @@ const SitemapPage: React.FC = () => {
                             <SiteLink to="/hostel" sub>Hostel</SiteLink>
                             <SiteLink to="/gallery" sub>Gallery</SiteLink>
                             <SiteLink to="/contact">Contact Us</SiteLink>
+                            <SiteLink to="/privacy">Privacy Policy</SiteLink>
                         </Section>
                     </div>
 

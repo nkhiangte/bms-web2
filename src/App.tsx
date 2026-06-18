@@ -95,6 +95,7 @@ import GalleryPage from '@/pages/public/GalleryPage';
 import ContactPage from '@/pages/public/ContactPage';
 import SitemapPage from '@/pages/public/SitemapPage';
 import SitemapXmlPage from '@/pages/public/SitemapXmlPage';
+import PrivacyPage from '@/pages/public/PrivacyPage';
 import AcademicPerformancePage from '@/pages/AcademicPerformancePage';
 import ReportSearchPage from '@/pages/ReportSearchPage';
 import ClassMarkStatementPage from '@/pages/ClassMarkStatementPage';
@@ -965,6 +966,8 @@ const App: React.FC = () => {
         
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="privacy-policy" element={<PrivacyPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
           <Route path="syllabus" element={<TextbooksPage />} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />

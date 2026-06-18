@@ -25,6 +25,7 @@ const PublicFooter: React.FC = () => {
                             <li><Link to="/rules" className="hover:text-white transition-colors">Rules & Regulations</Link></li>
                             <li><Link to="/faculty" className="hover:text-white transition-colors">Our Faculty</Link></li>
                             <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+                            <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                         </ul>
                     </div>
                     {/* Contact Info */}
@@ -66,8 +67,11 @@ const PublicFooter: React.FC = () => {
                         </Link>
                     </div>
                 </div>
-                <div className="mt-12 border-t border-slate-700 pt-8 text-center text-sm text-slate-400">
+                <div className="mt-12 border-t border-slate-700 pt-8 text-center text-sm text-slate-400 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p>&copy; {new Date().getFullYear()} Bethel Mission School. All Rights Reserved.</p>
+                    <div className="flex gap-4">
+                        <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                    </div>
                 </div>
             </div>
         </footer>

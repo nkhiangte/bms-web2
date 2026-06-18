@@ -968,6 +968,8 @@ const App: React.FC = () => {
           <Route path="sitemap" element={<SitemapPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="privacy-policy" element={<PrivacyPage />} />
+          <Route path="privacypage" element={<PrivacyPage />} />
+          <Route path="privacy-page" element={<PrivacyPage />} />
           <Route path="textbooks" element={<TextbooksPage />} />
           <Route path="syllabus" element={<TextbooksPage />} />
           <Route path="syllabus/:grade" element={<SyllabusPage syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />

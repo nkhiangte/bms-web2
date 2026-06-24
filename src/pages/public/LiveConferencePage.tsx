@@ -10,7 +10,7 @@ interface LiveConferencePageProps {
 }
 
 const LiveConferencePage: React.FC<LiveConferencePageProps> = ({ user }) => {
-  const { roomId } = useParams<{ roomId: string }>();
+  const { roomId } = useParams();
   const navigate = useNavigate();
 
   // Redirect to login if user is not authenticated

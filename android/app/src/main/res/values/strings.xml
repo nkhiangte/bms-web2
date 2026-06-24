@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Bethel Mission School</string>
-    <string name="title_activity_main">Bethel Mission School</string>
-    <string name="package_name">com.bethelmissionschool.app</string>
-    <string name="custom_url_scheme">com.bethelmissionschool.app</string>
-</resources>

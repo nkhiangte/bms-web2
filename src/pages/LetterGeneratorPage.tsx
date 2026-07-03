@@ -89,7 +89,7 @@ const LetterGeneratorPage: React.FC<{
     setLetterData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const saveLetterToFirebase = async () => {
+  const saveLetterToFirebase = async (showNotification = false) => {
     try {
       const letterToSave = {
         ...letterData,
@@ -101,8 +101,14 @@ const LetterGeneratorPage: React.FC<{
         { id: docRef.id, ...letterToSave } as any,
         ...prev,
       ]);
+      if (showNotification) {
+        alert("Letter saved successfully!");
+      }
     } catch (error) {
       console.error("Error saving letter:", error);
+      if (showNotification) {
+        alert("Error saving letter.");
+      }
     }
   };
 
@@ -374,7 +380,14 @@ const LetterGeneratorPage: React.FC<{
               </div>
             </section>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <button
+                onClick={() => saveLetterToFirebase(true)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                <DocumentPlusIcon className="w-5 h-5" />
+                Save Letter
+              </button>
               <button
                 onClick={handlePrint}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors"

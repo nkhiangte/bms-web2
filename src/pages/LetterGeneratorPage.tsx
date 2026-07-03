@@ -128,11 +128,24 @@ const LetterGeneratorPage: React.FC<{
 
     const imgData = canvas.toDataURL("image/jpeg", 0.95);
     const pdf = new jsPDF("p", "mm", "a4");
-    const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgProps = pdf.getImageProperties(imgData);
+    const totalPdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+    let heightLeft = totalPdfHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, totalPdfHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - totalPdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, totalPdfHeight);
+      heightLeft -= pdfHeight;
+    }
+
     pdf.save(`Official_Letter_${letterData.letterNo}.pdf`);
 
     window.scrollTo(0, oldScrollY);
@@ -385,7 +398,7 @@ const LetterGeneratorPage: React.FC<{
           <div className="sticky top-8 bg-slate-200 p-4 rounded-xl print:bg-transparent print:p-0">
             <div
               ref={letterRef}
-              className="bg-white w-full aspect-[1/1.414] p-12 shadow-xl print:shadow-none print:p-0 mx-auto overflow-hidden"
+              className="bg-white w-full h-max min-h-[141.4vw] md:min-h-[848px] lg:min-h-[1131px] p-12 shadow-xl print:shadow-none print:p-0 mx-auto"
               style={{ fontFamily: "serif", color: "#000000" }}
             >
               {/* Header */}
@@ -398,20 +411,12 @@ const LetterGeneratorPage: React.FC<{
                   alt="School Banner"
                   className="w-full max-h-24 object-contain mb-2"
                 />
-                <div className="text-sm font-bold" style={{ color: "#334155" }}>
-                  CHAMPHAI, MIZORAM | DISE Code:{" "}
-                  {schoolConfig.udiseCode || "[DISE Code]"}
-                </div>
               </div>
 
-              {/* Date & Sender */}
+              {/* Date & Ref No */}
               <div className="flex justify-between mb-8 text-sm">
                 <div>
                   <div className="font-bold">Ref No: {letterData.letterNo}</div>
-                  <div className="font-bold mt-2">{letterData.senderName}</div>
-                  <div>{letterData.senderDesignation}</div>
-                  <div>Bethel Mission School</div>
-                  <div>Champhai, Mizoram</div>
                 </div>
                 <div className="text-right">
                   <div className="font-bold">Date: {letterData.date}</div>

@@ -192,9 +192,13 @@ service cloud.firestore {
     }
 
     // ---------------------------
-    // Service Certificates
+    // Service Certificates & Office Letters
     // ---------------------------
     match /serviceCertificates/{docId} {
+      allow read, list, write, delete: if isStaff();
+    }
+    
+    match /officeLetters/{docId} {
       allow read, list, write, delete: if isStaff();
     }
 

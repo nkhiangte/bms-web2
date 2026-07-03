@@ -48,7 +48,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     notificationDaysBefore,
     onUpdatePrefs,
 }) => {
-    const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1)); // Start Apr 2026
+    const [currentDate, setCurrentDate] = useState(new Date()); // Start at current date
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [filterLevel, setFilterLevel] = useState<SchoolLevel>('all');
 

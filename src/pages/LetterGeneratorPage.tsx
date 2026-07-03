@@ -64,13 +64,13 @@ const LetterGeneratorPage: React.FC<{ user: User; schoolConfig: { udiseCode?: st
             logging: false,
         });
         
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgProps = pdf.getImageProperties(imgData);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`Official_Letter_${new Date().getTime()}.pdf`);
     };
 
@@ -276,12 +276,12 @@ const LetterGeneratorPage: React.FC<{ user: User; schoolConfig: { udiseCode?: st
                         <div 
                             ref={letterRef}
                             className="bg-white w-full aspect-[1/1.414] p-12 shadow-xl print:shadow-none print:p-0 mx-auto overflow-hidden"
-                            style={{ fontFamily: 'serif' }}
+                            style={{ fontFamily: 'serif', color: '#000000' }}
                         >
                             {/* Header */}
-                            <div className="border-b-2 border-slate-800 pb-4 mb-8 text-center">
+                            <div className="pb-4 mb-8 text-center" style={{ borderBottom: '2px solid #1e293b' }}>
                                 <img src={SCHOOL_BANNER_URL} alt="School Banner" className="w-full max-h-24 object-contain mb-2" />
-                                <div className="text-sm font-bold text-slate-700">
+                                <div className="text-sm font-bold" style={{ color: '#334155' }}>
                                     CHAMPHAI, MIZORAM | DISE Code: {schoolConfig.udiseCode || '[DISE Code]'}
                                 </div>
                             </div>

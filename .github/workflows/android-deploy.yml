@@ -73,4 +73,3 @@ jobs:
           packageName: com.bethelmissionschool.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: internal # Starts deployment to the Internal Testing track. Change to 'production' for a live release.
-          changesNotSentForReview: true

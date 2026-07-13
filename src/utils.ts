@@ -857,7 +857,7 @@ export const useHistoricalStudents = (selectedYear: string, globalYear: string, 
 
     useEffect(() => {
         let isMounted = true;
-        if (selectedYear === globalYear) {
+        if (normalizeAcademicYear(selectedYear) === normalizeAcademicYear(globalYear)) {
             setHistoricalStudents(currentStudents);
             setLoading(false);
             return;

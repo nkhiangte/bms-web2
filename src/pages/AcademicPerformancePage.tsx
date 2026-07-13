@@ -27,6 +27,8 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
   const { studentId } = useParams() as { studentId: string };
 
   const student = useMemo(() => students.find(s => s.id === studentId), [students, studentId]);
+
+  const studentYear = useMemo(() => student?.academicYear || academicYear, [student, academicYear]);
   
   const classmates = useMemo(() => {
     if (!student) return [];
@@ -37,12 +39,12 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
                               s.status === StudentStatus.GRADUATED || 
                               s.status === StudentStatus.DROPPED;
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const selectedYearNorm = normalizeAcademicYear(studentYear);
         const matchesYear = studentYearNorm === selectedYearNorm;
         
         return matchesGrade && matchesStatus && matchesYear;
     });
-  }, [students, student, academicYear]);
+  }, [students, student, studentYear]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [performanceData, setPerformanceData] = useState<Exam[]>([]);
@@ -130,7 +132,7 @@ const AcademicPerformancePage: React.FC<AcademicPerformancePageProps> = ({ stude
 
         <div className="space-y-8">
             {performanceData.map(exam => {
-                const processedClass = getProcessedClassData(classmates, student.grade, exam.id as any, gradeDefinitions, academicYear);
+                const processedClass = getProcessedClassData(classmates, student.grade, exam.id as any, gradeDefinitions, studentYear);
                 const studentSummary = processedClass.find(s => s.id === student.id);
                 const classAvg = processedClass.length > 0 
                     ? (processedClass.reduce((acc, curr) => acc + curr.percentage, 0) / processedClass.length).toFixed(1)

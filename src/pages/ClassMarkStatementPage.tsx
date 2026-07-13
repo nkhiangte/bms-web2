@@ -54,6 +54,13 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
   const [statusFilter, setStatusFilter] = useState<StudentStatus | 'ALL'>('ALL');
   const [showAllYears, setShowAllYears] = useState(false);
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(academicYear);
+
+  useEffect(() => {
+    setSelectedAcademicYear(academicYear);
+  }, [academicYear]);
+
+  const isReadOnly = useMemo(() => normalizeAcademicYear(selectedAcademicYear) !== normalizeAcademicYear(academicYear), [selectedAcademicYear, academicYear]);
+
   const { students: historicalStudents, loading: loadingHistory } = useHistoricalStudents(selectedAcademicYear, academicYear, students, db);
   const availableAcademicYears = useMemo(() => generateAcademicYearsList(), []);
 
@@ -66,24 +73,17 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         // The user is having trouble finding students.
         
         const studentYearNorm = normalizeAcademicYear(s.academicYear);
-        const selectedYearNorm = normalizeAcademicYear(academicYear);
+        const selectedYearNorm = normalizeAcademicYear(selectedAcademicYear);
         
         // Default students with no academic year to 2025-26
         const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
         const matchesYear = effectiveYear === selectedYearNorm;
-
-        // Inclusively check if student has ANY marks for this specific exam
-        const hasMarksForExam = s.academicPerformance?.some(exam => 
-            exam.id === examId && 
-            exam.results && 
-            exam.results.length > 0
-        );
         
         // If showAllYears is ON, we show everything in the grade.
-        // If OFF, we show only this year or those with existing marks.
-        return matchesGrade && (matchesYear || hasMarksForExam || showAllYears);
+        // If OFF, we show only this year.
+        return matchesGrade && (matchesYear || showAllYears);
     }).sort((a, b) => a.rollNo - b.rollNo);
-  }, [students, grade, academicYear, examId, showAllYears]);
+  }, [historicalStudents, grade, selectedAcademicYear, examId, showAllYears]);
 
   // For diagnostics: find students in this grade but different years who DON'T have marks yet
   const otherYearStats = useMemo<Record<string, number>>(() => {
@@ -92,7 +92,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     students.filter(s => {
         const matchesGrade = s.grade === grade;
         const effectiveYear = s.academicYear ? normalizeAcademicYear(s.academicYear) : normalizeAcademicYear('2025-26');
-        const isSelectedYear = effectiveYear === normalizeAcademicYear(academicYear);
+        const isSelectedYear = effectiveYear === normalizeAcademicYear(selectedAcademicYear);
         const hasMarks = s.academicPerformance?.some(exam => exam.id === examId && exam.results && exam.results.length > 0);
         
         return matchesGrade && !isSelectedYear && !hasMarks;
@@ -101,7 +101,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
        stats[effectiveYear] = (stats[effectiveYear] || 0) + 1;
     });
     return stats;
-  }, [students, grade, academicYear, examId]);
+  }, [students, grade, selectedAcademicYear, examId]);
 
   const otherYearCount = useMemo(() => {
     return Object.values(otherYearStats).reduce((acc: number, curr) => acc + (curr as number), 0);
@@ -287,7 +287,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
 
   const processedData: ProcessedStudent[] = useMemo(() => {
     // Use the shared utility for consistent calculation
-    const results = getProcessedClassData(students, grade!, examId, gradeDefinitions, academicYear, {
+    const results = getProcessedClassData(historicalStudents, grade!, examId, gradeDefinitions, selectedAcademicYear, {
         showAllYears,
         marksOverride: marksData
     });
@@ -310,7 +310,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     }
     
     return sortedData as ProcessedStudent[];
-  }, [students, grade, examId, gradeDefinitions, academicYear, showAllYears, marksData, sortCriteria]);
+  }, [historicalStudents, grade, examId, gradeDefinitions, selectedAcademicYear, showAllYears, marksData, sortCriteria]);
 
   const handleConfirmSave = async () => {
     if (!examDetails || changedStudents.size === 0) return;
@@ -772,7 +772,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
         </div>
     </div>
         
-            {selectedAcademicYear !== academicYear && (
+            {isReadOnly && (
                 <div className="mb-4 bg-amber-100 text-amber-800 p-3 rounded text-sm font-semibold text-center mt-4">
                     You are viewing a previous academic year ({selectedAcademicYear}). Marks cannot be edited.
                 </div>
@@ -832,7 +832,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             {/* FIX: Added text-slate-800 to make student names visible */}
                             <td className="px-2 py-1 font-medium text-slate-800 border-r whitespace-nowrap">
                                 {student.name}
-                                {normalizeAcademicYear(student.academicYear) !== normalizeAcademicYear(academicYear) && (
+                                {normalizeAcademicYear(student.academicYear) !== normalizeAcademicYear(selectedAcademicYear) && (
                                     <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
                                         Year: {student.academicYear || 'None'}
                                     </span>
@@ -852,7 +852,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                     return (
                                         <td key={sd.name} colSpan={1} className="px-0.5 py-1 border-l text-center">
                                             <select
-                                                disabled={selectedAcademicYear !== academicYear}
+                                                disabled={isReadOnly}
                                                 value={marksData[student.id]?.[sd.name] as string ?? ''}
                                                 onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'grade')}
                                                 className="form-select w-16 text-center"
@@ -871,7 +871,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
                                                 <input
-                                                    disabled={selectedAcademicYear !== academicYear}
+                                                    disabled={isReadOnly}
                                                     type="number"
                                                     value={marksData[student.id]?.[sd.name + '_sa'] ?? ''}
                                                     onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'sa')}
@@ -885,7 +885,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
                                                 <input
-                                                    disabled={selectedAcademicYear !== academicYear}
+                                                    disabled={isReadOnly}
                                                     type="number"
                                                     value={marksData[student.id]?.[sd.name + '_fa'] ?? ''}
                                                     onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'fa')}
@@ -908,7 +908,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                         <React.Fragment key={sd.name}>
                                             <td className="px-0.5 py-1 border-l text-center">
                                                 <input
-                                                    disabled={selectedAcademicYear !== academicYear}
+                                                    disabled={isReadOnly}
                                                     type="number"
                                                     value={marksData[student.id]?.[sd.name + '_exam'] ?? ''}
                                                     onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'exam')}
@@ -921,7 +921,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                             </td>
                                             <td className="px-0.5 py-1 border-l text-center">
                                                 <input
-                                                    disabled={selectedAcademicYear !== academicYear}
+                                                    disabled={isReadOnly}
                                                     type="number"
                                                     value={marksData[student.id]?.[sd.name + '_activity'] ?? ''}
                                                     onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'activity')}
@@ -940,7 +940,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                                 return (
                                     <td key={sd.name} className="px-0.5 py-1 border-l text-center">
                                         <input
-                                            disabled={selectedAcademicYear !== academicYear}
+                                            disabled={isReadOnly}
                                             type="number"
                                             value={marksData[student.id]?.[sd.name] ?? ''}
                                             onChange={(e) => handleMarkChange(student.id, sd.name, e.target.value, 'total')}
@@ -961,10 +961,10 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
                             <td className={`px-1 py-1 text-center font-bold border-l whitespace-nowrap ${student.result === 'PASS' || student.result === 'SIMPLE PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{student.result}</td>
                             <td className="px-1 py-1 text-sm text-slate-700 border-l">{student.remark}</td>
                             <td className="px-1 py-1 border-l">
-                                <input disabled={selectedAcademicYear !== academicYear} type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
+                                <input disabled={isReadOnly} type="number" value={attendanceData[student.id]?.totalWorkingDays ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'totalWorkingDays', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                             <td className="px-1 py-1 border-l">
-                                <input disabled={selectedAcademicYear !== academicYear} type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
+                                <input disabled={isReadOnly} type="number" value={attendanceData[student.id]?.daysPresent ?? ''} onChange={(e) => handleAttendanceChange(student.id, 'daysPresent', e.target.value)} className="form-input w-20 text-center" />
                             </td>
                         </tr>
                         );
@@ -992,7 +992,7 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             </button>
             <button
                 onClick={() => setIsConfirmSaveModalOpen(true)}
-                disabled={isSaving || changedStudents.size === 0 || selectedAcademicYear !== academicYear}
+                disabled={isSaving || changedStudents.size === 0 || isReadOnly}
                 className="btn btn-primary flex items-center gap-2 disabled:bg-slate-400"
             >
                 {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5" />}

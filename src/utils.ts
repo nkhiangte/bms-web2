@@ -417,20 +417,7 @@ export const getProcessedClassData = (
     const studentYearNorm = normalizeAcademicYear(s.academicYear);
     const effectiveYear = s.academicYear ? studentYearNorm : normalizeAcademicYear('2025-26');
     const matchesYear = effectiveYear === selectedYearNorm;
-    const hasMarksForExam = s.academicPerformance?.some(exam => {
-        if (exam.id === examId) return true;
-        if (!exam.name) return false;
-        const eName = exam.name.trim().toLowerCase();
-        const tmpl = TERMINAL_EXAMS.find(t => t.id === examId);
-        if (tmpl && eName === tmpl.name.trim().toLowerCase()) return true;
-        const legacyNames: Record<string, string[]> = {
-            terminal1: ['first terminal examination', 'i terminal examination'],
-            terminal2: ['second terminal examination', 'ii terminal examination'],
-            terminal3: ['third terminal examination', 'iii terminal examination'],
-        };
-        return (legacyNames[examId] || []).includes(eName);
-    });
-    return matchesGrade && (matchesYear || hasMarksForExam || showAllYears);
+    return matchesGrade && (matchesYear || showAllYears);
   });
 
   // 2. Determine subjects

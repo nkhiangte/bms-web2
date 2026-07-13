@@ -1015,6 +1015,11 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
 
   const [selectedAcademicYear, setSelectedAcademicYear] =
     React.useState<string>(academicYear);
+
+  React.useEffect(() => {
+    setSelectedAcademicYear(academicYear);
+  }, [academicYear]);
+
   const { students: historicalStudents, loading: loadingHistory } =
     useHistoricalStudents(selectedAcademicYear, academicYear, students, db);
   const availableAcademicYears = useMemo(() => generateAcademicYearsList(), []);
@@ -1030,24 +1035,18 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
             s.status === StudentStatus.GRADUATED ||
             s.status === StudentStatus.DROPPED;
           const studentYearNorm = normalizeAcademicYear(s.academicYear);
-          const selectedYearNorm = normalizeAcademicYear(academicYear);
+          const selectedYearNorm = normalizeAcademicYear(selectedAcademicYear);
           const effectiveYear = s.academicYear
             ? studentYearNorm
             : normalizeAcademicYear("2025-26");
           const matchesYear = effectiveYear === selectedYearNorm;
 
-          // NEW: Inclusively check if student has ANY marks for this specific exam
-          const hasMarksForExam = s.academicPerformance?.some(
-            (exam) =>
-              exam.id === examId && exam.results && exam.results.length > 0
-          );
-
           return (
-            matchesGrade && matchesStatus && (matchesYear || hasMarksForExam)
+            matchesGrade && matchesStatus && matchesYear
           );
         })
         .sort((a, b) => a.rollNo - b.rollNo),
-    [historicalStudents, grade, academicYear, examId]
+    [historicalStudents, grade, selectedAcademicYear, examId]
   );
 
   const gradeDef = useMemo(() => {
@@ -1133,7 +1132,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
           "terminal1",
           gradeDef,
           classStudents,
-          academicYear
+          selectedAcademicYear
         ),
         terminal2: calculateTermSummary(
           student,
@@ -1141,7 +1140,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
           "terminal2",
           gradeDef,
           classStudents,
-          academicYear
+          selectedAcademicYear
         ),
         terminal3: calculateTermSummary(
           student,
@@ -1149,7 +1148,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
           "terminal3",
           gradeDef,
           classStudents,
-          academicYear
+          selectedAcademicYear
         ),
       };
     });
@@ -1232,7 +1231,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
                     STUDENT'S PROGRESS REPORT
                   </h2>
                   <p className="font-semibold mt-1 print:text-sm">
-                    Academic Session: {academicYear}
+                    Academic Session: {selectedAcademicYear}
                   </p>
                 </header>
 
@@ -1279,7 +1278,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
                         Student ID:
                       </strong>
                       <span className="font-bold text-base">
-                        {formatStudentId(student, academicYear)}
+                        {formatStudentId(student, selectedAcademicYear)}
                       </span>
                     </div>
                   </div>
@@ -1327,7 +1326,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
                       exam={singleExam}
                       examTemplate={examTemplate}
                       allStudents={classStudents}
-                      academicYear={academicYear}
+                      academicYear={selectedAcademicYear}
                       staff={staff}
                     />
                   )}

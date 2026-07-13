@@ -849,6 +849,12 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
     () => students.find((s) => s.id === studentId),
     [students, studentId]
   );
+  
+  const studentYear = useMemo(
+    () => student?.academicYear || academicYear,
+    [student, academicYear]
+  );
+
   const classmates = useMemo(() => {
     if (!student) return [];
     // Only narrow down by grade. getProcessedClassData will handle status and year/exam filtering.
@@ -901,10 +907,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
               "terminal1",
               gradeDef,
               classmates,
-              academicYear
+              studentYear
             )
           : null,
-      [student, exams.terminal1, gradeDef, classmates, academicYear]
+      [student, exams.terminal1, gradeDef, classmates, studentYear]
     ),
     terminal2: useMemo(
       () =>
@@ -915,10 +921,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
               "terminal2",
               gradeDef,
               classmates,
-              academicYear
+              studentYear
             )
           : null,
-      [student, exams.terminal2, gradeDef, classmates, academicYear]
+      [student, exams.terminal2, gradeDef, classmates, studentYear]
     ),
     terminal3: useMemo(
       () =>
@@ -929,10 +935,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
               "terminal3",
               gradeDef,
               classmates,
-              academicYear
+              studentYear
             )
           : null,
-      [student, exams.terminal3, gradeDef, classmates, academicYear]
+      [student, exams.terminal3, gradeDef, classmates, studentYear]
     ),
   };
 
@@ -1030,7 +1036,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
               STUDENT'S PROGRESS REPORT
             </h2>
             <p className="font-semibold mt-0.5 text-xs">
-              Academic Session: {academicYear}
+              Academic Session: {studentYear}
             </p>
           </header>
 
@@ -1064,7 +1070,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
               <div>
                 <strong className="block text-slate-600">Student ID:</strong>
                 <span className="font-bold">
-                  {formatStudentId(student, academicYear)}
+                  {formatStudentId(student, studentYear)}
                 </span>
               </div>
             </div>
@@ -1094,7 +1100,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
                 exam={singleExam}
                 examTemplate={examTemplate}
                 allStudents={classmates}
-                academicYear={academicYear}
+                academicYear={studentYear}
                 staff={staff}
               />
             )}

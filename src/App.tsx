@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem, PaymentRecord, PodcastEpisode } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
-import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade, normalizeAcademicYear } from '@/utils';
+import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade, normalizeAcademicYear, normalizeSubjectName } from '@/utils';
 
 // Page Imports
 import LoginPage from '@/pages/LoginPage';
@@ -810,7 +810,18 @@ const App: React.FC = () => {
         err => handleFirestoreError(err, OperationType.GET, 'config/admissionSettings')
       ),
       db.collection('config').doc('gradeDefinitions').onSnapshot(
-        doc => { if (doc.exists) setGradeDefinitions(doc.data() as any); },
+        doc => {
+          if (doc.exists) {
+            const data = doc.data() as any;
+            if (data && data[Grade.II] && Array.isArray(data[Grade.II].subjects)) {
+              data[Grade.II].subjects = data[Grade.II].subjects.filter((s: any) => {
+                const norm = normalizeSubjectName(s.name);
+                return norm !== 'socialstudies' && norm !== 'evs';
+              });
+            }
+            setGradeDefinitions(data);
+          }
+        },
         err => handleFirestoreError(err, OperationType.GET, 'config/gradeDefinitions')
       ),
       db.collection('config').doc('sitemap').onSnapshot(

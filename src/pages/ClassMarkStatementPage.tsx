@@ -113,13 +113,22 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     const baseSubjects = [...(gradeDefinitions[grade]?.subjects || [])];
     const subjectsMap = new Map<string, SubjectDefinition>();
     
-    baseSubjects.forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+    baseSubjects.forEach(s => {
+      const normalized = normalizeSubjectName(s.name);
+      if (grade === Grade.II && (normalized === 'socialstudies' || normalized === 'evs')) {
+        return;
+      }
+      subjectsMap.set(normalized, s);
+    });
 
     classStudents.forEach(student => {
       const studentExam = student.academicPerformance?.find(e => e.id === examId);
       if (studentExam?.results) {
         studentExam.results.forEach(res => {
           const normalized = normalizeSubjectName(res.subject);
+          if (grade === Grade.II && (normalized === 'socialstudies' || normalized === 'evs')) {
+            return;
+          }
           if (!subjectsMap.has(normalized)) {
             subjectsMap.set(normalized, {
               name: res.subject,

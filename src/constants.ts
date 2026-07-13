@@ -470,7 +470,6 @@ export const GRADE_DEFINITIONS: Record<Grade, GradeDefinition> = {
             { name: 'MATH', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Spellings', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Hindi', examFullMarks: 100, activityFullMarks: 0 },
-            { name: 'EVS', examFullMarks: 100, activityFullMarks: 0 },
             { name: 'Cursive', examFullMarks: 0, activityFullMarks: 0, gradingSystem: 'OABC' },
             { name: 'Drawing', examFullMarks: 0, activityFullMarks: 0, gradingSystem: 'OABC' },
         ],

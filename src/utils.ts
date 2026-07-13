@@ -422,7 +422,13 @@ export const getProcessedClassData = (
 
   // 2. Determine subjects
   const subjectsMap = new Map<string, SubjectDefinition>();
-  (gradeDef.subjects || []).forEach(s => subjectsMap.set(normalizeSubjectName(s.name), s));
+  (gradeDef.subjects || []).forEach(s => {
+    const normalized = normalizeSubjectName(s.name);
+    if (grade === Grade.II && (normalized === 'socialstudies' || normalized === 'evs')) {
+      return;
+    }
+    subjectsMap.set(normalized, s);
+  });
   
   classStudents.forEach(student => {
     const studentExam = getStudentExam(student, examId);
@@ -434,6 +440,9 @@ export const getProcessedClassData = (
         Object.keys(override).forEach(key => {
             const rawSubj = key.replace(/_(exam|activity|sa|fa)$/, '');
             const normalized = normalizeSubjectName(rawSubj);
+            if (grade === Grade.II && (normalized === 'socialstudies' || normalized === 'evs')) {
+                return;
+            }
             if (!subjectsMap.has(normalized)) {
                 // Heuristic for new subjects in override
                 subjectsMap.set(normalized, {
@@ -449,6 +458,9 @@ export const getProcessedClassData = (
     if (results) {
       results.forEach(res => {
         const normalized = normalizeSubjectName(res.subject);
+        if (grade === Grade.II && (normalized === 'socialstudies' || normalized === 'evs')) {
+          return;
+        }
         if (!subjectsMap.has(normalized)) {
           subjectsMap.set(normalized, {
             name: res.subject,

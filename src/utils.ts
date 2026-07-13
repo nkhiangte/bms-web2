@@ -555,15 +555,17 @@ export const getProcessedClassData = (
     } as ProcessedStudent;
   });
 
-  // 4. Ranking
+  // 4. Ranking (Dense Ranking: consecutive rank values with no gaps)
   const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS');
+  const uniqueGrandTotals = Array.from(new Set(passedStudents.map(p => p.grandTotal))).sort((a, b) => b - a);
   
   return studentData.map(s => {
     let rank: number | '-' = '-';
     if (s.result === 'PASS' || s.result === 'SIMPLE PASS') {
-      // Standard Competition Ranking: 1 + number of students with strictly higher marks
-      const higherCount = passedStudents.filter(other => other.grandTotal > s.grandTotal).length;
-      rank = higherCount + 1;
+      const rankIndex = uniqueGrandTotals.indexOf(s.grandTotal);
+      if (rankIndex !== -1) {
+        rank = rankIndex + 1;
+      }
     }
     return { ...s, rank };
   });

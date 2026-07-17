@@ -374,6 +374,25 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
     setIsConfirmSaveModalOpen(false);
   };
 
+  const handleDownloadTemplate = () => {
+      const headers: string[] = ['Roll No', 'Student Name'];
+      subjectDefinitions.forEach(sd => {
+          if (sd.gradingSystem === 'OABC') {
+              headers.push(`${sd.name} (Grade)`);
+          } else if (hasActivities) {
+              headers.push(`${sd.name} (Exam)`);
+              headers.push(`${sd.name} (Activity)`);
+          } else {
+              headers.push(sd.name);
+          }
+      });
+      const data = classStudents.map(s => [s.rollNo, s.name]);
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Marks Entry');
+      XLSX.writeFile(workbook, `Marks_Template_${grade}_${examDetails?.name.replace(/\s+/g, '_')}.xlsx`);
+  };
+
   const handleExportExcel = () => {
     if (!processedData.length) return;
 
@@ -776,6 +795,12 @@ const ClassMarkStatementPage: React.FC<ClassMarkStatementPageProps> = ({ student
             </div>
         </div>
         <div className="flex items-center gap-2">
+            <button onClick={handleDownloadTemplate} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition flex items-center gap-1">
+                <InboxArrowDownIcon className="w-4 h-4" /> Download Template
+            </button>
+            <button onClick={() => setIsImportModalOpen(true)} className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-lg hover:bg-sky-700 transition flex items-center gap-1">
+                <InboxArrowDownIcon className="w-4 h-4" /> Import Marks
+            </button>
             <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition">Export Excel</button>
             <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition">Export PDF</button>
         </div>

@@ -568,12 +568,12 @@ export const getProcessedClassData = (
   });
 
   // 4. Ranking (Dense Ranking: consecutive rank values with no gaps)
-  const passedStudents = studentData.filter(s => s.result === 'PASS' || s.result === 'SIMPLE PASS');
+  const passedStudents = studentData.filter(s => s.result === 'PASS');
   const uniqueGrandTotals = Array.from(new Set(passedStudents.map(p => p.grandTotal))).sort((a, b) => b - a);
   
   return studentData.map(s => {
     let rank: number | '-' = '-';
-    if (s.result === 'PASS' || s.result === 'SIMPLE PASS') {
+    if (s.result === 'PASS') {
       const rankIndex = uniqueGrandTotals.indexOf(s.grandTotal);
       if (rankIndex !== -1) {
         rank = rankIndex + 1;

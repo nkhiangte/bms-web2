@@ -24,7 +24,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, stude
     const isParentDashboard = location.pathname === '/portal/parent-dashboard';
 
     return (
-        <div className="relative flex h-screen print:h-auto print:block">
+        <div className="relative flex h-screen print:h-auto print:block text-slate-900">
             {isParentDashboard && (
                 <div className="fixed inset-0 z-[-1] bg-gradient-to-br from-sky-100 via-rose-50 to-amber-100"></div>
             )}

@@ -299,8 +299,6 @@ input[type=number] { -moz-appearance: textfield; }
 /* ─── Portal overrides — keep portal on light/neutral ─── */
 /* The portal (/portal/*) uses its own DashboardLayout and white cards.   */
 /* These overrides ensure form inputs, tables stay readable in the portal. */
-.portal-scope table { color: var(--text-primary); }
-.portal-scope th     { color: var(--text-primary); }
 
 /* ─── Utility classes used across public pages ─── */
 .section-label {

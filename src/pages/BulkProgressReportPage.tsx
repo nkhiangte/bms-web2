@@ -107,7 +107,7 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
       <strong>Final Remarks:</strong> {finalRemark}
     </div>
     <div
-      className="mt-[1.5in] break-inside-avoid report-signatures"
+      className="mt-8 print:mt-6 break-inside-avoid report-signatures"
       style={{ fontSize: FS }}
     >
       <div className="flex justify-between items-end">
@@ -719,7 +719,7 @@ const ReportCard: React.FC<any> = ({
   );
 
   return (
-    <div className="border border-slate-400 rounded-lg overflow-hidden break-inside-avoid page-break-inside-avoid print:border-2 print:rounded-none">
+    <div className="border border-slate-400 rounded-lg overflow-hidden print:border-2 print:rounded-none">
       <h3 className="text-lg font-bold text-center text-slate-800 p-2 bg-slate-100 print:bg-transparent print:py-0.5 print:text-base print:border-b print:border-slate-400">
         {examTemplate.name}
       </h3>
@@ -958,7 +958,7 @@ const ReportCard: React.FC<any> = ({
           </span>
         </div>
       </div>
-      <div className="mt-[1.5in] break-inside-avoid p-3">
+      <div className="mt-8 print:mt-6 break-inside-avoid p-3">
         <div className="flex justify-between items-end">
           <div className="text-center">
             <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
@@ -1082,13 +1082,15 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
         @page {
             size: A4 portrait;
             margin-top: ${examId === "terminal3" ? "9.5cm" : "1cm"};
-            margin-bottom: 1.5cm;
+            margin-bottom: 1cm;
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
         .progress-report-page {
             page-break-after: always;
             break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         .progress-report-page .report-inner {
             zoom: 1.0;

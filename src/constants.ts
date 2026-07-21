@@ -782,4 +782,4 @@ export const DISTINCTION_HOLDERS_BY_YEAR: Record<string, DistinctionHolder[]> = 
     '2019': [ { name: 'C.L. Kimteii', parentage: 'D/o C. Lalthazuala', imageUrl: 'https://i.ibb.co/ks8prn9Z/cl-kim.jpg' }, { name: 'R. Lalrinmawii', parentage: 'D/o R. Lalfakzuala', imageUrl: 'https://i.ibb.co/1fYFM37C/r-rinmawii.jpg' } ],
 };
 
-export const SCHOOL_BANNER_URL = 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg';
+export const SCHOOL_BANNER_URL = 'https://i.ibb.co/bRJDhh25/banner-sch.png';

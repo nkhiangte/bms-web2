@@ -787,8 +787,8 @@ const App: React.FC = () => {
         doc => {
           if (doc.exists) {
             const data = doc.data() as any;
-            if (data && !data.schoolBannerUrl) {
-              db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg' }, { merge: true })
+            if (data && (!data.schoolBannerUrl || data.schoolBannerUrl === 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg')) {
+              db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/bRJDhh25/banner-sch.png' }, { merge: true })
                 .catch(e => console.error("Failed to seed schoolBannerUrl:", e));
             }
             setSchoolConfig(data);

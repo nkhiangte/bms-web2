@@ -30,7 +30,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
         setAcademicYear(config.currentAcademicYear || '2025-26');
         // Use a safe placeholder if no config is set
         setQrCodeUrl(config.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set');
-        setBannerUrl(config.schoolBannerUrl || 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg');
+        setBannerUrl(config.schoolBannerUrl || 'https://i.ibb.co/bRJDhh25/banner-sch.png');
     }, [config]);
 
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

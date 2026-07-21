@@ -166,7 +166,7 @@ const App: React.FC = () => {
   });
   const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
   const [admissionSettings, setAdmissionSettings] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
-  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '' });
+  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '', schoolBannerUrl: '' });
   const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
   const [tcRecords, setTcRecords] = useState<TcRecord[]>([]);
   const [serviceCerts, setServiceCerts] = useState<ServiceCertificateRecord[]>([]);
@@ -784,7 +784,16 @@ const App: React.FC = () => {
         err => handleFirestoreError(err, OperationType.LIST, 'classRoutines')
       ),
       db.collection('config').doc('schoolSettings').onSnapshot(
-        doc => { if (doc.exists) setSchoolConfig(doc.data() as any); },
+        doc => {
+          if (doc.exists) {
+            const data = doc.data() as any;
+            if (data && !data.schoolBannerUrl) {
+              db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg' }, { merge: true })
+                .catch(e => console.error("Failed to seed schoolBannerUrl:", e));
+            }
+            setSchoolConfig(data);
+          }
+        },
         err => handleFirestoreError(err, OperationType.GET, 'config/schoolSettings')
       ),
       db.collection('config').doc('feeStructure').onSnapshot(
@@ -1053,8 +1062,8 @@ const App: React.FC = () => {
           <Route path="sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={handleSaveSitemapContent} />} />
           <Route path="reports/academics" element={<ReportSearchPage students={students} academicYear={academicYear} />} />
           <Route path="reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user!} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />
-          <Route path="reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
-          <Route path="progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} />} />
+          <Route path="reports/bulk-print/:grade/:examId" element={<BulkProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} schoolConfig={schoolConfig} />} />
+          <Route path="progress-report/:studentId/:examId" element={<ProgressReportPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} academicYear={academicYear} schoolConfig={schoolConfig} />} />
           <Route path="routine" element={<RoutinePage examSchedules={examRoutines} classSchedules={classRoutines} user={user!} onSaveExamRoutine={handleSaveExamRoutine} onDeleteExamRoutine={handleDeleteExamRoutine} onUpdateClassRoutine={handleUpdateClassRoutine} />} />
           <Route path="exams" element={<ExamSelectionPage />} />
           <Route path="exams/:examId" element={<ExamClassSelectionPage gradeDefinitions={gradeDefinitions} staff={staff} user={user!} />} />

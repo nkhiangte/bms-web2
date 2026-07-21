@@ -41,6 +41,7 @@ interface ProgressReportPageProps {
   staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
   academicYear: string;
+  schoolConfig?: { schoolBannerUrl?: string };
 }
 
 // ─── Grade group helpers ──────────────────────────────────────────────────────
@@ -1001,6 +1002,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
   staff,
   gradeDefinitions,
   academicYear,
+  schoolConfig,
 }) => {
   const { grade: encodedGrade, examId } = useParams() as {
     grade: string;
@@ -1219,9 +1221,10 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
                 <header className="text-center mb-2">
                   {examId !== "terminal3" ? (
                     <img
-                      src={SCHOOL_BANNER_URL}
+                      src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
                       alt="School Banner"
                       className="w-full h-auto mb-2"
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div

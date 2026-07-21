@@ -39,6 +39,7 @@ interface ProgressReportPageProps {
   staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
   academicYear: string;
+  schoolConfig?: { schoolBannerUrl?: string };
 }
 
 const calculateTermSummary = (
@@ -838,6 +839,7 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
   staff,
   gradeDefinitions,
   academicYear,
+  schoolConfig,
 }) => {
   const { studentId, examId } = useParams() as {
     studentId: string;
@@ -1019,9 +1021,10 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
           <div className={examId === "terminal3" ? "print:hidden" : ""}>
             {examId !== "terminal3" ? (
               <img
-                src={SCHOOL_BANNER_URL}
+                src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
                 alt="School Banner"
                 className="w-full h-auto mb-2"
+                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="h-28 bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs mb-2">

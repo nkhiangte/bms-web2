@@ -7,8 +7,8 @@ import { resizeImage, uploadToImgBB } from '@/utils';
 const { Link, useNavigate } = ReactRouterDOM as any;
 
 interface SchoolSettingsPageProps {
-    config: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string };
-    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string }) => Promise<boolean>;
+    config: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string; schoolBannerUrl?: string };
+    onUpdate: (updates: { paymentQRCodeUrl?: string; upiId?: string; udiseCode?: string; currentAcademicYear?: string; schoolBannerUrl?: string }) => Promise<boolean>;
 }
 
 const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdate }) => {
@@ -17,9 +17,12 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
     const [udiseCode, setUdiseCode] = useState('');
     const [academicYear, setAcademicYear] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [bannerUrl, setBannerUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingBanner, setIsUploadingBanner] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const bannerInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setUpiId(config.upiId || 'nkhiangte@oksbi');
@@ -27,6 +30,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
         setAcademicYear(config.currentAcademicYear || '2025-26');
         // Use a safe placeholder if no config is set
         setQrCodeUrl(config.paymentQRCodeUrl || 'https://via.placeholder.com/300x300.png?text=QR+Code+Not+Set');
+        setBannerUrl(config.schoolBannerUrl || 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg');
     }, [config]);
 
     const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,10 +50,33 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
         }
     };
 
+    const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsUploadingBanner(true);
+            try {
+                const compressedDataUrl = await resizeImage(file, 1200, 400, 0.85);
+                const imgBbUrl = await uploadToImgBB(compressedDataUrl);
+                setBannerUrl(imgBbUrl);
+            } catch (error) {
+                console.error("Banner upload failed:", error);
+                alert("Failed to upload school banner. Please try again.");
+            } finally {
+                setIsUploadingBanner(false);
+            }
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        const success = await onUpdate({ upiId, udiseCode, paymentQRCodeUrl: qrCodeUrl, currentAcademicYear: academicYear });
+        const success = await onUpdate({ 
+            upiId, 
+            udiseCode, 
+            paymentQRCodeUrl: qrCodeUrl, 
+            currentAcademicYear: academicYear,
+            schoolBannerUrl: bannerUrl
+        });
         setIsSaving(false);
     };
 
@@ -92,6 +119,35 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                                     required
                                 />
                                 <p className="text-xs text-rose-500 mt-1">WARNING: Only change this manually if you missed the Promotion tool and need to fix the year, or if it's incorrect. Must format as YYYY-YY.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="p-6 bg-slate-50 border rounded-lg">
+                    <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Official School Banner (Report Header)</h2>
+                    <div className="space-y-4">
+                        <p className="text-xs text-slate-500">This banner is displayed on top of Progress Reports, Transfer Certificates, and other printed certificates. It should have a clean, high-contrast monochrome design on a white background.</p>
+                        <div className="flex flex-col lg:flex-row gap-6 items-start">
+                            <div className="w-full lg:w-2/3 border rounded-lg p-2 bg-white flex items-center justify-center min-h-[120px] overflow-hidden">
+                                {bannerUrl ? (
+                                    <img 
+                                        src={bannerUrl} 
+                                        alt="Official School Banner" 
+                                        className="w-full h-auto max-h-[160px] object-contain" 
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div className="text-slate-400 text-sm">No Banner Set</div>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <input type="file" ref={bannerInputRef} onChange={handleBannerChange} accept="image/*" className="hidden" />
+                                <button type="button" onClick={() => bannerInputRef.current?.click()} className="btn btn-secondary text-sm" disabled={isUploadingBanner}>
+                                    {isUploadingBanner ? <SpinnerIcon className="w-4 h-4"/> : <UploadIcon className="w-4 h-4"/>}
+                                    {isUploadingBanner ? 'Uploading Banner...' : 'Upload New Banner Image'}
+                                </button>
+                                <p className="text-[10px] text-slate-500">Recommended size: 1200x400px (Wide Aspect Ratio)</p>
                             </div>
                         </div>
                     </div>
@@ -141,7 +197,7 @@ const SchoolSettingsPage: React.FC<SchoolSettingsPageProps> = ({ config, onUpdat
                 </section>
 
                 <div className="flex justify-end">
-                    <button type="submit" disabled={isSaving || isUploading} className="btn btn-primary !px-8 !py-3">
+                    <button type="submit" disabled={isSaving || isUploading || isUploadingBanner} className="btn btn-primary !px-8 !py-3">
                         {isSaving ? <SpinnerIcon className="w-5 h-5"/> : <SaveIcon className="w-5 h-5"/>}
                         {isSaving ? 'Saving...' : 'Save Settings'}
                     </button>

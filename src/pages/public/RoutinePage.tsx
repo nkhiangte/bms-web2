@@ -21,7 +21,9 @@ const teacherColors: Record<string, string> = {
     'Sharon': 'bg-purple-800 text-white',
     'Nelson': 'bg-blue-800 text-white',
     'Lalhruaimawii': 'bg-orange-800 text-white',
-    'PS Lala': 'bg-yellow-700 text-black',
+    'PS Lala': 'bg-amber-700 text-white',
+    'Lala': 'bg-amber-700 text-white',
+    'Lalrinliani': 'bg-emerald-800 text-white',
     'Lalchhuanawma': 'bg-teal-800 text-white',
     'Saichhingpuii': 'bg-lime-800 text-white',
     'Malsawmi': 'bg-indigo-800 text-white',
@@ -77,11 +79,16 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
     }, []);
 
     const routineForDay: DailyRoutine = useMemo(() => {
-        const dailySchedule = classSchedules[activeDay] || [];
+        const dailySchedule = (classSchedules[activeDay] && classSchedules[activeDay].length > 0) 
+            ? classSchedules[activeDay] 
+            : (timetableData[activeDay] || []);
+        
+        const cleaned = dailySchedule.filter((cr: ClassRoutine) => cr.class !== 'Class III' && cr.class !== 'III');
+
         if (user?.role === 'parent' && parentGradeFilter) {
-            return dailySchedule.filter((cr: ClassRoutine) => cr.class === parentGradeFilter);
+            return cleaned.filter((cr: ClassRoutine) => cr.class === parentGradeFilter);
         }
-        return dailySchedule;
+        return cleaned;
     }, [classSchedules, activeDay, user, parentGradeFilter]);
 
     const isAdmin = user?.role === 'admin';
@@ -181,11 +188,9 @@ const RoutinePage: React.FC<RoutinePageProps> = ({
                         <button onClick={()=>setIsClassModalOpen(true)} className="btn btn-secondary text-xs p-2">
                             <EditIcon className="w-4 h-4" /> Edit {activeDay}
                         </button>
-                        {!hasClassData && (
-                            <button onClick={handleInitializeDefaults} disabled={isInitializing} className="btn btn-secondary text-xs bg-amber-950/30 text-amber-400 border-amber-700 hover:bg-amber-950/50 p-2">
-                                {isInitializing?<SpinnerIcon className="w-4 h-4" />:<SyncIcon className="w-4 h-4" />} Initialize Defaults
-                            </button>
-                        )}
+                        <button onClick={handleInitializeDefaults} disabled={isInitializing} className="btn btn-secondary text-xs bg-amber-950/30 text-amber-400 border-amber-700 hover:bg-amber-950/50 p-2">
+                            {isInitializing?<SpinnerIcon className="w-4 h-4" />:<SyncIcon className="w-4 h-4" />} Reset to 2026-27 Schedule
+                        </button>
                     </div>
                 )}
             </div>

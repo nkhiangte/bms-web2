@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem, PaymentRecord, PodcastEpisode } from '@/types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, ClassRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem, PaymentRecord, PodcastEpisode } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
+import { timetableData } from '@/timetableData';
 import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
 import { getCurrentAcademicYear, getNextAcademicYear, formatStudentId, calculateStudentResult, getNextGrade, normalizeAcademicYear, normalizeSubjectName } from '@/utils';
 
@@ -778,7 +779,18 @@ const App: React.FC = () => {
       db.collection('classRoutines').onSnapshot(
         s => {
           const r: Record<string, DailyRoutine> = {};
-          s.docs.forEach(d => r[d.id] = d.data()?.routine as DailyRoutine);
+          s.docs.forEach(d => {
+            let routine = d.data()?.routine as DailyRoutine;
+            if (Array.isArray(routine)) {
+              routine = routine.filter((cr: ClassRoutine) => cr.class !== 'Class III' && cr.class !== 'III');
+            }
+            r[d.id] = routine;
+          });
+          if (s.docs.length === 0) {
+            Object.entries(timetableData).forEach(([day, routine]) => {
+              db.collection('classRoutines').doc(day).set({ routine }).catch(e => console.error("Failed to seed classRoutines:", e));
+            });
+          }
           setClassRoutines(r);
         },
         err => handleFirestoreError(err, OperationType.LIST, 'classRoutines')
@@ -790,6 +802,13 @@ const App: React.FC = () => {
             if (data && (!data.schoolBannerUrl || data.schoolBannerUrl === 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg')) {
               db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/bRJDhh25/banner-sch.png' }, { merge: true })
                 .catch(e => console.error("Failed to seed schoolBannerUrl:", e));
+            }
+            if (!data.routineVersion2026_v3) {
+              Object.entries(timetableData).forEach(([day, routine]) => {
+                db.collection('classRoutines').doc(day).set({ routine }).catch(e => console.error("Failed to sync classRoutines:", e));
+              });
+              db.collection('config').doc('schoolSettings').set({ routineVersion2026_v3: true }, { merge: true })
+                .catch(e => console.error("Failed to set routineVersion2026_v3:", e));
             }
             setSchoolConfig(data);
           }

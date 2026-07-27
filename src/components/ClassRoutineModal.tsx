@@ -20,20 +20,18 @@ const ClassRoutineModal: React.FC<ClassRoutineModalProps> = ({ isOpen, onClose, 
         if (isOpen) {
             // Deep copy or initialize if empty
             let initialData = currentRoutine ? JSON.parse(JSON.stringify(currentRoutine)) : [];
+            // Remove Class III or III completely
+            initialData = initialData.filter((cr: ClassRoutine) => cr.class !== 'Class III' && cr.class !== 'III');
             
-            // Ensure all grades are present if it's a new setup or missing some
-            const existingGrades = new Set(initialData.map((r: ClassRoutine) => r.class));
-            // We typically use classes from X down to Nursery in the timetable view, let's preserve order if exists
-            // Or just use GRADES_LIST in reverse order for display consistency with the main table
-            const reverseGrades = [...GRADES_LIST].reverse();
+            const routineGrades = ['Class X', 'Class IX', 'Class VIII', 'Class VII', 'Class VI', 'Class V', 'Class IV'];
             
             if (initialData.length === 0) {
-                initialData = reverseGrades.map(g => ({
+                initialData = routineGrades.map(g => ({
                     class: g,
                     periods: Array(PERIOD_LABELS.length).fill({ subject: '' })
                 }));
             } else {
-                // If we have data, make sure we have 8 periods for each class (or match PERIOD_LABELS length)
+                // Make sure we have enough periods for each class
                 initialData = initialData.map((cr: ClassRoutine) => {
                     const periods = [...cr.periods];
                     if (periods.length < PERIOD_LABELS.length) {

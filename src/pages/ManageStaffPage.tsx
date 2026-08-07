@@ -13,7 +13,7 @@ interface ManageStaffPageProps {
   staff: Staff[];
   gradeDefinitions: Record<Grade, GradeDefinition>;
   onSaveStaff: (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGrade: Grade | null) => Promise<void>;
-  onDeleteStaff: (id: string) => Promise<void>;
+  onDeleteStaff: (staffMember: Staff, reason?: string) => Promise<void>;
   user: User;
 }
 
@@ -167,13 +167,16 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   // State for delete confirmation modal
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
+  const [removalReason, setRemovalReason] = useState('');
 
   const confinedGrades: Grade[] = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II];
 
   const filteredStaff = useMemo(() => 
-    staff.filter(s => 
-        ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().includes(searchTerm.toLowerCase())
-    ), 
+    staff.filter(s => {
+        const isRemoved = s.status === EmploymentStatus.RESIGNED || s.status === EmploymentStatus.DROPPED || s.removalYear;
+        if (isRemoved) return false;
+        return ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().includes(searchTerm.toLowerCase());
+    }), 
   [staff, searchTerm]);
 
   const teachingStaff = useMemo(() => filteredStaff.filter(s => s.staffType === 'Teaching'), [filteredStaff]);
@@ -228,6 +231,7 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
           return;
       }
       setStaffToDelete(staffMember);
+      setRemovalReason('');
       setIsDeleteConfirmOpen(true);
   };
 
@@ -235,9 +239,10 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
       if (!staffToDelete) return;
       setIsSaving(true); // Re-use isSaving for delete operation feedback
       try {
-          await onDeleteStaff(staffToDelete.id);
+          await onDeleteStaff(staffToDelete, removalReason);
           setIsDeleteConfirmOpen(false);
           setStaffToDelete(null);
+          setRemovalReason('');
       } catch (error: any) {
           console.error("Failed to delete staff:", error);
           alert(`Failed to delete staff member: ${error.message || 'Unknown error. Check console for details.'}`);
@@ -469,13 +474,25 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
+        onClose={() => { setIsDeleteConfirmOpen(false); setRemovalReason(''); }}
         onConfirm={handleConfirmDelete}
-        title="Confirm Deletion"
+        title="Confirm Staff Removal / Resignation"
         confirmDisabled={isSaving}
       >
-        <p>Are you sure you want to permanently delete <span className="font-bold">{staffToDelete?.firstName} {staffToDelete?.lastName}</span>? This action cannot be undone.</p>
-        {isSaving && <p className="text-sm text-red-600 mt-2">Deleting...</p>}
+        <div className="space-y-3">
+            <p>Are you sure you want to remove <span className="font-bold">{staffToDelete?.firstName} {staffToDelete?.lastName}</span>? This will mark them as Resigned and move them to the Teacher Drop Box.</p>
+            <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Reason for Removal / Resignation (Optional)</label>
+                <textarea
+                    value={removalReason}
+                    onChange={(e) => setRemovalReason(e.target.value)}
+                    placeholder="Enter reason for removal/resignation..."
+                    rows={2}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                />
+            </div>
+            {isSaving && <p className="text-sm text-red-600 mt-2">Processing...</p>}
+        </div>
       </ConfirmationModal>
         </div>
   );

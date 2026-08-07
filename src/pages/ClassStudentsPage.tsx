@@ -19,7 +19,7 @@ interface ClassStudentsPageProps {
   onUpdateClassTeacher: (grade: Grade, teacherId: string | undefined) => void;
   academicYear: string;
   onOpenImportModal: (grade: Grade | null) => void;
-  onDelete: (student: Student) => Promise<void>;
+  onDelete: (student: Student, reason?: string) => Promise<void>;
   onReinstate?: (student: Student) => Promise<void>;
   user: User;
   assignedGrade: Grade | null;
@@ -50,6 +50,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+    const [dropReason, setDropReason] = useState('');
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isImportPrevYearModalOpen, setIsImportPrevYearModalOpen] = useState(false);
     const [isSavingStudent, setIsSavingStudent] = useState(false);
@@ -97,13 +98,15 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
 
     const handleDeleteClick = (student: Student) => {
         setStudentToDelete(student);
+        setDropReason('');
         setIsConfirmDeleteModalOpen(true);
     };
 
     const handleConfirmDelete = async () => {
         if (studentToDelete) {
-            await onDelete(studentToDelete);
+            await onDelete(studentToDelete, dropReason);
             setStudentToDelete(null);
+            setDropReason('');
             setIsConfirmDeleteModalOpen(false);
         }
     };
@@ -298,11 +301,23 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
             />
             <ConfirmationModal
                 isOpen={isConfirmDeleteModalOpen}
-                onClose={() => setIsConfirmDeleteModalOpen(false)}
+                onClose={() => { setIsConfirmDeleteModalOpen(false); setDropReason(''); }}
                 onConfirm={handleConfirmDelete}
-                title="Confirm Student Deletion"
+                title="Confirm Student Deletion (Mark as Dropped)"
             >
-                <p>Are you sure you want to remove <span className="font-bold">{studentToDelete?.name}</span> from the active student list? This will mark the student as 'Dropped'.</p>
+                <div className="space-y-3">
+                    <p>Are you sure you want to remove <span className="font-bold">{studentToDelete?.name}</span> from the active student list? This will mark the student as 'Dropped'.</p>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Reason for Dropping (Optional)</label>
+                        <textarea
+                            value={dropReason}
+                            onChange={(e) => setDropReason(e.target.value)}
+                            placeholder="Enter reason for dropping student..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                    </div>
+                </div>
             </ConfirmationModal>
 
             {grade && (

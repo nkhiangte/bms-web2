@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, ClassRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, NavMenuItem, PaymentRecord, PodcastEpisode } from '@/types';
+import { User, Student, Staff, TcRecord, ServiceCertificateRecord, FeeStructure, AdmissionSettings, NotificationType, Grade, GradeDefinition, SubjectAssignment, FeePayments, Exam, Syllabus, Homework, Notice, CalendarEvent, DailyStudentAttendance, StudentAttendanceRecord, StaffAttendanceRecord, InventoryItem, HostelResident, HostelStaff, HostelInventoryItem, StockLog, HostelDisciplineEntry, ChoreRoster, ConductEntry, ExamRoutine, DailyRoutine, ClassRoutine, NewsItem, OnlineAdmission, FeeHead, FeeSet, BloodGroup, StudentClaim, ActivityLog, SubjectMark, StudentStatus, EmploymentStatus, NavMenuItem, PaymentRecord, PodcastEpisode } from '@/types';
 import { DEFAULT_ADMISSION_SETTINGS, DEFAULT_FEE_STRUCTURE, GRADE_DEFINITIONS, FEE_SET_GRADES, GRADES_LIST } from '@/constants';
 import { timetableData } from '@/timetableData';
 import { db, auth, firebase, OperationType, handleFirestoreError } from '@/firebaseConfig';
@@ -25,6 +25,7 @@ import ClassStudentsPage from '@/pages/ClassStudentsPage';
 import StaffAttendancePage from '@/pages/StaffAttendancePage';
 import StaffAttendanceLogPage from '@/pages/StaffAttendanceLogPage';
 import ManageStaffPage from '@/pages/ManageStaffPage';
+import TeacherDropBoxPage from '@/pages/TeacherDropBoxPage';
 import StaffDetailPage from '@/pages/StaffDetailPage';
 import StaffDocumentsPage from '@/pages/StaffDocumentsPage';
 import GenerateServiceCertificatePage from '@/pages/GenerateServiceCertificatePage';
@@ -228,13 +229,37 @@ const App: React.FC = () => {
 
   const handleLogin = async (email?: string, password?: string) => {
     if (!email || !password) return { success: false, message: 'Credentials missing' };
-    try { await auth.signInWithEmailAndPassword(email, password); return { success: true }; }
+    try {
+      const staffSnap = await db.collection('staff').get();
+      const matchedStaff = staffSnap.docs.map(d => d.data() as Staff).find(s => 
+        s.emailAddress && s.emailAddress.toLowerCase().includes(email.toLowerCase())
+      );
+      if (matchedStaff && (matchedStaff.status === EmploymentStatus.RESIGNED || matchedStaff.status === EmploymentStatus.DROPPED || matchedStaff.removalYear)) {
+        return { success: false, message: 'Access denied. This staff account has been removed or resigned.' };
+      }
+      await auth.signInWithEmailAndPassword(email, password);
+      return { success: true };
+    }
     catch (error: any) { return { success: false, message: error.message }; }
   };
 
   const handleGoogleSignIn = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    try { await auth.signInWithPopup(provider); return { success: true }; }
+    try {
+      const result = await auth.signInWithPopup(provider);
+      const email = result.user?.email;
+      if (email) {
+        const staffSnap = await db.collection('staff').get();
+        const matchedStaff = staffSnap.docs.map(d => d.data() as Staff).find(s => 
+          s.emailAddress && s.emailAddress.toLowerCase().includes(email.toLowerCase())
+        );
+        if (matchedStaff && (matchedStaff.status === EmploymentStatus.RESIGNED || matchedStaff.status === EmploymentStatus.DROPPED || matchedStaff.removalYear)) {
+          await auth.signOut();
+          return { success: false, message: 'Access denied. This staff account has been removed or resigned.' };
+        }
+      }
+      return { success: true };
+    }
     catch (error: any) { return { success: false, message: error.message }; }
   };
 
@@ -257,8 +282,14 @@ const App: React.FC = () => {
     } catch (error: any) { addNotification('Failed to update student.', 'error'); }
   };
 
-  const handleDeleteStudent = async (student: Student) => {
-    try { await db.collection('students').doc(student.id).update({ status: StudentStatus.DROPPED }); addNotification(`Student ${student.name} marked as dropped.`, 'success'); }
+  const handleDeleteStudent = async (student: Student, removalReason?: string) => {
+    try {
+      await db.collection('students').doc(student.id).update({
+        status: StudentStatus.DROPPED,
+        removalReason: removalReason || ''
+      });
+      addNotification(`Student ${student.name} marked as dropped.`, 'success');
+    }
     catch (error: any) { addNotification('Failed to drop student.', 'error'); }
   };
 
@@ -581,13 +612,36 @@ const App: React.FC = () => {
     } catch (error: any) { addNotification('Failed to save staff.', 'error'); }
   };
 
-  const handleDeleteStaff = async (id: string) => {
+  const handleDeleteStaff = async (staffMember: Staff, removalReason?: string) => {
     try {
-      await db.collection('staff').doc(id).delete();
-      const cur = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === id) as Grade | undefined;
+      await db.collection('staff').doc(staffMember.id).update({
+        status: EmploymentStatus.RESIGNED,
+        removalYear: academicYear,
+        removalReason: removalReason || ''
+      });
+      const cur = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === staffMember.id) as Grade | undefined;
       if (cur) await db.collection('config').doc('gradeDefinitions').update({ [cur]: { ...gradeDefinitions[cur], classTeacherId: firebase.firestore.FieldValue.delete() } });
-      addNotification('Staff deleted.', 'success');
-    } catch { addNotification('Failed to delete staff.', 'error'); }
+      addNotification(`Staff ${staffMember.firstName} ${staffMember.lastName} moved to drop box.`, 'success');
+    } catch { addNotification('Failed to remove staff.', 'error'); }
+  };
+
+  const handleReinstateStaff = async (staffMember: Staff) => {
+    try {
+      await db.collection('staff').doc(staffMember.id).update({
+        status: EmploymentStatus.ACTIVE,
+        removalYear: firebase.firestore.FieldValue.delete()
+      });
+      addNotification(`Staff ${staffMember.firstName} ${staffMember.lastName} reinstated.`, 'success');
+    } catch { addNotification('Failed to reinstate staff.', 'error'); }
+  };
+
+  const handlePermanentDeleteStaff = async (staffId: string) => {
+    try {
+      await db.collection('staff').doc(staffId).delete();
+      const cur = Object.keys(gradeDefinitions).find(g => gradeDefinitions[g as Grade]?.classTeacherId === staffId) as Grade | undefined;
+      if (cur) await db.collection('config').doc('gradeDefinitions').update({ [cur]: { ...gradeDefinitions[cur], classTeacherId: firebase.firestore.FieldValue.delete() } });
+      addNotification('Staff record permanently deleted.', 'success');
+    } catch { addNotification('Failed to delete staff record.', 'error'); }
   };
 
   const handleSaveHomework = async (hw: Omit<Homework, 'id' | 'createdBy'>, id?: string) => {
@@ -710,6 +764,19 @@ const App: React.FC = () => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          const staffSnap = await db.collection('staff').get();
+          const matchedStaff = staffSnap.docs.map(d => d.data() as Staff).find(s => 
+            (s.emailAddress && firebaseUser.email && s.emailAddress.toLowerCase().includes(firebaseUser.email.toLowerCase())) ||
+            (s.contactNumber && firebaseUser.phoneNumber && s.contactNumber.replace(/\D/g, '') === firebaseUser.phoneNumber.replace(/\D/g, ''))
+          );
+          if (matchedStaff && (matchedStaff.status === EmploymentStatus.RESIGNED || matchedStaff.status === EmploymentStatus.DROPPED || matchedStaff.removalYear)) {
+            await auth.signOut();
+            setUser(null);
+            setAuthLoading(false);
+            addNotification('Access denied. Your staff account has been removed or resigned.', 'error');
+            return;
+          }
+
           const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
           const isAdminEmail = firebaseUser.email === 'nkhiangte@gmail.com';
           const userData = userDoc.exists ? { uid: firebaseUser.uid, ...userDoc.data() } as User : { uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending', isNewUser: true } as User & { isNewUser?: boolean };
@@ -1041,6 +1108,7 @@ const App: React.FC = () => {
           <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
           <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={dailyStudentAttendance} onUpdateAttendance={handleMarkStudentAttendance} user={user!} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={fetchStudentAttendanceForRange} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} />} />
+          <Route path="teacher-drop-box" element={<TeacherDropBoxPage staff={staff} academicYear={academicYear} user={user!} onReinstateStaff={handleReinstateStaff} onPermanentDeleteStaff={handlePermanentDeleteStaff} onEditStaff={handleSaveStaff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="staff/attendance" element={<StaffAttendancePage user={user!} staff={staff} attendance={staffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} calendarEvents={calendarEvents} />} />
           <Route path="staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} user={user!} calendarEvents={calendarEvents} />} />
           <Route path="staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={handleSaveStaff} gradeDefinitions={gradeDefinitions} user={user!} />} />

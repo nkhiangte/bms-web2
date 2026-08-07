@@ -292,6 +292,7 @@ export interface Student {
     feePayments: FeePayments;
     academicPerformance?: Exam[];
     academicYear?: string;
+    removalReason?: string;
 }
 
 export interface ProcessedStudent extends Student {
@@ -373,7 +374,8 @@ export enum EmploymentStatus {
     ACTIVE = 'Active',
     ON_LEAVE = 'On Leave',
     RESIGNED = 'Resigned',
-    RETIRED = 'Retired'
+    RETIRED = 'Retired',
+    DROPPED = 'Dropped'
 }
 
 export enum StaffType {
@@ -435,6 +437,8 @@ export interface Staff {
     emergencyContactRelationship: string;
     emergencyContactNumber: string;
     medicalConditions?: string;
+    removalYear?: string;
+    removalReason?: string;
 }
 
 export interface InventoryItem {

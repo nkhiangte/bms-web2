@@ -30,6 +30,7 @@ const portalNavLinks = [
     { name: 'Class Routine', path: '/portal/routine', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden'] },
     { name: 'Attendance Log', path: '/portal/student/:studentId/attendance-log', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['parent'] },
     { name: 'Staff', path: '/portal/staff', icon: <BriefcaseIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Teacher Drop Box', path: '/portal/teacher-drop-box', icon: <ArchiveBoxIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Teacher Attendance', path: '/portal/staff/attendance-logs', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['admin', 'user'] },
     { name: 'Transfers', path: '/portal/transfers', icon: <TransferIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Inventory', path: '/portal/inventory', icon: <ArchiveBoxIcon className="w-5 h-5" />, roles: ['admin', 'user'] },

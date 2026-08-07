@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus } from '@/types';
+import { Student, Grade, GradeDefinition, Staff, User, FeePayments, FeeStructure, StudentStatus, Gender } from '@/types';
 import { BackIcon, HomeIcon, TrashIcon, PlusIcon, MessageIcon, WhatsappIcon, UserIcon, CurrencyDollarIcon, ArrowUpOnSquareIcon, CalendarDaysIcon, CheckCircleIcon, InboxArrowDownIcon } from '@/components/Icons';
 import { formatStudentId, calculateDues, formatPhoneNumberForWhatsApp, normalizeAcademicYear, exportStudentsToExcel } from '@/utils';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
@@ -63,7 +63,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 const studentYearNorm = normalizeAcademicYear(s.academicYear);
                 const selectedYearNorm = normalizeAcademicYear(academicYear);
                 const matchesYear = studentYearNorm === selectedYearNorm;
-                return matchesGrade && matchesYear && s.status !== StudentStatus.TRANSFERRED;
+                const isActive = s.status === StudentStatus.ACTIVE || !s.status;
+                return matchesGrade && matchesYear && isActive;
             })
             .sort((a, b) => a.rollNo - b.rollNo);
     }, [students, grade, academicYear]);
@@ -78,11 +79,15 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const gradeDef = grade ? gradeDefinitions[grade] : undefined;
     const currentClassTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
 
-    const stats = useMemo(() => {
-        const boys = classStudents.filter(s => s.gender === 'Male').length;
-        const girls = classStudents.filter(s => s.gender === 'Female').length;
-        return { boys, girls, total: classStudents.length };
+    const activeClassStudents = useMemo(() => {
+        return classStudents.filter(s => s.status === StudentStatus.ACTIVE || !s.status);
     }, [classStudents]);
+
+    const stats = useMemo(() => {
+        const boys = activeClassStudents.filter(s => s.gender === 'Male' || s.gender === Gender.MALE).length;
+        const girls = activeClassStudents.filter(s => s.gender === 'Female' || s.gender === Gender.FEMALE).length;
+        return { boys, girls, total: activeClassStudents.length };
+    }, [activeClassStudents]);
 
     const isAdmin = user.role === 'admin';
     const isStaff = isAdmin || user.role === 'user';

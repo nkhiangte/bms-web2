@@ -18,6 +18,7 @@ const portalNavLinks = [
     { name: 'Admin Panel', path: '/portal/admin', icon: <CogIcon className="w-5 h-5" />, roles: ['admin'] },
     { name: 'My Profile', path: '/portal/profile', icon: <UserIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'warden'] },
     { name: 'Students', path: '/portal/students', icon: <UsersIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+    { name: 'Drop Box', path: '/portal/drop-box', icon: <ArchiveBoxIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
     { name: 'Fee Management', path: '/portal/fees', icon: <CurrencyDollarIcon className="w-5 h-5" />, roles: ['admin'] },

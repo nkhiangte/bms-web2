@@ -15,7 +15,7 @@ import {
 } from '@/components/Icons';
 import { db } from '@/firebaseConfig';
 import { formatStudentId, exportStudentsToExcel } from '@/utils';
-import { Student, Grade } from '@/types';
+import { Student, Grade, StudentStatus } from '@/types';
 import {
     DisclosureData,
     DEFAULT_DISCLOSURE_DATA,
@@ -754,7 +754,8 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                 const allMatchingStudents = students.filter(s => {
                                     const studentYearNorm = s.academicYear ? s.academicYear.trim().toLowerCase() : '';
                                     const selectedYearNorm = academicYear ? academicYear.trim().toLowerCase() : '';
-                                    return studentYearNorm === selectedYearNorm || !studentYearNorm;
+                                    const isActive = s.status === StudentStatus.ACTIVE || !s.status;
+                                    return isActive && (studentYearNorm === selectedYearNorm || !studentYearNorm);
                                 }).sort((a, b) => {
                                     if (a.grade !== b.grade) return String(a.grade).localeCompare(String(b.grade));
                                     return (a.rollNo || 0) - (b.rollNo || 0);
@@ -777,7 +778,8 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                 const matchesGrade = s.grade === gradeValue;
                                 const studentYearNorm = s.academicYear ? s.academicYear.trim().toLowerCase() : '';
                                 const selectedYearNorm = academicYear ? academicYear.trim().toLowerCase() : '';
-                                return matchesGrade && (studentYearNorm === selectedYearNorm || !studentYearNorm);
+                                const isActive = s.status === StudentStatus.ACTIVE || !s.status;
+                                return matchesGrade && isActive && (studentYearNorm === selectedYearNorm || !studentYearNorm);
                             }).sort((a, b) => (a.rollNo || 0) - (b.rollNo || 0));
 
                             const hasStudents = gradeStudents.length > 0;

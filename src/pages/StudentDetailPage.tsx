@@ -8,12 +8,14 @@ import { MERIT_CATEGORIES, DEMERIT_CATEGORIES, TERMINAL_EXAMS, academicMonths } 
 import ConfirmationModal from '@/components/ConfirmationModal';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import StudentFormModal from '@/components/StudentFormModal';
+import TransferStudentModal from '@/components/TransferStudentModal';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
 interface StudentDetailPageProps {
   students: Student[];
   onEdit: (student: Student) => Promise<void>;
+  onTransferStudent: (studentId: string, newGrade: Grade) => Promise<void>; // Add this
   onDelete: (studentId: string) => Promise<void>;
   onReinstate?: (student: Student) => Promise<void>;
   academicYear: string;
@@ -46,7 +48,7 @@ const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ t
 )
 
 
-const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, onDelete, onReinstate, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
+const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit, onTransferStudent, onDelete, onReinstate, academicYear, user, assignedGrade, feeStructure, conductLog, hostelDisciplineLog, onAddConductEntry, onDeleteConductEntry }) => {
   const { studentId } = useParams() as { studentId: string };
   const navigate = useNavigate();
   
@@ -66,7 +68,9 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
   
   const canEdit = ['admin', 'user'].includes(user.role);
   const isAdmin = user.role === 'admin';
@@ -120,6 +124,20 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
       navigate('/portal/students');
     }
     setIsDeletingStudent(false);
+  };
+
+  const handleTransferSubmit = async (newGrade: Grade) => {
+      if (!student) return;
+      setIsTransferring(true);
+      try {
+          await onTransferStudent(student.id, newGrade);
+          setIsTransferModalOpen(false);
+      } catch (error) {
+          console.error("Error transferring student:", error);
+          alert("Failed to transfer student. Please try again.");
+      } finally {
+          setIsTransferring(false);
+      }
   };
 
   const handleEditSubmit = async (data: Omit<Student, 'id'>) => {
@@ -240,6 +258,15 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                 >
                   <EditIcon className="h-5 h-5" />
                   Edit Profile
+                </button>
+             )}
+             {canEdit && (
+                <button
+                  onClick={() => setIsTransferModalOpen(true)}
+                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition hover:-translate-y-0.5"
+                >
+                  <EditIcon className="h-5 h-5" />
+                  Transfer Class
                 </button>
              )}
              {isAdmin && (
@@ -616,6 +643,13 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         student={student}
         academicYear={academicYear}
         isSaving={isSaving}
+    />
+    <TransferStudentModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        onTransfer={handleTransferSubmit}
+        currentGrade={student.grade}
+        isSaving={isTransferring}
     />
     </>
   );

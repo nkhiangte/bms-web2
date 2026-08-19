@@ -73,7 +73,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const filteredStudents = useMemo(() => {
         return classStudents.filter(s => 
             s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            formatStudentId(s, academicYear).toLowerCase().includes(searchTerm.toLowerCase())
+            formatStudentId(s, academicYear).toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (s.pen && s.pen.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [classStudents, searchTerm, academicYear]);
 
@@ -240,8 +241,9 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs sm:text-sm text-slate-500 flex flex-col sm:flex-row sm:gap-4">
+                                            <div className="text-xs sm:text-sm text-slate-500 flex flex-col sm:flex-row sm:gap-4 sm:flex-wrap">
                                                 <span>ID: {formatStudentId(student, academicYear)}</span>
+                                                {student.pen && <span className="font-medium text-slate-600">PEN: {student.pen}</span>}
                                                 <span>Parent: {student.fatherName}</span>
                                             </div>
                                         </div>

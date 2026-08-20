@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Student, StudentClaim } from '@/types';
-import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '@/utils';
-import { UserIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@/components/Icons';
+import { formatStudentId, formatDateForDisplay, formatDateForStorage, formatDateTime } from '@/utils';
+import { UserIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ClockIcon } from '@/components/Icons';
 
 interface ParentReviewModalProps {
     user: User;
@@ -61,9 +61,17 @@ const ParentReviewModal: React.FC<ParentReviewModalProps> = ({ user, students, a
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b">
-                    <h3 className="text-xl font-bold text-slate-800">Review Parent Account Request</h3>
-                    <p className="text-sm text-slate-600">Approve claims for: <span className="font-semibold">{user.displayName}</span></p>
+                <div className="p-6 border-b flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-800">Review Parent Account Request</h3>
+                        <p className="text-sm text-slate-600">Approve claims for: <span className="font-semibold">{user.displayName}</span> ({user.email})</p>
+                    </div>
+                    {(user.createdAt || user.registeredAt || user.registrationDetails?.createdAt) && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-800 border border-sky-200 rounded-lg text-xs font-semibold">
+                            <ClockIcon className="w-4 h-4 text-sky-600" />
+                            <span>Registered: {formatDateTime(user.createdAt || user.registeredAt || user.registrationDetails?.createdAt)}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                     {verificationResults.map(({ claim, student, status }, index) => (

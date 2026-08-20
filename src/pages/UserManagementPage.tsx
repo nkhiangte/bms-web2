@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { User } from '@/types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon } from '@/components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, ClockIcon } from '@/components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { formatDateTime } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -64,15 +65,28 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Registered Date & Time</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Role</th>
                                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Actions</th>
                             </tr>
                         </thead>
                          <tbody className="bg-white divide-y divide-slate-200">
-                            {staffUsers.map(user => (
+                            {staffUsers.map(user => {
+                                const regTimestamp = user.createdAt || user.registeredAt;
+                                return (
                                 <tr key={user.uid}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{user.email}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                                        {regTimestamp ? (
+                                            <span className="font-medium text-slate-800 flex items-center gap-1.5">
+                                                <ClockIcon className="w-3.5 h-3.5 text-sky-600 inline shrink-0" />
+                                                {formatDateTime(regTimestamp)}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-xs">Not recorded</span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 text-sm">
                                         {user.role === 'pending' ? (
                                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Pending Approval</span>
@@ -97,7 +111,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            );})}
                         </tbody>
                     </table>
                 </div>

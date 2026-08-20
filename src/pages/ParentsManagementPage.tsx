@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { User, Student, StudentClaim } from '@/types';
-import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon, PhoneIcon, WhatsappIcon } from '@/components/Icons';
+import { BackIcon, HomeIcon, CheckIcon, TrashIcon, UserGroupIcon, ChevronUpIcon, PhoneIcon, WhatsappIcon, ClockIcon } from '@/components/Icons';
 import * as ReactRouterDOM from 'react-router-dom';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { firebase } from '@/firebaseConfig';
 import ParentReviewModal from '@/components/ParentReviewModal';
-import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp } from '@/utils';
+import { formatDateForDisplay, formatStudentId, formatPhoneNumberForWhatsApp, formatDateTime, formatDateOnly } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -101,6 +101,7 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Parent Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Registered Date & Time</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-800 uppercase">Linked Students</th>
                                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-800 uppercase">Actions</th>
@@ -109,11 +110,24 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                          <tbody className="bg-white divide-y divide-slate-200">
                             {parentUsers.map(user => {
                                 const isExpanded = expandedUserId === user.uid;
+                                const regTimestamp = user.createdAt || user.registeredAt || user.registrationDetails?.createdAt;
                                 return (
                                 <React.Fragment key={user.uid}>
                                     <tr className={`hover:bg-slate-50 ${isExpanded ? 'bg-sky-50' : ''}`}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{user.displayName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{user.email}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                                            {regTimestamp ? (
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-slate-800 flex items-center gap-1.5">
+                                                        <ClockIcon className="w-3.5 h-3.5 text-sky-600 inline" />
+                                                        {formatDateTime(regTimestamp)}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400 italic text-xs">Not recorded</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-sm">
                                             {user.role === 'pending_parent' || user.isParentPending ? (
                                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Pending Approval</span>
@@ -145,16 +159,17 @@ export const ParentsManagementPage: React.FC<ParentsManagementPageProps> = ({
                                     </tr>
                                     {isExpanded && (
                                         <tr className="bg-slate-50">
-                                            <td colSpan={5} className="p-4">
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <DetailItem label="Contact Number" value={user.registrationDetails?.contactNumber} />
+                                            <td colSpan={6} className="p-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                                    <DetailItem label="Registration Timestamp" value={regTimestamp ? formatDateTime(regTimestamp) : 'Legacy Account'} />
+                                                    <DetailItem label="Contact Number" value={user.registrationDetails?.contactNumber || (user as any).phone} />
                                                     <DetailItem label="Relationship" value={user.registrationDetails?.relationship} />
-                                                    <DetailItem label="Address" value={`${user.registrationDetails?.address}, ${user.registrationDetails?.city}`} />
+                                                    <DetailItem label="Address" value={user.registrationDetails?.address ? `${user.registrationDetails?.address}, ${user.registrationDetails?.city || ''}` : '-'} />
                                                     <div className="flex items-center gap-2">
-                                                        {user.registrationDetails?.contactNumber && (
-                                                            <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(user.registrationDetails.contactNumber)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full"><WhatsappIcon className="w-5 h-5"/></a>
+                                                        {(user.registrationDetails?.contactNumber || (user as any).phone) && (
+                                                            <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(user.registrationDetails?.contactNumber || (user as any).phone)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full" title="WhatsApp Message"><WhatsappIcon className="w-5 h-5"/></a>
                                                         )}
-                                                         <a href={`mailto:${user.email}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full"><PhoneIcon className="w-5 h-5"/></a>
+                                                         <a href={`mailto:${user.email}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full" title="Send Email"><PhoneIcon className="w-5 h-5"/></a>
                                                     </div>
                                                 </div>
                                             </td>

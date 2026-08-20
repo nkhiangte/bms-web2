@@ -321,6 +321,9 @@ export interface User {
     registrationDetails?: any;
     isParentPending?: boolean; // For users who are already staff but also want to be parents
     secondaryEmails?: string[]; // Support for multiple emails
+    createdAt?: string | any; // Timestamp of user registration
+    registeredAt?: string | any;
+    updatedAt?: string | any;
 }
 
 export interface SubjectDefinition {

@@ -618,6 +618,72 @@ export const formatDateForNews = (isoDate?: string): string => {
     });
 };
 
+/**
+ * Format any timestamp (ISO string, Date, Firestore Timestamp, or number) for clear, human-readable display.
+ * Returns both date and time (e.g., "20 Aug 2026, 11:30 AM") or empty fallback.
+ */
+export const formatDateTime = (timestamp?: any): string => {
+    if (!timestamp) return '-';
+    try {
+        let date: Date;
+        if (typeof timestamp?.toDate === 'function') {
+            date = timestamp.toDate();
+        } else if (typeof timestamp?.seconds === 'number') {
+            date = new Date(timestamp.seconds * 1000);
+        } else if (timestamp instanceof Date) {
+            date = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            date = new Date(timestamp);
+        } else {
+            return '-';
+        }
+
+        if (isNaN(date.getTime())) return '-';
+
+        return date.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch {
+        return '-';
+    }
+};
+
+/**
+ * Format timestamp as a friendly date string (e.g., "20 Aug 2026")
+ */
+export const formatDateOnly = (timestamp?: any): string => {
+    if (!timestamp) return '-';
+    try {
+        let date: Date;
+        if (typeof timestamp?.toDate === 'function') {
+            date = timestamp.toDate();
+        } else if (typeof timestamp?.seconds === 'number') {
+            date = new Date(timestamp.seconds * 1000);
+        } else if (timestamp instanceof Date) {
+            date = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            date = new Date(timestamp);
+        } else {
+            return '-';
+        }
+
+        if (isNaN(date.getTime())) return '-';
+
+        return date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch {
+        return '-';
+    }
+};
+
 export function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3; 
     const φ1 = lat1 * Math.PI/180;

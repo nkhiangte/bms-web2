@@ -48,7 +48,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const navigate = useNavigate();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState<'rollNo' | 'nameAsc' | 'nameDesc'>('rollNo');
+    const [sortBy, setSortBy] = useState<'rollNo' | 'nameAsc' | 'nameDesc' | 'penAsc' | 'penDesc'>('rollNo');
     const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     const [dropReason, setDropReason] = useState('');
@@ -84,6 +84,20 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
             }
             if (sortBy === 'nameDesc') {
                 return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' }) || (a.rollNo - b.rollNo);
+            }
+            if (sortBy === 'penAsc') {
+                const penA = (a.pen || '').trim();
+                const penB = (b.pen || '').trim();
+                if (!penA && penB) return 1;
+                if (penA && !penB) return -1;
+                return penA.localeCompare(penB, undefined, { numeric: true, sensitivity: 'base' }) || (a.rollNo - b.rollNo);
+            }
+            if (sortBy === 'penDesc') {
+                const penA = (a.pen || '').trim();
+                const penB = (b.pen || '').trim();
+                if (!penA && penB) return 1;
+                if (penA && !penB) return -1;
+                return penB.localeCompare(penA, undefined, { numeric: true, sensitivity: 'base' }) || (a.rollNo - b.rollNo);
             }
             return a.rollNo - b.rollNo;
         });
@@ -199,6 +213,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                                 <option value="rollNo">Roll No (Default)</option>
                                 <option value="nameAsc">Name (A → Z)</option>
                                 <option value="nameDesc">Name (Z → A)</option>
+                                <option value="penAsc">PEN (Ascending)</option>
+                                <option value="penDesc">PEN (Descending)</option>
                             </select>
                         </div>
                     </div>

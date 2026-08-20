@@ -140,6 +140,7 @@ import TestimonialGeneratorPage from '@/pages/admin/TestimonialGeneratorPage';
 import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import NotificationContainer from '@/components/NotificationContainer';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import IdleTimeoutModal from '@/components/IdleTimeoutModal';
 import { SpinnerIcon } from '@/components/Icons';
 
 const { Routes, Route, Navigate, useLocation, useNavigate } = ReactRouterDOM as any;
@@ -1023,6 +1024,7 @@ const App: React.FC = () => {
     <>
       <OfflineIndicator />
       <NotificationContainer notifications={notifications} onDismiss={removeNotification} />
+      <IdleTimeoutModal isLoggedIn={!!user} onLogout={handleLogout} />
       
       <ImportStudentsModal 
         isOpen={isImportModalOpen} 

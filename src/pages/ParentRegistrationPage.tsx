@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { auth, db, firebase } from '@/firebaseConfig';
+import Captcha from '@/components/Captcha';
 import { 
     UserIcon, MailIcon, PhoneIcon, HomeIcon, LockClosedIcon, 
     CheckCircleIcon, BackIcon, SpinnerIcon, PlusIcon, TrashIcon
@@ -23,6 +24,7 @@ const ParentRegistrationPage: React.FC = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCaptchaValid, setIsCaptchaValid] = useState(false);
     
     // Auth States
     const [otp, setOtp] = useState("");
@@ -210,6 +212,11 @@ const ParentRegistrationPage: React.FC = () => {
         e.preventDefault();
         if (!formData.agreeTerms || !formData.agreePrivacy || !formData.agreeIdentity) {
             alert("You must agree to the mandatory terms to proceed.");
+            return;
+        }
+
+        if (!isCaptchaValid) {
+            alert("Please complete the CAPTCHA security verification before creating your account.");
             return;
         }
 
@@ -576,6 +583,11 @@ const ParentRegistrationPage: React.FC = () => {
                                         <input type="checkbox" checked={formData.agreePhoto} onChange={e => updateFormData('agreePhoto', e.target.checked)} className="mt-1 form-checkbox h-5 w-5 text-sky-600 rounded border-slate-300" />
                                         <span className="text-sm text-slate-700">(Optional) I consent to the use of my child's photo for school directory and internal portal identification.</span>
                                     </label>
+
+                                    {/* Security Verification */}
+                                    <div className="pt-2">
+                                        <Captcha id="parent-reg-captcha" onVerify={setIsCaptchaValid} />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -597,7 +609,7 @@ const ParentRegistrationPage: React.FC = () => {
                                     Next Step
                                 </button>
                             ) : (
-                                <button type="submit" className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 ml-auto" disabled={isSubmitting}>
+                                <button type="submit" className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 ml-auto disabled:opacity-60 disabled:cursor-not-allowed" disabled={isSubmitting || !isCaptchaValid}>
                                     {isSubmitting ? (
                                         <>
                                             <SpinnerIcon className="w-5 h-5"/> Creating Account...

@@ -48,6 +48,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const navigate = useNavigate();
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState<'rollNo' | 'nameAsc' | 'nameDesc'>('rollNo');
     const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     const [dropReason, setDropReason] = useState('');
@@ -71,12 +72,22 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     }, [students, grade, academicYear]);
 
     const filteredStudents = useMemo(() => {
-        return classStudents.filter(s => 
+        const filtered = classStudents.filter(s => 
             s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
             formatStudentId(s, academicYear).toLowerCase().includes(searchTerm.toLowerCase()) ||
             (s.pen && s.pen.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-    }, [classStudents, searchTerm, academicYear]);
+
+        return [...filtered].sort((a, b) => {
+            if (sortBy === 'nameAsc') {
+                return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) || (a.rollNo - b.rollNo);
+            }
+            if (sortBy === 'nameDesc') {
+                return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' }) || (a.rollNo - b.rollNo);
+            }
+            return a.rollNo - b.rollNo;
+        });
+    }, [classStudents, searchTerm, academicYear, sortBy]);
 
     const gradeDef = grade ? gradeDefinitions[grade] : undefined;
     const currentClassTeacher = staff.find(s => s.id === gradeDef?.classTeacherId);
@@ -169,15 +180,29 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                 </div>
 
                 {/* Actions Bar */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search student..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="form-input w-full sm:w-64"
-                    />
-                    <div className="flex gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 flex-wrap">
+                        <input
+                            type="text"
+                            placeholder="Search student..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="form-input w-full sm:w-60"
+                        />
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap">Sort:</span>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                className="form-select py-1.5 px-3 text-sm border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500 bg-white font-medium text-slate-700"
+                            >
+                                <option value="rollNo">Roll No (Default)</option>
+                                <option value="nameAsc">Name (A → Z)</option>
+                                <option value="nameDesc">Name (Z → A)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 w-full lg:w-auto justify-end flex-wrap">
                         {isAdmin && (
                             <button 
                                 onClick={() => exportStudentsToExcel(classStudents, grade, academicYear)} 

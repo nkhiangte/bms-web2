@@ -28,19 +28,19 @@ interface StudentDetailPageProps {
   onDeleteConductEntry: (entryId: string) => Promise<void>;
 }
 
-const DetailItem: React.FC<{label: string, value?: string | number}> = ({ label, value }) => {
+const DetailItem: React.FC<{label: string, value?: string | number, className?: string}> = ({ label, value, className }) => {
     if (!value && value !== 0) return null;
     return (
-         <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <dt className="text-sm font-medium text-slate-600">{label}</dt>
-            <dd className="mt-1 text-md font-semibold text-slate-900">{value}</dd>
+         <div className={`bg-slate-50/90 px-2.5 py-1.5 rounded-md border border-slate-200 flex flex-col justify-center ${className || ''}`}>
+            <dt className="text-[11px] font-medium text-slate-500 leading-tight">{label}</dt>
+            <dd className="text-xs sm:text-sm font-semibold text-slate-900 mt-0.5 leading-snug break-words">{value}</dd>
         </div>
     )
 }
 
 const DetailSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children}) => (
-    <div className="mb-8">
-        <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">{title}</h2>
+    <div className="mb-3.5">
+        <h2 className="text-sm sm:text-base font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">{title}</h2>
         <div className="w-full">
             {children}
         </div>
@@ -209,107 +209,107 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
 
   return (
     <>
-    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 flex justify-between items-center">
+    <div className="bg-white rounded-xl shadow-md p-4 sm:p-5 lg:p-6">
+        <div className="mb-3 flex justify-between items-center">
              <button
                 onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
             >
-                <BackIcon className="w-5 h-5" />
+                <BackIcon className="w-4 h-4" />
                 Back
             </button>
              <Link
                 to="/portal/dashboard"
-                className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
                 title="Go to Home/Dashboard"
             >
-                <HomeIcon className="w-5 h-5" />
+                <HomeIcon className="w-4 h-4" />
                 <span>Home</span>
             </Link>
         </div>
-      <div className="flex flex-col md:flex-row gap-8 items-start pb-6 mb-6 border-b border-slate-200">
-        <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full shadow-lg border-4 border-white flex-shrink-0 mx-auto md:mx-0">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start pb-4 mb-4 border-b border-slate-200">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full shadow-md border-2 border-white flex-shrink-0 mx-auto sm:mx-0 overflow-hidden">
             <PhotoWithFallback src={student.photographUrl} alt={`${student.name}'s photograph`} />
         </div>
-        <div className="text-center md:text-left flex-grow">
-          <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
-             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">{student.name}</h1>
+        <div className="text-center sm:text-left flex-grow w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-0.5 justify-center sm:justify-start">
+             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{student.name}</h1>
              {student.status !== StudentStatus.ACTIVE && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wider">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wider self-center">
                     {student.status}
                 </span>
              )}
           </div>
-          <p className="text-slate-700 text-lg mt-1">{student.grade} - ID: <span className="font-semibold">{formattedStudentId}</span></p>
-           <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
+          <p className="text-slate-600 text-sm mt-0.5">{student.grade} - ID: <span className="font-semibold text-slate-800">{formattedStudentId}</span></p>
+           <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
              {student.status === StudentStatus.DROPPED && isAdmin && onReinstate && (
                 <button
                     onClick={handleReinstate}
-                    className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition hover:-translate-y-0.5"
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-emerald-600 text-white font-medium rounded-lg shadow-sm hover:bg-emerald-700 transition"
                 >
-                    <CheckCircleIcon className="h-5 w-5" />
+                    <CheckCircleIcon className="h-4 w-4" />
                     Reinstate Student
                 </button>
              )}
              {canEdit && (
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-sky-600 text-white font-medium rounded-lg shadow-sm hover:bg-sky-700 transition"
                 >
-                  <EditIcon className="h-5 h-5" />
+                  <EditIcon className="h-4 w-4" />
                   Edit Profile
                 </button>
              )}
              {canEdit && (
                 <button
                   onClick={() => setIsTransferModalOpen(true)}
-                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-amber-600 text-white font-medium rounded-lg shadow-sm hover:bg-amber-700 transition"
                 >
-                  <EditIcon className="h-5 h-5" />
+                  <EditIcon className="h-4 w-4" />
                   Transfer Class
                 </button>
              )}
              {isAdmin && (
                 <button
                   onClick={() => setIsDeletingStudent(true)}
-                  className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg shadow-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-rose-600 text-white font-medium rounded-lg shadow-sm hover:bg-rose-700 transition"
                 >
-                  <TrashIcon className="h-5 h-5" />
-                  Delete Student
+                  <TrashIcon className="h-4 w-4" />
+                  Delete
                 </button>
              )}
             <Link
                 to={`/portal/student/${student.id}/academics`}
-                className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition hover:-translate-y-0.5"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition"
             >
-                <DocumentReportIcon className="h-5 h-5" />
-                Academic Records
+                <DocumentReportIcon className="h-4 w-4" />
+                Academics
             </Link>
             <Link
                 to={`/portal/student/${student.id}/attendance-log`}
-                className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition hover:-translate-y-0.5"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-teal-600 text-white font-medium rounded-lg shadow-sm hover:bg-teal-700 transition"
             >
-                <CalendarDaysIcon className="h-5 h-5" />
+                <CalendarDaysIcon className="h-4 w-4" />
                 Attendance Log
             </Link>
-             <div className="relative flex-grow sm:flex-grow-0">
+             <div className="relative">
                 <button
                     onClick={() => setIsReportDropdownOpen(prev => !prev)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition hover:-translate-y-0.5"
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-teal-600 text-white font-medium rounded-lg shadow-sm hover:bg-teal-700 transition"
                 >
-                    <DocumentReportIcon className="h-5 h-5" />
-                    <span>View Progress Report</span>
-                    <ChevronDownIcon className={`w-4 h-4 transition-transform ${isReportDropdownOpen ? 'rotate-180' : ''}`} />
+                    <DocumentReportIcon className="h-4 w-4" />
+                    <span>Progress Report</span>
+                    <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${isReportDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isReportDropdownOpen && (
-                    <div className="absolute top-full mt-2 w-full bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10" onMouseLeave={() => setIsReportDropdownOpen(false)}>
+                    <div className="absolute top-full mt-1.5 right-0 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10" onMouseLeave={() => setIsReportDropdownOpen(false)}>
                         <div className="py-1">
                             {TERMINAL_EXAMS.map(exam => (
                                 <Link
                                     key={exam.id}
                                     to={`/portal/progress-report/${student.id}/${exam.id}`}
                                     target="_blank"
-                                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                    className="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
                                     onClick={() => setIsReportDropdownOpen(false)}
                                 >
                                     {exam.name}
@@ -323,25 +323,25 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
         </div>
       </div>
       
-      <div className="space-y-12">
+      <div className="space-y-3.5">
             <DetailSection title="Personal Information">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-2">
                     <DetailItem label="Student ID" value={formattedStudentId} />
                     <DetailItem label="Permanent Education Number (PEN)" value={student.pen} />
                     <DetailItem label="Date of Birth" value={formatDateForDisplay(student.dateOfBirth)} />
                     <DetailItem label="Gender" value={student.gender} />
                     <DetailItem label="Aadhaar Number" value={student.aadhaarNumber} />
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        <dt className="text-sm font-medium text-slate-600">Contact Number</dt>
-                        <dd className="mt-1 text-md font-semibold text-slate-900 flex justify-between items-center">
+                    <div className="bg-slate-50/90 px-2.5 py-1.5 rounded-md border border-slate-200 flex flex-col justify-center">
+                        <dt className="text-[11px] font-medium text-slate-500 leading-tight">Contact Number</dt>
+                        <dd className="text-xs sm:text-sm font-semibold text-slate-900 mt-0.5 leading-snug flex justify-between items-center">
                             <span>{student.contact || 'N/A'}</span>
                             {student.contact && (
-                                <div className="flex items-center gap-2">
-                                    <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-full transition-colors" title="Send WhatsApp Message">
-                                        <WhatsappIcon className="w-5 h-5"/>
+                                <div className="flex items-center gap-1">
+                                    <a href={`https://wa.me/${formatPhoneNumberForWhatsApp(student.contact)}`} target="_blank" rel="noopener noreferrer" className="p-0.5 text-emerald-600 hover:text-emerald-700 transition-colors" title="Send WhatsApp Message">
+                                        <WhatsappIcon className="w-3.5 h-3.5"/>
                                     </a>
-                                    <a href={`sms:${student.contact}`} className="p-2 text-sky-600 hover:bg-sky-100 rounded-full transition-colors" title="Send SMS">
-                                        <MessageIcon className="w-5 h-5"/>
+                                    <a href={`sms:${student.contact}`} className="p-0.5 text-sky-600 hover:text-sky-700 transition-colors" title="Send SMS">
+                                        <MessageIcon className="w-3.5 h-3.5"/>
                                     </a>
                                 </div>
                             )}
@@ -349,124 +349,14 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                     </div>
                     <DetailItem label="Blood Group" value={student.bloodGroup} />
                     <DetailItem label="CWSN" value={student.cwsn} />
-                    <div className="sm:col-span-2 lg:col-span-3">
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-4">
                         <DetailItem label="Address" value={student.address} />
                     </div>
                 </dl>
             </DetailSection>
 
-            {/* Fee Payment Status Section */}
-            <DetailSection title="Fee Payment Status">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Payment Progress Summary */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-slate-50 border rounded-xl p-6">
-                            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <CurrencyDollarIcon className="w-5 h-5 text-emerald-600"/>
-                                Monthly Tuition Fees ({academicYear})
-                            </h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                                {academicMonths.map(month => {
-                                    const isPaid = student.feePayments?.tuitionFeesPaid?.[month];
-                                    return (
-                                        <div 
-                                            key={month} 
-                                            className={`p-2 rounded-lg border text-center transition-colors ${
-                                                isPaid 
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-                                                : 'bg-white border-slate-200 text-slate-400'
-                                            }`}
-                                        >
-                                            <div className="text-[10px] font-bold uppercase tracking-wider">{month.substring(0, 3)}</div>
-                                            <div className="mt-1">
-                                                {isPaid ? <CheckCircleIcon className="w-5 h-5 mx-auto"/> : <ClockIcon className="w-5 h-5 mx-auto opacity-30"/>}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-slate-50 border rounded-xl p-4">
-                                <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Examination Fees</h3>
-                                <div className="space-y-2">
-                                    {TERMINAL_EXAMS.map(exam => {
-                                        const isPaid = student.feePayments?.examFeesPaid?.[exam.id as keyof typeof student.feePayments.examFeesPaid];
-                                        return (
-                                            <div key={exam.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                                                <span className="text-sm font-medium text-slate-700">{exam.name}</span>
-                                                {isPaid ? (
-                                                    <span className="text-emerald-600 font-bold text-xs flex items-center gap-1"><CheckCircleIcon className="w-4 h-4"/> PAID</span>
-                                                ) : (
-                                                    <span className="text-rose-600 font-bold text-xs flex items-center gap-1"><XCircleIcon className="w-4 h-4"/> UNPAID</span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div className="bg-slate-50 border rounded-xl p-4">
-                                <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">One-Time Charges</h3>
-                                <div className="flex items-center justify-between p-3 bg-white rounded border h-[42px]">
-                                    <span className="text-sm font-medium text-slate-700">Admission / Annual Misc Fees</span>
-                                    {student.feePayments?.admissionFeePaid ? (
-                                        <span className="text-emerald-600 font-bold text-xs flex items-center gap-1"><CheckCircleIcon className="w-4 h-4"/> PAID</span>
-                                    ) : (
-                                        <span className="text-rose-600 font-bold text-xs flex items-center gap-1"><XCircleIcon className="w-4 h-4"/> UNPAID</span>
-                                    )}
-                                </div>
-                                {isAdmin && (
-                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-4 w-full btn btn-secondary text-xs py-2">
-                                        Update Payment Status
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Outstanding Dues Summary */}
-                    <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 h-fit shadow-sm">
-                        <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
-                            <ExclamationTriangleIcon className="w-6 h-6 text-amber-600"/>
-                            Outstanding Dues
-                        </h3>
-                        {dues.length > 0 ? (
-                            <>
-                                <ul className="space-y-3">
-                                    {dues.map((due, idx) => (
-                                        <li key={idx} className="flex gap-2 text-sm text-amber-800">
-                                            <span className="font-bold mt-1 text-amber-600">•</span>
-                                            <span className="font-medium leading-tight">{due}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="mt-8 pt-4 border-t border-amber-200">
-                                    <p className="text-xs text-amber-700 font-bold uppercase tracking-widest mb-1">Total Outstanding (Est.)</p>
-                                    <div className="text-3xl font-black text-amber-900">
-                                        {/* Dynamic calculation is visible on fee page, here we just show count or summary */}
-                                        {dues.length} Pending Items
-                                    </div>
-                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-4 w-full btn btn-primary bg-amber-600 hover:bg-amber-700 border-none shadow-amber-200 shadow-lg">
-                                        Manage & Pay Fees
-                                    </Link>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="text-center py-6">
-                                <div className="bg-emerald-100 text-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircleIcon className="w-10 h-10"/>
-                                </div>
-                                <h4 className="font-bold text-emerald-800 text-lg">No Pending Dues</h4>
-                                <p className="text-sm text-emerald-700 mt-2">All school fees for {academicYear} are currently clear.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </DetailSection>
-
             <DetailSection title="Parent & Guardian Information">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-2">
                     <DetailItem label="Father's Name" value={student.fatherName} />
                     <DetailItem label="Father's Occupation" value={student.fatherOccupation} />
                     <DetailItem label="Father's Aadhaar" value={student.fatherAadhaar} />
@@ -478,33 +368,142 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                 </dl>
             </DetailSection>
 
+            {/* Fee Payment Status Section */}
+            <DetailSection title="Fee Payment Status">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    {/* Payment Progress Summary */}
+                    <div className="lg:col-span-2 space-y-3">
+                        <div className="bg-slate-50 border rounded-xl p-3.5">
+                            <h3 className="font-bold text-slate-800 mb-2.5 text-xs sm:text-sm flex items-center gap-2">
+                                <CurrencyDollarIcon className="w-4 h-4 text-emerald-600"/>
+                                Monthly Tuition Fees ({academicYear})
+                            </h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5">
+                                {academicMonths.map(month => {
+                                    const isPaid = student.feePayments?.tuitionFeesPaid?.[month];
+                                    return (
+                                        <div 
+                                            key={month} 
+                                            className={`p-1 rounded border text-center transition-colors ${
+                                                isPaid 
+                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                                                : 'bg-white border-slate-200 text-slate-400'
+                                            }`}
+                                        >
+                                            <div className="text-[10px] font-bold uppercase tracking-wider">{month.substring(0, 3)}</div>
+                                            <div className="mt-0.5">
+                                                {isPaid ? <CheckCircleIcon className="w-3.5 h-3.5 mx-auto"/> : <ClockIcon className="w-3.5 h-3.5 mx-auto opacity-30"/>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="bg-slate-50 border rounded-xl p-3">
+                                <h3 className="font-bold text-slate-800 mb-2 text-xs uppercase tracking-wide">Examination Fees</h3>
+                                <div className="space-y-1">
+                                    {TERMINAL_EXAMS.map(exam => {
+                                        const isPaid = student.feePayments?.examFeesPaid?.[exam.id as keyof typeof student.feePayments.examFeesPaid];
+                                        return (
+                                            <div key={exam.id} className="flex items-center justify-between px-2.5 py-1 bg-white rounded border">
+                                                <span className="text-xs font-medium text-slate-700">{exam.name}</span>
+                                                {isPaid ? (
+                                                    <span className="text-emerald-600 font-bold text-[11px] flex items-center gap-1"><CheckCircleIcon className="w-3.5 h-3.5"/> PAID</span>
+                                                ) : (
+                                                    <span className="text-rose-600 font-bold text-[11px] flex items-center gap-1"><XCircleIcon className="w-3.5 h-3.5"/> UNPAID</span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="bg-slate-50 border rounded-xl p-3">
+                                <h3 className="font-bold text-slate-800 mb-2 text-xs uppercase tracking-wide">One-Time Charges</h3>
+                                <div className="flex items-center justify-between px-2.5 py-1.5 bg-white rounded border">
+                                    <span className="text-xs font-medium text-slate-700">Admission / Annual Misc Fees</span>
+                                    {student.feePayments?.admissionFeePaid ? (
+                                        <span className="text-emerald-600 font-bold text-[11px] flex items-center gap-1"><CheckCircleIcon className="w-3.5 h-3.5"/> PAID</span>
+                                    ) : (
+                                        <span className="text-rose-600 font-bold text-[11px] flex items-center gap-1"><XCircleIcon className="w-3.5 h-3.5"/> UNPAID</span>
+                                    )}
+                                </div>
+                                {isAdmin && (
+                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-2.5 w-full btn btn-secondary text-xs py-1">
+                                        Update Payment Status
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Outstanding Dues Summary */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 h-fit shadow-sm">
+                        <h3 className="text-sm sm:text-base font-bold text-amber-900 mb-2 flex items-center gap-1.5">
+                            <ExclamationTriangleIcon className="w-4 h-4 text-amber-600"/>
+                            Outstanding Dues
+                        </h3>
+                        {dues.length > 0 ? (
+                            <>
+                                <ul className="space-y-1">
+                                    {dues.map((due, idx) => (
+                                        <li key={idx} className="flex gap-1.5 text-xs text-amber-800">
+                                            <span className="font-bold text-amber-600">•</span>
+                                            <span className="font-medium leading-tight">{due}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <div className="mt-3 pt-2.5 border-t border-amber-200">
+                                    <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider mb-0.5">Total Outstanding</p>
+                                    <div className="text-lg font-bold text-amber-900">
+                                        {dues.length} Pending Items
+                                    </div>
+                                    <Link to="/portal/fees" state={{ studentId: student.id }} className="mt-2.5 w-full btn btn-primary text-xs py-1.5 bg-amber-600 hover:bg-amber-700 border-none shadow-sm">
+                                        Manage & Pay Fees
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center py-3">
+                                <div className="bg-emerald-100 text-emerald-600 w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5">
+                                    <CheckCircleIcon className="w-5 h-5"/>
+                                </div>
+                                <h4 className="font-bold text-emerald-800 text-xs sm:text-sm">No Pending Dues</h4>
+                                <p className="text-[11px] text-emerald-700 mt-0.5">All school fees for {academicYear} are currently clear.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </DetailSection>
+
             
             
             <DetailSection title="School Conduct Log">
                 {canEdit && (
-                    <div className="mb-6 p-4 bg-slate-50 border rounded-lg">
+                    <div className="mb-4 p-3 bg-slate-50 border rounded-lg">
                         {!isAddingConduct ? (
-                            <button onClick={() => setIsAddingConduct(true)} className="btn btn-secondary">
-                                <PlusIcon className="w-5 h-5"/> Add New Log Entry
+                            <button onClick={() => setIsAddingConduct(true)} className="btn btn-secondary text-xs py-1.5 px-3">
+                                <PlusIcon className="w-4 h-4"/> Add New Log Entry
                             </button>
                         ) : (
-                            <form onSubmit={handleAddEntrySubmit} className="space-y-4 animate-fade-in">
-                                <h4 className="font-bold text-lg text-slate-800">New Conduct Entry</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <form onSubmit={handleAddEntrySubmit} className="space-y-3 animate-fade-in">
+                                <h4 className="font-bold text-sm text-slate-800">New Conduct Entry</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-800">Type</label>
+                                        <label className="block text-xs font-bold text-slate-700">Type</label>
                                         <select value={newEntryType} onChange={e => {
                                             const type = e.target.value as ConductEntryType;
                                             setNewEntryType(type);
                                             setNewEntryCategory(type === ConductEntryType.MERIT ? MERIT_CATEGORIES[0] : DEMERIT_CATEGORIES[0]);
-                                        }} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                        }} className="mt-0.5 block w-full text-xs border-slate-300 rounded-md shadow-sm">
                                             <option value={ConductEntryType.MERIT}>Merit</option>
                                             <option value={ConductEntryType.DEMERIT}>Demerit</option>
                                         </select>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-bold text-slate-800">Category</label>
-                                        <select value={newEntryCategory} onChange={e => setNewEntryCategory(e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm">
+                                        <label className="block text-xs font-bold text-slate-700">Category</label>
+                                        <select value={newEntryCategory} onChange={e => setNewEntryCategory(e.target.value)} className="mt-0.5 block w-full text-xs border-slate-300 rounded-md shadow-sm">
                                             {(newEntryType === ConductEntryType.MERIT ? MERIT_CATEGORIES : DEMERIT_CATEGORIES).map(cat => (
                                                 <option key={cat} value={cat}>{cat}</option>
                                             ))}
@@ -512,13 +511,13 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-800">Description</label>
-                                    <textarea value={newEntryDescription} onChange={e => setNewEntryDescription(e.target.value)} rows={2} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm" required placeholder="Provide specific details..."/>
+                                    <label className="block text-xs font-bold text-slate-700">Description</label>
+                                    <textarea value={newEntryDescription} onChange={e => setNewEntryDescription(e.target.value)} rows={2} className="mt-0.5 block w-full text-xs border-slate-300 rounded-md shadow-sm" required placeholder="Provide specific details..."/>
                                 </div>
-                                <div className="flex justify-end gap-3">
-                                    <button type="button" onClick={() => setIsAddingConduct(false)} className="btn btn-secondary" disabled={isSavingConduct}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary" disabled={isSavingConduct}>
-                                        {isSavingConduct ? <SpinnerIcon className="w-5 h-5"/> : <CheckIcon className="w-5 h-5" />}
+                                <div className="flex justify-end gap-2">
+                                    <button type="button" onClick={() => setIsAddingConduct(false)} className="btn btn-secondary text-xs py-1 px-3" disabled={isSavingConduct}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary text-xs py-1 px-3" disabled={isSavingConduct}>
+                                        {isSavingConduct ? <SpinnerIcon className="w-4 h-4"/> : <CheckIcon className="w-4 h-4" />}
                                         {isSavingConduct ? 'Saving...' : 'Save Entry'}
                                     </button>
                                 </div>
@@ -527,78 +526,80 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({ students, onEdit,
                     </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <h4 className="font-bold text-lg text-emerald-600 mb-3">Merits ({merits.length})</h4>
+                        <h4 className="font-bold text-sm text-emerald-600 mb-2">Merits ({merits.length})</h4>
                         {merits.length > 0 ? (
-                            <ul className="space-y-3">
+                            <ul className="space-y-2">
                                 {merits.map(entry => (
-                                    <li key={entry.id} className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 group relative">
-                                        <p className="font-semibold text-emerald-800">{entry.category}</p>
-                                        <p className="text-sm text-slate-700">{entry.description}</p>
-                                        <p className="text-xs text-slate-500 mt-2">{formatDateForDisplay(entry.date)} - by {entry.recordedBy}</p>
+                                    <li key={entry.id} className="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 group relative">
+                                        <p className="font-semibold text-xs text-emerald-800">{entry.category}</p>
+                                        <p className="text-xs text-slate-700 mt-0.5">{entry.description}</p>
+                                        <p className="text-[10px] text-slate-500 mt-1">{formatDateForDisplay(entry.date)} - by {entry.recordedBy}</p>
                                         {canEdit && (
-                                            <button onClick={() => setEntryToDelete(entry)} className="absolute top-2 right-2 p-1.5 text-red-500 hover:bg-red-100 rounded-full hidden group-hover:block">
-                                                <TrashIcon className="w-4 h-4" />
+                                            <button onClick={() => setEntryToDelete(entry)} className="absolute top-1.5 right-1.5 p-1 text-red-500 hover:bg-red-100 rounded-full hidden group-hover:block">
+                                                <TrashIcon className="w-3.5 h-3.5" />
                                             </button>
                                         )}
                                     </li>
                                 ))}
                             </ul>
-                        ) : <p className="text-slate-600 italic">No merits recorded.</p>}
+                        ) : <p className="text-xs text-slate-500 italic">No merits recorded.</p>}
                     </div>
                     <div>
-                        <h4 className="font-bold text-lg text-rose-600 mb-3">Demerits ({demerits.length})</h4>
+                        <h4 className="font-bold text-sm text-rose-600 mb-2">Demerits ({demerits.length})</h4>
                         {demerits.length > 0 ? (
-                            <ul className="space-y-3">
+                            <ul className="space-y-2">
                                 {demerits.map(entry => (
-                                    <li key={entry.id} className="bg-rose-50 p-3 rounded-lg border border-rose-200 group relative">
-                                        <p className="font-semibold text-rose-800">{entry.category}</p>
-                                        <p className="text-sm text-slate-700">{entry.description}</p>
-                                        <p className="text-xs text-slate-500 mt-2">{formatDateForDisplay(entry.date)} - by {entry.recordedBy}</p>
+                                    <li key={entry.id} className="bg-rose-50 p-2.5 rounded-lg border border-rose-200 group relative">
+                                        <p className="font-semibold text-xs text-rose-800">{entry.category}</p>
+                                        <p className="text-xs text-slate-700 mt-0.5">{entry.description}</p>
+                                        <p className="text-[10px] text-slate-500 mt-1">{formatDateForDisplay(entry.date)} - by {entry.recordedBy}</p>
                                         {canEdit && (
-                                            <button onClick={() => setEntryToDelete(entry)} className="absolute top-2 right-2 p-1.5 text-red-500 hover:bg-red-100 rounded-full hidden group-hover:block">
-                                                <TrashIcon className="w-4 h-4" />
+                                            <button onClick={() => setEntryToDelete(entry)} className="absolute top-1.5 right-1.5 p-1 text-red-500 hover:bg-red-100 rounded-full hidden group-hover:block">
+                                                <TrashIcon className="w-3.5 h-3.5" />
                                             </button>
                                         )}
                                     </li>
                                 ))}
                             </ul>
-                        ) : <p className="text-slate-600 italic">No demerits recorded.</p>}
+                        ) : <p className="text-xs text-slate-500 italic">No demerits recorded.</p>}
                     </div>
                 </div>
             </DetailSection>
 
             <DetailSection title="Hostel Discipline Log">
                 {studentHostelLog.length > 0 ? (
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                         {studentHostelLog.map(entry => (
-                             <li key={entry.id} className={`p-3 rounded-lg border ${getSeverityColor(entry.severity)}`}>
+                             <li key={entry.id} className={`p-2.5 rounded-lg border ${getSeverityColor(entry.severity)}`}>
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="font-semibold">{entry.category}</p>
-                                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/60">{entry.severity}</span>
+                                        <p className="font-semibold text-xs">{entry.category}</p>
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/60">{entry.severity}</span>
                                     </div>
-                                    <span className="text-sm font-semibold">{entry.status}</span>
+                                    <span className="text-xs font-semibold">{entry.status}</span>
                                 </div>
-                                <p className="text-sm text-slate-700 mt-2">{entry.description}</p>
-                                {entry.actionTaken && <p className="text-sm text-slate-700 mt-2"><span className="font-semibold">Action Taken:</span> {entry.actionTaken}</p>}
-                                <p className="text-xs text-slate-500 mt-2">{formatDateForDisplay(entry.date)} - by {entry.reportedBy}</p>
+                                <p className="text-xs text-slate-700 mt-1">{entry.description}</p>
+                                {entry.actionTaken && <p className="text-xs text-slate-700 mt-1"><span className="font-semibold">Action Taken:</span> {entry.actionTaken}</p>}
+                                <p className="text-[10px] text-slate-500 mt-1">{formatDateForDisplay(entry.date)} - by {entry.reportedBy}</p>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-slate-600 italic">No hostel discipline entries recorded for this student.</p>
+                    <p className="text-xs text-slate-500 italic">No hostel discipline entries recorded for this student.</p>
                 )}
             </DetailSection>
 
             <DetailSection title="Academic & Health">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    <DetailItem label="Last School Attended" value={student.lastSchoolAttended} />
-                    <div className="sm:col-span-2 lg:col-span-3">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-2">
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <DetailItem label="Last School Attended" value={student.lastSchoolAttended} />
+                    </div>
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-4">
                         <DetailItem label="Achievements" value={student.achievements} />
                     </div>
-                    <div className="sm:col-span-2 lg:col-span-3">
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-4">
                         <DetailItem label="Health Conditions" value={student.healthConditions} />
                     </div>
                 </dl>

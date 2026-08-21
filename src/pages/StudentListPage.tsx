@@ -7,7 +7,7 @@ import { GRADES_LIST } from '@/constants';
 import StudentTable from '@/components/StudentTable';
 import StudentFormModal from '@/components/StudentFormModal';
 import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon, TrashIcon } from '@/components/Icons';
+import { PlusIcon, SearchIcon, HomeIcon, BackIcon, ChevronDownIcon, ChevronUpIcon, ArrowUpOnSquareIcon, TrashIcon, XIcon } from '@/components/Icons';
 import { formatStudentId, normalizeAcademicYear } from '@/utils';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -149,89 +149,39 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
         </Link>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
-        <h2 className="text-2xl font-bold text-slate-800 md:flex-grow">
-          {statusFilter === StudentStatus.ACTIVE ? 'Active' : statusFilter === StudentStatus.DROPPED ? 'Dropped' : 'Transferred'} Students ({filteredStudents.length}) <span className="text-sm font-normal text-slate-500">for {academicYear}</span>
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as StudentStatus)}
-            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition font-semibold text-slate-700 bg-slate-50"
-            aria-label="Filter by student status"
-          >
-            <option value={StudentStatus.ACTIVE}>Active</option>
-            <option value={StudentStatus.DROPPED}>Dropped</option>
-            <option value={StudentStatus.TRANSFERRED}>Transferred</option>
-          </select>
-
-          {/* Search Type Selector */}
-          <select
-            value={searchType}
-            onChange={e => setSearchType(e.target.value as any)}
-            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition"
-            aria-label="Select search type"
-          >
-            <option value="name">Search by Name</option>
-            <option value="pen">Search by PEN</option>
-            <option value="fatherName">Search by Father's Name</option>
-            <option value="studentId">Search by Student ID</option>
-          </select>
-          
-          {/* Search Bar */}
-          <div className="relative w-full sm:w-auto">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <SearchIcon className="h-5 w-5 text-slate-500" />
-            </div>
-            <input
-              type="text"
-              placeholder={searchPlaceholders[searchType]}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition placeholder:text-slate-500"
-              aria-label="Search students"
-            />
-          </div>
-
-          {/* Grade Filter */}
-          <select
-            value={gradeFilter}
-            onChange={e => setGradeFilter(e.target.value)}
-            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition"
-            aria-label="Filter students by grade"
-          >
-            <option value="">All Grades</option>
-            {GRADES_LIST.map(grade => (
-              <option key={grade} value={grade}>{grade}</option>
-            ))}
-          </select>
-
+      {/* Header and Actions */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">
+            {statusFilter === StudentStatus.ACTIVE ? 'Active' : statusFilter === StudentStatus.DROPPED ? 'Dropped' : 'Transferred'} Students ({filteredStudents.length}) <span className="text-sm font-normal text-slate-500">for {academicYear}</span>
+          </h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Add Student Button */}
           <button
             onClick={() => setIsAddModalOpen(true)}
             disabled={!['admin', 'user'].includes(user.role)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-sky-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none shrink-0"
             title={!['admin', 'user'].includes(user.role) ? "Staff access required" : "Add a new student"}
           >
-            <PlusIcon className="h-5 w-5" />
+            <PlusIcon className="h-4 w-4" />
             Add Student
           </button>
 
           {/* Bulk Delete for Dropped students */}
           {statusFilter === StudentStatus.DROPPED && filteredStudents.length > 0 && user.role === 'admin' && (
             <button
-                onClick={async () => {
-                    if (window.confirm(`Are you sure you want to PERMANENTLY delete ALL ${filteredStudents.length} dropped students for ${academicYear}? This cannot be undone.`)) {
-                        for (const s of filteredStudents) {
-                            await onDelete(s.id);
-                        }
-                    }
-                }}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg shadow-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition hover:-translate-y-0.5"
+              onClick={async () => {
+                if (window.confirm(`Are you sure you want to PERMANENTLY delete ALL ${filteredStudents.length} dropped students for ${academicYear}? This cannot be undone.`)) {
+                  for (const s of filteredStudents) {
+                    await onDelete(s.id);
+                  }
+                }
+              }}
+              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition hover:-translate-y-0.5 shrink-0"
             >
-                <TrashIcon className="h-5 w-5" />
-                Empty Dropped List
+              <TrashIcon className="h-4 w-4" />
+              Empty Dropped List
             </button>
           )}
 
@@ -239,12 +189,86 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ students, onAdd, onEd
           <button
             onClick={() => setIsImportPrevYearModalOpen(true)}
             disabled={!['admin', 'user'].includes(user.role)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition hover:-translate-y-0.5 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none shrink-0"
             title={!['admin', 'user'].includes(user.role) ? "Staff access required" : "Import students from previous year"}
           >
-            <ArrowUpOnSquareIcon className="h-5 w-5" />
+            <ArrowUpOnSquareIcon className="h-4 w-4" />
             Import from Prev Year
           </button>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-3.5 mb-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Status Filter (Compact) */}
+          <div className="w-full sm:w-28 md:w-32 shrink-0">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value as StudentStatus)}
+              className="w-full px-2.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition shadow-sm"
+              aria-label="Filter by student status"
+            >
+              <option value={StudentStatus.ACTIVE}>Active</option>
+              <option value={StudentStatus.DROPPED}>Dropped</option>
+              <option value={StudentStatus.TRANSFERRED}>Transferred</option>
+            </select>
+          </div>
+
+          {/* Search Parameter Selector (Compact) */}
+          <div className="w-full sm:w-36 md:w-44 shrink-0">
+            <select
+              value={searchType}
+              onChange={e => setSearchType(e.target.value as any)}
+              className="w-full px-2.5 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition shadow-sm"
+              aria-label="Select search parameter"
+            >
+              <option value="name">Search by Name</option>
+              <option value="pen">Search by PEN</option>
+              <option value="fatherName">Father's Name</option>
+              <option value="studentId">Student ID</option>
+            </select>
+          </div>
+          
+          {/* Student Search Input (Enlarged and Flex-Grow) */}
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[240px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <SearchIcon className="h-4 w-4 sm:h-5 sm:w-5 text-sky-600" />
+            </div>
+            <input
+              type="text"
+              placeholder={searchPlaceholders[searchType]}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 sm:pl-10 pr-9 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition placeholder:text-slate-400 shadow-sm text-slate-800"
+              aria-label="Search students"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                title="Clear search"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Grade Filter (Compact) */}
+          <div className="w-full sm:w-28 md:w-36 shrink-0">
+            <select
+              value={gradeFilter}
+              onChange={e => setGradeFilter(e.target.value)}
+              className="w-full px-2.5 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition shadow-sm"
+              aria-label="Filter students by grade"
+            >
+              <option value="">All Grades</option>
+              {GRADES_LIST.map(grade => (
+                <option key={grade} value={grade}>{grade}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       

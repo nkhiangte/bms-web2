@@ -698,6 +698,7 @@ export interface TcRecord {
     refNo: string;
     studentDbId: string;
     studentDisplayId: string;
+    pen?: string;
     nameOfStudent: string;
     gender: string;
     fatherName: string;

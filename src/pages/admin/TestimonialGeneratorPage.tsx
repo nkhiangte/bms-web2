@@ -12,19 +12,24 @@ const TestimonialGeneratorPage: React.FC = () => {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [searchResults, setSearchResults] = useState<Student[]>([]);
     
+    const [pen, setPen] = useState('');
     const [division, setDivision] = useState('First');
     const [year, setYear] = useState(new Date().getFullYear().toString());
     const [certificateId, setCertificateId] = useState('');
     const [dateOfIssue, setDateOfIssue] = useState(new Date().toISOString().split('T')[0]);
 
-    // Auto-generate certificate ID when student is selected
+    // Auto-generate certificate ID and set PEN when student is selected
     React.useEffect(() => {
         if (selectedStudent && !certificateId) {
             const year = new Date().getFullYear();
             const random = Math.floor(Math.random() * 90000) + 10000; // 5 digit random
             setCertificateId(`BMS${year}${random}`);
+            setPen(selectedStudent.pen || '');
+        } else if (selectedStudent) {
+            setPen(selectedStudent.pen || '');
         } else if (!selectedStudent) {
             setCertificateId('');
+            setPen('');
         }
     }, [selectedStudent, certificateId]);
 
@@ -58,7 +63,8 @@ const TestimonialGeneratorPage: React.FC = () => {
             const searchLower = searchTerm.toLowerCase().trim();
             const results = allStudents.filter(s => 
                 (s.name || '').toLowerCase().includes(searchLower) || 
-                (s.studentId || '').toLowerCase().includes(searchLower)
+                (s.studentId || '').toLowerCase().includes(searchLower) ||
+                (s.pen || '').toLowerCase().includes(searchLower)
             );
             
             setSearchResults(results);
@@ -136,7 +142,7 @@ const TestimonialGeneratorPage: React.FC = () => {
                                     <li key={student.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div>
                                             <p className="text-sm font-medium text-slate-900">{student.name}</p>
-                                            <p className="text-sm text-slate-500">Add No: {student.studentId} • Father: {student.fatherName || 'N/A'}</p>
+                                            <p className="text-sm text-slate-500">Add No: {student.studentId} • PEN: {student.pen || 'N/A'} • Father: {student.fatherName || 'N/A'}</p>
                                         </div>
                                         <button
                                             onClick={() => {
@@ -158,6 +164,7 @@ const TestimonialGeneratorPage: React.FC = () => {
                         <div className="bg-sky-50 border border-sky-200 p-4 rounded-md relative flex justify-between items-center">
                             <div>
                                 <p className="font-semibold text-sky-900">{selectedStudent.name}</p>
+                                <p className="text-sm text-sky-700">Add No: {selectedStudent.studentId} • PEN: {pen || selectedStudent.pen || 'N/A'}</p>
                                 <p className="text-sm text-sky-700">D/O, S/O: {selectedStudent.fatherName || selectedStudent.motherName}</p>
                                 <p className="text-sm text-sky-700">DOB: {formatDate(selectedStudent.dateOfBirth)}</p>
                             </div>
@@ -185,6 +192,16 @@ const TestimonialGeneratorPage: React.FC = () => {
                                     placeholder="BMS20260001"
                                 />
                                 <p className="mt-1 text-xs text-slate-500">Format: BMS + Numbers only</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">PEN (Permanent Education Number)</label>
+                                <input
+                                    type="text"
+                                    value={pen}
+                                    onChange={(e) => setPen(e.target.value)}
+                                    className="block w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+                                    placeholder="e.g. 21012345678"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">HSLC Division Passed</label>
@@ -263,12 +280,15 @@ const TestimonialGeneratorPage: React.FC = () => {
                         Testimonial / Character Certificate
                     </h1>
                     
-                    <div className="flex justify-between items-center mb-8 text-lg">
+                    <div className="flex justify-between items-center mb-8 text-base font-semibold">
                         <div>
-                            No<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[150px] text-center">{certificateId}</span>
+                            No.<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[120px] text-center">{certificateId}</span>
                         </div>
                         <div>
-                            ID<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[150px] text-center">{selectedStudent.studentId}</span>
+                            PEN<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[140px] text-center">{pen || selectedStudent.pen || 'N/A'}</span>
+                        </div>
+                        <div>
+                            ID<span className="font-medium ml-2 border-b-2 border-dashed border-black pb-1 inline-block min-w-[120px] text-center">{selectedStudent.studentId}</span>
                         </div>
                     </div>
 

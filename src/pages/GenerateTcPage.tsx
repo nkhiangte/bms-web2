@@ -70,6 +70,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
     
     const [formData, setFormData] = useState({
         nameOfStudent: '',
+        pen: '',
         gender: '' as Gender | string,
         fatherName: '',
         motherName: '',
@@ -110,6 +111,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             setFormData(prev => ({
                 ...prev,
                 nameOfStudent: student.name,
+                pen: student.pen || '',
                 gender: student.gender,
                 fatherName: student.fatherName,
                 motherName: student.motherName,
@@ -187,6 +189,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                 setFormData(prev => ({
                     ...prev,
                     nameOfStudent: student.name,
+                    pen: student.pen || '',
                     gender: student.gender,
                     fatherName: student.fatherName,
                     motherName: student.motherName,
@@ -224,6 +227,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
             // Use fallback to student record for missing fields in legacy TC records
             setFormData({
                 nameOfStudent: existingTc.nameOfStudent || foundStudent?.name || '',
+                pen: existingTc.pen || foundStudent?.pen || '',
                 gender: existingTc.gender || foundStudent?.gender || '',
                 fatherName: existingTc.fatherName || foundStudent?.fatherName || '',
                 motherName: existingTc.motherName || foundStudent?.motherName || '',
@@ -402,6 +406,7 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
                             <legend className="text-lg font-bold text-slate-800 px-2">Student Details</legend>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                                 <FormField label="Student Name" name="nameOfStudent" value={formData.nameOfStudent} onChange={handleChange} />
+                                <FormField label="PEN (Permanent Education No)" name="pen" value={formData.pen} onChange={handleChange} required={false} />
                                 <FormField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} />
                                 <FormField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} />
                                 <FormField label="Current Class" name="currentClass" value={formData.currentClass} onChange={handleChange} />

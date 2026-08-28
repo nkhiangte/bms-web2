@@ -83,9 +83,10 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-4 gap-x-8 mb-4">
-                    <div className="col-span-2"><strong>Ref. No:</strong> {record.refNo}</div>
-                    <div className="col-span-2 text-right"><strong>Student ID:</strong> {record.studentDisplayId}</div>
+                <div className="grid grid-cols-3 gap-x-4 mb-4">
+                    <div><strong>Ref. No:</strong> {record.refNo}</div>
+                    <div className="text-center"><strong>PEN:</strong> {record.pen || 'N/A'}</div>
+                    <div className="text-right"><strong>Student ID:</strong> {record.studentDisplayId}</div>
                 </div>
 
                 <main className="space-y-2 text-slate-900">
@@ -105,6 +106,7 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2 pt-1">
+                        <DetailItem label="PEN (Permanent Education No):" value={record.pen || 'N/A'} />
                         <DetailItem label="Current Class:" value={record.currentClass} />
                         <DetailItem label="Roll No:" value={record.rollNo} />
                         <DetailItem label="Date of birth:" value={formatDateForDisplay(record.dateOfBirth)} />

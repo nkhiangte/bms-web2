@@ -1128,8 +1128,8 @@ const App: React.FC = () => {
           <Route path="transfers/generate" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
           <Route path="transfers/generate/:studentId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
           <Route path="transfers/edit/:tcId" element={<GenerateTcPage students={students} tcRecords={tcRecords} academicYear={academicYear} onGenerateTc={handleGenerateTc} onUpdateTc={handleUpdateTc} isSaving={false} />} />
-          <Route path="transfers/records" element={<TcRecordsPage tcRecords={tcRecords} />} />
-          <Route path="transfers/print/:tcId" element={<PrintTcPage tcRecords={tcRecords} />} />
+          <Route path="transfers/records" element={<TcRecordsPage tcRecords={tcRecords} students={students} />} />
+          <Route path="transfers/print/:tcId" element={<PrintTcPage tcRecords={tcRecords} students={students} />} />
           <Route path="inventory" element={<InventoryPage inventory={inventory} onAdd={handleAddInventoryItem} onEdit={handleEditInventoryItem} onDelete={handleDeleteInventoryItem} user={user!} />} />
           <Route path="hostel-dashboard" element={<HostelDashboardPage disciplineLog={hostelDisciplineLog} />} />
           <Route path="hostel/students" element={<HostelStudentListPage residents={hostelResidents} students={students} onAdd={handleAddHostelResident} onAddById={handleAddHostelResidentById} onEdit={handleEditHostelResident} onDelete={handleDeleteHostelResident} user={user!} academicYear={academicYear} />} />

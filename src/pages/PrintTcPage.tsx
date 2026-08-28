@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { TcRecord } from '@/types';
+import { TcRecord, Student } from '@/types';
+import { db } from '@/firebaseConfig';
 import { BackIcon, PrinterIcon } from '@/components/Icons';
 import { formatDateForDisplay } from '@/utils';
 import { SCHOOL_BANNER_URL } from '@/constants';
@@ -10,7 +10,14 @@ const { useParams, useNavigate } = ReactRouterDOM as any;
 
 interface PrintTcPageProps {
   tcRecords: TcRecord[];
+  students?: Student[];
 }
+
+const getPenFromStudent = (student?: any): string => {
+  if (!student) return '';
+  const val = student.pen || student.penNumber || student.PEN || student.pen_no || student.permanentEducationNumber;
+  return val && String(val).trim() !== 'N/A' ? String(val).trim() : '';
+};
 
 const DetailItem: React.FC<{ label: string; value?: string | number }> = ({ label, value }) => (
     <div className="flex items-end pb-1">
@@ -19,13 +26,57 @@ const DetailItem: React.FC<{ label: string; value?: string | number }> = ({ labe
     </div>
 );
 
-
-const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
-    // Fix: Cast untyped useParams call to specific type to resolve build error
+const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords, students = [] }) => {
     const { tcId } = useParams() as { tcId: string };
     const navigate = useNavigate();
 
     const record = tcRecords.find(r => r.id === tcId);
+    const [fetchedPen, setFetchedPen] = useState<string>('');
+
+    useEffect(() => {
+        if (!record) return;
+        if (record.pen && record.pen.trim() !== '' && record.pen.trim() !== 'N/A') {
+            setFetchedPen(record.pen.trim());
+            return;
+        }
+
+        // Try memory lookup first
+        const matched = students.find(s => 
+            s.id === record.studentDbId || 
+            s.studentId === record.studentDisplayId || 
+            (s.name && record.nameOfStudent && s.name.trim().toLowerCase() === record.nameOfStudent.trim().toLowerCase())
+        );
+
+        const foundPen = getPenFromStudent(matched);
+        if (foundPen) {
+            setFetchedPen(foundPen);
+            db.collection('tcRecords').doc(record.id).update({ pen: foundPen }).catch(() => {});
+            return;
+        }
+
+        // Fetch from Firestore
+        if (record.studentDbId) {
+            db.collection('students').doc(record.studentDbId).get().then(doc => {
+                if (doc.exists) {
+                    const p = getPenFromStudent(doc.data());
+                    if (p) {
+                        setFetchedPen(p);
+                        db.collection('tcRecords').doc(record.id).update({ pen: p }).catch(() => {});
+                    }
+                }
+            }).catch(() => {});
+        } else if (record.studentDisplayId) {
+            db.collection('students').where('studentId', '==', record.studentDisplayId).limit(1).get().then(snap => {
+                if (!snap.empty) {
+                    const p = getPenFromStudent(snap.docs[0].data());
+                    if (p) {
+                        setFetchedPen(p);
+                        db.collection('tcRecords').doc(record.id).update({ pen: p }).catch(() => {});
+                    }
+                }
+            }).catch(() => {});
+        }
+    }, [record, students]);
 
     if (!record) {
         return (
@@ -42,8 +93,8 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
             </div>
         );
     }
-    
-    // Properties accessed directly from record below
+
+    const displayPen = (record.pen && record.pen.trim() !== 'N/A' && record.pen.trim() !== '') ? record.pen : (fetchedPen || 'N/A');
 
     return (
       <div className="bg-slate-200 print:bg-white flex flex-col items-center py-4 print:py-0">
@@ -85,7 +136,7 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
 
                 <div className="grid grid-cols-3 gap-x-4 mb-4">
                     <div><strong>Ref. No:</strong> {record.refNo}</div>
-                    <div className="text-center"><strong>PEN:</strong> {record.pen || 'N/A'}</div>
+                    <div className="text-center"><strong>PEN:</strong> {displayPen}</div>
                     <div className="text-right"><strong>Student ID:</strong> {record.studentDisplayId}</div>
                 </div>
 
@@ -106,7 +157,7 @@ const PrintTcPage: React.FC<PrintTcPageProps> = ({ tcRecords }) => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2 pt-1">
-                        <DetailItem label="PEN (Permanent Education No):" value={record.pen || 'N/A'} />
+                        <DetailItem label="PEN (Permanent Education No):" value={displayPen} />
                         <DetailItem label="Current Class:" value={record.currentClass} />
                         <DetailItem label="Roll No:" value={record.rollNo} />
                         <DetailItem label="Date of birth:" value={formatDateForDisplay(record.dateOfBirth)} />

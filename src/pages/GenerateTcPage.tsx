@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from '@/types';
+import { db } from '@/firebaseConfig';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '@/components/Icons';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '@/utils';
 import { GoogleGenAI } from "@google/genai";
@@ -211,11 +212,27 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         } else if (paramTcId) {
             const tc = tcRecords.find(r => r.id === paramTcId);
             if (tc) {
-                const student = students.find(s => s.id === tc.studentDbId);
+                const student = students.find(s => s.id === tc.studentDbId || s.studentId === tc.studentDisplayId || (s.name && tc.nameOfStudent && s.name.trim().toLowerCase() === tc.nameOfStudent.trim().toLowerCase()));
                 if (student) {
                     setFoundStudent(student);
                     setNameInput(student.name);
                     setExistingTc(tc);
+                } else {
+                    setExistingTc(tc);
+                    setNameInput(tc.nameOfStudent);
+                    if (tc.studentDbId) {
+                        db.collection('students').doc(tc.studentDbId).get().then(doc => {
+                            if (doc.exists) {
+                                setFoundStudent({ id: doc.id, ...doc.data() } as Student);
+                            }
+                        }).catch(() => {});
+                    } else if (tc.studentDisplayId) {
+                        db.collection('students').where('studentId', '==', tc.studentDisplayId).limit(1).get().then(snap => {
+                            if (!snap.empty) {
+                                setFoundStudent({ id: snap.docs[0].id, ...snap.docs[0].data() } as Student);
+                            }
+                        }).catch(() => {});
+                    }
                 }
             }
         }
@@ -225,9 +242,10 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         if (existingTc && initialLoadDone.current !== existingTc.id) {
             // Load existing TC data into form when in edit mode or when student has a TC
             // Use fallback to student record for missing fields in legacy TC records
+            const studentPen = (foundStudent as any)?.pen || (foundStudent as any)?.penNumber || (foundStudent as any)?.PEN || (foundStudent as any)?.pen_no || '';
             setFormData({
                 nameOfStudent: existingTc.nameOfStudent || foundStudent?.name || '',
-                pen: existingTc.pen || foundStudent?.pen || '',
+                pen: (existingTc.pen && existingTc.pen !== 'N/A' ? existingTc.pen : '') || studentPen || '',
                 gender: existingTc.gender || foundStudent?.gender || '',
                 fatherName: existingTc.fatherName || foundStudent?.fatherName || '',
                 motherName: existingTc.motherName || foundStudent?.motherName || '',

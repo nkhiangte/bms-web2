@@ -80,52 +80,54 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-hidden">
                     {/* Backdrop */}
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleClose}
-                        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                     />
 
                     {/* Modal Content */}
                     <motion.div 
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 15 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col"
+                        className="relative bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-w-[94vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col border border-slate-800"
                     >
                         {/* Close Button */}
                         <button 
                             onClick={handleClose}
-                            className="absolute top-4 right-4 z-[110] bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-colors border border-white/30 group"
+                            aria-label="Close popup"
+                            className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-[130] bg-black/70 hover:bg-black/90 text-white p-2 sm:p-2.5 rounded-full backdrop-blur-md transition-all border border-white/20 shadow-xl group focus:outline-none"
                         >
-                            <XIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                            <XIcon className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
 
-                        <div className="flex-grow overflow-y-auto w-full bg-slate-900 flex flex-col items-center">
-                            <div className="relative w-full min-h-[400px]">
+                        <div className="flex-grow overflow-y-auto overflow-x-hidden w-full bg-slate-950 flex flex-col items-center">
+                            <div className="relative w-full flex justify-center items-start overflow-x-hidden">
                                 <EditableContent 
                                     id="home_popup_image" 
                                     defaultContent="https://placehold.jp/24/0f172a/ffffff/1200x1600.png?text=HSLC+2026+Distinction+List\n(Click+the+blue+pencil+on+top+left+to+upload)" 
                                     type="image" 
                                     user={user}
-                                    className="w-full h-auto"
-                                    buttonClassName="top-10 left-10"
+                                    className="w-full max-w-full flex justify-center items-start overflow-hidden"
+                                    imgClassName="w-full h-auto max-w-full object-contain block mx-auto select-none"
+                                    buttonClassName="top-4 left-4"
                                     alwaysShowButton={true}
                                     imgAlt="HSLC 2026 Distinction Results"
                                 />
                                 
                                 {user?.role === 'admin' && (
-                                    <div className="absolute bottom-6 left-6 z-[110] bg-black/40 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-[11px] text-white/80 uppercase tracking-widest font-black pointer-events-none flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                                    <div className="absolute bottom-4 left-4 z-[110] bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 text-[11px] text-white/90 uppercase tracking-widest font-black pointer-events-none flex flex-col gap-0.5 shadow-lg">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
                                             Admin Edit Mode
                                         </div>
-                                        <div className="text-[9px] opacity-60 font-normal">Popup will only show to visitors if Enabled</div>
+                                        <div className="text-[9px] text-slate-300 font-normal">Popup will only show to visitors if Active</div>
                                     </div>
                                 )}
                             </div>
@@ -133,28 +135,28 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
 
                         {/* Admin toggle for enabling/disabling the popup */}
                         {user?.role === 'admin' && (
-                            <div className="p-4 bg-slate-50 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
+                            <div className="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-slate-700">Visitor Popup Status</span>
-                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Only admins can see this bar</span>
+                                        <span className="text-xs sm:text-sm font-bold text-slate-200">Visitor Popup Status</span>
+                                        <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-bold tracking-tight">Admin control</span>
                                     </div>
                                     <button 
                                         onClick={handleTogglePopup}
-                                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                            isEnabled ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                        className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                                            isEnabled ? 'bg-sky-500 text-white hover:bg-sky-600' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
                                         }`}
                                     >
-                                        {isEnabled ? 'Active (Click to Disable)' : 'Inactive (Click to Enable)'}
+                                        {isEnabled ? 'Active (Live for visitors)' : 'Inactive (Hidden from visitors)'}
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                     <p className="text-[10px] text-slate-400 italic max-w-[200px] text-right leading-tight">
-                                         Click the edit icon on the image to upload the HSLC Distinction List.
+                                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                                     <p className="hidden md:block text-[10px] text-slate-400 italic max-w-[200px] text-right leading-tight">
+                                         Click the blue pencil button on top-left of image to upload a new banner.
                                      </p>
                                      <button
                                          onClick={handleClose}
-                                         className="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg text-sm hover:bg-slate-800 transition-colors shrink-0"
+                                         className="w-full sm:w-auto px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs sm:text-sm transition-colors shrink-0 border border-slate-700"
                                      >
                                          Close Preview
                                      </button>

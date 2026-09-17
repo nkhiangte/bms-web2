@@ -1,11 +1,28 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User } from '@/types';
-import { PlusIcon, SearchIcon, HomeIcon, BackIcon, EditIcon, BriefcaseIcon, PhoneIcon, MailIcon, TrashIcon, DocumentReportIcon, InboxArrowDownIcon, ChevronDownIcon, SpinnerIcon } from '@/components/Icons';
+import { Staff, EmploymentStatus, Grade, GradeDefinition, Designation, User, SubjectAssignment } from '@/types';
+import { 
+    PlusIcon, 
+    SearchIcon, 
+    HomeIcon, 
+    BackIcon, 
+    EditIcon, 
+    BriefcaseIcon, 
+    PhoneIcon, 
+    MailIcon, 
+    TrashIcon, 
+    DocumentReportIcon, 
+    InboxArrowDownIcon, 
+    ChevronDownIcon, 
+    SpinnerIcon,
+    AcademicCapIcon,
+    BookOpenIcon
+} from '@/components/Icons';
 import * as XLSX from 'xlsx';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import StaffFormModal from '@/components/StaffFormModal';
 import ConfirmationModal from '@/components/ConfirmationModal'; 
+import TeacherSubjectAssignmentsModal from '@/components/TeacherSubjectAssignmentsModal';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -15,14 +32,17 @@ interface ManageStaffPageProps {
   onSaveStaff: (staffData: Omit<Staff, 'id'>, id: string | undefined, assignedGrade: Grade | null) => Promise<void>;
   onDeleteStaff: (staffMember: Staff, reason?: string) => Promise<void>;
   user: User;
+  onUpdateStaffAssignments?: (teacherId: string, assignedSubjects: SubjectAssignment[], assignedGradeKey: Grade | null) => Promise<void>;
 }
 
 const StaffCard: React.FC<{ 
     staffMember: Staff;
     onEdit: (staffMember: Staff) => void;
     onDelete: (staffMember: Staff) => void;
+    onManageAssignments?: (staffMember: Staff) => void;
+    gradeDefinitions?: Record<Grade, GradeDefinition>;
     user: User;
-}> = ({ staffMember, onEdit, onDelete, user }) => {
+}> = ({ staffMember, onEdit, onDelete, onManageAssignments, gradeDefinitions = {} as Record<Grade, GradeDefinition>, user }) => {
     const { status, firstName, lastName, designation, department } = staffMember;
     const isActive = status === EmploymentStatus.ACTIVE;
     
@@ -37,25 +57,57 @@ const StaffCard: React.FC<{
     const canEdit = isAdmin || (user?.email && staffMember.emailAddress && user.email.trim().toLowerCase() === staffMember.emailAddress.trim().toLowerCase());
     const canDelete = isAdmin;
 
+    // Check if this teacher is a primary Class Teacher
+    const assignedClass = useMemo(() => {
+        if (!gradeDefinitions) return null;
+        const entry = Object.entries(gradeDefinitions).find(([, def]) => def.classTeacherId === staffMember.id);
+        return entry ? (entry[0] as Grade) : null;
+    }, [staffMember.id, gradeDefinitions]);
+
+    const isTeacher = staffMember.staffType === 'Teaching';
+    const subjectsCount = staffMember.assignedSubjects?.length || 0;
+
     return (
-        <div className={`bg-white rounded-xl shadow-lg p-5 flex flex-col transition-all duration-300 h-full ${!isActive ? 'opacity-70 bg-slate-50' : 'hover:shadow-xl hover:scale-[1.02]'}`}>
+        <div className={`bg-white rounded-xl shadow-lg p-5 flex flex-col transition-all duration-300 h-full ${!isActive ? 'opacity-70 bg-slate-50' : 'hover:shadow-xl hover:scale-[1.01]'}`}>
             <div className="flex items-start gap-4 pb-4 border-b">
                 <div className="w-20 h-20 rounded-full shadow-md border-2 border-white flex-shrink-0">
                     <Link to={`/staff/${staffMember.id}`} className="block w-full h-full">
                         <PhotoWithFallback src={staffMember.photographUrl} alt={`${firstName} ${lastName}'s photograph`} />
                     </Link>
                 </div>
-                <div className="flex-grow">
+                <div className="flex-grow min-w-0">
                     <Link to={`/staff/${staffMember.id}`} className="block">
-                        <h3 className="text-xl font-bold text-slate-900 hover:text-sky-700">{firstName} {lastName}</h3>
+                        <h3 className="text-xl font-bold text-slate-900 hover:text-sky-700 truncate">{firstName} {lastName}</h3>
                     </Link>
-                    <p className="text-md text-sky-700 font-semibold">{designation}</p>
+                    <p className="text-md text-sky-700 font-semibold truncate">{designation}</p>
                     <p className="text-sm text-slate-700">{department}</p>
-                    <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold ${statusStyles[status] || statusStyles[EmploymentStatus.RETIRED]}`}>
-                        {status}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyles[status] || statusStyles[EmploymentStatus.RETIRED]}`}>
+                            {status}
+                        </span>
+                        {assignedClass && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <AcademicCapIcon className="w-3 h-3 text-indigo-600" />
+                                Class Teacher: {assignedClass}
+                            </span>
+                        )}
                     </div>
                 </div>
-                <div className="flex flex-col items-center gap-2 z-10">
+                <div className="flex flex-col items-center gap-2 z-10 shrink-0">
+                    {isAdmin && isTeacher && onManageAssignments && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onManageAssignments(staffMember);
+                            }}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-full flex-shrink-0 cursor-pointer"
+                            title="Manage Subjects & Classes Taught"
+                        >
+                            <BookOpenIcon className="w-5 h-5" />
+                        </button>
+                    )}
                     <button 
                         onClick={(e) => { 
                             e.preventDefault(); 
@@ -63,7 +115,7 @@ const StaffCard: React.FC<{
                             if(!canEdit) { alert("You do not have permission to edit this staff member."); return; }
                             onEdit(staffMember); 
                         }} 
-                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
+                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer" 
                         title={canEdit ? "Edit Staff Details" : "You can only edit your own profile"}
                         disabled={!canEdit}
                     >
@@ -76,7 +128,7 @@ const StaffCard: React.FC<{
                             if(!canDelete) { alert("Only admins can delete staff."); return; }
                             onDelete(staffMember); 
                         }} 
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed" 
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-full flex-shrink-0 disabled:text-slate-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer" 
                         title={canDelete ? "Remove Staff" : "Admin access required"}
                         disabled={!canDelete}
                     >
@@ -84,6 +136,7 @@ const StaffCard: React.FC<{
                     </button>
                 </div>
             </div>
+
             <div className="mt-4 space-y-2 text-sm text-slate-800 flex-grow">
                 <div className="flex items-center gap-2">
                     <BriefcaseIcon className="w-4 h-4 text-slate-600 flex-shrink-0"/>
@@ -97,13 +150,77 @@ const StaffCard: React.FC<{
                     <MailIcon className="w-4 h-4 text-slate-600 flex-shrink-0"/>
                     <a href={`mailto:${staffMember.emailAddress}`} className="hover:underline text-sky-700 truncate">{staffMember.emailAddress}</a>
                 </div>
+
+                {/* Teaching Staff: Classes & Subjects Taught Section */}
+                {isTeacher && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <BookOpenIcon className="w-3.5 h-3.5 text-indigo-600" />
+                                Classes &amp; Subjects ({subjectsCount})
+                            </span>
+                            {isAdmin && onManageAssignments && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onManageAssignments(staffMember);
+                                    }}
+                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                >
+                                    Manage
+                                </button>
+                            )}
+                        </div>
+
+                        {staffMember.assignedSubjects && staffMember.assignedSubjects.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                                {staffMember.assignedSubjects.map((asgn, i) => (
+                                    <span
+                                        key={i}
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-50 text-slate-800 hover:text-indigo-900 px-2 py-0.5 rounded-md border border-slate-200 transition"
+                                    >
+                                        <strong className="text-indigo-700">{asgn.grade}:</strong>
+                                        <span>{asgn.subject}</span>
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-slate-400 italic">No classes or subjects assigned yet.</p>
+                        )}
+
+                        {isAdmin && onManageAssignments && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onManageAssignments(staffMember);
+                                }}
+                                className="mt-3 w-full py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 text-xs font-bold rounded-lg border border-indigo-200/80 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                                <AcademicCapIcon className="w-4 h-4 text-indigo-600" />
+                                Add / Edit / Delete Subjects Taught
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 
-const StaffGrid: React.FC<{staff: Staff[], onEdit: (staffMember: Staff) => void, onDelete: (staffMember: Staff) => void, user: User, title?: string}> = ({ staff, onEdit, onDelete, user, title }) => {
+const StaffGrid: React.FC<{
+    staff: Staff[];
+    onEdit: (staffMember: Staff) => void;
+    onDelete: (staffMember: Staff) => void;
+    onManageAssignments?: (staffMember: Staff) => void;
+    gradeDefinitions?: Record<Grade, GradeDefinition>;
+    user: User;
+    title?: string;
+}> = ({ staff, onEdit, onDelete, onManageAssignments, gradeDefinitions, user, title }) => {
     if (staff.length === 0) {
         return <p className="text-slate-600 text-center py-4">{title ? `No staff found for ${title}.` : "No staff found."}</p>;
     }
@@ -115,12 +232,14 @@ const StaffGrid: React.FC<{staff: Staff[], onEdit: (staffMember: Staff) => void,
                     staffMember={member}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onManageAssignments={onManageAssignments}
+                    gradeDefinitions={gradeDefinitions}
                     user={user}
                 />
             ))}
         </div>
-    )
-}
+    );
+};
 
 const PrintableStaffList: React.FC<{ staff: Staff[] }> = ({ staff }) => (
     <div>
@@ -154,7 +273,7 @@ const PrintableStaffList: React.FC<{ staff: Staff[] }> = ({ staff }) => (
     </div>
 );
 
-const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitions, onSaveStaff, onDeleteStaff, user }) => {
+const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitions, onSaveStaff, onDeleteStaff, user, onUpdateStaffAssignments }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'teaching' | 'non-teaching'>('teaching');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -168,6 +287,36 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
   const [removalReason, setRemovalReason] = useState('');
+
+  // State for Teacher Subject Assignments Modal
+  const [isAssignmentsModalOpen, setIsAssignmentsModalOpen] = useState(false);
+  const [selectedTeacherForAssignments, setSelectedTeacherForAssignments] = useState<Staff | null>(null);
+  const [isQuickTeacherSelectOpen, setIsQuickTeacherSelectOpen] = useState(false);
+
+  const handleOpenAssignments = (staffMember: Staff) => {
+      setSelectedTeacherForAssignments(staffMember);
+      setIsAssignmentsModalOpen(true);
+  };
+
+  const handleSaveTeacherAssignments = async (
+      teacherId: string,
+      assignedSubjects: SubjectAssignment[],
+      assignedGradeKey: Grade | null
+  ) => {
+      setIsSaving(true);
+      try {
+          if (onUpdateStaffAssignments) {
+              await onUpdateStaffAssignments(teacherId, assignedSubjects, assignedGradeKey);
+          }
+          setIsAssignmentsModalOpen(false);
+          setSelectedTeacherForAssignments(null);
+      } catch (error: any) {
+          console.error("Failed to update teacher assignments:", error);
+          throw error;
+      } finally {
+          setIsSaving(false);
+      }
+  };
 
   const confinedGrades: Grade[] = [Grade.NURSERY, Grade.KINDERGARTEN, Grade.I, Grade.II];
 
@@ -407,6 +556,50 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                               </div>
                           )}
                       </div>
+                      {user.role === 'admin' && (
+                          <div className="relative">
+                              <button
+                                  type="button"
+                                  onClick={() => setIsQuickTeacherSelectOpen(prev => !prev)}
+                                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg border border-indigo-200 shadow-xs transition cursor-pointer"
+                                  title="Quickly assign, edit, or delete subjects & classes for any teacher"
+                              >
+                                  <AcademicCapIcon className="h-5 h-5 text-indigo-600" />
+                                  <span>Assign Subjects</span>
+                                  <ChevronDownIcon className="w-4 h-4" />
+                              </button>
+                              {isQuickTeacherSelectOpen && (
+                                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl z-30 border border-slate-200 py-2 max-h-80 overflow-y-auto">
+                                      <div className="px-3 py-1.5 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
+                                          Select Teacher to Manage:
+                                      </div>
+                                      {teachingStaff.length === 0 ? (
+                                          <p className="p-3 text-xs text-slate-400">No active teaching staff found.</p>
+                                      ) : (
+                                          teachingStaff.map(t => (
+                                              <button
+                                                  key={t.id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                      setIsQuickTeacherSelectOpen(false);
+                                                      handleOpenAssignments(t);
+                                                  }}
+                                                  className="w-full text-left px-3 py-2 text-xs hover:bg-indigo-50/70 flex items-center gap-2.5 transition cursor-pointer"
+                                              >
+                                                  <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                                                      <PhotoWithFallback src={t.photographUrl} alt={t.firstName} className="w-full h-full object-cover" />
+                                                  </div>
+                                                  <div className="min-w-0 flex-1">
+                                                      <div className="font-bold text-slate-800 truncate">{t.firstName} {t.lastName}</div>
+                                                      <div className="text-[10px] text-slate-500 truncate">{t.designation} • {t.assignedSubjects?.length || 0} subjects</div>
+                                                  </div>
+                                              </button>
+                                          ))
+                                      )}
+                                  </div>
+                              )}
+                          </div>
+                      )}
                       <button onClick={handleOpenAdd} disabled={user.role !== 'admin'} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition disabled:bg-slate-400 disabled:cursor-not-allowed">
                           <PlusIcon className="h-5 h-5" /> Add Staff
                       </button>
@@ -430,11 +623,11 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                   <div className="animate-fade-in space-y-8">
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Confined Teachers (Nursery to Class II)</h2>
-                          <StaffGrid staff={confinedTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Confined Teachers" />
+                          <StaffGrid staff={confinedTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} onManageAssignments={handleOpenAssignments} gradeDefinitions={gradeDefinitions} user={user} title="Confined Teachers" />
                       </div>
                       <div>
                           <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Subject Wise Teachers</h2>
-                          <StaffGrid staff={subjectTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} user={user} title="Subject Wise Teachers" />
+                          <StaffGrid staff={subjectTeachers} onEdit={handleOpenEdit} onDelete={handleDeleteClick} onManageAssignments={handleOpenAssignments} gradeDefinitions={gradeDefinitions} user={user} title="Subject Wise Teachers" />
                       </div>
                   </div>
               )}
@@ -468,6 +661,20 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
         staffMember={editingStaff}
         allStaff={staff}
         gradeDefinitions={gradeDefinitions}
+        isSaving={isSaving}
+      />
+
+      {/* Teacher Subject Assignments Modal */}
+      <TeacherSubjectAssignmentsModal
+        isOpen={isAssignmentsModalOpen}
+        onClose={() => {
+            setIsAssignmentsModalOpen(false);
+            setSelectedTeacherForAssignments(null);
+        }}
+        teacher={selectedTeacherForAssignments}
+        gradeDefinitions={gradeDefinitions}
+        allStaff={staff}
+        onSave={handleSaveTeacherAssignments}
         isSaving={isSaving}
       />
 

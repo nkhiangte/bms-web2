@@ -5,7 +5,6 @@ import { Student, TcRecord, Grade, Gender, Category, StudentStatus, User } from 
 import { db } from '@/firebaseConfig';
 import { BackIcon, HomeIcon, SearchIcon, DocumentPlusIcon, CheckIcon, SpinnerIcon, SparklesIcon, PrinterIcon } from '@/components/Icons';
 import { formatStudentId, formatDateForDisplay, formatDateForStorage } from '@/utils';
-import { GoogleGenAI } from "@google/genai";
 import ConfirmationModal from '@/components/ConfirmationModal';
 
 const { useNavigate, useParams, Link } = ReactRouterDOM as any;
@@ -268,24 +267,71 @@ export const GenerateTcPage: React.FC<GenerateTcPageProps> = ({ students, tcReco
         }
     }, [existingTc, foundStudent]);
 
+    const convertDateToWordsLocal = (dateString: string): string => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+
+        const ordinals = [
+            "", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth",
+            "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth", "Twentieth",
+            "Twenty-First", "Twenty-Second", "Twenty-Third", "Twenty-Fourth", "Twenty-Fifth", "Twenty-Sixth", "Twenty-Seventh", "Twenty-Eighth", "Twenty-Ninth", "Thirtieth", "Thirty-First"
+        ];
+
+        const numToWords = (n: number): string => {
+            const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+            const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+            if (n < 20) return units[n];
+            const digit = n % 10;
+            return tens[Math.floor(n / 10)] + (digit ? "-" + units[digit] : "");
+        };
+
+        let yearWords = "";
+        if (year >= 2000 && year < 2100) {
+            const lastTwo = year % 100;
+            yearWords = lastTwo === 0 ? "Two Thousand" : `Two Thousand and ${numToWords(lastTwo)}`;
+        } else if (year >= 1900 && year < 2000) {
+            const lastTwo = year % 100;
+            yearWords = lastTwo === 0 ? "Nineteen Hundred" : `Nineteen Hundred and ${numToWords(lastTwo)}`;
+        } else {
+            yearWords = String(year);
+        }
+
+        const dayWord = ordinals[day] || `${day}th`;
+        return `${dayWord} of ${month}, ${yearWords}`;
+    };
+
     const handleGenerateDateInWords = async () => {
         if (!formData.dateOfBirth) return;
         setIsGeneratingWords(true);
+        const formattedDate = formatDateForDisplay(formData.dateOfBirth);
         try {
-            const prompt = `Convert the date ${formatDateForDisplay(formData.dateOfBirth)} into words. For example, for "15/08/1947" you should respond with "Fifteenth of August, Nineteen Hundred and Forty-Seven". Do not add any extra formatting or quotation marks.`;
-            
-            const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY});
-            const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: prompt,
+            const res = await fetch('/api/ai/date-in-words', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dateStr: formattedDate }),
             });
-            const text = response.text;
-            if (text) {
-                setFormData(prev => ({ ...prev, dateOfBirthInWords: text.replace(/["*]/g, '').trim() }));
+            if (res.ok) {
+                const data = await res.json();
+                if (data.dateInWords) {
+                    setFormData(prev => ({ ...prev, dateOfBirthInWords: data.dateInWords }));
+                    return;
+                }
+            }
+            // Fallback to local conversion
+            const fallback = convertDateToWordsLocal(formData.dateOfBirth);
+            if (fallback) {
+                setFormData(prev => ({ ...prev, dateOfBirthInWords: fallback }));
             }
         } catch (error) {
-            console.error("AI Generation failed:", error);
-            alert("Failed to generate date in words. Please enter it manually.");
+            console.warn("Server date-in-words API failed, using local conversion fallback:", error);
+            const fallback = convertDateToWordsLocal(formData.dateOfBirth);
+            if (fallback) {
+                setFormData(prev => ({ ...prev, dateOfBirthInWords: fallback }));
+            }
         } finally {
             setIsGeneratingWords(false);
         }

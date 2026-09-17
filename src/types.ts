@@ -795,6 +795,35 @@ export interface NavMenuItem {
     updatedAt?: string;
 }
 
+export type QuestionType = 'mcq' | 'short' | 'long' | 'true_false' | 'fill_blank';
+export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+export type QuestionExamType = 'terminal1' | 'terminal2' | 'terminal3' | 'class_test' | 'annual' | 'general';
+
+export interface QuestionBankItem {
+    id: string;
+    grade: Grade;
+    subject: string;
+    chapter?: string;
+    type: QuestionType;
+    question: string;
+    options?: string[]; // for MCQ
+    correctAnswer?: string;
+    explanation?: string;
+    marks: number;
+    difficulty: QuestionDifficulty;
+    examType?: QuestionExamType;
+    academicYear?: string;
+    tags?: string[];
+    createdBy?: {
+        uid: string;
+        name: string;
+        email?: string;
+        staffId?: string;
+    };
+    createdAt: string;
+    updatedAt?: string;
+}
+
 declare global {
     interface Window {
         Razorpay: any;

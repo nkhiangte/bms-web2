@@ -73,6 +73,21 @@
         "distinctionListImageUrl": { "type": "string" }
       },
       "required": ["year", "appeared", "passed"]
+    },
+    "QuestionBankItem": {
+      "title": "QuestionBankItem",
+      "description": "Question bank item for exam generation and teacher workspace",
+      "type": "object",
+      "properties": {
+        "grade": { "type": "string" },
+        "subject": { "type": "string" },
+        "chapter": { "type": "string" },
+        "type": { "type": "string", "enum": ["mcq", "short", "long", "fill", "true_false"] },
+        "question": { "type": "string" },
+        "marks": { "type": "number" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] }
+      },
+      "required": ["grade", "subject", "question"]
     }
   },
   "firestore": {
@@ -95,6 +110,10 @@
     "/hslc_results/{resultId}": {
       "schema": "HSLCResultSummary",
       "description": "Yearly HSLC results statistics"
+    },
+    "/questionBank/{questionId}": {
+      "schema": "QuestionBankItem",
+      "description": "Curated repository of academic questions by grade and subject"
     }
   }
 }

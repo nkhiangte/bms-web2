@@ -21,7 +21,8 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() &&
              (hasRole('admin') || 
-              (request.auth.token.email == "nkhiangte@gmail.com" && request.auth.token.email_verified == true));
+              request.auth.token.email == "nkhiangte@gmail.com" ||
+              (request.auth.token.email != null && request.auth.token.email.lower() == "nkhiangte@gmail.com"));
     }
 
     function isStaff() {
@@ -52,16 +53,6 @@ service cloud.firestore {
               .data.studentIds
           : []
         );
-    }
-
-    function canAccessStudent(studentId) {
-      return isStaff() ||
-             (isParent() && studentId in getParentStudentIds());
-    }
-    
-    function canAccessGrade(grade) {
-      let studentIds = getParentStudentIds();
-      return isStaff() || (isParent() && studentIds.size() > 0);
     }
 
     // ---------------------------
@@ -228,11 +219,26 @@ service cloud.firestore {
     // ---------------------------
     match /homework/{homeworkId} {
       allow list: if isStaff() || isParent();
-      allow get: if isStaff() || (isParent() && canAccessGrade(resource.data.grade));
+      allow get: if isStaff() || (isParent() && getParentStudentIds().size() > 0);
       allow create, update, delete: if isStaff();
     }
     
     match /syllabus/{syllabusId} {
+      allow read, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    match /questionBank/{questionId} {
+      allow read, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /achievements/{docId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /textbooks/{docId} {
       allow read, list: if true;
       allow create, update, delete: if isStaff();
     }
@@ -253,8 +259,12 @@ service cloud.firestore {
     // Inventory System
     // ---------------------------
     match /inventory/{docId} {
-      allow read, list, write: if isSignedIn() && (isStaff() || request.auth.token.email == "nkhiangte@gmail.com");
+      allow read, list, write: if isSignedIn() && (isStaff() || (request.auth.token.email != null && request.auth.token.email.lower() == "nkhiangte@gmail.com"));
       allow delete: if isAdmin();
+    }
+
+    match /students_archive/{year}/students/{studentId} {
+      allow read, list, write, delete: if isStaff();
     }
 
     // ---------------------------

@@ -3,9 +3,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon, CheckIcon } from '@/components/Icons';
 import AcademicYearForm from '@/components/AcademicYearForm';
-import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry, Staff, StaffAttendanceRecord, AttendanceStatus } from '@/types';
+import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry, Staff, StaffAttendanceRecord, AttendanceStatus, Syllabus, Homework, ExamRoutine } from '@/types';
 import { getDistanceFromLatLonInM } from '@/utils';
 import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
+import { TeacherWorkspace } from '@/components/TeacherWorkspace';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
@@ -24,6 +25,9 @@ interface DashboardPageProps {
   pendingStaffCount: number;
   onUpdateAcademicYear: (year: string) => Promise<void>;
   disciplineLog: HostelDisciplineEntry[]; // FIX: Add disciplineLog prop
+  syllabus?: Syllabus[];
+  homework?: Homework[];
+  examRoutines?: ExamRoutine[];
 }
 
 const DashboardCard: React.FC<{
@@ -215,7 +219,25 @@ const StaffAttendanceWidget: React.FC<{
     );
 };
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAttendance, onMarkStaffAttendance, studentCount, academicYear, assignedGrade, assignedSubjects, calendarEvents, pendingAdmissionsCount, pendingParentCount, pendingStaffCount, onUpdateAcademicYear, disciplineLog }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ 
+  user, 
+  staff, 
+  todayStaffAttendance, 
+  onMarkStaffAttendance, 
+  studentCount, 
+  academicYear, 
+  assignedGrade, 
+  assignedSubjects, 
+  calendarEvents, 
+  pendingAdmissionsCount, 
+  pendingParentCount, 
+  pendingStaffCount, 
+  onUpdateAcademicYear, 
+  disciplineLog,
+  syllabus = [],
+  homework = [],
+  examRoutines = []
+}) => {
   const navigate = useNavigate();
   const [isChangingYear, setIsChangingYear] = useState(false);
   
@@ -228,6 +250,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAt
 
   const isAdmin = user.role === 'admin';
   const totalPending = pendingAdmissionsCount + pendingParentCount + pendingStaffCount;
+
+  const currentUserStaffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase()), [staff, user.email]);
+
+  const isTeacher = user.role === 'user' || Boolean(currentUserStaffProfile?.assignedSubjects && currentUserStaffProfile.assignedSubjects.length > 0);
+  const [activeDashboardTab, setActiveDashboardTab] = useState<'workspace' | 'modules'>(isTeacher ? 'workspace' : 'modules');
   
   const upcomingEvents = useMemo(() => {
     if (!calendarEvents) return [];
@@ -241,8 +268,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAt
         })
         .slice(0, 5); // Show up to 5 upcoming events
     }, [calendarEvents]);
-
-  const currentUserStaffProfile = useMemo(() => staff.find(s => s.emailAddress.toLowerCase() === user.email?.toLowerCase()), [staff, user.email]);
   
   const isDateHoliday = (date: Date) => {
       const dayOfWeek = date.getDay();
@@ -344,30 +369,86 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAt
                 onMarkAttendance={onMarkStaffAttendance} 
             />
         )}
-        
-        {(isAdmin || user.role === 'user' || user.role === 'warden') &&
-            <UpcomingEventsCard events={upcomingEvents} isAdmin={isAdmin} />
-        }
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isAdmin && (
-                <DashboardCard
-                    title="Admin Panel"
-                    description="Access all administrative functions."
-                    icon={<CogIcon className="w-7 h-7" />}
-                    count={totalPending > 0 ? totalPending : undefined}
-                    color="rose"
-                    action={<Link to="/portal/admin">Go to Admin Panel</Link>}
-                />
-            )}
-             <DashboardCard
-                title={isAdmin ? "Manage Students" : "View Students"}
-                description={isAdmin ? `View, edit, or delete student records for ${academicYear}.` : `Browse all active students in ${academicYear}.`}
-                icon={<UsersIcon className="w-7 h-7" />}
-                count={studentCount}
-                color="sky"
-                action={<Link to="/portal/students">View Active Students</Link>}
+        {/* Tab Switcher for Teachers & Admins */}
+        {(isTeacher || isAdmin) && (
+            <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl w-fit mb-6">
+                <button
+                    onClick={() => setActiveDashboardTab('workspace')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        activeDashboardTab === 'workspace'
+                            ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60'
+                            : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                >
+                    <AcademicCapIcon className="w-4 h-4" />
+                    Teacher Workspace &amp; Question Bank
+                </button>
+                <button
+                    onClick={() => setActiveDashboardTab('modules')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        activeDashboardTab === 'modules'
+                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                            : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                >
+                    <BookOpenIcon className="w-4 h-4" />
+                    School Modules &amp; Overview
+                </button>
+            </div>
+        )}
+
+        {activeDashboardTab === 'workspace' ? (
+            <TeacherWorkspace
+                user={user}
+                staff={staff}
+                assignedGrade={assignedGrade}
+                assignedSubjects={assignedSubjects}
+                syllabus={syllabus}
+                homework={homework}
+                examRoutines={examRoutines}
+                academicYear={academicYear}
+                isEmbeddedInDashboard={true}
             />
+        ) : (
+            <>
+                {(isAdmin || user.role === 'user' || user.role === 'warden') &&
+                    <UpcomingEventsCard events={upcomingEvents} isAdmin={isAdmin} />
+                }
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <DashboardCard
+                        title="Teacher Workspace"
+                        description="Access your assigned classes, Question Bank, and AI question generator."
+                        icon={<AcademicCapIcon className="w-7 h-7" />}
+                        color="indigo"
+                        action={
+                            <button
+                                onClick={() => setActiveDashboardTab('workspace')}
+                                className="inline-flex items-center justify-center w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
+                            >
+                                Open Workspace
+                            </button>
+                        }
+                    />
+                    {isAdmin && (
+                        <DashboardCard
+                            title="Admin Panel"
+                            description="Access all administrative functions."
+                            icon={<CogIcon className="w-7 h-7" />}
+                            count={totalPending > 0 ? totalPending : undefined}
+                            color="rose"
+                            action={<Link to="/portal/admin">Go to Admin Panel</Link>}
+                        />
+                    )}
+                     <DashboardCard
+                        title={isAdmin ? "Manage Students" : "View Students"}
+                        description={isAdmin ? `View, edit, or delete student records for ${academicYear}.` : `Browse all active students in ${academicYear}.`}
+                        icon={<UsersIcon className="w-7 h-7" />}
+                        count={studentCount}
+                        color="sky"
+                        action={<Link to="/portal/students">View Active Students</Link>}
+                    />
             {user.role === 'user' && assignedGrade && (
                  <DashboardCard
                     title="My Class"
@@ -491,6 +572,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user, staff, todayStaffAt
                 action={<Link to="/portal/staff">{"View Staff"}</Link>}
             />}
         </div>
+        </>
+        )}
     </div>
   );
 };

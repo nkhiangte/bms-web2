@@ -37,6 +37,7 @@ const sidebarCategories: CategoryData[] = [
         name: 'Dashboard',
         items: [
             { name: 'Portal Home', path: '/portal/dashboard', parentPath: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden', 'pending_parent'] },
+            { name: 'Teacher Workspace', path: '/portal/teacher-workspace', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Parent Dashboard', path: '/portal/parent-dashboard', icon: <HomeIcon className="w-5 h-5" />, roles: ['admin', 'user', 'warden'], hidden: (user: User) => !(user.studentIds && user.studentIds.length > 0) },
             { name: 'My Profile', path: '/portal/profile', icon: <UserIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'warden'] },
             { name: 'Admin Panel', path: '/portal/admin', icon: <CogIcon className="w-5 h-5" />, roles: ['admin'] },
@@ -47,6 +48,7 @@ const sidebarCategories: CategoryData[] = [
         items: [
             { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+            { name: 'Question Bank', path: '/portal/teacher-workspace?tab=question-bank', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Manage Syllabus', path: '/portal/manage-syllabus', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Class Routine', path: '/portal/routine', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent', 'pending', 'warden'] },
             { name: 'Attendance Log', path: '/portal/student/:studentId/attendance-log', icon: <CalendarDaysIcon className="w-5 h-5"/>, roles: ['parent'] },

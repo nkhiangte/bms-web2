@@ -10,6 +10,7 @@ interface EditableContentProps {
     type: 'text' | 'textarea' | 'image';
     user: User | null; // To check admin role
     className?: string; // For styling the display element
+    imgClassName?: string; // For styling the <img> element directly
     style?: React.CSSProperties; // Inline styles
     imgAlt?: string; // Alt text for images
     placeholder?: string;
@@ -24,6 +25,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
     type, 
     user, 
     className = '', 
+    imgClassName,
     style = {},
     imgAlt = 'Website image',
     placeholder = 'Enter content...',
@@ -209,7 +211,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 <img 
                     src={content} 
                     alt={imgAlt} 
-                    className={`w-full h-full object-cover ${isSaving ? 'opacity-50' : ''}`} 
+                    className={`${imgClassName || 'w-full h-full object-cover'} ${isSaving ? 'opacity-50' : ''}`} 
                     onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://placehold.jp/24/0f172a/ffffff/800x600.png?text=HSLC+Result+List+Placeholder\n(Please+Upload+Real+Image)';
                     }}

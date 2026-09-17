@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { 
     BackIcon, 
@@ -12,10 +12,13 @@ import {
     EditIcon,
     TrashIcon,
     PlusIcon,
+    AcademicCapIcon,
+    BookOpenIcon,
 } from '@/components/Icons';
 import { db } from '@/firebaseConfig';
 import { formatStudentId, exportStudentsToExcel } from '@/utils';
-import { Student, Grade, StudentStatus } from '@/types';
+import { Student, Grade, StudentStatus, Staff, GradeDefinition, SubjectAssignment, StaffType, EmploymentStatus } from '@/types';
+import AdminTeacherAssignmentsSection from '@/components/AdminTeacherAssignmentsSection';
 import {
     DisclosureData,
     DEFAULT_DISCLOSURE_DATA,
@@ -26,7 +29,7 @@ import {
     CommitteeRow,
 } from './MandatoryDisclosureData';
 
-const { Link, useNavigate } = ReactRouterDOM as any;
+const { Link, useNavigate, useSearchParams } = ReactRouterDOM as any;
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -591,6 +594,9 @@ interface AdminPageProps {
     academicYear: string;
     disclosureData: DisclosureData;
     onSaveDisclosure: (data: DisclosureData) => Promise<void>;
+    staff?: Staff[];
+    gradeDefinitions?: Record<Grade, GradeDefinition>;
+    onUpdateStaffAssignments?: (teacherId: string, assignedSubjects: SubjectAssignment[], assignedGradeKey: Grade | null) => Promise<void>;
 }
 
 // ─── AdminPage ────────────────────────────────────────────────────────────────
@@ -603,12 +609,39 @@ const AdminPage: React.FC<AdminPageProps> = ({
     academicYear,
     disclosureData,
     onSaveDisclosure,
+    staff = [],
+    gradeDefinitions = {} as Record<Grade, GradeDefinition>,
+    onUpdateStaffAssignments,
 }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [migrating, setMigrating] = useState(false);
     const [migrateResult, setMigrateResult] = useState<string | null>(null);
     const [showDisclosure, setShowDisclosure] = useState(false);
     const [showStudentExport, setShowStudentExport] = useState(false);
+    const [showTeacherAssignments, setShowTeacherAssignments] = useState(false);
+
+    // Auto-open if query or hash has teacher-assignments
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab === 'teacher-assignments' || window.location.hash.includes('teacher-assignments')) {
+            setShowTeacherAssignments(true);
+            setTimeout(() => {
+                document.getElementById('teacher-assignments-section')?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+    }, [searchParams]);
+
+    // Count teachers who still need subjects assigned
+    const unassignedTeachersCount = useMemo(() => {
+        if (!staff) return 0;
+        return staff.filter(s => {
+            const isRemoved = s.status === EmploymentStatus.RESIGNED || s.status === EmploymentStatus.DROPPED || s.removalYear;
+            if (isRemoved) return false;
+            const isTeaching = s.staffType === StaffType.TEACHING || (s.staffType as any) === 'Teaching' || s.department?.toLowerCase().includes('teach') || s.designation?.toLowerCase().includes('teacher');
+            return isTeaching && (!s.assignedSubjects || s.assignedSubjects.length === 0);
+        }).length;
+    }, [staff]);
 
     const handleMigrateStudentIds = async () => {
         if (!window.confirm('This will write the correct studentId and academicYear into every student record that is missing them. Continue?')) return;
@@ -727,6 +760,17 @@ const AdminPage: React.FC<AdminPageProps> = ({
                     <AdminCard key={link.title} {...link} />
                 ))}
                 <AdminCard
+                    title="Assign Subjects to Teachers"
+                    description="Allocate teaching subjects and official class teacher roles across all faculty members."
+                    icon={<AcademicCapIcon className="w-7 h-7" />}
+                    accent="border-indigo-500"
+                    count={unassignedTeachersCount > 0 ? unassignedTeachersCount : undefined}
+                    onClick={() => { 
+                        setShowTeacherAssignments(v => !v); 
+                        window.setTimeout(() => document.getElementById('teacher-assignments-section')?.scrollIntoView({ behavior: 'smooth' }), 50); 
+                    }}
+                />
+                <AdminCard
                     title="Export Student Details"
                     description="Download registered students details for each class in Excel format."
                     icon={<InboxArrowDownIcon className="w-7 h-7" />}
@@ -741,6 +785,26 @@ const AdminPage: React.FC<AdminPageProps> = ({
                     onClick={() => { setShowDisclosure(v => !v); window.setTimeout(() => document.getElementById('disclosure-editor')?.scrollIntoView({ behavior: 'smooth' }), 50); }}
                 />
             </div>
+
+            {showTeacherAssignments && (
+                <div className="relative mt-8">
+                    <div className="flex justify-end mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowTeacherAssignments(false)}
+                            className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                        >
+                            ✕ Close Subject Assignments
+                        </button>
+                    </div>
+                    <AdminTeacherAssignmentsSection
+                        staff={staff}
+                        gradeDefinitions={gradeDefinitions}
+                        academicYear={academicYear}
+                        onUpdateStaffAssignments={onUpdateStaffAssignments}
+                    />
+                </div>
+            )}
 
             {showStudentExport && (
                 <div id="student-export-section" className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-md scroll-mt-6 text-slate-800">

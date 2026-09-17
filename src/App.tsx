@@ -17,6 +17,7 @@ import ParentRegistrationPage from '@/pages/ParentRegistrationPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
+import TeacherWorkspacePage from '@/pages/TeacherWorkspacePage';
 import StudentListPage from '@/pages/StudentListPage';
 import DropBoxPage from '@/pages/DropBoxPage';
 import StudentDetailPage from '@/pages/StudentDetailPage';
@@ -620,6 +621,45 @@ const App: React.FC = () => {
     } catch (error: any) { addNotification('Failed to save staff.', 'error'); }
   };
 
+  const handleUpdateStaffAssignments = async (
+    teacherId: string,
+    assignedSubjects: SubjectAssignment[],
+    assignedGradeKey: Grade | null
+  ) => {
+    try {
+      const batch = db.batch();
+      const staffRef = db.collection('staff').doc(teacherId);
+      batch.update(staffRef, { assignedSubjects });
+
+      // Handle class teacher assignment updates in gradeDefinitions
+      const currentAssignedGrade = Object.keys(gradeDefinitions).find(
+        (g) => gradeDefinitions[g as Grade]?.classTeacherId === teacherId
+      ) as Grade | undefined;
+
+      const configRef = db.collection('config').doc('gradeDefinitions');
+
+      if (assignedGradeKey && assignedGradeKey !== currentAssignedGrade) {
+        const updates: Record<string, any> = {};
+        if (currentAssignedGrade) {
+          updates[`${currentAssignedGrade}.classTeacherId`] = firebase.firestore.FieldValue.delete();
+        }
+        updates[`${assignedGradeKey}.classTeacherId`] = teacherId;
+        batch.update(configRef, updates);
+      } else if (!assignedGradeKey && currentAssignedGrade) {
+        batch.update(configRef, {
+          [`${currentAssignedGrade}.classTeacherId`]: firebase.firestore.FieldValue.delete(),
+        });
+      }
+
+      await batch.commit();
+      addNotification('Teacher class & subject assignments updated successfully.', 'success');
+    } catch (error: any) {
+      console.error('Failed to update teacher assignments:', error);
+      addNotification(`Failed to update assignments: ${error.message || 'Unknown error'}`, 'error');
+      throw error;
+    }
+  };
+
   const handleDeleteStaff = async (staffMember: Staff, removalReason?: string) => {
     try {
       await db.collection('staff').doc(staffMember.id).update({
@@ -786,8 +826,32 @@ const App: React.FC = () => {
           }
 
           const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
-          const isAdminEmail = firebaseUser.email === 'nkhiangte@gmail.com';
-          const userData = userDoc.exists ? { uid: firebaseUser.uid, ...userDoc.data() } as User : { uid: firebaseUser.uid, email: firebaseUser.email || '', displayName: firebaseUser.displayName || 'User', role: isAdminEmail ? 'admin' : 'pending', isNewUser: true } as User & { isNewUser?: boolean };
+          const isAdminEmail = firebaseUser.email?.toLowerCase() === 'nkhiangte@gmail.com';
+          let userData: User & { isNewUser?: boolean };
+
+          if (userDoc.exists) {
+            userData = { uid: firebaseUser.uid, ...userDoc.data() } as User;
+            if (isAdminEmail && userData.role !== 'admin') {
+              userData.role = 'admin';
+              db.collection('users').doc(firebaseUser.uid).set({ role: 'admin' }, { merge: true }).catch(console.error);
+            }
+          } else {
+            const assignedRole = isAdminEmail ? 'admin' : (matchedStaff ? 'user' : 'pending');
+            userData = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || (isAdminEmail ? 'Administrator' : (matchedStaff ? `${matchedStaff.firstName} ${matchedStaff.lastName}`.trim() : 'User')),
+              role: assignedRole,
+              isNewUser: !isAdminEmail && !matchedStaff
+            };
+            db.collection('users').doc(firebaseUser.uid).set({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: userData.displayName,
+              role: assignedRole,
+              createdAt: new Date().toISOString()
+            }, { merge: true }).catch(console.error);
+          }
           
           setUser(userData);
 
@@ -1100,12 +1164,13 @@ const App: React.FC = () => {
         <Route path="/reset-password" element={<ResetPasswordPage onResetPassword={async (newPassword) => { try { const actionCode = new URLSearchParams(window.location.search).get('oobCode'); if (!actionCode) throw new Error('Missing action code.'); await auth.confirmPasswordReset(actionCode, newPassword); return { success: true, message: 'Password reset! You can now log in.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
 
         <Route path="/portal" element={authLoading ? <LoadingScreen /> : (user ? ((user as any).isNewUser ? <Navigate to="/parent-registration" replace /> : <DashboardLayout user={user} onLogout={handleLogout} students={students} staff={staff} tcRecords={tcRecords} serviceCerts={serviceCerts} academicYear={academicYear} />) : <Navigate to="/login" replace />)}>
-          <Route path="dashboard" element={user?.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> : <DashboardPage user={user!} staff={staff} todayStaffAttendance={staffAttendance} onMarkStaffAttendance={handleMarkStaffAttendance} studentCount={students.filter(s => (s.status === StudentStatus.ACTIVE || !s.status) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} />} />
+          <Route path="dashboard" element={user?.role === 'parent' ? <Navigate to="/portal/parent-dashboard" replace /> : <DashboardPage user={user!} staff={staff} todayStaffAttendance={staffAttendance} onMarkStaffAttendance={handleMarkStaffAttendance} studentCount={students.filter(s => (s.status === StudentStatus.ACTIVE || !s.status) && normalizeAcademicYear(s.academicYear) === normalizeAcademicYear(academicYear)).length} academicYear={academicYear} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} calendarEvents={calendarEvents} pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} onUpdateAcademicYear={handleUpdateAcademicYear} disciplineLog={hostelDisciplineLog} syllabus={syllabus} homework={homework} examRoutines={examRoutines} />} />
+          <Route path="teacher-workspace" element={<TeacherWorkspacePage user={user!} staff={staff} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} syllabus={syllabus} homework={homework} examRoutines={examRoutines} academicYear={academicYear} gradeDefinitions={gradeDefinitions} onUpdateStaffAssignments={handleUpdateStaffAssignments} />} />
           <Route path="parent-dashboard" element={<ParentDashboardPage user={user!} allStudents={students} onLinkChild={async (c: StudentClaim) => { await db.collection('users').doc(user!.uid).update({ claimedStudents: firebase.firestore.FieldValue.arrayUnion(c) }); addNotification('Child linking request submitted!', 'success'); }} currentAttendance={dailyStudentAttendance} news={news} staff={staff} gradeDefinitions={gradeDefinitions} homework={homework} syllabus={syllabus} onSendMessage={handleSendMessage} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} feeStructure={feeStructure} />} />
           <Route path="announcements" element={<AnnouncementsPage user={user!} notices={notices} />} />
           <Route path="student/:studentId/profile" element={<StudentProfilePage user={user!} students={students} admissions={onlineAdmissions} />} />
           <Route path="fees/:studentId" element={<ParentFeePortalPage user={user!} students={students} feeStructure={feeStructure} paymentRecords={paymentRecords} schoolConfig={schoolConfig} />} />
-          <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} />} />
+          <Route path="admin" element={<AdminPage pendingAdmissionsCount={pendingAdmissionsCount} pendingParentCount={pendingParentCount} pendingStaffCount={pendingStaffCount} students={students} academicYear={academicYear} disclosureData={disclosureData} onSaveDisclosure={handleSaveDisclosure} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateStaffAssignments={handleUpdateStaffAssignments} />} />
           <Route path="profile" element={<UserProfilePage currentUser={user!} allStudents={students} onUpdateProfile={handleUpdateUserProfile} />} />
           <Route path="change-password" element={<ChangePasswordPage onChangePassword={async (c, n) => { try { const cr = firebase.auth.EmailAuthProvider.credential(user!.email!, c); await auth.currentUser?.reauthenticateWithCredential(cr); await auth.currentUser?.updatePassword(n); return { success: true, message: 'Password changed.' }; } catch (err: any) { return { success: false, message: err.message }; } }} />} />
           <Route path="students" element={<StudentListPage students={students} onAdd={handleAddStudent} onEdit={handleEditStudent} onDelete={handlePermanentDeleteStudent} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} gradeDefinitions={gradeDefinitions} />} />
@@ -1116,11 +1181,11 @@ const App: React.FC = () => {
           <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} user={user!} />} />
           <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
           <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={dailyStudentAttendance} onUpdateAttendance={handleMarkStudentAttendance} user={user!} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={fetchStudentAttendanceForRange} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
-          <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} />} />
+          <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} onUpdateStaffAssignments={handleUpdateStaffAssignments} />} />
           <Route path="teacher-drop-box" element={<TeacherDropBoxPage staff={staff} academicYear={academicYear} user={user!} onReinstateStaff={handleReinstateStaff} onPermanentDeleteStaff={handlePermanentDeleteStaff} onEditStaff={handleSaveStaff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="staff/attendance" element={<StaffAttendancePage user={user!} staff={staff} attendance={staffAttendance} onMarkAttendance={handleMarkStaffAttendance} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} calendarEvents={calendarEvents} />} />
           <Route path="staff/attendance-logs" element={<StaffAttendanceLogPage staff={staff} students={students} gradeDefinitions={gradeDefinitions} fetchStaffAttendanceForMonth={fetchStaffAttendanceForMonth} fetchStaffAttendanceForRange={fetchStaffAttendanceForRange} academicYear={academicYear} user={user!} calendarEvents={calendarEvents} />} />
-          <Route path="staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={handleSaveStaff} gradeDefinitions={gradeDefinitions} user={user!} />} />
+          <Route path="staff/:staffId" element={<StaffDetailPage staff={staff} onEdit={handleSaveStaff} gradeDefinitions={gradeDefinitions} user={user!} onUpdateStaffAssignments={handleUpdateStaffAssignments} />} />
           <Route path="staff/certificates" element={<StaffDocumentsPage serviceCertificateRecords={serviceCerts} user={user!} />} />
           <Route path="staff/certificates/generate" element={<GenerateServiceCertificatePage staff={staff} onSave={handleGenerateServiceCertificate} user={user!} />} />
           <Route path="staff/certificates/print/:certId" element={<PrintServiceCertificatePage serviceCertificateRecords={serviceCerts} />} />

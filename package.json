@@ -1,11 +1,12 @@
 {
   "name": "bethel-mission-school---website",
   "private": true,
-  "version": "1.25.0",
+  "version": "1.26.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -15,6 +16,7 @@
     "@google/genai": "latest",
     "@jitsi/react-sdk": "^1.4.4",
     "@tailwindcss/typography": "^0.5.19",
+    "express": "^5.2.1",
     "firebase": "12.2.0",
     "html2canvas": "1.4.1",
     "jimp": "^1.6.1",
@@ -33,12 +35,15 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.4.1",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
+    "esbuild": "^0.28.2",
     "postcss": "^8.4.39",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.4",
+    "tsx": "^4.23.13",
     "typescript": "^5.5.3",
     "vite": "^5.3.1"
   }

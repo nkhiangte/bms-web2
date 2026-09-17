@@ -426,3 +426,21 @@ input[type=number] { -moz-appearance: textfield; }
   font-weight: 800;
   letter-spacing: 0.08em;
 }
+
+/* Ensure inputs and selects inside light/white surfaces have readable dark text and white background */
+.bg-white input:not([type="checkbox"]):not([type="radio"]),
+.bg-white select,
+.bg-white textarea,
+.bg-slate-50 input:not([type="checkbox"]):not([type="radio"]),
+.bg-slate-50 select,
+.bg-slate-50 textarea {
+  color: #0f172a !important;
+  background-color: #ffffff;
+}
+
+.bg-white select option,
+.bg-slate-50 select option {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+

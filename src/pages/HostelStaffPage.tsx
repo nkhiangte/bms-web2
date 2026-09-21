@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+import * as XLSX from 'xlsx';
+import { FileSpreadsheet } from 'lucide-react';
 import { BackIcon, HomeIcon, BriefcaseIcon, UserIcon, PhoneIcon, UserGroupIcon, CalendarDaysIcon, PlusIcon, EditIcon, TrashIcon } from '@/components/Icons';
 import { HostelStaff, HostelStaffRole, PaymentStatus, User } from '@/types';
 
@@ -78,6 +80,57 @@ const HostelStaffPage: React.FC<HostelStaffPageProps> = ({ staff, onAdd, onEdit,
     const wardens = useMemo(() => staff.filter(s => s.role === HostelStaffRole.WARDEN), [staff]);
     const otherStaff = useMemo(() => staff.filter(s => s.role !== HostelStaffRole.WARDEN), [staff]);
 
+    const handleDownloadXlsx = () => {
+        if (!staff || staff.length === 0) {
+            alert('No hostel staff data available to export.');
+            return;
+        }
+
+        const headers = [
+            'Sl. No.',
+            'Name',
+            'Role',
+            'Duty Shift',
+            'Assigned Block',
+            'Contact Number',
+            'Date of Joining',
+            'Salary (INR)',
+            'Payment Status'
+        ];
+
+        const rows = staff.map((member, index) => [
+            index + 1,
+            member.name || '',
+            member.role || '',
+            member.dutyShift || '',
+            member.assignedBlock || 'N/A',
+            member.contactNumber || '',
+            member.dateOfJoining || '',
+            member.salary ?? '',
+            member.paymentStatus || ''
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+        // Auto-compute column widths
+        const colWidths = headers.map((header, colIdx) => {
+            let maxLen = header.length;
+            for (const row of rows) {
+                const cellVal = row[colIdx];
+                if (cellVal !== undefined && cellVal !== null) {
+                    maxLen = Math.max(maxLen, String(cellVal).length);
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 3, 12), 35) };
+        });
+        ws['!cols'] = colWidths;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Hostel Staff');
+        const today = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `BMS_Hostel_Staff_${today}.xlsx`);
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex justify-between items-center">
@@ -99,14 +152,25 @@ const HostelStaffPage: React.FC<HostelStaffPageProps> = ({ staff, onAdd, onEdit,
                         <p className="text-slate-600 mt-1">Manage records for wardens, mess staff, and their duties.</p>
                     </div>
                  </div>
-                 <button
-                    onClick={onAdd}
-                    disabled={user.role !== 'admin'}
-                    className="btn btn-primary disabled:bg-slate-400 disabled:cursor-not-allowed"
-                 >
-                    <PlusIcon className="w-5 h-5" />
-                    Add New Staff
-                </button>
+                 <div className="flex items-center gap-3">
+                     <button
+                        type="button"
+                        onClick={handleDownloadXlsx}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold rounded-lg shadow-sm transition cursor-pointer"
+                        title="Download hostel staff list as Excel spreadsheet (.xlsx)"
+                     >
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
+                        <span>Download XLSX</span>
+                     </button>
+                     <button
+                        onClick={onAdd}
+                        disabled={user.role !== 'admin'}
+                        className="btn btn-primary disabled:bg-slate-400 disabled:cursor-not-allowed"
+                     >
+                        <PlusIcon className="w-5 h-5" />
+                        Add New Staff
+                     </button>
+                 </div>
             </div>
 
             <div className="space-y-10">

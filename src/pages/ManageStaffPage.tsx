@@ -19,6 +19,7 @@ import {
     BookOpenIcon
 } from '@/components/Icons';
 import * as XLSX from 'xlsx';
+import { FileSpreadsheet } from 'lucide-react';
 import PhotoWithFallback from '@/components/PhotoWithFallback';
 import StaffFormModal from '@/components/StaffFormModal';
 import ConfirmationModal from '@/components/ConfirmationModal'; 
@@ -400,53 +401,112 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
       }
   };
 
+  const createWorksheetWithWidths = (headers: string[], rows: (string | number)[][]) => {
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const colWidths = headers.map((header, colIdx) => {
+        let maxLen = header.length;
+        for (const row of rows) {
+            const cellVal = row[colIdx];
+            if (cellVal !== undefined && cellVal !== null) {
+                maxLen = Math.max(maxLen, String(cellVal).length);
+            }
+        }
+        return { wch: Math.min(Math.max(maxLen + 3, 10), 45) };
+    });
+    ws['!cols'] = colWidths;
+    return ws;
+  };
+
   const getExportData = (dataToExport: Staff[]) => {
     const headers = [
-        'EmployeeID', 'StaffType', 'FirstName', 'LastName', 'Gender', 'DateOfBirth', 'Nationality', 
-        'MaritalStatus', 'BloodGroup', 'AadhaarNumber', 'ContactNumber', 'EmailAddress', 
-        'PermanentAddress', 'CurrentAddress', 'EducationalQualification', 'Specialization', 
-        'YearsOfExperience', 'PreviousExperience', 'DateOfJoining', 'Department', 'Designation', 
-        'EmployeeType', 'Status', 'AssignedSubjects', 'TeacherLicenseNumber', 'SalaryGrade', 
-        'BasicSalary', 'BankAccountNumber', 'BankName', 'PANNumber', 'EmergencyContactName', 
-        'EmergencyContactRelationship', 'EmergencyContactNumber', 'MedicalConditions'
+        'Sl. No.',
+        'Employee ID',
+        'Full Name',
+        'First Name',
+        'Last Name',
+        'Staff Type',
+        'Designation',
+        'Department',
+        'Class Teacher Of',
+        'Assigned Subjects & Classes',
+        'Status',
+        'Employee Type',
+        'Highest Qualification',
+        'Specialization',
+        'Years of Experience',
+        'Previous Experience',
+        'Date of Joining',
+        'Date of Birth',
+        'Contact Number',
+        'Email Address',
+        'Gender',
+        'Salary Grade',
+        'Basic Salary (INR)',
+        'Bank Name',
+        'Bank Account Number',
+        'PAN Number',
+        'Aadhaar Number',
+        'Teacher License Number',
+        'Blood Group',
+        'Nationality',
+        'Marital Status',
+        'Current Address',
+        'Permanent Address',
+        'Emergency Contact Name',
+        'Emergency Contact Relationship',
+        'Emergency Contact Phone',
+        'Medical Conditions'
     ];
 
-    const rows = dataToExport.map(member => [
-        member.employeeId || '',
-        member.staffType || '',
-        member.firstName || '',
-        member.lastName || '',
-        member.gender || '',
-        member.dateOfBirth || '',
-        member.nationality || '',
-        member.maritalStatus || '',
-        member.bloodGroup || '',
-        member.aadhaarNumber || '',
-        member.contactNumber || '',
-        member.emailAddress || '',
-        member.permanentAddress || '',
-        member.currentAddress || '',
-        member.educationalQualification || '',
-        member.specialization || '',
-        member.yearsOfExperience || '',
-        member.previousExperience || '',
-        member.dateOfJoining || '',
-        member.department || '',
-        member.designation || '',
-        member.employeeType || '',
-        member.status || '',
-        (member.assignedSubjects || []).map(a => `${a.grade}: ${a.subject}`).join(' | '),
-        member.teacherLicenseNumber || '',
-        member.salaryGrade || '',
-        member.basicSalary || '',
-        member.bankAccountNumber || '',
-        member.bankName || '',
-        member.panNumber || '',
-        member.emergencyContactName || '',
-        member.emergencyContactRelationship || '',
-        member.emergencyContactNumber || '',
-        member.medicalConditions || ''
-    ]);
+    const rows = dataToExport.map((member, index) => {
+        const assignedClass = gradeDefinitions
+            ? Object.entries(gradeDefinitions).find(([, def]) => (def as GradeDefinition)?.classTeacherId === member.id)?.[0] || ''
+            : '';
+
+        const subjectsStr = (member.assignedSubjects || [])
+            .map(a => `${a.grade}: ${a.subject}`)
+            .join('; ');
+
+        return [
+            index + 1,
+            member.employeeId || '',
+            `${member.firstName || ''} ${member.lastName || ''}`.trim(),
+            member.firstName || '',
+            member.lastName || '',
+            member.staffType || '',
+            member.designation || '',
+            member.department || '',
+            assignedClass ? `Class ${assignedClass}` : '—',
+            subjectsStr || '—',
+            member.status || '',
+            member.employeeType || '',
+            member.educationalQualification || '',
+            member.specialization || '',
+            member.yearsOfExperience ?? '',
+            member.previousExperience || '',
+            member.dateOfJoining || '',
+            member.dateOfBirth || '',
+            member.contactNumber || '',
+            member.emailAddress || '',
+            member.gender || '',
+            member.salaryGrade || '',
+            member.basicSalary ?? '',
+            member.bankName || '',
+            member.bankAccountNumber || '',
+            member.panNumber || '',
+            member.aadhaarNumber || '',
+            member.teacherLicenseNumber || '',
+            member.bloodGroup || '',
+            member.nationality || '',
+            member.maritalStatus || '',
+            member.currentAddress || '',
+            member.permanentAddress || '',
+            member.emergencyContactName || '',
+            member.emergencyContactRelationship || '',
+            member.emergencyContactNumber || '',
+            member.medicalConditions || ''
+        ];
+    });
     
     return { headers, rows };
   };
@@ -485,26 +545,68 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
     setIsExportMenuOpen(false);
   };
 
-  const handleDownloadXlsx = () => {
-    const dataToExport = activeTab === 'teaching' ? teachingStaff : nonTeachingStaff;
-    if (dataToExport.length === 0) {
-        alert("No staff data available to download for the current view.");
-        return;
+  const handleDownloadFullXlsx = (scope: 'all' | 'teaching' | 'non-teaching' | 'current' = 'all') => {
+    const today = new Date().toISOString().split('T')[0];
+    const wb = XLSX.utils.book_new();
+
+    if (scope === 'all') {
+        const allList = filteredStaff;
+        if (allList.length === 0) {
+            alert("No staff records available to export.");
+            return;
+        }
+
+        // Sheet 1: All Staff
+        const { headers: allHeaders, rows: allRows } = getExportData(allList);
+        const wsAll = createWorksheetWithWidths(allHeaders, allRows);
+        XLSX.utils.book_append_sheet(wb, wsAll, 'All Staff');
+
+        // Sheet 2: Teaching Staff
+        if (teachingStaff.length > 0) {
+            const { headers: tHeaders, rows: tRows } = getExportData(teachingStaff);
+            const wsTeaching = createWorksheetWithWidths(tHeaders, tRows);
+            XLSX.utils.book_append_sheet(wb, wsTeaching, 'Teaching Staff');
+        }
+
+        // Sheet 3: Non-Teaching Staff
+        if (nonTeachingStaff.length > 0) {
+            const { headers: ntHeaders, rows: ntRows } = getExportData(nonTeachingStaff);
+            const wsNonTeaching = createWorksheetWithWidths(ntHeaders, ntRows);
+            XLSX.utils.book_append_sheet(wb, wsNonTeaching, 'Non-Teaching Staff');
+        }
+
+        XLSX.writeFile(wb, `BMS_Staff_All_${today}.xlsx`);
+    } else if (scope === 'teaching') {
+        if (teachingStaff.length === 0) {
+            alert("No teaching staff records available to export.");
+            return;
+        }
+        const { headers, rows } = getExportData(teachingStaff);
+        const ws = createWorksheetWithWidths(headers, rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Teaching Staff');
+        XLSX.writeFile(wb, `BMS_Teaching_Staff_${today}.xlsx`);
+    } else if (scope === 'non-teaching') {
+        if (nonTeachingStaff.length === 0) {
+            alert("No non-teaching staff records available to export.");
+            return;
+        }
+        const { headers, rows } = getExportData(nonTeachingStaff);
+        const ws = createWorksheetWithWidths(headers, rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Non-Teaching Staff');
+        XLSX.writeFile(wb, `BMS_Non_Teaching_Staff_${today}.xlsx`);
+    } else {
+        const currentList = activeTab === 'teaching' ? teachingStaff : nonTeachingStaff;
+        if (currentList.length === 0) {
+            alert(`No ${activeTab} staff records available to export.`);
+            return;
+        }
+        const sheetName = activeTab === 'teaching' ? 'Teaching Staff' : 'Non-Teaching Staff';
+        const { headers, rows } = getExportData(currentList);
+        const ws = createWorksheetWithWidths(headers, rows);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, `BMS_Staff_${activeTab}_${today}.xlsx`);
     }
 
-    const { headers, rows } = getExportData(dataToExport);
-    
-    // Create a new workbook
-    const wb = XLSX.utils.book_new();
-    
-    // Create a worksheet from headers and rows
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    
-    // Add the worksheet to the workbook
-    XLSX.utils.book_append_sheet(wb, ws, activeTab === 'teaching' ? 'Teaching Staff' : 'Non-Teaching Staff');
-    
-    // Generate buffer and trigger download
-    XLSX.writeFile(wb, `BMS_Staff_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
     setIsExportMenuOpen(false);
   };
 
@@ -540,18 +642,95 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                           <DocumentReportIcon className="h-5 h-5" />
                           Service Certificates
                       </Link>
+                      {/* Prominent Download XLSX Button with Menu */}
                       <div className="relative">
-                          <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="btn btn-secondary w-full">
-                              <InboxArrowDownIcon className="h-5 h-5" />
-                              Export
-                              <ChevronDownIcon className="w-4 h-4" />
-                          </button>
+                          <div className="inline-flex rounded-lg shadow-sm w-full sm:w-auto">
+                              <button
+                                  type="button"
+                                  onClick={() => handleDownloadFullXlsx('current')}
+                                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm rounded-l-lg transition cursor-pointer"
+                                  title={`Download ${activeTab === 'teaching' ? 'Teaching' : 'Non-Teaching'} Staff list (.xlsx)`}
+                              >
+                                  <FileSpreadsheet className="w-4 h-4 text-emerald-100 shrink-0" />
+                                  <span>Download XLSX</span>
+                              </button>
+                              <button
+                                  type="button"
+                                  onClick={() => setIsExportMenuOpen(prev => !prev)}
+                                  className="px-2.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-r-lg border-l border-emerald-500/50 transition cursor-pointer flex items-center justify-center"
+                                  title="Export options (All Staff, Teaching, Non-Teaching, CSV, PDF)"
+                                  aria-expanded={isExportMenuOpen}
+                              >
+                                  <ChevronDownIcon className="w-4 h-4" />
+                              </button>
+                          </div>
                           {isExportMenuOpen && (
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
+                              <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl z-30 border border-slate-200 py-1.5 overflow-hidden animate-fade-in">
+                                  <div className="px-3.5 py-2.5 bg-emerald-50 border-b border-emerald-100">
+                                      <p className="text-xs font-bold text-emerald-950 uppercase tracking-wide flex items-center gap-1.5">
+                                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                                          Download Staff Excel (.xlsx)
+                                      </p>
+                                      <p className="text-[11px] text-emerald-800 mt-0.5">Compatible with Excel, Sheets & Numbers</p>
+                                  </div>
                                   <div className="py-1">
-                                      <button onClick={() => window.print()} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as PDF</button>
-                                      <button onClick={handleDownloadXlsx} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as XLSX</button>
-                                      <button onClick={handleDownloadCsv} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Export as CSV</button>
+                                      <button
+                                          type="button"
+                                          onClick={() => handleDownloadFullXlsx('all')}
+                                          className="w-full text-left px-3.5 py-2.5 text-xs text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 flex items-center justify-between transition cursor-pointer"
+                                      >
+                                          <div>
+                                              <div className="font-bold text-slate-900">All Staff (Complete Directory)</div>
+                                              <div className="text-[11px] text-slate-500">Multi-sheet workbook with all roles</div>
+                                          </div>
+                                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">
+                                              All ({filteredStaff.length})
+                                          </span>
+                                      </button>
+                                      <button
+                                          type="button"
+                                          onClick={() => handleDownloadFullXlsx('teaching')}
+                                          className="w-full text-left px-3.5 py-2.5 text-xs text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 flex items-center justify-between transition cursor-pointer"
+                                      >
+                                          <div>
+                                              <div className="font-semibold text-slate-800">Teaching Staff (.xlsx)</div>
+                                              <div className="text-[11px] text-slate-500">Subjects & assigned classes included</div>
+                                          </div>
+                                          <span className="text-[10px] bg-slate-100 text-slate-700 font-semibold px-1.5 py-0.5 rounded">
+                                              {teachingStaff.length}
+                                          </span>
+                                      </button>
+                                      <button
+                                          type="button"
+                                          onClick={() => handleDownloadFullXlsx('non-teaching')}
+                                          className="w-full text-left px-3.5 py-2.5 text-xs text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 flex items-center justify-between transition cursor-pointer"
+                                      >
+                                          <div>
+                                              <div className="font-semibold text-slate-800">Non-Teaching Staff (.xlsx)</div>
+                                              <div className="text-[11px] text-slate-500">Admin, hostel, library & sports</div>
+                                          </div>
+                                          <span className="text-[10px] bg-slate-100 text-slate-700 font-semibold px-1.5 py-0.5 rounded">
+                                              {nonTeachingStaff.length}
+                                          </span>
+                                      </button>
+                                  </div>
+                                  <div className="border-t border-slate-100 py-1 bg-slate-50/80">
+                                      <button
+                                          type="button"
+                                          onClick={handleDownloadCsv}
+                                          className="w-full text-left px-3.5 py-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer flex items-center justify-between"
+                                      >
+                                          <span>Download as CSV ({activeTab === 'teaching' ? 'Teaching' : 'Non-Teaching'})</span>
+                                          <span className="text-[10px] text-slate-400">.csv</span>
+                                      </button>
+                                      <button
+                                          type="button"
+                                          onClick={() => { setIsExportMenuOpen(false); window.print(); }}
+                                          className="w-full text-left px-3.5 py-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer flex items-center justify-between"
+                                      >
+                                          <span>Print / Save as PDF</span>
+                                          <span className="text-[10px] text-slate-400">PDF</span>
+                                      </button>
                                   </div>
                               </div>
                           )}
@@ -606,15 +785,26 @@ const ManageStaffPage: React.FC<ManageStaffPageProps> = ({ staff, gradeDefinitio
                   </div>
               </div>
               
-              <div className="border-b border-slate-200">
+              <div className="border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-                      <button onClick={() => setActiveTab('teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'teaching' ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
-                          Teaching Staff
+                      <button onClick={() => setActiveTab('teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'teaching' ? 'border-sky-500 text-sky-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                          Teaching Staff ({teachingStaff.length})
                       </button>
-                      <button onClick={() => setActiveTab('non-teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'non-teaching' ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
-                          Non-Teaching Staff
+                      <button onClick={() => setActiveTab('non-teaching')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'non-teaching' ? 'border-sky-500 text-sky-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                          Non-Teaching Staff ({nonTeachingStaff.length})
                       </button>
                   </nav>
+                  <div className="pb-3 sm:pb-0 flex items-center gap-2">
+                      <button
+                          type="button"
+                          onClick={() => handleDownloadFullXlsx('current')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-2xs transition cursor-pointer"
+                          title={`Download ${activeTab === 'teaching' ? 'Teaching Staff' : 'Non-Teaching Staff'} as Excel spreadsheet (.xlsx)`}
+                      >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Download {activeTab === 'teaching' ? 'Teaching' : 'Non-Teaching'} Staff (.xlsx)</span>
+                      </button>
+                  </div>
               </div>
           </div>
 

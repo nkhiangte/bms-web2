@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+import * as XLSX from 'xlsx';
+import { FileSpreadsheet } from 'lucide-react';
 import { Staff, EmploymentStatus, Grade, GradeDefinition, User } from '@/types';
 import { UserIcon } from '@/components/Icons';
 import EditableContent from '@/components/EditableContent';
@@ -63,6 +65,64 @@ const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions, user
         return map;
     }, [gradeDefinitions]);
 
+    const handleDownloadFacultyXlsx = () => {
+        if (!activeTeachingStaff || activeTeachingStaff.length === 0) {
+            alert('No faculty records available to download.');
+            return;
+        }
+
+        const headers = [
+            'Sl. No.',
+            'Teacher Name',
+            'Designation',
+            'Department',
+            'Class Teacher Of',
+            'Assigned Subjects',
+            'Educational Qualification',
+            'Specialization',
+            'Years of Experience',
+            'Contact Number',
+            'Email Address'
+        ];
+
+        const rows = activeTeachingStaff.map((member, index) => {
+            const assignedClass = classTeacherMap.get(member.id);
+            const subjects = (member.assignedSubjects || []).map(s => `${s.grade}: ${s.subject}`).join('; ');
+            return [
+                index + 1,
+                `${member.firstName || ''} ${member.lastName || ''}`.trim(),
+                member.designation || 'Teacher',
+                member.department || 'Academics',
+                assignedClass ? `Class ${assignedClass}` : '—',
+                subjects || '—',
+                member.educationalQualification || '—',
+                member.specialization || '—',
+                member.yearsOfExperience ?? '—',
+                member.contactNumber || '—',
+                member.emailAddress || '—'
+            ];
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+        const colWidths = headers.map((header, colIdx) => {
+            let maxLen = header.length;
+            for (const row of rows) {
+                const cellVal = row[colIdx];
+                if (cellVal !== undefined && cellVal !== null) {
+                    maxLen = Math.max(maxLen, String(cellVal).length);
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 3, 12), 40) };
+        });
+        ws['!cols'] = colWidths;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Faculty Directory');
+        const today = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `BMS_Faculty_Directory_${today}.xlsx`);
+    };
+
     return (
         <div className="py-16 bg-black min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,6 +133,19 @@ const FacultyPage: React.FC<FacultyPageProps> = ({ staff, gradeDefinitions, user
                     <div className="mt-4 text-lg text-slate-400">
                          <EditableContent id="faculty_subtitle" defaultContent="Meet the dedicated educators shaping the future." type="text" user={user} />
                     </div>
+                    {activeTeachingStaff.length > 0 && (
+                        <div className="mt-6 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={handleDownloadFacultyXlsx}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-700/80 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-sm rounded-lg border border-emerald-500/30 shadow-md hover:shadow-lg transition cursor-pointer"
+                                title="Download Faculty directory as Excel spreadsheet (.xlsx)"
+                            >
+                                <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
+                                <span>Download Faculty List (.xlsx)</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
                 {activeTeachingStaff.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

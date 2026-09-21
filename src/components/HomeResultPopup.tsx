@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { XIcon, SpinnerIcon } from '@/components/Icons';
 import { db } from '@/firebaseConfig';
@@ -14,8 +15,10 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isEnabled, setIsEnabled] = useState(false);
     const [imageUrl, setImageUrl] = useState<string>('');
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         // Check if we already showed it in this session
         const hasShown = sessionStorage.getItem('hasShownHomePopup');
         const isAdmin = user?.role === 'admin';
@@ -75,46 +78,46 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
         sessionStorage.setItem('hasShownHomePopup', 'true');
     };
 
-    if (isLoading) return null;
+    if (isLoading || !mounted) return null;
 
-    return (
+    const popupContent = (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-hidden">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 w-full h-[100dvh] min-h-screen overflow-x-hidden overflow-y-auto">
                     {/* Backdrop */}
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleClose}
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        className="fixed inset-0 w-full h-full bg-black/85 backdrop-blur-sm cursor-pointer"
                     />
 
                     {/* Modal Content */}
                     <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="relative bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-w-[94vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col border border-slate-800"
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                        className="relative z-10 m-auto w-full max-w-[88vw] sm:max-w-md md:max-w-xl lg:max-w-2xl max-h-[85vh] sm:max-h-[88vh] bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-800 self-center origin-center"
                     >
                         {/* Close Button */}
                         <button 
                             onClick={handleClose}
                             aria-label="Close popup"
-                            className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-[130] bg-black/70 hover:bg-black/90 text-white p-2 sm:p-2.5 rounded-full backdrop-blur-md transition-all border border-white/20 shadow-xl group focus:outline-none"
+                            className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-[130] bg-black/80 hover:bg-black text-white p-2 sm:p-2.5 rounded-full backdrop-blur-md transition-all border border-white/20 shadow-xl group focus:outline-none"
                         >
                             <XIcon className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
 
-                        <div className="flex-grow overflow-y-auto overflow-x-hidden w-full bg-slate-950 flex flex-col items-center">
-                            <div className="relative w-full flex justify-center items-start overflow-x-hidden">
+                        <div className="flex-grow overflow-y-auto overflow-x-hidden w-full bg-slate-950 flex flex-col items-center justify-start">
+                            <div className="relative w-full flex justify-center items-center overflow-x-hidden p-0">
                                 <EditableContent 
                                     id="home_popup_image" 
                                     defaultContent="https://placehold.jp/24/0f172a/ffffff/1200x1600.png?text=HSLC+2026+Distinction+List\n(Click+the+blue+pencil+on+top+left+to+upload)" 
                                     type="image" 
                                     user={user}
-                                    className="w-full max-w-full flex justify-center items-start overflow-hidden"
+                                    className="w-full max-w-full flex justify-center items-center overflow-hidden"
                                     imgClassName="w-full h-auto max-w-full object-contain block mx-auto select-none"
                                     buttonClassName="top-4 left-4"
                                     alwaysShowButton={true}
@@ -168,6 +171,8 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
             )}
         </AnimatePresence>
     );
+
+    return typeof document !== 'undefined' ? createPortal(popupContent, document.body) : null;
 };
 
 export default HomeResultPopup;

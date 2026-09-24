@@ -1,0 +1,11 @@
+{
+  "totalVisits": 48261,
+  "todayDate": "2026-09-24",
+  "todayVisits": 343,
+  "totalUniques": 12481,
+  "dailyIps": {
+    "2026-09-24": [
+      "test_curl_user_1"
+    ]
+  }
+}

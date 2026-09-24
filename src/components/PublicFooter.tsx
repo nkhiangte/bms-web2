@@ -2,6 +2,7 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { InstagramIcon, YouTubeIcon, MailIcon, PhoneIcon, FacebookIcon } from '@/components/Icons';
+import SiteVisitorCounter from '@/components/SiteVisitorCounter';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -24,6 +25,7 @@ const PublicFooter: React.FC = () => {
                             <li><Link to="/admissions" className="hover:text-white transition-colors">Admissions</Link></li>
                             <li><Link to="/rules" className="hover:text-white transition-colors">Rules & Regulations</Link></li>
                             <li><Link to="/faculty" className="hover:text-white transition-colors">Our Faculty</Link></li>
+                            <li><Link to="/promo-video" className="text-pink-400 hover:text-pink-300 font-semibold transition-colors flex items-center gap-1.5"><span>🎬</span> Ad Video & Reels</Link></li>
                             <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
                             <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                         </ul>
@@ -69,7 +71,8 @@ const PublicFooter: React.FC = () => {
                 </div>
                 <div className="mt-12 border-t border-slate-700 pt-8 text-center text-sm text-slate-400 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p>&copy; {new Date().getFullYear()} Bethel Mission School. All Rights Reserved.</p>
-                    <div className="flex gap-4">
+                    <div className="flex items-center gap-4">
+                        <SiteVisitorCounter variant="compact" />
                         <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                     </div>
                 </div>

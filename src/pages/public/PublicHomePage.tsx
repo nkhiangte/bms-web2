@@ -5,6 +5,7 @@ import { NewsItem, User } from '@/types';
 import { formatDateForNews, stripHtml } from '@/utils';
 import EditableContent from '@/components/EditableContent';
 import HomeResultPopup from '@/components/HomeResultPopup';
+import SiteVisitorCounter from '@/components/SiteVisitorCounter';
 
 const { Link } = ReactRouterDOM as any;
 
@@ -123,7 +124,7 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
 
             {/* ── STATS STRIP ── */}
             <section className="bg-sky-700 text-white py-8">
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto px-4 space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                         {[
                             { value: '1996', label: 'Est. Year' },
@@ -136,6 +137,11 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                                 <div className="text-sky-200 text-sm mt-1 font-medium uppercase tracking-wide">{stat.label}</div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Live Site Visitor Counter Strip */}
+                    <div className="pt-4 border-t border-sky-600/60">
+                        <SiteVisitorCounter variant="stats-strip" />
                     </div>
                 </div>
             </section>
@@ -218,6 +224,9 @@ const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
                     </div>
                 </div>
             </section>
+
+            {/* ── LIVE SITE VISITOR COUNTER BANNER ── */}
+            <SiteVisitorCounter variant="banner" />
 
             {/* ── CONNECT WITH US ── */}
             <section className="py-20 bg-slate-50">

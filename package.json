@@ -1,7 +1,7 @@
 {
   "name": "bethel-mission-school---website",
   "private": true,
-  "version": "1.26.0",
+  "version": "1.27.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

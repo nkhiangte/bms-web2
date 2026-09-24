@@ -737,6 +737,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
         { title: "News Management",     description: "Create and manage school news.",                                         icon: <DocumentReportIcon className="w-7 h-7" />, link: "/portal/news-management" },
         { title: "School Settings",     description: "Update school info, payment QR codes, etc.",                             icon: <CogIcon className="w-7 h-7" />,            link: "/portal/settings" },
         { title: "Manage Documents",    description: "Upload and manage downloadable PDF documents for the website.",          icon: <DocIcon />,                                link: "/portal/documents" },
+        { title: "Ad Video & Reels Studio", description: "30-second promotional video generator, social media scripts & Meta Ads kit.", icon: <DocumentReportIcon className="w-7 h-7 text-pink-600" />, link: "/promo-video" },
     ];
 
     return (

@@ -137,6 +137,7 @@ import TextbooksPage from '@/pages/public/TextbooksPage';
 import ManageTextbooksPage from '@/pages/ManageTextbooksPage';
 import LetterGeneratorPage from '@/pages/LetterGeneratorPage';
 import TestimonialGeneratorPage from '@/pages/admin/TestimonialGeneratorPage';
+import PromoVideoPage from '@/pages/public/PromoVideoPage';
 
 import { ImportStudentsModal } from '@/components/ImportStudentsModal';
 import NotificationContainer from '@/components/NotificationContainer';
@@ -1143,6 +1144,10 @@ const App: React.FC = () => {
           <Route path="podcasts" element={<PodcastsPage podcasts={podcasts} />} />
           <Route path="live-conference/:roomId" element={<LiveConferencePage user={user} />} />
           <Route path="news/:newsId" element={<NewsDetailPage news={news} user={user} />} />
+          <Route path="promo-video" element={<PromoVideoPage user={user} />} />
+          <Route path="ad-video" element={<PromoVideoPage user={user} />} />
+          <Route path="reels" element={<PromoVideoPage user={user} />} />
+          <Route path="reel" element={<PromoVideoPage user={user} />} />
         
           <Route path="fees" element={<FeesPage students={students} feeStructure={feeStructure} admissionSettings={admissionSettings} onUpdateFeePayments={handleUpdateFeePayments} academicYear={academicYear} addNotification={addNotification} user={user} />} />
           <Route path="sitemap" element={<SitemapPage />} />

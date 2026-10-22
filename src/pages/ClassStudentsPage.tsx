@@ -9,6 +9,8 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import ExamFeeCollectionModal from '@/components/ExamFeeCollectionModal';
 import StudentFormModal from '@/components/StudentFormModal';
 import ImportFromPreviousYearModal from '@/components/ImportFromPreviousYearModal';
+import ClassSubjectManagerModal from '@/components/ClassSubjectManagerModal';
+import { BookOpenIcon } from '@/components/Icons';
 
 const { Link, useNavigate, useParams } = ReactRouterDOM as any;
 
@@ -26,6 +28,7 @@ interface ClassStudentsPageProps {
   onAddStudentToClass: (studentData: Omit<Student, 'id'>) => Promise<void>;
   onUpdateBulkFeePayments: (updates: Array<{ studentId: string; payments: FeePayments }>) => Promise<void>;
   feeStructure: FeeStructure;
+  onUpdateGradeDefinition?: (grade: Grade, newDefinition: GradeDefinition) => void;
 }
 
 const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
@@ -41,7 +44,8 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     assignedGrade,
     onAddStudentToClass,
     onUpdateBulkFeePayments,
-    feeStructure
+    feeStructure,
+    onUpdateGradeDefinition
 }) => {
     const { grade: encodedGrade } = useParams();
     const grade = encodedGrade ? decodeURIComponent(encodedGrade) as Grade : undefined;
@@ -56,6 +60,7 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
     const [isImportPrevYearModalOpen, setIsImportPrevYearModalOpen] = useState(false);
     const [isSavingStudent, setIsSavingStudent] = useState(false);
     const [isExamFeeModalOpen, setIsExamFeeModalOpen] = useState(false);
+    const [isManageSubjectsOpen, setIsManageSubjectsOpen] = useState(false);
 
     const classStudents = useMemo(() => {
         if (!grade) return [];
@@ -220,13 +225,22 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                     </div>
                     <div className="flex gap-2 w-full lg:w-auto justify-end flex-wrap">
                         {isAdmin && (
-                            <button 
-                                onClick={() => exportStudentsToExcel(classStudents, grade, academicYear)} 
-                                className="btn btn-secondary whitespace-nowrap bg-sky-50 text-sky-700 hover:bg-sky-100 border-sky-300 shadow-sm" 
-                                title="Download All Student Details to Excel"
-                            >
-                                <InboxArrowDownIcon className="w-5 h-5 text-sky-600"/> Download Excel
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => setIsManageSubjectsOpen(true)}
+                                    className="btn btn-secondary whitespace-nowrap bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200 shadow-sm"
+                                    title={`Manage subjects for ${grade}`}
+                                >
+                                    <BookOpenIcon className="w-5 h-5 text-indigo-600"/> Subjects ({gradeDef?.subjects?.length || 0})
+                                </button>
+                                <button 
+                                    onClick={() => exportStudentsToExcel(classStudents, grade, academicYear)} 
+                                    className="btn btn-secondary whitespace-nowrap bg-sky-50 text-sky-700 hover:bg-sky-100 border-sky-300 shadow-sm" 
+                                    title="Download All Student Details to Excel"
+                                >
+                                    <InboxArrowDownIcon className="w-5 h-5 text-sky-600"/> Download Excel
+                                </button>
+                            </>
                         )}
                         {isStaff && (
                             <div className="flex gap-2">
@@ -372,6 +386,17 @@ const ClassStudentsPage: React.FC<ClassStudentsPageProps> = ({
                     newStudentTargetGrade={grade}
                     academicYear={academicYear}
                     isSaving={isSavingStudent}
+                />
+            )}
+            {grade && onUpdateGradeDefinition && (
+                <ClassSubjectManagerModal
+                    isOpen={isManageSubjectsOpen}
+                    onClose={() => setIsManageSubjectsOpen(false)}
+                    grade={grade}
+                    gradeDefinitions={gradeDefinitions}
+                    onUpdateGradeDefinition={onUpdateGradeDefinition}
+                    staff={staff}
+                    isAdmin={isAdmin}
                 />
             )}
             {grade && (

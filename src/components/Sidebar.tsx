@@ -47,6 +47,7 @@ const sidebarCategories: CategoryData[] = [
         name: 'Academics',
         items: [
             { name: 'Classes', path: '/portal/classes', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
+            { name: 'Manage Subjects', path: '/portal/subjects', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Academics & Reports', path: '/portal/reports/academics', icon: <AcademicCapIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Question Bank', path: '/portal/teacher-workspace?tab=question-bank', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Manage Syllabus', path: '/portal/manage-syllabus', icon: <BookOpenIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
@@ -106,6 +107,7 @@ const sidebarCategories: CategoryData[] = [
     {
         name: 'Tools',
         items: [
+            { name: 'Visitor Analytics & Counter', path: '/portal/visitor-analytics', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
             { name: 'AI Insights', path: '/portal/insights', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Activity Log', path: '/portal/activity-log', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },

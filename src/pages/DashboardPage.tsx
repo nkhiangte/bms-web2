@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { UsersIcon, PlusIcon, DocumentReportIcon, BookOpenIcon, BriefcaseIcon, CurrencyDollarIcon, AcademicCapIcon, ArchiveBoxIcon, BuildingOfficeIcon, UserGroupIcon, CalendarDaysIcon, MegaphoneIcon, SyncIcon, ClipboardDocumentListIcon, SparklesIcon, TransferIcon, InboxArrowDownIcon, SpinnerIcon, CogIcon, XIcon, CheckIcon } from '@/components/Icons';
 import AcademicYearForm from '@/components/AcademicYearForm';
+import { Globe } from 'lucide-react';
 import { User, Grade, SubjectAssignment, CalendarEvent, CalendarEventType, HostelDisciplineEntry, Staff, StaffAttendanceRecord, AttendanceStatus, Syllabus, Homework, ExamRoutine } from '@/types';
 import { getDistanceFromLatLonInM } from '@/utils';
 import { SCHOOL_CALENDAR_2026_2027 } from '@/constants';
@@ -518,6 +519,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({
                 color="indigo"
                 action={<Link to="/portal/classes">Browse Classes</Link>}
             />
+            {isAdmin && (
+                <DashboardCard
+                    title="Manage Class Subjects"
+                    description="Configure, add, edit, or remove curriculum subjects for each class."
+                    icon={<BookOpenIcon className="w-7 h-7" />}
+                    color="sky"
+                    action={<Link to="/portal/subjects">Manage Subjects</Link>}
+                />
+            )}
              <DashboardCard
                 title="Class Routine"
                 description="View the daily class timetable."
@@ -563,6 +573,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({
                 color="teal"
                 action={<Link to="/portal/calendar">View Calendar</Link>}
             />
+
+            {isAdmin && (
+                <DashboardCard
+                    title="Visitor Analytics & Counter"
+                    description="View visitor countries, devices, and manage the website counter baseline."
+                    icon={<Globe className="w-7 h-7" />}
+                    color="sky"
+                    action={<Link to="/portal/visitor-analytics">Manage Analytics</Link>}
+                />
+            )}
         
             {!isAdmin && <DashboardCard
                 title={"View Staff"}

@@ -47,7 +47,8 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ students, staff, tcRecords, s
     'generate': 'Generate',
     'print': 'Print',
     'records': 'Records',
-    'bulk-print': 'Bulk Print'
+    'bulk-print': 'Bulk Print',
+    'visitor-analytics': 'Visitor Analytics & Counter'
   };
 
   const breadcrumbs = pathnames.map((value, index) => {

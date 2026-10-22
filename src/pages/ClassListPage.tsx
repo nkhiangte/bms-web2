@@ -81,6 +81,9 @@ const ClassListPage: React.FC<ClassListPageProps> = ({ gradeDefinitions, staff, 
                             <div className="mt-2 text-xs text-slate-600 font-medium">
                                 Teacher: <span className="font-semibold block">{teacherName}</span>
                             </div>
+                            <div className="mt-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50/70 py-0.5 px-2 rounded-full inline-block">
+                                {gradeDef?.subjects?.length || 0} Subjects
+                            </div>
                         </Link>
                     )
                 })}

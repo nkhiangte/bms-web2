@@ -118,6 +118,7 @@ import AnnouncementsPage from '@/pages/portal/AnnouncementsPage';
 import StudentProfilePage from '@/pages/portal/StudentProfilePage';
 import ParentFeePortalPage from '@/pages/portal/ParentFeePortalPage';
 import SchoolSettingsPage from '@/pages/SchoolSettingsPage';
+import AdminVisitorAnalyticsPage from '@/pages/AdminVisitorAnalyticsPage';
 import ManageHomeworkPage from '@/pages/ManageHomeworkPage';
 import ManageSyllabusPage from '@/pages/ManageSyllabusPage';
 import { ParentsManagementPage } from '@/pages/ParentsManagementPage';
@@ -1184,7 +1185,7 @@ const App: React.FC = () => {
           <Route path="student/:studentId/academics" element={<AcademicPerformancePage students={students} onUpdateAcademic={handleUpdateAcademic} gradeDefinitions={gradeDefinitions} academicYear={academicYear} user={user!} assignedGrade={assignedGrade} assignedSubjects={assignedSubjects} />} />
           <Route path="student/:studentId/attendance-log" element={<StudentAttendanceLogPage students={students} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} user={user!} calendarEvents={calendarEvents} />} />
           <Route path="classes" element={<ClassListPage gradeDefinitions={gradeDefinitions} staff={staff} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} user={user!} />} />
-          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} />} />
+          <Route path="classes/:grade" element={<ClassStudentsPage students={students} staff={staff} gradeDefinitions={gradeDefinitions} onUpdateClassTeacher={(g, tid) => handleUpdateGradeDefinition(g, { ...gradeDefinitions[g], classTeacherId: tid })} academicYear={academicYear} onOpenImportModal={(g) => { setImportTargetGrade(g); setIsImportModalOpen(true); }} onDelete={handleDeleteStudent} onReinstate={handleReinstateStudent} user={user!} assignedGrade={assignedGrade} onAddStudentToClass={handleAddStudent} onUpdateBulkFeePayments={handleUpdateBulkFeePayments} feeStructure={feeStructure} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />
           <Route path="classes/:grade/attendance" element={<StudentAttendancePage students={students} allAttendance={dailyStudentAttendance} onUpdateAttendance={handleMarkStudentAttendance} user={user!} fetchStudentAttendanceForMonth={fetchStudentAttendanceForMonth} fetchStudentAttendanceForRange={fetchStudentAttendanceForRange} academicYear={academicYear} assignedGrade={assignedGrade} calendarEvents={calendarEvents} />} />
           <Route path="staff" element={<ManageStaffPage staff={staff} gradeDefinitions={gradeDefinitions} onSaveStaff={handleSaveStaff} onDeleteStaff={handleDeleteStaff} user={user!} onUpdateStaffAssignments={handleUpdateStaffAssignments} />} />
           <Route path="teacher-drop-box" element={<TeacherDropBoxPage staff={staff} academicYear={academicYear} user={user!} onReinstateStaff={handleReinstateStaff} onPermanentDeleteStaff={handlePermanentDeleteStaff} onEditStaff={handleSaveStaff} gradeDefinitions={gradeDefinitions} />} />
@@ -1226,7 +1227,7 @@ const App: React.FC = () => {
           <Route path="users" element={<UserManagementPage allUsers={users} currentUser={user!} onUpdateUserRole={handleUpdateUserRole} onDeleteUser={handleDeleteUser} />} />
           <Route path="parents" element={<ParentsManagementPage allUsers={users} students={students} academicYear={academicYear} currentUser={user!} onDeleteUser={handleDeleteUser} onUpdateUser={handleUpdateParentUser} />} />
           <Route path="promotion" element={<PromotionPage students={students} gradeDefinitions={gradeDefinitions} academicYear={academicYear} onPromoteStudents={handlePromoteStudents} user={user!} />} />
-          <Route path="subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={handleUpdateGradeDefinition} user={user!} onResetAllMarks={handleResetAllAcademicMarks} />} />
+          <Route path="subjects" element={<ManageSubjectsPage gradeDefinitions={gradeDefinitions} onUpdateGradeDefinition={handleUpdateGradeDefinition} user={user!} onResetAllMarks={handleResetAllAcademicMarks} staff={staff} students={students} />} />
           <Route path="sitemap-editor" element={<SitemapEditorPage initialContent={sitemapContent} onSave={handleSaveSitemapContent} />} />
           <Route path="reports/academics" element={<ReportSearchPage students={students} academicYear={academicYear} />} />
           <Route path="reports/class/:grade/:examId" element={<ClassMarkStatementPage students={students} academicYear={academicYear} user={user!} gradeDefinitions={gradeDefinitions} onUpdateAcademic={handleUpdateAcademic} onUpdateGradeDefinition={handleUpdateGradeDefinition} />} />
@@ -1248,6 +1249,7 @@ const App: React.FC = () => {
           <Route path="manage-navigation" element={<ManageNavigationPage navigation={navigation} onSave={handleSaveNavItem} onDelete={handleDeleteNavItem} />} />
           <Route path="manage-achievements" element={<ManageAchievementsPage user={user!} />} />
           <Route path="manage-hslc" element={<ManageHSLCResultsPage user={user!} />} />
+          <Route path="visitor-analytics" element={<AdminVisitorAnalyticsPage user={user!} />} />
           <Route path="settings" element={<SchoolSettingsPage config={schoolConfig} onUpdate={async (c) => { await db.collection('config').doc('schoolSettings').set(c, { merge: true }); setSchoolConfig(prev => ({ ...prev, ...c })); return true; }} />} />
           <Route path="fees" element={<FeeManagementPage students={students} academicYear={academicYear} onUpdateFeePayments={handleUpdateFeePayments} user={user!} feeStructure={feeStructure} onUpdateFeeStructure={handleUpdateFeeStructure} addNotification={addNotification} schoolConfig={schoolConfig} />} />
         </Route>

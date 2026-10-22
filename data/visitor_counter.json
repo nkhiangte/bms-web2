@@ -1,11 +1,57 @@
 {
-  "totalVisits": 48261,
+  "totalVisits": 48260,
   "todayDate": "2026-09-24",
-  "todayVisits": 343,
-  "totalUniques": 12481,
+  "todayVisits": 342,
+  "totalUniques": 12480,
   "dailyIps": {
     "2026-09-24": [
-      "test_curl_user_1"
+      "test_curl_user_1",
+      "v_yplwtk364_mufcasqw",
+      "test_admin_device"
     ]
-  }
+  },
+  "countries": {
+    "India": {
+      "count": 45366,
+      "code": "IN"
+    }
+  },
+  "devices": {
+    "mobile": 34749,
+    "desktop": 12065,
+    "tablet": 1448
+  },
+  "os": {
+    "Android": 27992,
+    "iOS": 10617,
+    "Windows": 7722,
+    "macOS": 1930
+  },
+  "browsers": {
+    "Chrome": 31371,
+    "Safari": 10617,
+    "Edge": 3861,
+    "Firefox": 2413
+  },
+  "topPages": {
+    "/": 21718,
+    "/faculty": 7239,
+    "/admissions": 5791,
+    "/login": 4826
+  },
+  "recentLogs": [
+    {
+      "id": "log_1790243749420_8xyxp",
+      "timestamp": "2026-09-24T09:55:49.420Z",
+      "visitorId": "test_admin_device",
+      "country": "India",
+      "countryCode": "IN",
+      "city": "Champhai / Mizoram",
+      "deviceType": "mobile",
+      "os": "Android",
+      "browser": "Chrome",
+      "path": "/",
+      "screen": ""
+    }
+  ]
 }

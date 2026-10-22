@@ -45,6 +45,39 @@ function checkIsNewSession(): boolean {
     }
 }
 
+function getClientTelemetry() {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    let deviceType: 'mobile' | 'desktop' | 'tablet' = 'desktop';
+    if (/iPad|Tablet|PlayBook/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))) {
+        deviceType = 'tablet';
+    } else if (/Mobile|Android|iP(hone|od)|BlackBerry|IEMobile/i.test(ua)) {
+        deviceType = 'mobile';
+    }
+
+    let os = 'Other';
+    if (/Android/i.test(ua)) os = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+    else if (/Windows/i.test(ua)) os = 'Windows';
+    else if (/Mac/i.test(ua)) os = 'macOS';
+    else if (/Linux/i.test(ua)) os = 'Linux';
+
+    let browser = 'Other';
+    if (/Edg/i.test(ua)) browser = 'Edge';
+    else if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
+    else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+    else if (/Firefox/i.test(ua)) browser = 'Firefox';
+
+    let timezone = 'Asia/Kolkata';
+    try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+    } catch {}
+
+    const screen = typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : '';
+    const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+
+    return { deviceType, os, browser, timezone, screen, path };
+}
+
 export const SiteVisitorCounter: React.FC<SiteVisitorCounterProps> = ({
     variant = 'banner',
     className = '',
@@ -63,13 +96,15 @@ export const SiteVisitorCounter: React.FC<SiteVisitorCounterProps> = ({
     // Record page visit on initial load
     const recordVisit = useCallback(async () => {
         const isNewSession = checkIsNewSession();
+        const telemetry = getClientTelemetry();
         try {
             const res = await fetch('/api/visitors/hit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     visitorId: visitorIdRef.current,
-                    isNewSession
+                    isNewSession,
+                    ...telemetry
                 })
             });
             if (res.ok) {

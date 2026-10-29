@@ -173,7 +173,7 @@ const App: React.FC = () => {
   });
   const [feeStructure, setFeeStructure] = useState<FeeStructure>(DEFAULT_FEE_STRUCTURE);
   const [admissionSettings, setAdmissionSettings] = useState<AdmissionSettings>(DEFAULT_ADMISSION_SETTINGS);
-  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '', schoolBannerUrl: '' });
+  const [schoolConfig, setSchoolConfig] = useState({ paymentQRCodeUrl: '', upiId: '', udiseCode: '', schoolBannerUrl: 'https://i.ibb.co/Gfh1ZxLv/sch-logo-bw.png' });
   const [gradeDefinitions, setGradeDefinitions] = useState<Record<Grade, GradeDefinition>>(GRADE_DEFINITIONS);
   const [tcRecords, setTcRecords] = useState<TcRecord[]>([]);
   const [serviceCerts, setServiceCerts] = useState<ServiceCertificateRecord[]>([]);
@@ -941,8 +941,8 @@ const App: React.FC = () => {
         doc => {
           if (doc.exists) {
             const data = doc.data() as any;
-            if (data && (!data.schoolBannerUrl || data.schoolBannerUrl === 'https://i.ibb.co/PsvXSD4F/dcb090f5e4fd.jpg')) {
-              db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/bRJDhh25/banner-sch.png' }, { merge: true })
+            if (data && (!data.schoolBannerUrl || data.schoolBannerUrl.includes('bRJDhh25') || data.schoolBannerUrl.includes('XxjvSChz') || data.schoolBannerUrl.includes('PsvXSD4F'))) {
+              db.collection('config').doc('schoolSettings').set({ schoolBannerUrl: 'https://i.ibb.co/Gfh1ZxLv/sch-logo-bw.png' }, { merge: true })
                 .catch(e => console.error("Failed to seed schoolBannerUrl:", e));
             }
             if (!data.routineVersion2026_v3) {

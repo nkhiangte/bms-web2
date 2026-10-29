@@ -18,6 +18,7 @@ import {
   GRADES_WITH_NO_ACTIVITIES,
   OABC_GRADES,
   SCHOOL_BANNER_URL,
+  LOCAL_SCHOOL_BANNER_URL,
 } from "@/constants";
 import {
   formatDateForDisplay,
@@ -987,6 +988,50 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
     []
   );
 
+  const [isPreparingPrint, setIsPreparingPrint] = React.useState(false);
+
+  const effectiveBannerUrl = useMemo(() => {
+    const custom = schoolConfig?.schoolBannerUrl?.trim();
+    if (custom && custom.includes('Gfh1ZxLv')) return custom;
+    if (custom && !custom.includes('bRJDhh25') && !custom.includes('XxjvSChz') && !custom.includes('PsvXSD4F') && custom.startsWith('http')) {
+      return custom;
+    }
+    return SCHOOL_BANNER_URL;
+  }, [schoolConfig]);
+
+  useEffect(() => {
+    const img1 = new Image();
+    img1.src = effectiveBannerUrl;
+    const img2 = new Image();
+    img2.src = LOCAL_SCHOOL_BANNER_URL;
+  }, [effectiveBannerUrl]);
+
+  const handlePrint = async () => {
+    setIsPreparingPrint(true);
+    const images = Array.from(document.querySelectorAll<HTMLImageElement>('.progress-report-banner'));
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            if (!img.complete || img.naturalWidth === 0) {
+              img.src = LOCAL_SCHOOL_BANNER_URL;
+            }
+            resolve();
+          }, 800);
+          img.onload = () => { clearTimeout(timer); resolve(); };
+          img.onerror = () => {
+            clearTimeout(timer);
+            img.src = LOCAL_SCHOOL_BANNER_URL;
+            resolve();
+          };
+        });
+      })
+    );
+    setIsPreparingPrint(false);
+    window.print();
+  };
+
   if (!student)
     return <div className="p-8 text-center">Loading student data...</div>;
   if (!gradeDef)
@@ -1012,8 +1057,12 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
             {student.name} — {examTemplate?.name}
           </p>
         </div>
-        <button onClick={() => window.print()} className="btn btn-primary">
-          <PrinterIcon className="w-5 h-5" /> Print Report
+        <button
+          onClick={handlePrint}
+          disabled={isPreparingPrint}
+          className="btn btn-primary flex items-center gap-2"
+        >
+          <PrinterIcon className="w-5 h-5" /> {isPreparingPrint ? "Preparing..." : "Print Report"}
         </button>
       </div>
 
@@ -1033,10 +1082,18 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
           {/* Progress report banner */}
           <div className="mb-1 text-center w-full">
             <img
-              src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
+              src={effectiveBannerUrl}
               alt="School Banner"
               className="w-full h-auto block mb-1.5 progress-report-banner"
-              referrerPolicy="no-referrer"
+              loading="eager"
+              decoding="sync"
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                if (!img.dataset.fallbackApplied) {
+                  img.dataset.fallbackApplied = "true";
+                  img.src = LOCAL_SCHOOL_BANNER_URL;
+                }
+              }}
             />
           </div>
 

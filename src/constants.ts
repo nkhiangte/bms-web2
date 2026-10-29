@@ -783,3 +783,4 @@ export const DISTINCTION_HOLDERS_BY_YEAR: Record<string, DistinctionHolder[]> = 
 };
 
 export const SCHOOL_BANNER_URL = 'https://i.ibb.co/Gfh1ZxLv/sch-logo-bw.png';
+export const LOCAL_SCHOOL_BANNER_URL = '/sch-logo-bw.png';

@@ -18,6 +18,7 @@ import {
   GRADES_WITH_NO_ACTIVITIES,
   OABC_GRADES,
   SCHOOL_BANNER_URL,
+  LOCAL_SCHOOL_BANNER_URL,
 } from "@/constants";
 import {
   formatDateForDisplay,
@@ -1017,6 +1018,49 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
 
   const [selectedAcademicYear, setSelectedAcademicYear] =
     React.useState<string>(academicYear);
+  const [isPreparingPrint, setIsPreparingPrint] = React.useState(false);
+
+  const effectiveBannerUrl = useMemo(() => {
+    const custom = schoolConfig?.schoolBannerUrl?.trim();
+    if (custom && custom.includes('Gfh1ZxLv')) return custom;
+    if (custom && !custom.includes('bRJDhh25') && !custom.includes('XxjvSChz') && !custom.includes('PsvXSD4F') && custom.startsWith('http')) {
+      return custom;
+    }
+    return SCHOOL_BANNER_URL;
+  }, [schoolConfig]);
+
+  useEffect(() => {
+    const img1 = new Image();
+    img1.src = effectiveBannerUrl;
+    const img2 = new Image();
+    img2.src = LOCAL_SCHOOL_BANNER_URL;
+  }, [effectiveBannerUrl]);
+
+  const handlePrintAll = async () => {
+    setIsPreparingPrint(true);
+    const images = Array.from(document.querySelectorAll<HTMLImageElement>('.progress-report-banner'));
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            if (!img.complete || img.naturalWidth === 0) {
+              img.src = LOCAL_SCHOOL_BANNER_URL;
+            }
+            resolve();
+          }, 800);
+          img.onload = () => { clearTimeout(timer); resolve(); };
+          img.onerror = () => {
+            clearTimeout(timer);
+            img.src = LOCAL_SCHOOL_BANNER_URL;
+            resolve();
+          };
+        });
+      })
+    );
+    setIsPreparingPrint(false);
+    window.print();
+  };
 
   React.useEffect(() => {
     setSelectedAcademicYear(academicYear);
@@ -1226,8 +1270,12 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
             {grade} - {examTemplate.name} ({classStudents.length} students)
           </p>
         </div>
-        <button onClick={() => window.print()} className="btn btn-primary">
-          <PrinterIcon className="w-5 h-5" /> Print All
+        <button
+          onClick={handlePrintAll}
+          disabled={isPreparingPrint}
+          className="btn btn-primary flex items-center gap-2"
+        >
+          <PrinterIcon className="w-5 h-5" /> {isPreparingPrint ? "Preparing..." : "Print All"}
         </button>
       </div>
 
@@ -1248,12 +1296,20 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
               className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page"
             >
               <div className="font-serif print:text-xs report-inner">
-                <header className="text-center mb-2 print:mb-1">
+                <header className="text-center mb-2 print:mb-1 w-full">
                   <img
-                    src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
+                    src={effectiveBannerUrl}
                     alt="School Banner"
                     className="w-full h-auto block mb-1.5 progress-report-banner"
-                    referrerPolicy="no-referrer"
+                    loading="eager"
+                    decoding="sync"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      if (!img.dataset.fallbackApplied) {
+                        img.dataset.fallbackApplied = "true";
+                        img.src = LOCAL_SCHOOL_BANNER_URL;
+                      }
+                    }}
                   />
                   <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-1 print:text-base print:px-4 print:pb-0.5 print:mt-0">
                     STUDENT'S PROGRESS REPORT

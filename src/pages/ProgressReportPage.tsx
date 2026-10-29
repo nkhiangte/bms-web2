@@ -954,23 +954,28 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 6mm 8mm 6mm 8mm;
   }
   body * { visibility: hidden; }
   #progress-report-printable, #progress-report-printable * { visibility: visible; }
   #progress-report-printable {
-    position: fixed;
+    position: absolute;
     top: 0; left: 0;
-    width: 210mm;
-    padding: ${examId === "terminal3" ? "8.5cm" : "0.5cm"} 1cm 1cm 1cm;
+    width: 100%;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
-    font-size: 9pt;
+    font-size: 8.5pt;
     font-family: serif;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    max-height: 284mm;
+    overflow: hidden;
   }
   .print-hidden { display: none !important; }
 }
 `,
-    [examId]
+    []
   );
 
   if (!student)
@@ -1004,10 +1009,9 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
       </div>
 
       {/* Screen preview card */}
-      <div className="container mx-auto bg-white p-6 my-4 shadow-lg print:hidden">
-        <p className="text-xs text-slate-400 mb-2 text-center">
-          Screen preview — actual print output uses A4 with 8 cm top margin for
-          letterhead.
+      <div className="container mx-auto bg-white p-4 my-4 shadow-lg print:hidden text-center">
+        <p className="text-xs text-slate-500">
+          Standard A4 format — 1 report per page.
         </p>
       </div>
 
@@ -1017,20 +1021,14 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
         className="container mx-auto bg-white p-6 my-4 shadow-lg print:w-full print:max-w-none print:my-0 print:shadow-none print:p-0"
       >
         <div className="font-serif text-xs text-slate-900">
-          {/* On screen: show banner for terminal1/2, blank space for terminal3. In print: show banner only for terminal 1 & 2 */}
-          <div className={examId === "terminal3" ? "print:hidden" : ""}>
-            {examId !== "terminal3" ? (
-              <img
-                src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
-                alt="School Banner"
-                className="w-full h-auto mb-2"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="h-28 bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs mb-2">
-                8 cm header space (pre-printed letterhead)
-              </div>
-            )}
+          {/* Progress report banner */}
+          <div className="mb-1 text-center">
+            <img
+              src="https://i.ibb.co/XxjvSChz/Sch-banner.png"
+              alt="School Banner"
+              className="w-full h-auto max-h-[140px] print:max-h-[44mm] object-contain mb-1.5 mx-auto block"
+              referrerPolicy="no-referrer"
+            />
           </div>
 
           {/* Title & session */}

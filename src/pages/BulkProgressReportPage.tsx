@@ -102,18 +102,18 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
 }) => (
   <>
     <div
-      className="mt-6 border border-slate-400 rounded-lg p-2 break-inside-avoid"
+      className="mt-4 print:mt-1.5 border border-slate-400 rounded-lg p-2 print:p-1.5 break-inside-avoid"
       style={{ fontSize: FS }}
     >
       <strong>Final Remarks:</strong> {finalRemark}
     </div>
     <div
-      className="mt-8 print:mt-6 break-inside-avoid report-signatures"
+      className="mt-6 print:mt-2.5 break-inside-avoid report-signatures"
       style={{ fontSize: FS }}
     >
       <div className="flex justify-between items-end">
         <div className="text-center">
-          <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
+          <div className="h-10 print:h-8 flex flex-col justify-end pb-1 min-w-[150px]">
             {classTeacher ? (
               <p className="font-bold uppercase text-slate-900 text-xs">
                 {classTeacher.firstName} {classTeacher.lastName}
@@ -122,22 +122,22 @@ const ReportFooter: React.FC<{ finalRemark: string; classTeacher?: Staff }> = ({
               <div className="h-4" />
             )}
           </div>
-          <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+          <p className="border-t-2 border-slate-900 pt-1 font-semibold px-4 text-xs">
             Class Teacher's Signature
           </p>
         </div>
         <div className="text-center">
-          <div className="h-10 flex flex-col justify-end pb-1 min-w-[150px]">
+          <div className="h-10 print:h-8 flex flex-col justify-end pb-1 min-w-[150px]">
             <p className="font-bold uppercase text-slate-900 text-xs">
               K Malsawmdawngi
             </p>
           </div>
-          <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+          <p className="border-t-2 border-slate-900 pt-1 font-semibold px-4 text-xs">
             Principal's Signature
           </p>
         </div>
       </div>
-      <div className="flex justify-between mt-4 text-xs text-slate-500">
+      <div className="flex justify-between mt-2 print:mt-1 text-xs text-slate-500">
         <p>
           Date : {formatDateForDisplay(new Date().toISOString().split("T")[0])}
         </p>
@@ -959,10 +959,10 @@ const ReportCard: React.FC<any> = ({
           </span>
         </div>
       </div>
-      <div className="mt-8 print:mt-6 break-inside-avoid p-3">
+      <div className="mt-4 print:mt-2 break-inside-avoid p-3 print:p-1">
         <div className="flex justify-between items-end">
           <div className="text-center">
-            <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
+            <div className="h-12 print:h-8 flex flex-col justify-end pb-1 min-w-[150px]">
               {classTeacher ? (
                 <p className="font-bold uppercase text-slate-900 text-xs">
                   {classTeacher.firstName} {classTeacher.lastName}
@@ -971,22 +971,22 @@ const ReportCard: React.FC<any> = ({
                 <div className="h-4" />
               )}
             </div>
-            <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+            <p className="border-t-2 border-slate-900 pt-1 font-semibold px-4 text-xs">
               Class Teacher's Signature
             </p>
           </div>
           <div className="text-center">
-            <div className="h-16 flex flex-col justify-end pb-1 min-w-[150px]">
+            <div className="h-12 print:h-8 flex flex-col justify-end pb-1 min-w-[150px]">
               <p className="font-bold uppercase text-slate-900 text-xs">
                 K Malsawmdawngi
               </p>
             </div>
-            <p className="border-t-2 border-slate-900 pt-2 font-semibold px-4">
+            <p className="border-t-2 border-slate-900 pt-1 font-semibold px-4 text-xs">
               Principal's Signature
             </p>
           </div>
         </div>
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-2 print:mt-1 text-xs text-slate-500">
           Date : {formatDateForDisplay(new Date().toISOString().split("T")[0])}
         </p>
       </div>
@@ -1080,25 +1080,46 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
       document.head.appendChild(style);
     }
     style.textContent = `
+    @page {
+        size: A4 portrait;
+        margin: 6mm 8mm 6mm 8mm;
+    }
     @media print {
-        @page {
-            size: A4 portrait;
-            margin-top: ${examId === "terminal3" ? "9.5cm" : "1cm"};
-            margin-bottom: 1cm;
-            margin-left: 0.6cm;
-            margin-right: 0.6cm;
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            width: 100% !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         .progress-report-page {
-            page-break-after: always;
-            break-after: page;
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-before: auto !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background: #fff !important;
+            max-height: 284mm !important;
+            overflow: hidden !important;
+        }
+        .progress-report-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
         }
         .progress-report-page .report-inner {
-            zoom: 1.0;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            font-size: 11px !important;
+            line-height: 1.25 !important;
         }
-        .report-banner-placeholder {
-            display: ${examId === "terminal3" ? "block" : "none"} !important;
+        .progress-report-page table {
+            font-size: 10.5px !important;
         }
         .report-signatures {
             break-inside: avoid !important;
@@ -1112,7 +1133,7 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
     return () => {
       if (style) style.textContent = "";
     };
-  }, [examId]);
+  }, []);
 
   const allSummaries = useMemo(() => {
     if (examId !== "terminal3" || !gradeDef) return null;
@@ -1218,24 +1239,17 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
               className="bg-white p-8 my-8 shadow-lg print:shadow-none print:my-0 print:p-0 progress-report-page"
             >
               <div className="font-serif print:text-xs report-inner">
-                <header className="text-center mb-2">
-                  {examId !== "terminal3" ? (
-                    <img
-                      src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
-                      alt="School Banner"
-                      className="w-full h-auto mb-2"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div
-                      className="h-32 md:h-40 report-banner-placeholder"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-2 print:text-lg print:mt-0">
+                <header className="text-center mb-2 print:mb-1">
+                  <img
+                    src="https://i.ibb.co/XxjvSChz/Sch-banner.png"
+                    alt="School Banner"
+                    className="w-full h-auto max-h-[140px] print:max-h-[44mm] object-contain mb-1.5 mx-auto block"
+                    referrerPolicy="no-referrer"
+                  />
+                  <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-1 print:text-base print:px-4 print:pb-0.5 print:mt-0">
                     STUDENT'S PROGRESS REPORT
                   </h2>
-                  <p className="font-semibold mt-1 print:text-sm">
+                  <p className="font-semibold mt-0.5 print:text-xs">
                     Academic Session: {selectedAcademicYear}
                   </p>
                 </header>

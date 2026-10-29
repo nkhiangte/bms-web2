@@ -1121,6 +1121,15 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
         .progress-report-page table {
             font-size: 10.5px !important;
         }
+        .progress-report-banner {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
         .report-signatures {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
@@ -1241,9 +1250,9 @@ const BulkProgressReportPage: React.FC<ProgressReportPageProps> = ({
               <div className="font-serif print:text-xs report-inner">
                 <header className="text-center mb-2 print:mb-1">
                   <img
-                    src="https://i.ibb.co/XxjvSChz/Sch-banner.png"
+                    src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
                     alt="School Banner"
-                    className="w-full h-auto max-h-[140px] print:max-h-[44mm] object-contain mb-1.5 mx-auto block"
+                    className="w-full h-auto block mb-1.5 progress-report-banner"
                     referrerPolicy="no-referrer"
                   />
                   <h2 className="text-xl font-semibold inline-block border-b-2 border-slate-700 px-8 pb-1 mt-1 print:text-base print:px-4 print:pb-0.5 print:mt-0">

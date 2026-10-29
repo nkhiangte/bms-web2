@@ -972,6 +972,15 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
     max-height: 284mm;
     overflow: hidden;
   }
+  .progress-report-banner {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
   .print-hidden { display: none !important; }
 }
 `,
@@ -1022,11 +1031,11 @@ const ProgressReportPage: React.FC<ProgressReportPageProps> = ({
       >
         <div className="font-serif text-xs text-slate-900">
           {/* Progress report banner */}
-          <div className="mb-1 text-center">
+          <div className="mb-1 text-center w-full">
             <img
-              src="https://i.ibb.co/XxjvSChz/Sch-banner.png"
+              src={schoolConfig?.schoolBannerUrl || SCHOOL_BANNER_URL}
               alt="School Banner"
-              className="w-full h-auto max-h-[140px] print:max-h-[44mm] object-contain mb-1.5 mx-auto block"
+              className="w-full h-auto block mb-1.5 progress-report-banner"
               referrerPolicy="no-referrer"
             />
           </div>

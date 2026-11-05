@@ -38,13 +38,28 @@ const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description:
     </Link>
 );
 
-const AchievementCard: React.FC<{ item: Achievement }> = ({ item }) => (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-        {item.imageUrl && (
-            <div className="aspect-[4/3] overflow-hidden bg-slate-100">
-                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-            </div>
-        )}
+const AchievementCard: React.FC<{ item: Achievement }> = ({ item }) => {
+    const [imgFailed, setImgFailed] = useState(false);
+    const hasValidImage = Boolean(
+        item.imageUrl &&
+        !imgFailed &&
+        !item.imageUrl.includes('placeholder')
+    );
+
+    return (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            {hasValidImage && (
+                <div className="aspect-[4/3] overflow-hidden bg-slate-100 relative">
+                    <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={() => setImgFailed(true)}
+                    />
+                </div>
+            )}
         <div className="p-5 flex flex-col flex-1">
             <div className="flex items-center justify-between gap-2 mb-3">
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['Other']}`}>
@@ -61,7 +76,8 @@ const AchievementCard: React.FC<{ item: Achievement }> = ({ item }) => (
             )}
         </div>
     </div>
-);
+    );
+};
 
 const AchievementsPage: React.FC = () => {
     const [achievements, setAchievements] = useState<Achievement[]>([]);

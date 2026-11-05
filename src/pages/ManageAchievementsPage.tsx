@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { seedAchievements } from '@/seedAchievements';
 import { db } from '@/firebaseConfig';
-import { uploadToImgBB, resizeImage } from '@/utils';
+import { uploadToImgBB, uploadImageToStorage, resizeImage } from '@/utils';
 import { SpinnerIcon, PlusIcon, XIcon } from '@/components/Icons';
 import { User } from '@/types';
 
@@ -135,7 +135,7 @@ const seedScienceAchievements = async () => {
         setUploading(true);
         try {
             const resized = await resizeImage(file, 1024, 1024, 0.85);
-            const url = await uploadToImgBB(resized);
+            const url = await uploadImageToStorage(resized, 'achievements');
             setEditing(prev => prev ? { ...prev, imageUrl: url } : prev);
         } catch {
             alert('Failed to upload image.');

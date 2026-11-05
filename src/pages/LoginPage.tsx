@@ -180,7 +180,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
         <div className="bg-white shadow-xl rounded-2xl px-8 pt-8 pb-8">
           <div className="mb-8 text-center">
             <img
-              src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png"
+              src="/assets/school/bms-logo-color.png"
               alt="Bethel Mission School Logo"
               className="mx-auto h-32 mb-4"
             />

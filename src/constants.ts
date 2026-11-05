@@ -776,11 +776,13 @@ export const GRADES_WITH_NO_ACTIVITIES: Grade[] = [
     Grade.X,
 ];
 
+export const SCHOOL_LOGO_URL = '/assets/school/bms-logo-color.png';
+
 export const DISTINCTION_HOLDERS_BY_YEAR: Record<string, DistinctionHolder[]> = {
-    '2023': [ { name: 'Esther Tingbiakmuani', parentage: 'D/o Z.L. Thanga', imageUrl: 'https://i.ibb.co/v4zsJtrq/esther.jpg' } ],
-    '2020': [ { name: 'Manngaihsangi', parentage: 'D/o K. Lalthlamuana', imageUrl: 'https://i.ibb.co/4wrY5r7B/manngaih.jpg' } ],
+    '2023': [ { name: 'Esther Tingbiakmuani', parentage: 'D/o Z.L. Thanga', imageUrl: '/assets/school/esther.jpg' } ],
+    '2020': [ { name: 'Manngaihsangi', parentage: 'D/o K. Lalthlamuana', imageUrl: '/assets/school/manngaih.jpg' } ],
     '2019': [ { name: 'C.L. Kimteii', parentage: 'D/o C. Lalthazuala', imageUrl: 'https://i.ibb.co/ks8prn9Z/cl-kim.jpg' }, { name: 'R. Lalrinmawii', parentage: 'D/o R. Lalfakzuala', imageUrl: 'https://i.ibb.co/1fYFM37C/r-rinmawii.jpg' } ],
 };
 
-export const SCHOOL_BANNER_URL = 'https://i.ibb.co/Gfh1ZxLv/sch-logo-bw.png';
+export const SCHOOL_BANNER_URL = '/sch-logo-bw.png';
 export const LOCAL_SCHOOL_BANNER_URL = '/sch-logo-bw.png';

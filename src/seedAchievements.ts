@@ -17,7 +17,7 @@ const hardcodedAchievements = [
         year: '2023',
         category: 'Academic',
         studentName: 'Esther Tingbiakmuani',
-        imageUrl: 'https://i.ibb.co/v4zsJtrq/esther.jpg',
+        imageUrl: '/assets/school/esther.jpg',
     },
     {
         title: 'MBSE HSLC 10th Rank',
@@ -25,7 +25,7 @@ const hardcodedAchievements = [
         year: '2020',
         category: 'Academic',
         studentName: 'Manngaihsangi',
-        imageUrl: 'https://i.ibb.co/4wrY5r7B/manngaih.jpg',
+        imageUrl: '/assets/school/manngaih.jpg',
     },
     {
         title: 'MBSE HSLC 10th Rank',

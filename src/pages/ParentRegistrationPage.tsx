@@ -328,7 +328,7 @@ const ParentRegistrationPage: React.FC = () => {
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:p-8">
             <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-8">
-                    <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Logo" className="h-16 mx-auto mb-4" />
+                    <img src="/assets/school/bms-logo-color.png" alt="Logo" className="h-16 mx-auto mb-4" />
                     <h1 className="text-3xl font-extrabold text-slate-900">Parent Portal Registration</h1>
                     <p className="mt-2 text-slate-600">Create an account to track your child's progress</p>
                 </div>

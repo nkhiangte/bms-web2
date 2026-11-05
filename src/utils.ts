@@ -1012,59 +1012,32 @@ export const resizeImage = (file: File, maxWidth: number, maxHeight: number, qua
 };
 
 export const uploadImageToStorage = async (base64OrFile: string | File, folder = 'uploads'): Promise<string> => {
-    try {
-        const { storage } = await import('@/firebaseConfig');
-        const timestamp = Date.now();
-        const rand = Math.random().toString(36).substring(2, 8);
+    const { storage } = await import('@/firebaseConfig');
+    const timestamp = Date.now();
+    const rand = Math.random().toString(36).substring(2, 8);
 
-        if (typeof base64OrFile === 'string') {
-            const match = base64OrFile.match(/^data:image\/(\w+);base64,/);
-            const ext = match ? (match[1] === 'jpeg' ? 'jpg' : match[1]) : 'jpg';
-            const cleanBase64 = base64OrFile.replace(/^data:image\/\w+;base64,/, '');
-            const filePath = `${folder}/${timestamp}_${rand}.${ext}`;
-            const storageRef = storage.ref(filePath);
-            await storageRef.putString(cleanBase64, 'base64', {
-                contentType: match ? `image/${match[1]}` : 'image/jpeg',
-            });
-            return await storageRef.getDownloadURL();
-        } else {
-            const ext = base64OrFile.name.split('.').pop() || 'jpg';
-            const filePath = `${folder}/${timestamp}_${rand}.${ext}`;
-            const storageRef = storage.ref(filePath);
-            await storageRef.put(base64OrFile);
-            return await storageRef.getDownloadURL();
-        }
-    } catch (firebaseErr) {
-        console.warn('Firebase Storage upload failed, attempting ImgBB fallback:', firebaseErr);
-        if (typeof base64OrFile === 'string') {
-            return await uploadToImgBB(base64OrFile);
-        }
-        throw firebaseErr;
+    if (typeof base64OrFile === 'string') {
+        const match = base64OrFile.match(/^data:image\/(\w+);base64,/);
+        const ext = match ? (match[1] === 'jpeg' ? 'jpg' : match[1]) : 'jpg';
+        const cleanBase64 = base64OrFile.replace(/^data:image\/\w+;base64,/, '');
+        const filePath = `${folder}/${timestamp}_${rand}.${ext}`;
+        const storageRef = storage.ref(filePath);
+        await storageRef.putString(cleanBase64, 'base64', {
+            contentType: match ? `image/${match[1]}` : 'image/jpeg',
+        });
+        return await storageRef.getDownloadURL();
+    } else {
+        const ext = base64OrFile.name.split('.').pop() || 'jpg';
+        const filePath = `${folder}/${timestamp}_${rand}.${ext}`;
+        const storageRef = storage.ref(filePath);
+        await storageRef.put(base64OrFile);
+        return await storageRef.getDownloadURL();
     }
 };
 
 export const uploadToImgBB = async (base64Image: string): Promise<string> => {
-    try {
-        // Primary: Upload directly to Firebase Storage
-        return await uploadImageToStorage(base64Image, 'general');
-    } catch (storageError) {
-        console.warn('Primary Firebase Storage upload failed, falling back to ImgBB:', storageError);
-        const formData = new FormData();
-        const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
-        formData.append('image', cleanBase64);
-
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-            method: 'POST',
-            body: formData,
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            return data.data.url;
-        } else {
-            throw new Error(data.error?.message || 'Failed to upload image');
-        }
-    }
+    // Routed directly to Firebase Storage
+    return await uploadImageToStorage(base64Image, 'school_uploads');
 };
 
 export const stripHtml = (html: string): string => {

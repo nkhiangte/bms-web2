@@ -27,8 +27,8 @@ const STATIC_HSLC_RESULTS = [
 ];
 
 const topRankers = [
-    { name: 'Esther Tingbiakmuani', rank: '4th Rank', year: 2023, imgSrc: 'https://i.ibb.co/v4zsJtrq/esther.jpg' },
-    { name: 'Manngaihsangi', rank: '10th Rank', year: 2020, imgSrc: 'https://i.ibb.co/4wrY5r7B/manngaih.jpg' },
+    { name: 'Esther Tingbiakmuani', rank: '4th Rank', year: 2023, imgSrc: '/assets/school/esther.jpg' },
+    { name: 'Manngaihsangi', rank: '10th Rank', year: 2020, imgSrc: '/assets/school/manngaih.jpg' },
     { name: 'C.L. Kimteii', rank: '10th Rank', year: 2019, imgSrc: 'https://i.ibb.co/ks8prn9Z/cl-kim.jpg' },
     { name: 'R. Lalrinmawii', rank: '10th Rank', year: 2019, imgSrc: 'https://i.ibb.co/1fYFM37C/r-rinmawii.jpg' },
 ];

@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ user, students = [], onLogout, onToggle
                 </svg>
             </button>
             <Link to="/portal/dashboard" title="Go to Dashboard" className="flex items-center gap-3">
-                <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-10 sm:h-12" />
+                <img src="/assets/school/bms-logo-color.png" alt="Bethel Mission School Logo" className="h-10 sm:h-12" />
                 <div>
                   <h1 className="text-lg sm:text-xl font-bold text-slate-800 hidden md:block uppercase">
                     Bethel Mission School

@@ -206,7 +206,7 @@ const CollapsibleCategory: React.FC<{ category: CategoryData, user: User, onLink
 const SidebarContent: React.FC<{user: User, onLinkClick?: () => void}> = ({ user, onLinkClick }) => (
     <div className="flex flex-col flex-grow bg-slate-50 border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-4 mb-4">
-             <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-10" />
+             <img src="/assets/school/bms-logo-color.png" alt="Bethel Mission School Logo" className="h-10" />
               <span className="ml-3 text-lg font-bold text-slate-800">BMS Portal</span>
         </div>
         <div className="flex-grow flex flex-col px-2">

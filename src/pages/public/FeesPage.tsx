@@ -126,7 +126,7 @@ const FeesPage: React.FC<FeesPageProps> = ({ user, feeStructure, admissionSettin
         const options = {
             key: razorpayKey, amount: currentDuesTotal * 100, currency: "INR",
             name: "Bethel Mission School", description: `Fee Payment for ${foundStudent.name}`,
-            image: "https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png",
+            image: "/assets/school/bms-logo-color.png",
             handler: async (response: any) => {
                 const existingPayments: FeePayments = foundStudent.feePayments || { admissionFeePaid: false, tuitionFeesPaid: {}, examFeesPaid: { terminal1: false, terminal2: false, terminal3: false } };
                 const newPayments: FeePayments = JSON.parse(JSON.stringify(existingPayments));

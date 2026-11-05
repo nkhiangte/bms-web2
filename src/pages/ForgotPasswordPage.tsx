@@ -34,7 +34,7 @@ const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onForgotPasswor
       <div className="w-full max-w-md">
         <div className="bg-white shadow-xl rounded-2xl px-8 pt-8 pb-8">
           <div className="mb-8 text-center">
-             <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="mx-auto h-32 mb-4" />
+             <img src="/assets/school/bms-logo-color.png" alt="Bethel Mission School Logo" className="mx-auto h-32 mb-4" />
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Forgot Password</h1>
             <p className="text-slate-600 mt-2">Enter your email to receive a password reset link.</p>
           </div>

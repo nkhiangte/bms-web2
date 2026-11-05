@@ -41,7 +41,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user, navigation }) => {
                 <div className="flex items-center justify-between h-20 sm:h-24">
                     {/* Logo */}
                     <Link to="/" className="flex items-center flex-shrink-0">
-                        <img src="https://i.ibb.co/v40h3B0K/BMS-Logo-Color.png" alt="Bethel Mission School Logo" className="h-16 sm:h-20" />
+                        <img src="/assets/school/bms-logo-color.png" alt="Bethel Mission School Logo" className="h-16 sm:h-20" />
                     </Link>
 
                     {/* Login Button & Mobile Menu Toggle */}

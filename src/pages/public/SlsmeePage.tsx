@@ -5,9 +5,15 @@ import { BackIcon } from '@/components/Icons';
 const { Link } = ReactRouterDOM as any;
 
 const Lightbox: React.FC<{src:string;alt:string;onClose:()=>void}> = ({src,alt,onClose}) => (
-    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-white text-4xl hover:text-slate-300">&times;</button>
-        <img src={src} alt={alt} className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl" onClick={e=>e.stopPropagation()} />
+    <div className="fixed inset-0 bg-[#07162B]/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-white text-4xl hover:text-[#DFC06B]">&times;</button>
+        <img
+            src={src}
+            alt={alt}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/school/campus.jpg'; }}
+            className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl border border-[#C9A84C]/50"
+            onClick={e=>e.stopPropagation()}
+        />
     </div>
 );
 
@@ -47,35 +53,42 @@ const SlsmeePage: React.FC = () => {
 
     return (
         <>
-        <div className="bg-black py-16 min-h-screen">
+        <div className="bg-[#F4F7FB] py-12 md:py-16 min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-                <div className="mb-8">
-                    <Link to="/achievements/science" className="flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors">
-                        <BackIcon className="w-5 h-5" /> Back to Science & Maths Achievements
+                <div className="mb-6">
+                    <Link to="/achievements/science" className="inline-flex items-center gap-2 text-sm font-bold text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors">
+                        <BackIcon className="w-5 h-5" /> Back to Science &amp; Maths Achievements
                     </Link>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-8 md:p-12 rounded-lg shadow-2xl">
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-6">State Level Science Mathematics & Environment Exhibition (SLSMEE)</h1>
-                    <div className="space-y-6 text-slate-300 leading-relaxed">
-                        <p>Participation in the SLSMEE organized by SCERT began in 2006, and since then, our students have created an inspiring legacy.</p>
-                        <ul className="list-disc list-inside mt-4 space-y-2">
-                            <li><strong className="text-white">2006</strong> – First participation.</li>
-                            <li><strong className="text-white">2014</strong> – Lalrinchhani (Class IX) won 3rd Prize, and showcased her project at the <a href="https://bitm.gov.in/science-fair/" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300 underline font-semibold">Eastern India Science Fair</a> 2015 at BITM, Kolkata.</li>
-                            <li><strong className="text-white">2015</strong> – Runrempuia and Vanlalfeli (both Class IX) won 1st Prizes; all three represented Mizoram at BITM, Kolkata.</li>
-                            <li><strong className="text-white">2016</strong> – Joar Vanlalchhanhimi won 1st Prize, earning a place at <a href="https://ncert.nic.in/jn-national-science-exhibition.php?ln=en" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300 underline font-semibold">JNSMEE 2017</a> in Bhopal.</li>
-                            <li><strong className="text-white">2017</strong> – C.L. Kimteii and R. Lalrinmawii won prizes and presented at BITM, Kolkata 2018.</li>
-                            <li><strong className="text-white">2018</strong> – Zenngoluni won 1st Prize and Dosiamliana won 2nd Prize, both advancing to BITM, Kolkata 2019.</li>
-                            <li><strong className="text-white">2019</strong> – Four students represented the state at the Eastern India Science Fair 2020, BITM, Kolkata.</li>
-                            <li><strong className="text-white">2022</strong> – Laldinpuii won 1st Prize in the Mathematics category.</li>
-                            <li><strong className="text-white">2024</strong> – Lawmgsangzuali Hmar and Lalruatkima represented the state at the NE India Science Fair, National Science Centre, Guwahati.</li>
+                <div className="bg-white border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] p-6 sm:p-8 md:p-12 rounded-2xl shadow-lg">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B1F3A] mb-6">State Level Science Mathematics &amp; Environment Exhibition (SLSMEE)</h1>
+                    <div className="space-y-6 text-[#132D52] leading-relaxed">
+                        <p>Participation in the SLSMEE organized by SCERT began in <span className="font-tabular">2006</span>, and since then, our students have created an inspiring legacy.</p>
+                        <ul className="space-y-2.5">
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2006</strong> – First participation.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2014</strong> – Lalrinchhani (Class IX) won 3rd Prize, and showcased her project at the <a href="https://bitm.gov.in/science-fair/" target="_blank" rel="noopener noreferrer" className="text-[#8E6D1B] hover:text-[#0B1F3A] underline font-bold">Eastern India Science Fair</a> 2015 at BITM, Kolkata.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2015</strong> – Runrempuia and Vanlalfeli (both Class IX) won 1st Prizes; all three represented Mizoram at BITM, Kolkata.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2016</strong> – Joar Vanlalchhanhimi won 1st Prize, earning a place at <a href="https://ncert.nic.in/jn-national-science-exhibition.php?ln=en" target="_blank" rel="noopener noreferrer" className="text-[#8E6D1B] hover:text-[#0B1F3A] underline font-bold">JNSMEE 2017</a> in Bhopal.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2017</strong> – C.L. Kimteii and R. Lalrinmawii won prizes and presented at BITM, Kolkata 2018.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2018</strong> – Zenngoluni won 1st Prize and Dosiamliana won 2nd Prize, both advancing to BITM, Kolkata 2019.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2019</strong> – Four students represented the state at the Eastern India Science Fair 2020, BITM, Kolkata.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2022</strong> – Laldinpuii won 1st Prize in the Mathematics category.</li>
+                            <li className="p-3 bg-[#F4F7FB] rounded-lg border-l-4 border-[#C9A84C]"><strong className="text-[#0B1F3A] font-tabular">2024</strong> – Lawmgsangzuali Hmar and Lalruatkima represented the state at the NE India Science Fair, National Science Centre, Guwahati.</li>
                         </ul>
                     </div>
-                    <div className="mt-12 pt-8 border-t border-zinc-700">
-                        <h2 className="text-2xl font-bold text-center text-white mb-8">Achievements in Pictures</h2>
+                    <div className="mt-12 pt-8 border-t border-[#C9A84C]/40">
+                        <h2 className="text-2xl font-bold text-center text-[#0B1F3A] mb-8">Achievements in Pictures</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {slsmeeImages.map((img,i) => (
-                                <figure key={i} className="aspect-square cursor-pointer group" onClick={()=>setSelectedImage(img)}>
-                                    <img src={img.src} alt={img.alt} className="rounded-lg shadow-md w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 border border-zinc-700" loading="lazy" />
+                                <figure key={i} className="aspect-square cursor-pointer group bg-[#F4F7FB] rounded-xl overflow-hidden border border-[#0B1F3A]/15" onClick={()=>setSelectedImage(img)}>
+                                    <img
+                                        src={img.src}
+                                        alt={img.alt}
+                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/school/campus.jpg'; }}
+                                    />
                                 </figure>
                             ))}
                         </div>

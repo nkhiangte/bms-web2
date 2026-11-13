@@ -5,11 +5,11 @@ import { AcademicCapIcon, BookOpenIcon } from '@/components/Icons';
 const { Link } = ReactRouterDOM as any;
 
 const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string }> = ({ icon, title, description, link }) => (
-    <Link to={link} className="group block bg-zinc-900 border border-zinc-800 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:border-sky-700 transition-all transform hover:-translate-y-2">
-        <div className="text-sky-400 mb-4">{icon}</div>
-        <h3 className="text-2xl font-bold text-white group-hover:text-sky-400 transition-colors">{title}</h3>
-        <p className="mt-2 text-slate-400">{description}</p>
-        <div className="mt-4 inline-block font-semibold text-sky-400 group-hover:text-sky-300">
+    <Link to={link} className="group block bg-white border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] p-6 sm:p-8 rounded-2xl shadow-sm hover:shadow-xl hover:border-[#C9A84C] transition-all transform hover:-translate-y-1">
+        <div className="text-[#0B1F3A] group-hover:text-[#8E6D1B] transition-colors mb-4">{icon}</div>
+        <h3 className="text-xl sm:text-2xl font-bold text-[#0B1F3A] group-hover:text-[#8E6D1B] transition-colors">{title}</h3>
+        <p className="mt-2 text-[#132D52]/80 text-sm sm:text-base">{description}</p>
+        <div className="mt-4 inline-block font-bold text-[#8E6D1B] group-hover:text-[#0B1F3A] transition-colors">
             Learn More &rarr;
         </div>
     </Link>
@@ -25,17 +25,20 @@ const ScienceClubPage: React.FC = () => {
         { title:"Mathematics Competition", description:"Success in the State-Level Mathematics Competition organized by MMS.", link:"/achievements/science/mathematics-competition", icon:<AcademicCapIcon className="w-12 h-12" /> },
     ];
     return (
-        <div className="relative py-16 overflow-hidden bg-black min-h-screen">
+        <div className="relative py-12 md:py-16 overflow-hidden bg-[#F4F7FB] min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Achievements in Science & Mathematics</h1>
-                    <p className="mt-4 text-lg text-slate-400">Explore our students' remarkable achievements in various science and mathematics competitions and programs.</p>
+                <div className="text-center mb-12">
+                    <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#8E6D1B] bg-[#FBF6E8] border border-[#C9A84C]/50 px-3 py-1 rounded-full mb-3">
+                        STEM Excellence
+                    </span>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B1F3A]">Achievements in Science &amp; Mathematics</h1>
+                    <p className="mt-3 text-base sm:text-lg text-[#132D52]/80 max-w-2xl mx-auto">Explore our students&apos; remarkable achievements in various science and mathematics competitions and programs.</p>
                 </div>
-                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {achievements.map(a => <SubPageCard key={a.title} icon={a.icon} title={a.title} description={a.description} link={a.link} />)}
                 </div>
-                <div className="mt-12 text-center pt-8 border-t border-zinc-800">
-                    <Link to="/gallery" state={{initialPath:['By Event/Occasion','Science Fair']}} className="inline-block px-8 py-3 bg-sky-600 text-white font-bold text-lg rounded-lg shadow-md hover:bg-sky-700 transition-transform transform hover:-translate-y-1">
+                <div className="mt-12 text-center pt-8 border-t border-[#0B1F3A]/15">
+                    <Link to="/gallery" state={{initialPath:['By Event/Occasion','Science Fair']}} className="inline-flex items-center justify-center min-h-[48px] px-8 py-3 bg-[#0B1F3A] text-white font-bold text-base rounded-xl shadow-md hover:bg-[#132D52] border-b-2 border-[#C9A84C] transition-all">
                         View Science Gallery
                     </Link>
                 </div>

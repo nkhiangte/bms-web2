@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Private / authenticated portal routes
+Disallow: /portal/
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://bms04.com/sitemap.xml

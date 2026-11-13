@@ -711,6 +711,31 @@ Curriculum & Syllabus Strictness Guidelines:
     }
   });
 
+  // Serve robots.txt & sitemap.xml with proper MIME types for Googlebot & Search Console
+  app.get("/robots.txt", (_req, res) => {
+    const robotsPath = fs.existsSync(path.join(process.cwd(), "public", "robots.txt"))
+      ? path.join(process.cwd(), "public", "robots.txt")
+      : path.join(process.cwd(), "dist", "robots.txt");
+    res.type("text/plain; charset=utf-8");
+    if (fs.existsSync(robotsPath)) {
+      return res.sendFile(robotsPath);
+    }
+    return res.send("User-agent: *\nAllow: /\nDisallow: /portal/\nSitemap: https://bms04.com/sitemap.xml\n");
+  });
+
+  app.get("/sitemap.xml", (_req, res) => {
+    const sitemapPath = fs.existsSync(path.join(process.cwd(), "public", "sitemap.xml"))
+      ? path.join(process.cwd(), "public", "sitemap.xml")
+      : path.join(process.cwd(), "dist", "sitemap.xml");
+    res.type("application/xml; charset=utf-8");
+    if (fs.existsSync(sitemapPath)) {
+      return res.sendFile(sitemapPath);
+    }
+    return res.send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.com/</loc><priority>1.0</priority></url><url><loc>https://bms04.com/admissions</loc><priority>0.9</priority></url><url><loc>https://bms04.com/academics</loc><priority>0.9</priority></url><url><loc>https://bms04.com/about</loc><priority>0.8</priority></url><url><loc>https://bms04.com/contact</loc><priority>0.8</priority></url></urlset>`
+    );
+  });
+
   // Vite middleware for development vs static build in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

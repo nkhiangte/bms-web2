@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import * as ReactRouterDOM from 'react-router-dom';
 import { auth, firebase, db } from '../firebaseConfig';
@@ -175,48 +174,67 @@ const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 to-amber-200 p-4">
+    <div className="bms-login-page min-h-screen bg-[#0B1F3A] flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
-        <div className="bg-white shadow-xl rounded-2xl px-8 pt-8 pb-8">
-          <div className="mb-8 text-center">
+        <div className="bg-white rounded-2xl shadow-2xl border-t-4 border-[#C9A84C] px-6 sm:px-8 pt-8 pb-8">
+          <div className="mb-6 text-center">
             <img
               src="/assets/school/bms-logo-color.png"
               alt="Bethel Mission School Logo"
-              className="mx-auto h-32 mb-4"
+              className="mx-auto h-24 sm:h-28 w-auto mb-3 object-contain"
             />
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Portal Login</h1>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B]">
+              Bethel Mission School &middot; Champhai
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B1F3A] mt-1">
+              Portal Login
+            </h1>
+            <p className="text-xs text-[#0B1F3A]/70 italic mt-1">
+              "Service to God &amp; Men"
+            </p>
           </div>
           
-          <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
+          <div className="flex bg-[#F4F7FB] border border-[#0B1F3A]/15 p-1 rounded-xl mb-6">
               <button 
+                  type="button"
                   onClick={() => { setLoginMethod('email'); setShowOtpInput(false); }}
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${loginMethod === 'email' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 min-h-[44px] py-2 text-sm font-bold rounded-lg transition-all ${
+                    loginMethod === 'email'
+                      ? 'bg-[#0B1F3A] text-white shadow-sm'
+                      : 'text-[#0B1F3A]/70 hover:text-[#0B1F3A]'
+                  }`}
               >
-                  Email/Password
+                  Email / Password
               </button>
               <button 
+                  type="button"
                   onClick={() => { setLoginMethod('phone'); setShowOtpInput(false); }}
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${loginMethod === 'phone' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 min-h-[44px] py-2 text-sm font-bold rounded-lg transition-all ${
+                    loginMethod === 'phone'
+                      ? 'bg-[#0B1F3A] text-white shadow-sm'
+                      : 'text-[#0B1F3A]/70 hover:text-[#0B1F3A]'
+                  }`}
               >
                   Phone OTP
               </button>
           </div>
 
           {formError && (
-            <p
-              className="bg-red-100 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded-r-lg relative mb-4 shadow-sm"
+            <div
+              className="bg-[#0B1F3A] border-2 border-[#C9A84C] text-white px-4 py-3 rounded-xl mb-4 shadow-sm text-sm font-medium flex items-start gap-2.5"
               role="alert"
             >
-              {formError}
-            </p>
+              <span className="text-[#DFC06B] font-extrabold flex-shrink-0">!</span>
+              <span>{formError}</span>
+            </div>
           )}
           {notification && !formError && (
-            <p
-              className="bg-emerald-50 border-l-4 border-emerald-400 text-emerald-800 px-4 py-3 rounded-r-lg relative mb-4 shadow-sm"
+            <div
+              className="bg-[#FBF6E8] border border-[#C9A84C] text-[#0B1F3A] px-4 py-3 rounded-xl mb-4 shadow-sm text-sm font-semibold"
               role="alert"
             >
               {notification}
-            </p>
+            </div>
           )}
 
           <div id="recaptcha-container"></div>
@@ -226,13 +244,13 @@ const LoginPage: React.FC<LoginPageProps> = ({
             <fieldset disabled={loading}>
               <div className="mb-4">
                 <label
-                  className="block text-slate-700 text-sm font-bold mb-2"
+                  className="block text-[#0B1F3A] text-sm font-bold mb-1.5"
                   htmlFor="email"
                 >
-                  Email
+                  Email Address
                 </label>
                 <input
-                  className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  className="appearance-none border border-[#0B1F3A]/25 rounded-lg w-full min-h-[48px] py-3 px-4 bg-white text-[#0B1F3A] leading-tight focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/30"
                   id="email"
                   type="email"
                   placeholder="your-email@example.com"
@@ -244,13 +262,13 @@ const LoginPage: React.FC<LoginPageProps> = ({
               </div>
               <div className="mb-6">
                 <label
-                  className="block text-slate-700 text-sm font-bold mb-2"
+                  className="block text-[#0B1F3A] text-sm font-bold mb-1.5"
                   htmlFor="password"
                 >
                   Password
                 </label>
                 <input
-                  className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  className="appearance-none border border-[#0B1F3A]/25 rounded-lg w-full min-h-[48px] py-3 px-4 bg-white text-[#0B1F3A] leading-tight focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/30"
                   id="password"
                   type="password"
                   placeholder="Password"
@@ -262,7 +280,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="text-right mt-2">
                   <Link
                     to="/forgot-password"
-                    className="inline-block align-baseline font-bold text-sm text-sky-600 hover:text-sky-800 transition-colors"
+                    className="inline-block align-baseline font-bold text-sm text-[#8E6D1B] hover:text-[#0B1F3A] transition-colors"
                   >
                     Forgot Password?
                   </Link>
@@ -270,7 +288,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <button
-                  className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-slate-400"
+                  className="w-full min-h-[48px] bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold py-3 px-4 rounded-lg focus:outline-none transition-colors shadow-md disabled:opacity-50"
                   type="submit"
                   disabled={loading}
                 >
@@ -284,17 +302,17 @@ const LoginPage: React.FC<LoginPageProps> = ({
                   <form onSubmit={handlePhoneSubmit}>
                       <fieldset disabled={loading}>
                           <div className="mb-6">
-                              <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="phone">
+                              <label className="block text-[#0B1F3A] text-sm font-bold mb-1.5" htmlFor="phone">
                                   Mobile Number
                               </label>
                               <div className="flex">
-                                  <span className="inline-flex items-center px-3 text-sm text-slate-900 bg-slate-200 border border-r-0 border-slate-300 rounded-l-md">
+                                  <span className="inline-flex items-center px-3.5 text-sm font-bold text-white bg-[#0B1F3A] border border-r-0 border-[#0B1F3A] rounded-l-lg">
                                       +91
                                   </span>
                                   <input
                                       type="tel"
                                       id="phone"
-                                      className="shadow-sm appearance-none border border-slate-300 rounded-r-md w-full py-3 px-4 text-slate-800 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                      className="appearance-none border border-[#0B1F3A]/25 rounded-r-lg rounded-l-none w-full min-h-[48px] py-3 px-4 bg-white text-[#0B1F3A] leading-tight focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/30 font-tabular"
                                       placeholder="10-digit mobile number"
                                       value={phoneNumber}
                                       onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
@@ -302,10 +320,10 @@ const LoginPage: React.FC<LoginPageProps> = ({
                                       required
                                   />
                               </div>
-                              <p className="text-xs text-slate-500 mt-2">We'll send an OTP to verify your number.</p>
+                              <p className="text-xs text-[#0B1F3A]/70 mt-2">We'll send an OTP to verify your registered number.</p>
                           </div>
                           <button
-                              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 shadow-md disabled:bg-slate-400"
+                              className="w-full min-h-[48px] bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold py-3 px-4 rounded-lg focus:outline-none transition-colors shadow-md disabled:opacity-50"
                               type="submit"
                               disabled={loading || phoneNumber.length < 10}
                           >
@@ -317,13 +335,13 @@ const LoginPage: React.FC<LoginPageProps> = ({
                   <form onSubmit={handleOtpSubmit}>
                       <fieldset disabled={loading}>
                           <div className="mb-6">
-                              <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="otp">
+                              <label className="block text-[#0B1F3A] text-sm font-bold mb-1.5" htmlFor="otp">
                                   Enter OTP
                               </label>
                               <input
                                   id="otp"
                                   type="text"
-                                  className="shadow-sm appearance-none border border-slate-300 rounded-lg w-full py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                  className="appearance-none border border-[#0B1F3A]/25 rounded-lg w-full min-h-[48px] py-3 px-4 bg-white text-[#0B1F3A] focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/30 font-tabular"
                                   placeholder="6-digit code"
                                   value={otp}
                                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -335,14 +353,14 @@ const LoginPage: React.FC<LoginPageProps> = ({
                                   <button 
                                       type="button" 
                                       onClick={() => setShowOtpInput(false)}
-                                      className="text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors"
+                                      className="text-sm font-bold text-[#8E6D1B] hover:text-[#0B1F3A] transition-colors"
                                   >
                                       Change Mobile Number
                                   </button>
                               </div>
                           </div>
                           <button
-                              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 shadow-md disabled:bg-slate-400"
+                              className="w-full min-h-[48px] bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold py-3 px-4 rounded-lg focus:outline-none transition-colors shadow-md disabled:opacity-50"
                               type="submit"
                               disabled={loading || otp.length < 6}
                           >
@@ -354,46 +372,46 @@ const LoginPage: React.FC<LoginPageProps> = ({
           )}
 
             <div className="relative flex py-5 items-center">
-                <div className="flex-grow border-t border-slate-300"></div>
-                <span className="flex-shrink mx-4 text-slate-500 text-sm">Or</span>
-                <div className="flex-grow border-t border-slate-300"></div>
+                <div className="flex-grow border-t border-[#0B1F3A]/15"></div>
+                <span className="flex-shrink mx-4 text-[#0B1F3A]/60 text-xs font-bold uppercase tracking-wider">Or</span>
+                <div className="flex-grow border-t border-[#0B1F3A]/15"></div>
             </div>
 
             <button
                 type="button"
                 onClick={handleGoogleClick}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg hover:bg-slate-50 transition-all duration-300 shadow-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
+                className="w-full min-h-[48px] flex items-center justify-center gap-3 bg-white border border-[#0B1F3A]/30 text-[#0B1F3A] font-bold py-3 px-4 rounded-lg hover:bg-[#F4F7FB] hover:border-[#C9A84C] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <svg className="w-5 h-5" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.82l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                    <path fill="none" d="M0 0h48v48H0z"></path>
+                <svg className="w-5 h-5 text-[#0B1F3A]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z" />
                 </svg>
-                Sign in with Google
+                <span>Sign in with Google</span>
             </button>
 
-          <div className="text-center mt-6 text-sm text-slate-700">
-            <p className="mb-2">
+          <div className="text-center mt-6 text-sm text-[#0B1F3A]/85 space-y-2">
+            <p>
                 Teacher or Admin?{' '}
-                <Link to="/signup" className="font-bold text-sky-600 hover:text-sky-800">Register Here</Link>
+                <Link to="/signup" className="font-bold text-[#8E6D1B] hover:text-[#0B1F3A] underline underline-offset-2">
+                  Register Here
+                </Link>
             </p>
             <p>
                 Parent or Student?{' '}
-                <Link to="/parent-registration" className="font-bold text-sky-600 hover:text-sky-800">Create Account</Link>
+                <Link to="/parent-registration" className="font-bold text-[#8E6D1B] hover:text-[#0B1F3A] underline underline-offset-2">
+                  Create Account
+                </Link>
             </p>
-            <p className="mt-4">
-              <Link to="/" className="font-bold text-sm text-slate-600 hover:text-slate-800">
+            <p className="pt-3 border-t border-[#0B1F3A]/10">
+              <Link to="/" className="inline-flex items-center justify-center min-h-[40px] font-bold text-sm text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors">
                     &larr; Back to Website Home
               </Link>
             </p>
           </div>
         </div>
-        <p className="text-center text-slate-700 text-xs mt-6">
-          &copy;{new Date().getFullYear()} Bethel Mission School. All rights
-          reserved.
+
+        <p className="text-center text-white/75 text-xs mt-5">
+          &copy; {new Date().getFullYear()} Bethel Mission School, Champhai. All rights reserved.
         </p>
       </div>
     </div>

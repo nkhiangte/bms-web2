@@ -67,7 +67,7 @@ const APP_SCENES: AppScene[] = [
             { label: "Real-Time Cloud Sync", desc: "Works on Android, iPhone & Web Portal", icon: "🌐" }
         ],
         bottomCta: "SUPER SMOOTH & INTUITIVE",
-        accentColor: "#38bdf8" // Sky blue
+        accentColor: "#DFC06B"
     },
     {
         id: 2,
@@ -84,7 +84,7 @@ const APP_SCENES: AppScene[] = [
             { label: "1-Click PDF Report Card", desc: "Official stamped report card ready to download", icon: "📥" }
         ],
         bottomCta: "INSTANT REPORT CARDS ON YOUR PHONE",
-        accentColor: "#a855f7" // Purple
+        accentColor: "#C9A84C"
     },
     {
         id: 3,
@@ -101,7 +101,7 @@ const APP_SCENES: AppScene[] = [
             { label: "Instant Result Publish", desc: "Alert parents immediately via app notification", icon: "🚀" }
         ],
         bottomCta: "ZERO PAPERWORK FOR TEACHERS",
-        accentColor: "#f59e0b" // Amber / Gold
+        accentColor: "#FFFFFF"
     },
     {
         id: 4,
@@ -118,7 +118,7 @@ const APP_SCENES: AppScene[] = [
             { label: "Daily Homework & Notices", desc: "Syllabus, due dates and teacher notes", icon: "📚" }
         ],
         bottomCta: "SAFE, SIMPLE & TRANSPARENT",
-        accentColor: "#10b981" // Emerald
+        accentColor: "#DFC06B"
     },
     {
         id: 5,
@@ -135,7 +135,7 @@ const APP_SCENES: AppScene[] = [
             { label: "24/7 Digital School Access", desc: "Champhai's most trusted school management platform", icon: "⭐" }
         ],
         bottomCta: "INSTALL NOW AT BMS04.COM",
-        accentColor: "#f43f5e" // Coral / Rose
+        accentColor: "#C9A84C"
     }
 ];
 
@@ -1209,20 +1209,20 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-[#07162B] text-white py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header Banner */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#C9A84C]/30 pb-6">
                     <div>
-                        <div className="flex items-center gap-2 text-sky-400 font-semibold text-xs uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-[#DFC06B] font-semibold text-xs uppercase tracking-wider">
                             <Sparkles className="w-4 h-4" />
-                            <span>Exam & Result Management Spotlight • Facebook & Instagram Reels</span>
+                            <span>Exam &amp; Result Management Spotlight • Facebook &amp; Instagram Reels</span>
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-1 tracking-tight">
-                            30-Second Exam & Result Ad Video
+                            30-Second Exam &amp; Result Ad Video
                         </h1>
-                        <p className="text-slate-400 text-sm mt-1 max-w-2xl">
-                            Highlights how easily Bethel Mission School handles <strong className="text-purple-400">examinations, marks entry, auto-tabulation, and instant 1-click digital report cards</strong> with <strong className="text-emerald-400">spoken voiceover audio baked into the media file</strong>.
+                        <p className="text-white/80 text-sm mt-1 max-w-2xl">
+                            Highlights how easily Bethel Mission School handles <strong className="text-[#DFC06B]">examinations, marks entry, auto-tabulation, and instant 1-click digital report cards</strong> with <strong className="text-white">spoken voiceover audio baked into the media file</strong>.
                         </p>
                     </div>
 
@@ -1233,10 +1233,10 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                             disabled={isRecording || isGeneratingVoice}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all cursor-pointer ${
                                 isRecording 
-                                ? 'bg-amber-600 text-white animate-pulse' 
+                                ? 'bg-[#8E6D1B] text-white animate-pulse' 
                                 : isGeneratingVoice
-                                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-500 hover:from-purple-500 hover:to-sky-400 text-white hover:shadow-purple-900/40'
+                                ? 'bg-[#132D52] text-white/50 cursor-not-allowed'
+                                : 'bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A]'
                             }`}
                         >
                             <Download className="w-4 h-4" />
@@ -1251,9 +1251,9 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
 
                         <Link
                             to="/portal/dashboard"
-                            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm rounded-xl border border-slate-700 transition"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white font-medium text-sm rounded-xl border border-[#C9A84C]/40 transition"
                         >
-                            <LayoutDashboard className="w-4 h-4 text-sky-400" />
+                            <LayoutDashboard className="w-4 h-4 text-[#DFC06B]" />
                             <span>Open App Portal</span>
                         </Link>
                     </div>
@@ -1263,15 +1263,15 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* Left Column: 9:16 Interactive Reel Player Phone Mockup */}
                     <div className="lg:col-span-5 flex flex-col items-center">
-                        <div className="w-full max-w-[360px] bg-slate-900 border-4 border-slate-800 rounded-[44px] p-3.5 shadow-2xl relative overflow-hidden ring-1 ring-white/10">
+                        <div className="w-full max-w-[360px] bg-[#0B1F3A] border-4 border-[#1C3D6E] rounded-[44px] p-3.5 shadow-2xl relative overflow-hidden ring-1 ring-[#C9A84C]/30">
                             {/* Phone Speaker Notch */}
-                            <div className="w-28 h-4 bg-slate-800 rounded-full mx-auto mb-2 flex items-center justify-center">
-                                <div className="w-3 h-3 bg-slate-900 rounded-full mr-2"></div>
-                                <div className="w-10 h-1.5 bg-slate-700 rounded-full"></div>
+                            <div className="w-28 h-4 bg-[#132D52] rounded-full mx-auto mb-2 flex items-center justify-center">
+                                <div className="w-3 h-3 bg-[#07162B] rounded-full mr-2"></div>
+                                <div className="w-10 h-1.5 bg-[#1C3D6E] rounded-full"></div>
                             </div>
 
                             {/* Canvas 9:16 Viewport */}
-                            <div className="relative aspect-[9/16] w-full bg-black rounded-[32px] overflow-hidden shadow-inner group">
+                            <div className="relative aspect-[9/16] w-full bg-[#07162B] rounded-[32px] overflow-hidden shadow-inner group">
                                 <canvas
                                     ref={canvasRef}
                                     width={720}
@@ -1280,25 +1280,25 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                 />
 
                                 {/* Interactive Overlay Controls */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#07162B]/60 via-transparent to-[#07162B]/20 pointer-events-none" />
 
                                 {/* Top Right Sound Toggle */}
                                 <button
                                     type="button"
                                     onClick={handleToggleMute}
-                                    className="absolute top-4 right-4 z-20 p-2.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition cursor-pointer"
+                                    className="absolute top-4 right-4 z-20 p-2.5 bg-[#07162B]/80 hover:bg-[#0B1F3A] text-white rounded-full backdrop-blur-md border border-[#C9A84C]/40 transition cursor-pointer"
                                     title={isMuted ? "Unmute Audio" : "Mute Audio"}
                                 >
-                                    {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                                    {isMuted ? <VolumeX className="w-4 h-4 text-white/70" /> : <Volume2 className="w-4 h-4 text-[#DFC06B]" />}
                                 </button>
 
                                 {/* Center Play/Pause button on hover/tap */}
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
-                                    className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+                                    className="absolute inset-0 flex items-center justify-center bg-[#07162B]/30 opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
                                 >
-                                    <div className="p-4 bg-black/70 rounded-full backdrop-blur-md text-white shadow-xl hover:scale-110 transition-transform">
+                                    <div className="p-4 bg-[#0B1F3A]/90 rounded-full backdrop-blur-md text-[#DFC06B] border border-[#C9A84C]/50 shadow-xl hover:scale-110 transition-transform">
                                         {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
                                     </div>
                                 </button>
@@ -1307,37 +1307,37 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                 <div className="absolute bottom-3 left-4 right-4 z-20 pointer-events-none flex items-end justify-between">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-1.5">
-                                            <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center font-bold text-[10px] text-white">
+                                            <div className="w-6 h-6 rounded-full bg-[#C9A84C] flex items-center justify-center font-bold text-[10px] text-[#0B1F3A]">
                                                 BMS
                                             </div>
                                             <span className="font-bold text-xs text-white drop-shadow">bethel.app</span>
-                                            <span className="text-[9px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded font-bold">Exam Results</span>
+                                            <span className="text-[9px] bg-[#C9A84C] text-[#0B1F3A] px-1.5 py-0.5 rounded font-bold">Exam Results</span>
                                         </div>
                                         <p className="text-[10px] text-white/90 line-clamp-1 drop-shadow">
-                                            Bethel Mission School App • Instant exam results, marks & report cards
+                                            Bethel Mission School App • Instant exam results, marks &amp; report cards
                                         </p>
                                     </div>
-                                    <div className="text-[10px] font-mono text-white/80 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm">
+                                    <div className="text-[10px] font-tabular text-[#DFC06B] bg-[#07162B]/80 px-2 py-0.5 rounded backdrop-blur-sm">
                                         {currentTime.toFixed(1)}s / 30s
                                     </div>
                                 </div>
                             </div>
 
                             {/* Player Physical Controls */}
-                            <div className="mt-4 px-2 flex items-center justify-between gap-2 text-slate-300">
+                            <div className="mt-4 px-2 flex items-center justify-between gap-2 text-white">
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
-                                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                                    className="p-2.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold border border-[#C9A84C]/30"
                                 >
-                                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                    {isPlaying ? <Pause className="w-4 h-4 text-[#DFC06B]" /> : <Play className="w-4 h-4 text-[#DFC06B]" />}
                                     <span>{isPlaying ? 'Pause' : 'Play'}</span>
                                 </button>
 
                                 <button
                                     type="button"
                                     onClick={handleRestart}
-                                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition cursor-pointer"
+                                    className="p-2.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-xl transition cursor-pointer border border-[#C9A84C]/30"
                                     title="Replay from 00:00"
                                 >
                                     <RotateCcw className="w-4 h-4" />
@@ -1346,9 +1346,9 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                 <button
                                     type="button"
                                     onClick={handleToggleMute}
-                                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs"
+                                    className="p-2.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs border border-[#C9A84C]/30"
                                 >
-                                    {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                                    {isMuted ? <VolumeX className="w-4 h-4 text-white/70" /> : <Volume2 className="w-4 h-4 text-[#DFC06B]" />}
                                     <span>{isMuted ? 'Muted' : 'Audio On'}</span>
                                 </button>
                             </div>
@@ -1356,15 +1356,15 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
 
                         {/* Direct Download Link after export */}
                         {downloadUrl && (
-                            <div className="mt-4 w-full max-w-[360px] p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-center space-y-2">
-                                <p className="text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5">
-                                    <Check className="w-4 h-4 text-emerald-400" />
+                            <div className="mt-4 w-full max-w-[360px] p-3.5 bg-[#0B1F3A] border border-[#C9A84C] rounded-2xl text-center space-y-2">
+                                <p className="text-xs font-bold text-[#DFC06B] flex items-center justify-center gap-1.5">
+                                    <Check className="w-4 h-4 text-[#DFC06B]" />
                                     <span>30s Exam Ad Video File Ready with Voiceover!</span>
                                 </p>
                                 <a
                                     href={downloadUrl}
                                     download={`Bethel_App_Exam_Results_Reel_Ad_${selectedLanguage.toUpperCase()}_${new Date().toISOString().split('T')[0]}.webm`}
-                                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition"
+                                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] text-xs font-bold rounded-xl shadow transition"
                                 >
                                     <Download className="w-3.5 h-3.5" />
                                     <span>Download Video File (.webm / .mp4)</span>
@@ -1376,23 +1376,21 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                     {/* Right Column: Scene Breakdown, Voiceover Studio, Controls */}
                     <div className="lg:col-span-7 space-y-6">
                         {/* Voiceover Audio Studio Card */}
-                        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-5 space-y-4 shadow-xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
-                            
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <div className="bg-[#0B1F3A] border border-[#C9A84C]/40 rounded-2xl p-5 space-y-4 shadow-xl relative overflow-hidden">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1C3D6E] pb-3">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl">
+                                    <div className="p-2 bg-[#132D52] text-[#DFC06B] rounded-xl">
                                         <Mic className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <h3 className="font-extrabold text-white text-base">Voiceover Audio Studio</h3>
-                                        <p className="text-xs text-slate-400">Exam-focused narration baked directly into the exported media file.</p>
+                                        <p className="text-xs text-white/75">Exam-focused narration baked directly into the exported media file.</p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-purple-400 border border-purple-500/20 flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#132D52] text-[#DFC06B] border border-[#C9A84C]/40 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-[#DFC06B] animate-pulse" />
                                         <span>{voiceoverStatus}</span>
                                     </span>
                                 </div>
@@ -1402,8 +1400,8 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Language selector */}
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                                        <Radio className="w-3.5 h-3.5 text-purple-400" />
+                                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                                        <Radio className="w-3.5 h-3.5 text-[#DFC06B]" />
                                         <span>Narration Language</span>
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1416,11 +1414,11 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                             disabled={isGeneratingVoice}
                                             className={`py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
                                                 selectedLanguage === 'en'
-                                                ? 'bg-purple-600 text-white border-purple-400 shadow-md'
-                                                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+                                                ? 'bg-[#C9A84C] text-[#0B1F3A] border-[#DFC06B] shadow-md'
+                                                : 'bg-[#132D52] text-white border-[#1C3D6E] hover:bg-[#1C3D6E]'
                                             }`}
                                         >
-                                            🇬🇧 English (Exam Focus)
+                                            English (Exam Focus)
                                         </button>
                                         <button
                                             type="button"
@@ -1431,19 +1429,19 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                             disabled={isGeneratingVoice}
                                             className={`py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
                                                 selectedLanguage === 'mizo'
-                                                ? 'bg-purple-600 text-white border-purple-400 shadow-md'
-                                                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+                                                ? 'bg-[#C9A84C] text-[#0B1F3A] border-[#DFC06B] shadow-md'
+                                                : 'bg-[#132D52] text-white border-[#1C3D6E] hover:bg-[#1C3D6E]'
                                             }`}
                                         >
-                                            🇲🇿 Mizo Tawng (Exam Focus)
+                                            Mizo Tawng (Exam Focus)
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* AI Voice Tone selector */}
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                                        <Sparkles className="w-3.5 h-3.5 text-[#DFC06B]" />
                                         <span>AI Voice Character</span>
                                     </label>
                                     <select
@@ -1455,7 +1453,7 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         }}
                                         disabled={isGeneratingVoice}
                                         aria-label="Select AI Voice Character"
-                                        className="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                                        className="w-full bg-[#132D52] border border-[#C9A84C]/40 text-white text-xs font-semibold rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] cursor-pointer"
                                     >
                                         <option value="Kore">Kore (Clear, Professional Female)</option>
                                         <option value="Fenrir">Fenrir (Deep, Confident Male)</option>
@@ -1466,14 +1464,14 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                             </div>
 
                             {/* Volume Mix Sliders */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/80">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#1C3D6E]">
                                 <div className="space-y-1">
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="text-slate-300 font-semibold flex items-center gap-1.5">
-                                            <Mic className="w-3 h-3 text-purple-400" />
+                                        <span className="text-white/90 font-semibold flex items-center gap-1.5">
+                                            <Mic className="w-3 h-3 text-[#DFC06B]" />
                                             <span>Voiceover Level:</span>
                                         </span>
-                                        <span className="font-mono text-purple-400 font-bold">{Math.round(voiceoverVolume * 100)}%</span>
+                                        <span className="font-tabular text-[#DFC06B] font-bold">{Math.round(voiceoverVolume * 100)}%</span>
                                     </div>
                                     <input
                                         type="range"
@@ -1482,17 +1480,17 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         step="0.05"
                                         value={voiceoverVolume}
                                         onChange={(e) => setVoiceoverVolume(parseFloat(e.target.value))}
-                                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                        className="w-full h-1.5 bg-[#132D52] rounded-lg appearance-none cursor-pointer accent-[#C9A84C]"
                                     />
                                 </div>
 
                                 <div className="space-y-1">
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="text-slate-300 font-semibold flex items-center gap-1.5">
-                                            <Music className="w-3 h-3 text-sky-400" />
+                                        <span className="text-white/90 font-semibold flex items-center gap-1.5">
+                                            <Music className="w-3 h-3 text-[#DFC06B]" />
                                             <span>Background Beat Level:</span>
                                         </span>
-                                        <span className="font-mono text-sky-400 font-bold">{Math.round(musicVolume * 100)}%</span>
+                                        <span className="font-tabular text-[#DFC06B] font-bold">{Math.round(musicVolume * 100)}%</span>
                                     </div>
                                     <input
                                         type="range"
@@ -1501,20 +1499,20 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         step="0.02"
                                         value={musicVolume}
                                         onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                        className="w-full h-1.5 bg-[#132D52] rounded-lg appearance-none cursor-pointer accent-[#C9A84C]"
                                     />
                                 </div>
                             </div>
 
                             {/* Action Buttons: Regenerate, Solo Test, Upload Custom Voice */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#1C3D6E]">
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
                                         onClick={handleToggleSoloVoiceover}
-                                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                                        className="px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-lg text-xs font-semibold border border-[#C9A84C]/30 flex items-center gap-1.5 transition cursor-pointer"
                                     >
-                                        {isPlayingVoiceoverSolo ? <Pause className="w-3.5 h-3.5 text-rose-400" /> : <Play className="w-3.5 h-3.5 text-purple-400" />}
+                                        {isPlayingVoiceoverSolo ? <Pause className="w-3.5 h-3.5 text-[#DFC06B]" /> : <Play className="w-3.5 h-3.5 text-[#DFC06B]" />}
                                         <span>{isPlayingVoiceoverSolo ? 'Stop VO Solo' : 'Listen VO Solo'}</span>
                                     </button>
 
@@ -1522,9 +1520,9 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         type="button"
                                         onClick={() => loadVoiceover(selectedLanguage, selectedVoice)}
                                         disabled={isGeneratingVoice}
-                                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                                        className="px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-lg text-xs font-semibold border border-[#C9A84C]/30 flex items-center gap-1.5 transition cursor-pointer"
                                     >
-                                        <RefreshCw className={`w-3.5 h-3.5 text-purple-400 ${isGeneratingVoice ? 'animate-spin' : ''}`} />
+                                        <RefreshCw className={`w-3.5 h-3.5 text-[#DFC06B] ${isGeneratingVoice ? 'animate-spin' : ''}`} />
                                         <span>Re-synthesize Voice</span>
                                     </button>
                                 </div>
@@ -1540,10 +1538,10 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                                        className="px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-white rounded-lg text-xs font-semibold border border-[#C9A84C]/30 flex items-center gap-1.5 transition cursor-pointer"
                                         title="Upload an MP3 or WAV file recorded by school staff"
                                     >
-                                        <Upload className="w-3.5 h-3.5 text-amber-400" />
+                                        <Upload className="w-3.5 h-3.5 text-[#DFC06B]" />
                                         <span>Upload Staff Voice (.mp3/.wav)</span>
                                     </button>
                                 </div>
@@ -1551,13 +1549,13 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                         </div>
 
                         {/* 5-Scene Timeline Selector */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                        <div className="bg-[#0B1F3A] border border-[#1C3D6E] rounded-2xl p-5 space-y-4 shadow-xl">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                                    <Layers className="w-4 h-4 text-purple-400" />
-                                    <span>30-Second Exam & Result Ad Timeline</span>
+                                    <Layers className="w-4 h-4 text-[#DFC06B]" />
+                                    <span>30-Second Exam &amp; Result Ad Timeline</span>
                                 </h3>
-                                <span className="text-xs font-mono text-purple-400 bg-purple-950/80 border border-purple-800/60 px-2.5 py-0.5 rounded-full">
+                                <span className="text-xs font-tabular text-[#0B1F3A] bg-[#DFC06B] px-2.5 py-0.5 rounded-full font-bold">
                                     Active: Scene {activeSceneIndex + 1} of 5
                                 </span>
                             </div>
@@ -1573,11 +1571,11 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                             onClick={() => handleSeekToScene(scene)}
                                             className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                                                 isActive
-                                                ? 'bg-purple-950/80 border-purple-400 ring-2 ring-purple-400/30'
-                                                : 'bg-slate-800/60 border-slate-700/60 hover:bg-slate-800 text-slate-300'
+                                                ? 'bg-[#132D52] border-[#C9A84C] ring-2 ring-[#C9A84C]/40'
+                                                : 'bg-[#07162B] border-[#1C3D6E] hover:bg-[#132D52] text-white/80'
                                             }`}
                                         >
-                                            <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-400 mb-1">
+                                            <div className="flex items-center justify-between w-full text-[10px] font-tabular text-[#DFC06B] mb-1">
                                                 <span>0{scene.start}s - 0{scene.end}s</span>
                                                 <span 
                                                     className="w-2 h-2 rounded-full" 
@@ -1591,29 +1589,28 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                             </div>
 
                             {/* Active Scene Highlights */}
-                            <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3">
+                            <div className="p-4 bg-[#07162B] rounded-xl border border-[#1C3D6E] space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
                                         Scene {activeSceneIndex + 1} Featured Functionality
                                     </span>
                                     <span 
-                                        className="text-[11px] font-bold px-2 py-0.5 rounded"
-                                        style={{ backgroundColor: `${APP_SCENES[activeSceneIndex].accentColor}33`, color: APP_SCENES[activeSceneIndex].accentColor }}
+                                        className="text-[11px] font-bold px-2 py-0.5 rounded bg-[#132D52] text-[#DFC06B] border border-[#C9A84C]/40"
                                     >
                                         {APP_SCENES[activeSceneIndex].badge}
                                     </span>
                                 </div>
                                 <h4 className="text-lg font-extrabold text-white">{APP_SCENES[activeSceneIndex].headline}</h4>
-                                <p className="text-xs text-purple-300 font-medium">{APP_SCENES[activeSceneIndex].subline}</p>
+                                <p className="text-xs text-[#DFC06B] font-medium">{APP_SCENES[activeSceneIndex].subline}</p>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-800/80">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[#1C3D6E]">
                                     {APP_SCENES[activeSceneIndex].appFeatures.map((feat, i) => (
-                                        <div key={i} className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
+                                        <div key={i} className="p-2.5 bg-[#0B1F3A] rounded-lg border border-[#1C3D6E] space-y-1">
                                             <div className="text-xs font-bold text-white flex items-center gap-1.5">
                                                 <span>{feat.icon}</span>
                                                 <span className="line-clamp-1">{feat.label}</span>
                                             </div>
-                                            <p className="text-[11px] text-slate-400 leading-tight">{feat.desc}</p>
+                                            <p className="text-[11px] text-white/75 leading-tight">{feat.desc}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -1621,13 +1618,13 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                         </div>
 
                         {/* Script & Meta Ads Resource Tabs */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                            <div className="flex border-b border-slate-800 bg-slate-950/60 p-1.5 gap-1">
+                        <div className="bg-[#0B1F3A] border border-[#1C3D6E] rounded-2xl overflow-hidden shadow-xl">
+                            <div className="flex border-b border-[#1C3D6E] bg-[#07162B] p-1.5 gap-1">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('preview')}
                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        activeTab === 'preview' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                        activeTab === 'preview' ? 'bg-[#C9A84C] text-[#0B1F3A]' : 'text-white/70 hover:text-white'
                                     }`}
                                 >
                                     Shot Breakdown
@@ -1636,7 +1633,7 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                     type="button"
                                     onClick={() => setActiveTab('script')}
                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        activeTab === 'script' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                        activeTab === 'script' ? 'bg-[#C9A84C] text-[#0B1F3A]' : 'text-white/70 hover:text-white'
                                     }`}
                                 >
                                     English Script
@@ -1645,7 +1642,7 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                     type="button"
                                     onClick={() => setActiveTab('mizo')}
                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        activeTab === 'mizo' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                        activeTab === 'mizo' ? 'bg-[#C9A84C] text-[#0B1F3A]' : 'text-white/70 hover:text-white'
                                     }`}
                                 >
                                     Mizo Script
@@ -1654,44 +1651,44 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                     type="button"
                                     onClick={() => setActiveTab('meta-ads')}
                                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                        activeTab === 'meta-ads' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                                        activeTab === 'meta-ads' ? 'bg-[#C9A84C] text-[#0B1F3A]' : 'text-white/70 hover:text-white'
                                     }`}
                                 >
-                                    Reel Ad Copy & Kit
+                                    Reel Ad Copy &amp; Kit
                                 </button>
                             </div>
 
                             <div className="p-5">
                                 {activeTab === 'preview' && (
                                     <div className="space-y-3">
-                                        <div className="text-xs text-slate-400">
+                                        <div className="text-xs text-white/75">
                                             The 30-second ad sequence strongly showcases examination workflows and instant result transparency:
                                         </div>
                                         <div className="space-y-2 text-xs">
-                                            <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between">
-                                                <span className="font-mono text-sky-400">[00:00 - 00:06]</span>
-                                                <span className="text-slate-200 font-medium">Sleek Home UI & instant 1-tap navigation dock with Exam badge</span>
-                                                <span className="text-sky-400 font-bold">Scene 1</span>
+                                            <div className="p-2.5 bg-[#07162B] rounded-lg border border-[#1C3D6E] flex items-center justify-between gap-2">
+                                                <span className="font-tabular text-[#DFC06B]">[00:00 - 00:06]</span>
+                                                <span className="text-white font-medium">Sleek Home UI &amp; instant 1-tap navigation dock with Exam badge</span>
+                                                <span className="text-[#DFC06B] font-bold">Scene 1</span>
                                             </div>
-                                            <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between">
-                                                <span className="font-mono text-purple-400">[00:06 - 00:12]</span>
-                                                <span className="text-slate-200 font-medium">Student Marksheet: Math 96, Science 94, Rank #1 & 1-Click PDF Report Card</span>
-                                                <span className="text-purple-400 font-bold">Scene 2 (Spotlight)</span>
+                                            <div className="p-2.5 bg-[#07162B] rounded-lg border border-[#1C3D6E] flex items-center justify-between gap-2">
+                                                <span className="font-tabular text-[#DFC06B]">[00:06 - 00:12]</span>
+                                                <span className="text-white font-medium">Student Marksheet: Math 96, Science 94, Rank #1 &amp; 1-Click PDF Report Card</span>
+                                                <span className="text-[#DFC06B] font-bold">Scene 2 (Spotlight)</span>
                                             </div>
-                                            <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between">
-                                                <span className="font-mono text-amber-400">[00:12 - 00:18]</span>
-                                                <span className="text-slate-200 font-medium">Teacher Exam Portal: Rapid marks entry, auto-grading & 1-click publish</span>
-                                                <span className="text-amber-400 font-bold">Scene 3 (Spotlight)</span>
+                                            <div className="p-2.5 bg-[#07162B] rounded-lg border border-[#1C3D6E] flex items-center justify-between gap-2">
+                                                <span className="font-tabular text-[#DFC06B]">[00:12 - 00:18]</span>
+                                                <span className="text-white font-medium">Teacher Exam Portal: Rapid marks entry, auto-grading &amp; 1-click publish</span>
+                                                <span className="text-[#DFC06B] font-bold">Scene 3 (Spotlight)</span>
                                             </div>
-                                            <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between">
-                                                <span className="font-mono text-emerald-400">[00:18 - 00:24]</span>
-                                                <span className="text-slate-200 font-medium">10-Second UPI fee payment & daily attendance notifications</span>
-                                                <span className="text-emerald-400 font-bold">Scene 4</span>
+                                            <div className="p-2.5 bg-[#07162B] rounded-lg border border-[#1C3D6E] flex items-center justify-between gap-2">
+                                                <span className="font-tabular text-[#DFC06B]">[00:18 - 00:24]</span>
+                                                <span className="text-white font-medium">10-Second UPI fee payment &amp; daily attendance notifications</span>
+                                                <span className="text-[#DFC06B] font-bold">Scene 4</span>
                                             </div>
-                                            <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between">
-                                                <span className="font-mono text-rose-400">[00:24 - 00:30]</span>
-                                                <span className="text-slate-200 font-medium">Open bms04.com and install app on phone home screen</span>
-                                                <span className="text-rose-400 font-bold">Scene 5</span>
+                                            <div className="p-2.5 bg-[#07162B] rounded-lg border border-[#1C3D6E] flex items-center justify-between gap-2">
+                                                <span className="font-tabular text-[#DFC06B]">[00:24 - 00:30]</span>
+                                                <span className="text-white font-medium">Open bms04.com and install app on phone home screen</span>
+                                                <span className="text-[#DFC06B] font-bold">Scene 5</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1702,24 +1699,24 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <h4 className="text-sm font-bold text-white">English Voiceover Script (Exact 30 Seconds)</h4>
-                                                <p className="text-xs text-slate-400">Paced for clear, energetic tech commercial audio emphasizing exam results.</p>
+                                                <p className="text-xs text-white/70">Paced for clear, energetic tech commercial audio emphasizing exam results.</p>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleCopy(ENGLISH_VOICEOVER_TEXT, 'en_script')}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition cursor-pointer"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-xs font-semibold text-white rounded-lg transition cursor-pointer"
                                             >
-                                                {copiedKey === 'en_script' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                                {copiedKey === 'en_script' ? <Check className="w-3.5 h-3.5 text-[#DFC06B]" /> : <Copy className="w-3.5 h-3.5" />}
                                                 <span>{copiedKey === 'en_script' ? 'Copied' : 'Copy Script'}</span>
                                             </button>
                                         </div>
 
-                                        <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-sm text-slate-200 leading-relaxed font-mono">
-                                            <p><span className="text-sky-400">[00:00 - 00:06]</span> "Managing school exams and results has never been this easy! Meet the all new Bethel Mission School app."</p>
-                                            <p><span className="text-purple-400">[00:06 - 00:12]</span> "Parents and students get instant exam results with subject breakdowns, grades, and official PDF report cards in one click!"</p>
-                                            <p><span className="text-amber-400">[00:12 - 00:18]</span> "Teachers can enter marks with automatic tabulation in seconds."</p>
-                                            <p><span className="text-emerald-400">[00:18 - 00:24]</span> "Plus cashless UPI fees and live attendance."</p>
-                                            <p><span className="text-rose-400">[00:24 - 00:30]</span> "Open bms04.com and experience seamless result management today!"</p>
+                                        <div className="p-4 bg-[#07162B] rounded-xl border border-[#1C3D6E] space-y-2 text-sm text-white/90 leading-relaxed">
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:00 - 00:06]</span> &quot;Managing school exams and results has never been this easy! Meet the all new Bethel Mission School app.&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:06 - 00:12]</span> &quot;Parents and students get instant exam results with subject breakdowns, grades, and official PDF report cards in one click!&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:12 - 00:18]</span> &quot;Teachers can enter marks with automatic tabulation in seconds.&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:18 - 00:24]</span> &quot;Plus cashless UPI fees and live attendance.&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:24 - 00:30]</span> &quot;Open bms04.com and experience seamless result management today!&quot;</p>
                                         </div>
                                     </div>
                                 )}
@@ -1729,24 +1726,24 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <h4 className="text-sm font-bold text-white">Mizo Voiceover Script (Exact 30 Seconds)</h4>
-                                                <p className="text-xs text-slate-400">Natural Mizo tawng focused on exam results and report cards.</p>
+                                                <p className="text-xs text-white/70">Natural Mizo tawng focused on exam results and report cards.</p>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleCopy(MIZO_VOICEOVER_TEXT, 'mizo_script')}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-xs font-semibold text-slate-200 rounded-lg transition cursor-pointer"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-xs font-semibold text-white rounded-lg transition cursor-pointer"
                                             >
-                                                {copiedKey === 'mizo_script' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                                {copiedKey === 'mizo_script' ? <Check className="w-3.5 h-3.5 text-[#DFC06B]" /> : <Copy className="w-3.5 h-3.5" />}
                                                 <span>{copiedKey === 'mizo_script' ? 'Copied' : 'Copy Script'}</span>
                                             </button>
                                         </div>
 
-                                        <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-sm text-slate-200 leading-relaxed font-mono">
-                                            <p><span className="text-sky-400">[00:00 - 00:06]</span> "Exam marksheet leh result buaipui a hahthlak thin em? Bethel Mission School App hmangin exam leh result management hi a awlsam tawh lutuk!"</p>
-                                            <p><span className="text-purple-400">[00:06 - 00:12]</span> "Nu leh pa leh zirlaite'n exam result, subject tin mark, grade, leh report card official an phone atangin 1-click-in an download thei nghal!"</p>
-                                            <p><span className="text-amber-400">[00:12 - 00:18]</span> "Zirtirtute tan mark chhut luh leh tabulation a awlsam em em bawk."</p>
-                                            <p><span className="text-emerald-400">[00:18 - 00:24]</span> "School fee pawh UPI hmangin second reilote chhungin a pek theih bawk e."</p>
-                                            <p><span className="text-rose-400">[00:24 - 00:30]</span> "bms04.com-ah lut la, result en ve nghal rawh le!"</p>
+                                        <div className="p-4 bg-[#07162B] rounded-xl border border-[#1C3D6E] space-y-2 text-sm text-white/90 leading-relaxed">
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:00 - 00:06]</span> &quot;Exam marksheet leh result buaipui a hahthlak thin em? Bethel Mission School App hmangin exam leh result management hi a awlsam tawh lutuk!&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:06 - 00:12]</span> &quot;Nu leh pa leh zirlaite&apos;n exam result, subject tin mark, grade, leh report card official an phone atangin 1-click-in an download thei nghal!&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:12 - 00:18]</span> &quot;Zirtirtute tan mark chhut luh leh tabulation a awlsam em em bawk.&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:18 - 00:24]</span> &quot;School fee pawh UPI hmangin second reilote chhungin a pek theih bawk e.&quot;</p>
+                                            <p><span className="font-tabular font-bold text-[#DFC06B]">[00:24 - 00:30]</span> &quot;bms04.com-ah lut la, result en ve nghal rawh le!&quot;</p>
                                         </div>
                                     </div>
                                 )}
@@ -1755,8 +1752,8 @@ const PromoVideoPage: React.FC<PromoVideoPageProps> = ({ user }) => {
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h4 className="text-sm font-bold text-white">Facebook & Instagram Reels Ad Copy (Exam Focus)</h4>
-                                                <p className="text-xs text-slate-400">Optimized for high engagement among parents and educators.</p>
+                                                <h4 className="text-sm font-bold text-white">Facebook &amp; Instagram Reels Ad Copy (Exam Focus)</h4>
+                                                <p className="text-xs text-white/70">Optimized for high engagement among parents and educators.</p>
                                             </div>
                                             <button
                                                 type="button"
@@ -1778,27 +1775,27 @@ Works seamlessly on any Android, iPhone, or Web browser!
 #BethelMissionSchool #ExamResults #ReportCard #Champhai #Mizoram #SchoolApp #ParentPortal #SmartSchool`,
                                                     'meta_copy'
                                                 )}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition cursor-pointer"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#132D52] hover:bg-[#1C3D6E] text-xs font-semibold text-white rounded-lg transition cursor-pointer"
                                             >
-                                                {copiedKey === 'meta_copy' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                                {copiedKey === 'meta_copy' ? <Check className="w-3.5 h-3.5 text-[#DFC06B]" /> : <Copy className="w-3.5 h-3.5" />}
                                                 <span>{copiedKey === 'meta_copy' ? 'Copied' : 'Copy Ad Text'}</span>
                                             </button>
                                         </div>
 
-                                        <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-3 whitespace-pre-line font-sans">
-                                            <p className="font-bold text-white text-sm">🏆 No more waiting for paper marksheets! Get your child's exam results instantly on your phone.</p>
+                                        <div className="p-4 bg-[#07162B] rounded-xl border border-[#1C3D6E] text-xs text-white/90 space-y-3 whitespace-pre-line">
+                                            <p className="font-bold text-white text-sm">🏆 No more waiting for paper marksheets! Get your child&apos;s exam results instantly on your phone.</p>
                                             <p>The official Bethel Mission School App takes the stress out of examinations and result season. Parents, students, and teachers now have complete digital transparency at their fingertips!</p>
                                             
-                                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1 font-mono text-[11px] text-slate-300">
-                                                <div>📊 Instant Exam Marksheets – Check subject marks, grades & class rank</div>
+                                            <div className="bg-[#0B1F3A] p-3 rounded-lg border border-[#1C3D6E] space-y-1 text-[11px] text-white/90">
+                                                <div>📊 Instant Exam Marksheets – Check subject marks, grades &amp; class rank</div>
                                                 <div>📥 1-Click Official Report Cards – Download stamped PDF progress reports</div>
-                                                <div>📝 Teacher Auto-Tabulation – Fast mark input with automatic totals & ranks</div>
+                                                <div>📝 Teacher Auto-Tabulation – Fast mark input with automatic totals &amp; ranks</div>
                                                 <div>🚀 1-Click Result Publishing – No more paper delays or manual registers</div>
-                                                <div>💳 1-Click UPI Fee Payments & Live Daily Attendance Tracking</div>
+                                                <div>💳 1-Click UPI Fee Payments &amp; Live Daily Attendance Tracking</div>
                                             </div>
 
-                                            <p className="text-purple-300 font-semibold">👉 Experience the app today: https://bms04.com</p>
-                                            <p className="text-slate-400 text-[11px]">Recommended Meta Ad Settings: Objective: Traffic / Video Views • Target: Parents & Teachers in Mizoram • CTA: "Use App" or "Learn More"</p>
+                                            <p className="text-[#DFC06B] font-semibold">👉 Experience the app today: https://bms04.com</p>
+                                            <p className="text-white/70 text-[11px]">Recommended Meta Ad Settings: Objective: Traffic / Video Views • Target: Parents &amp; Teachers in Mizoram • CTA: &quot;Use App&quot; or &quot;Learn More&quot;</p>
                                         </div>
                                     </div>
                                 )}
@@ -1807,25 +1804,25 @@ Works seamlessly on any Android, iPhone, or Web browser!
 
                         {/* Quick Feature Summary Tiles */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div className="p-3.5 bg-slate-900 border border-purple-500/30 rounded-xl text-center">
+                            <div className="p-3.5 bg-[#0B1F3A] border border-[#C9A84C]/40 rounded-xl text-center">
                                 <div className="text-xl mb-1">🏆</div>
                                 <div className="font-bold text-xs text-white">Instant Marksheet</div>
-                                <div className="text-[11px] text-purple-400">Class Rank & Grades</div>
+                                <div className="text-[11px] text-[#DFC06B]">Class Rank &amp; Grades</div>
                             </div>
-                            <div className="p-3.5 bg-slate-900 border border-purple-500/30 rounded-xl text-center">
+                            <div className="p-3.5 bg-[#0B1F3A] border border-[#C9A84C]/40 rounded-xl text-center">
                                 <div className="text-xl mb-1">📥</div>
                                 <div className="font-bold text-xs text-white">PDF Report Cards</div>
-                                <div className="text-[11px] text-purple-400">1-Click Download</div>
+                                <div className="text-[11px] text-[#DFC06B]">1-Click Download</div>
                             </div>
-                            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl text-center">
+                            <div className="p-3.5 bg-[#0B1F3A] border border-[#1C3D6E] rounded-xl text-center">
                                 <div className="text-xl mb-1">📝</div>
                                 <div className="font-bold text-xs text-white">Auto Tabulation</div>
-                                <div className="text-[11px] text-slate-400">Rapid Teacher Entry</div>
+                                <div className="text-[11px] text-white/75">Rapid Teacher Entry</div>
                             </div>
-                            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl text-center">
+                            <div className="p-3.5 bg-[#0B1F3A] border border-[#1C3D6E] rounded-xl text-center">
                                 <div className="text-xl mb-1">💳</div>
                                 <div className="font-bold text-xs text-white">UPI Fee Pay</div>
-                                <div className="text-[11px] text-slate-400">Instant PDF Receipts</div>
+                                <div className="text-[11px] text-white/75">Instant PDF Receipts</div>
                             </div>
                         </div>
                     </div>

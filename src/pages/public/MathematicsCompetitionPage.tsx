@@ -5,19 +5,19 @@ const { Link } = ReactRouterDOM as any;
 
 const MathematicsCompetitionPage: React.FC = () => {
     return (
-        <div className="bg-black py-16 min-h-screen">
+        <div className="bg-[#F4F7FB] py-12 md:py-16 min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-                <div className="mb-8">
-                    <Link to="/achievements/science" className="flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors">
-                        <BackIcon className="w-5 h-5" />Back to Science & Maths Achievements
+                <div className="mb-6">
+                    <Link to="/achievements/science" className="inline-flex items-center gap-2 text-sm font-bold text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors">
+                        <BackIcon className="w-5 h-5" />Back to Science &amp; Maths Achievements
                     </Link>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-8 md:p-12 rounded-lg shadow-2xl">
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-6">State-Level Mathematics Competition</h1>
-                    <div className="space-y-6 text-slate-300 leading-relaxed">
-                        <p>At Bethel Mission School, we take great pride in the achievements of our students in state-wide competitions. The State-Level Mathematics Competition is organized annually by the Mizoram Mathematics Society (MMS) in collaboration with the Mizoram Science, Technology & Innovation Council (MISTIC).</p>
+                <div className="bg-white border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] p-6 sm:p-8 md:p-12 rounded-2xl shadow-lg">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B1F3A] mb-6">State-Level Mathematics Competition</h1>
+                    <div className="space-y-6 text-[#132D52] leading-relaxed">
+                        <p>At Bethel Mission School, we take great pride in the achievements of our students in state-wide competitions. The State-Level Mathematics Competition is organized annually by the Mizoram Mathematics Society (MMS) in collaboration with the Mizoram Science, Technology &amp; Innovation Council (MISTIC).</p>
                         <p>This competition gives students from Classes V, VIII, X, and XII the opportunity to showcase their mathematical skills. Over the years, our students have consistently brought honor to the school.</p>
-                        <h3 className="text-xl font-semibold text-white pt-4 border-t border-zinc-700 mt-6">Our Achievements</h3>
+                        <h3 className="text-xl font-bold text-[#0B1F3A] pt-4 border-t border-[#C9A84C]/40 mt-6">Our Achievements</h3>
                         <div className="space-y-4">
                             {[
                                 ['2023','Paumuansanga (S/o B. Zamtinkhupa) – 1st Prize'],
@@ -25,15 +25,15 @@ const MathematicsCompetitionPage: React.FC = () => {
                                 ['2019','Thangbiakmuani (D/o K. Langkapa) – Centre Prize'],
                                 ['2016','Runrempuia (S/o P. Lalhmingthanga) – Consolation Prize'],
                             ].map(([year,result])=>(
-                                <div key={year} className="bg-zinc-800 border border-zinc-700 rounded-lg p-4">
-                                    <h4 className="font-bold text-lg text-white">{year} – State-Level Mathematics Competition</h4>
-                                    <ul className="list-disc list-inside mt-2 space-y-1 text-slate-300">
+                                <div key={year} className="bg-[#F4F7FB] border border-[#0B1F3A]/10 border-l-4 border-l-[#C9A84C] rounded-r-xl p-4">
+                                    <h4 className="font-bold text-lg text-[#0B1F3A] font-tabular">{year} – State-Level Mathematics Competition</h4>
+                                    <ul className="list-disc list-inside mt-2 space-y-1 text-[#132D52]">
                                         {result.split('\n').map((r,i)=><li key={i}>{r}</li>)}
                                     </ul>
                                 </div>
                             ))}
                         </div>
-                        <h3 className="text-xl font-semibold text-white pt-4 border-t border-zinc-700 mt-6">Inspiring Excellence</h3>
+                        <h3 className="text-xl font-bold text-[#0B1F3A] pt-4 border-t border-[#C9A84C]/40 mt-6">Inspiring Excellence</h3>
                         <p>These achievements reflect the hard work, discipline, and passion of our students, as well as the dedication of our teachers in nurturing mathematical talents.</p>
                     </div>
                 </div>

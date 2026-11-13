@@ -186,7 +186,7 @@ const App: React.FC = () => {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [examRoutines, setExamRoutines] = useState<ExamRoutine[]>([]);
   const [classRoutines, setClassRoutines] = useState<Record<string, DailyRoutine>>({});
-  const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.netlify.app/</loc></url></urlset>`);
+  const [sitemapContent, setSitemapContent] = useState<string>(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://bms04.com/</loc><priority>1.0</priority></url>\n  <url><loc>https://bms04.com/admissions</loc><priority>0.9</priority></url>\n  <url><loc>https://bms04.com/academics</loc><priority>0.9</priority></url>\n  <url><loc>https://bms04.com/about</loc><priority>0.8</priority></url>\n  <url><loc>https://bms04.com/contact</loc><priority>0.8</priority></url>\n  <url><loc>https://bms04.com/fees</loc><priority>0.8</priority></url>\n  <url><loc>https://bms04.com/disclosure</loc><priority>0.6</priority></url>\n</urlset>`);
   const [hostelResidents, setHostelResidents] = useState<HostelResident[]>([]);
   const [hostelStaff, setHostelStaff] = useState<HostelStaff[]>([]);
   const [hostelInventory, setHostelInventory] = useState<HostelInventoryItem[]>([]);
@@ -1105,13 +1105,13 @@ const App: React.FC = () => {
 
       <Routes>
         <Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
-          <Route index element={<PublicHomePage news={news} user={user} />} />
+          <Route index element={<PublicHomePage news={news} user={user} staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="about" element={<AboutPage user={user} />} />
           <Route path="history" element={<HistoryPage user={user} />} />
           <Route path="faculty" element={<FacultyPage staff={staff} gradeDefinitions={gradeDefinitions} user={user} />} />
           <Route path="staff/:staffId" element={<PublicStaffDetailPage staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="rules" element={<RulesPage user={user} />} />
-          <Route path="admissions" element={<AdmissionsPage user={user} />} />
+          <Route path="admissions" element={<AdmissionsPage user={user} feeStructure={feeStructure} admissionSettings={admissionSettings} />} />
           <Route path="admissions/online" element={<OnlineAdmissionPage user={user} onOnlineAdmissionSubmit={handleOnlineAdmissionSubmit} />} />
           <Route path="admissions/status" element={<AdmissionStatusPage user={user} />} />
                    <Route path="admissions/payment/:admissionId" element={<AdmissionPaymentPage user={user} addNotification={addNotification} admissionConfig={admissionSettings} schoolConfig={schoolConfig} />} />
@@ -1120,7 +1120,7 @@ const App: React.FC = () => {
           <Route path="ncc" element={<NccPage user={user} />} />
           <Route path="arts-culture" element={<ArtsCulturePage user={user} />} />
           <Route path="eco-club" element={<EcoClubPage user={user} />} />
-          <Route path="academics" element={<AcademicsPage user={user} />} />
+          <Route path="academics" element={<AcademicsPage user={user} syllabus={syllabus} gradeDefinitions={gradeDefinitions} />} />
           <Route path="academics/curriculum" element={<CurriculumPage gradeDefinitions={gradeDefinitions} />} />
           <Route path="achievements" element={<AchievementsPage />} />
           <Route path="achievements/academic" element={<AcademicAchievementsPage />} />

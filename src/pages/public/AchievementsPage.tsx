@@ -16,24 +16,24 @@ interface Achievement {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-    'Academic':      'bg-sky-100 text-sky-700 border-sky-200',
-    'Sports':        'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'Science & Maths': 'bg-violet-100 text-violet-700 border-violet-200',
-    'Quiz':          'bg-amber-100 text-amber-700 border-amber-200',
-    'Other':         'bg-slate-100 text-slate-600 border-slate-200',
+    'Academic': 'bg-[#0B1F3A] text-[#DFC06B] border-[#C9A84C]',
+    'Sports': 'bg-[#FBF6E8] text-[#8E6D1B] border-[#C9A84C]',
+    'Science & Maths': 'bg-[#0B1F3A] text-white border-[#0B1F3A]',
+    'Quiz': 'bg-[#FBF6E8] text-[#0B1F3A] border-[#C9A84C]',
+    'Other': 'bg-[#F4F7FB] text-[#0B1F3A] border-[#0B1F3A]/20',
 };
 
 const CATEGORY_ORDER = ['Academic', 'Sports', 'Science & Maths', 'Quiz', 'Other'];
 
 const SubPageCard: React.FC<{ icon: React.ReactNode; title: string; description: string; link: string }> = ({ icon, title, description, link }) => (
     <Link to={link} className="group block public-feature-card">
-        <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)', color: 'var(--gold)' }}>
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5 bg-[#07162B] border border-[#C9A84C]/40 text-[#DFC06B]">
             {icon}
         </div>
-        <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{title}</h3>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{description}</p>
-        <div className="mt-4 text-sm font-semibold flex items-center gap-1 group-hover:gap-2 transition-all" style={{ color: 'var(--gold)' }}>
-            View Details →
+        <h3 className="text-xl font-bold mb-2 text-white">{title}</h3>
+        <p className="text-sm leading-relaxed text-white/75">{description}</p>
+        <div className="mt-4 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all text-[#DFC06B]">
+            View Details &rarr;
         </div>
     </Link>
 );
@@ -47,35 +47,36 @@ const AchievementCard: React.FC<{ item: Achievement }> = ({ item }) => {
     );
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl border border-[#C9A84C]/35 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
             {hasValidImage && (
-                <div className="aspect-[4/3] overflow-hidden bg-slate-100 relative">
+                <div className="aspect-[4/3] overflow-hidden bg-[#07162B] relative">
                     <img
                         src={item.imageUrl}
                         alt={item.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
                         referrerPolicy="no-referrer"
                         onError={() => setImgFailed(true)}
                     />
                 </div>
             )}
-        <div className="p-5 flex flex-col flex-1">
-            <div className="flex items-center justify-between gap-2 mb-3">
-                <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['Other']}`}>
-                    {item.category}
-                </span>
-                <span className="text-xs text-slate-400 font-medium">{item.year}</span>
+            <div className="p-5 flex flex-col flex-1">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['Other']}`}>
+                        {item.category}
+                    </span>
+                    <span className="font-tabular text-xs text-[#0B1F3A]/60 font-bold">{item.year}</span>
+                </div>
+                <h3 className="font-extrabold text-[#0B1F3A] text-base leading-snug mb-1">{item.title}</h3>
+                {item.studentName && (
+                    <p className="text-sm text-[#8E6D1B] font-bold mb-2">{item.studentName}</p>
+                )}
+                {item.description && (
+                    <p className="text-sm text-[#0B1F3A]/75 leading-relaxed flex-1">{item.description}</p>
+                )}
             </div>
-            <h3 className="font-bold text-slate-800 text-base leading-snug mb-1">{item.title}</h3>
-            {item.studentName && (
-                <p className="text-sm text-sky-600 font-medium mb-2">🎓 {item.studentName}</p>
-            )}
-            {item.description && (
-                <p className="text-sm text-slate-500 leading-relaxed flex-1">{item.description}</p>
-            )}
         </div>
-    </div>
     );
 };
 
@@ -108,7 +109,6 @@ const AchievementsPage: React.FC = () => {
         ? achievements
         : achievements.filter(a => a.category === activeCategory);
 
-    // Group by category for "All" view
     const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
         const items = achievements.filter(a => a.category === cat);
         if (items.length > 0) acc[cat] = items;
@@ -116,54 +116,50 @@ const AchievementsPage: React.FC = () => {
     }, {} as Record<string, Achievement[]>);
 
     return (
-        <div className="py-20 min-h-[70vh]" style={{ background: 'var(--bg-base)' }}>
+        <div className="py-16 min-h-[70vh] bg-[#0B1F3A]">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Header */}
-                <div className="text-center mb-16">
+                <div className="text-center mb-14">
                     <div className="section-label mb-3">Our Students</div>
                     <h1 className="section-heading">Achievements</h1>
                     <div className="gold-rule mt-4 mb-5" />
-                    <p className="section-subtext max-w-xl mx-auto">Explore our students' achievements in various fields.</p>
+                    <p className="section-subtext max-w-xl mx-auto">Explore our students&apos; achievements across academics, sports, and competitions.</p>
                 </div>
 
-                {/* Sub-page cards */}
-                <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
+                <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
                     <SubPageCard icon={<AcademicCapIcon className="w-6 h-6" />} title="Academic Achievements" description="View our students' outstanding performance in the MBSE HSLC Board Examinations over the years." link="/achievements/academic" />
                     <SubPageCard icon={<UsersIcon className="w-6 h-6" />} title="Sports Achievements" description="Excellence in athletics, teamwork, and sportsmanship. View our victories in various competitions." link="/achievements/sports" />
                     <SubPageCard icon={<AcademicCapIcon className="w-6 h-6" />} title="Science & Maths" description="A hub of innovation and discovery. See our students' award-winning projects and participation." link="/achievements/science" />
                     <SubPageCard icon={<AcademicCapIcon className="w-6 h-6" />} title="Quiz" description="Excellence in knowledge, critical thinking, and quick decision-making skills in various quiz competitions." link="/achievements/quiz" />
                 </div>
 
-                {/* Hall of Fame */}
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-10">
                         <div className="section-label mb-3">Recognition</div>
                         <h2 className="section-heading">Hall of Fame</h2>
                         <div className="gold-rule mt-4 mb-5" />
-                        <p className="section-subtext max-w-xl mx-auto">Celebrating our students' individual and team accomplishments across all disciplines.</p>
+                        <p className="section-subtext max-w-xl mx-auto">Celebrating our students&apos; individual and team accomplishments across all disciplines.</p>
                     </div>
 
                     {loading ? (
                         <div className="flex justify-center py-16">
-                            <div className="w-8 h-8 border-4 border-slate-200 border-t-sky-500 rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-4 border-white/20 border-t-[#C9A84C] rounded-full animate-spin" />
                         </div>
                     ) : achievements.length === 0 ? (
-                        <div className="text-center py-16 text-slate-400">
+                        <div className="text-center py-16 text-white/60">
                             <p className="text-lg">No achievements added yet.</p>
                         </div>
                     ) : (
                         <>
-                            {/* Category filter tabs */}
                             <div className="flex flex-wrap justify-center gap-2 mb-10">
                                 {categories.map(cat => (
                                     <button
                                         key={cat}
                                         onClick={() => setActiveCategory(cat)}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all ${
+                                        className={`px-4 py-2 min-h-[40px] rounded-full text-sm font-bold border transition-all ${
                                             activeCategory === cat
-                                                ? 'bg-sky-600 text-white border-sky-600'
-                                                : 'bg-white text-slate-600 border-slate-200 hover:border-sky-300'
+                                                ? 'bg-[#C9A84C] text-[#0B1F3A] border-[#C9A84C]'
+                                                : 'bg-[#132D52] text-white border-white/20 hover:border-[#C9A84C]'
                                         }`}
                                     >
                                         {cat}
@@ -171,7 +167,6 @@ const AchievementsPage: React.FC = () => {
                                 ))}
                             </div>
 
-                            {/* Filtered single-category grid */}
                             {activeCategory !== 'All' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {filtered.map(item => (
@@ -179,14 +174,13 @@ const AchievementsPage: React.FC = () => {
                                     ))}
                                 </div>
                             ) : (
-                                /* Grouped by category */
                                 <div className="space-y-14">
                                     {Object.entries(grouped).map(([cat, items]) => (
                                         <div key={cat}>
                                             <div className="flex items-center gap-3 mb-6">
-                                                <h3 className="text-xl font-bold text-slate-800">{cat}</h3>
-                                                <div className="flex-1 h-px bg-slate-200" />
-                                                <span className="text-sm text-slate-400">{items.length} record{items.length !== 1 ? 's' : ''}</span>
+                                                <h3 className="text-xl font-extrabold text-white">{cat}</h3>
+                                                <div className="flex-1 h-px bg-[#C9A84C]/30" />
+                                                <span className="font-tabular text-sm text-[#DFC06B]">{items.length} record{items.length !== 1 ? 's' : ''}</span>
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 {items.map(item => (

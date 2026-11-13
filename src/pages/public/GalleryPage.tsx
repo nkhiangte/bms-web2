@@ -31,13 +31,13 @@ const VideoModal: React.FC<{ videoId: string; title: string; onClose: () => void
         return () => window.removeEventListener('keydown', handler);
     }, []);
     return (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-[#07162B]/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative w-full max-w-4xl" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
+                <button onClick={onClose} aria-label="Close video" className="absolute -top-11 right-0 text-white/80 hover:text-[#DFC06B] text-3xl font-light">&times;</button>
                 <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                    <iframe className="absolute inset-0 w-full h-full rounded-xl" src={`https://www.youtube.com/embed/${videoId}?autoplay=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                    <iframe className="absolute inset-0 w-full h-full rounded-xl border border-[#C9A84C]/40" src={`https://www.youtube.com/embed/${videoId}?autoplay=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
                 </div>
-                {title && <p className="text-white font-semibold text-center mt-4">{title}</p>}
+                {title && <p className="text-white font-bold text-center mt-4">{title}</p>}
             </div>
         </div>
     );
@@ -55,19 +55,19 @@ const ImageLightbox: React.FC<{ images: GalleryItem[]; index: number; onClose: (
         return () => window.removeEventListener('keydown', handler);
     }, [index]);
     return (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-[#07162B]/95 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative max-w-5xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
-                <img src={img.imageSrc} alt={img.title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" referrerPolicy="no-referrer" />
+                <button onClick={onClose} aria-label="Close image" className="absolute -top-11 right-0 text-white/80 hover:text-[#DFC06B] text-3xl font-light">&times;</button>
+                <img src={img.imageSrc} alt={img.title} decoding="async" className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl border border-[#C9A84C]/30" referrerPolicy="no-referrer" />
                 {(img.title || img.caption) && (
                     <div className="mt-4 text-center">
-                        {img.title && <p className="text-white font-semibold text-lg">{img.title}</p>}
-                        {img.caption && <p className="text-slate-400 text-sm mt-1">{img.caption}</p>}
+                        {img.title && <p className="text-white font-bold text-lg">{img.title}</p>}
+                        {img.caption && <p className="text-white/75 text-sm mt-1">{img.caption}</p>}
                     </div>
                 )}
-                {index > 0 && <button onClick={() => onNav(index - 1)} className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white/70 hover:text-white text-5xl">‹</button>}
-                {index < images.length - 1 && <button onClick={() => onNav(index + 1)} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white/70 hover:text-white text-5xl">›</button>}
-                <p className="text-slate-500 text-sm mt-3">{index + 1} / {images.length}</p>
+                {index > 0 && <button onClick={() => onNav(index - 1)} aria-label="Previous image" className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#0B1F3A]/85 border border-[#C9A84C]/50 text-white hover:text-[#DFC06B] text-3xl flex items-center justify-center">&lsaquo;</button>}
+                {index < images.length - 1 && <button onClick={() => onNav(index + 1)} aria-label="Next image" className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#0B1F3A]/85 border border-[#C9A84C]/50 text-white hover:text-[#DFC06B] text-3xl flex items-center justify-center">&rsaquo;</button>}
+                <p className="font-tabular text-white/60 text-sm mt-3">{index + 1} / {images.length}</p>
             </div>
         </div>
     );
@@ -75,7 +75,7 @@ const ImageLightbox: React.FC<{ images: GalleryItem[]; index: number; onClose: (
 
 interface GalleryPageProps { user: User | null; }
 
-const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
+const GalleryPage: React.FC<GalleryPageProps> = () => {
     const navigate = useNavigate();
     const params = useParams();
     const slugPath: string = (params['*'] || '').replace(/^\/+|\/+$/g, '');
@@ -158,7 +158,7 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
     }, [currentSubfolders]);
 
     const imageItems = items.filter(i => i.type !== 'video');
-    const handleItemClick = (item: GalleryItem, idx: number) => {
+    const handleItemClick = (item: GalleryItem) => {
         if (item.type === 'video' && item.videoUrl) {
             const ytId = getYouTubeId(item.videoUrl);
             if (ytId) { setActiveVideoId(ytId); setActiveVideoTitle(item.title); }
@@ -172,40 +172,41 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
         <>
             {activeVideoId && <VideoModal videoId={activeVideoId} title={activeVideoTitle} onClose={() => setActiveVideoId(null)} />}
             {lightboxIndex !== null && <ImageLightbox images={imageItems} index={lightboxIndex} onClose={() => setLightboxIndex(null)} onNav={setLightboxIndex} />}
-            <div className="bg-black py-16 min-h-screen">
+            <div className="bg-[#0B1F3A] py-12 sm:py-16 min-h-screen">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-8 text-center">
-                        <h1 className="text-4xl font-extrabold text-white">School Gallery</h1>
-                        <p className="mt-2 text-slate-500">Browse photos and videos by event, year, or category</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#DFC06B]">Campus Memories</p>
+                        <h1 className="mt-1 text-3xl sm:text-4xl font-extrabold text-white">School Gallery</h1>
+                        <p className="mt-2 text-white/75 text-sm sm:text-base">Browse photos and videos by event, year, or category</p>
                     </div>
-                    <nav className="text-sm font-semibold text-slate-400 mb-8 flex items-center flex-wrap gap-1">
-                        <button onClick={() => navigateToBreadcrumb(-1)} className="hover:text-sky-400 transition-colors">Gallery</button>
+                    <nav className="text-sm font-bold text-white/75 mb-8 flex items-center flex-wrap gap-1.5">
+                        <button onClick={() => navigateToBreadcrumb(-1)} className="hover:text-[#DFC06B] transition-colors">Gallery</button>
                         {currentPath.map((folder, index) => (
                             <React.Fragment key={folder}>
-                                <span className="text-zinc-700">/</span>
-                                <button onClick={() => navigateToBreadcrumb(index)} className={`hover:text-sky-400 transition-colors ${index === currentPath.length - 1 ? 'text-sky-400' : ''}`}>{folder}</button>
+                                <span className="text-white/40">/</span>
+                                <button onClick={() => navigateToBreadcrumb(index)} className={`hover:text-[#DFC06B] transition-colors ${index === currentPath.length - 1 ? 'text-[#DFC06B]' : ''}`}>{folder}</button>
                             </React.Fragment>
                         ))}
                     </nav>
                     {folderTreeLoading ? (
-                        <div className="flex justify-center py-20"><SpinnerIcon className="w-10 h-10 text-sky-500" /></div>
+                        <div className="flex justify-center py-20"><SpinnerIcon className="w-10 h-10 text-[#C9A84C]" /></div>
                     ) : !isLeafNode ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                             {currentSubfolders.map(folder => {
                                 const thumb = folderThumbs[folder.name] || folder.thumbnail;
                                 const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
                                 return (
-                                    <div key={folder.name} onClick={() => navigateTo(folder.name)} className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group border border-zinc-800 hover:border-sky-700 transition-colors">
+                                    <div key={folder.name} onClick={() => navigateTo(folder.name)} className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group border border-white/15 hover:border-[#C9A84C] transition-colors">
                                         {thumb ? (
                                             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundImage: `url(${thumb})` }} />
                                         ) : (
-                                            <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center"><FolderIcon className="w-16 h-16 text-zinc-700" /></div>
+                                            <div className="absolute inset-0 bg-[#132D52] flex items-center justify-center"><FolderIcon className="w-16 h-16 text-[#C9A84C]/50" /></div>
                                         )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#07162B]/90 via-[#07162B]/30 to-transparent" />
                                         <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
-                                            <FolderIcon className="w-6 h-6 opacity-80 mb-1" />
+                                            <FolderIcon className="w-6 h-6 text-[#DFC06B] mb-1" />
                                             <h3 className="font-bold text-base leading-tight">{folder.name}</h3>
-                                            {hasSubfolders && <p className="text-xs text-white/50 mt-0.5">{folder.subfolders!.length} subfolder{folder.subfolders!.length !== 1 ? 's' : ''}</p>}
+                                            {hasSubfolders && <p className="text-xs text-white/70 mt-0.5 font-tabular">{folder.subfolders!.length} subfolder{folder.subfolders!.length !== 1 ? 's' : ''}</p>}
                                         </div>
                                     </div>
                                 );
@@ -213,33 +214,33 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ user }) => {
                         </div>
                     ) : (
                         itemsLoading ? (
-                            <div className="flex justify-center py-20"><SpinnerIcon className="w-10 h-10 text-sky-500" /></div>
+                            <div className="flex justify-center py-20"><SpinnerIcon className="w-10 h-10 text-[#C9A84C]" /></div>
                         ) : items.length === 0 ? (
-                            <div className="text-center py-24 border-2 border-dashed border-zinc-800 rounded-xl">
-                                <FolderIcon className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                                <p className="text-slate-500 font-semibold">No photos or videos in this folder yet.</p>
-                                <p className="text-slate-600 text-sm mt-1">Check back soon!</p>
+                            <div className="text-center py-24 border-2 border-dashed border-[#C9A84C]/35 rounded-xl bg-[#132D52]">
+                                <FolderIcon className="w-12 h-12 text-[#DFC06B]/60 mx-auto mb-3" />
+                                <p className="text-white font-bold">No photos or videos in this folder yet.</p>
+                                <p className="text-white/65 text-sm mt-1">Check back soon!</p>
                             </div>
                         ) : (
                             <>
-                                <p className="text-sm text-slate-500 mb-4">{items.length} item{items.length !== 1 ? 's' : ''}</p>
+                                <p className="font-tabular text-sm text-[#DFC06B] mb-4 font-semibold">{items.length} item{items.length !== 1 ? 's' : ''}</p>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                                    {items.map((item, idx) => (
-                                        <div key={item.id} onClick={() => handleItemClick(item, idx)} className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group border border-zinc-800 hover:border-sky-700 transition-colors">
-                                            <img src={item.imageSrc} alt={item.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" referrerPolicy="no-referrer" />
+                                    {items.map((item) => (
+                                        <div key={item.id} onClick={() => handleItemClick(item)} className="aspect-square relative rounded-xl overflow-hidden shadow-md cursor-pointer group border border-white/15 hover:border-[#C9A84C] transition-colors bg-[#132D52]">
+                                            <img src={item.imageSrc} alt={item.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" referrerPolicy="no-referrer" />
                                             {item.type === 'video' ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-300">
-                                                    <div className="bg-red-600/90 rounded-full p-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                                        <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                                <div className="absolute inset-0 flex items-center justify-center bg-[#07162B]/40 group-hover:bg-[#07162B]/60 transition-colors duration-300">
+                                                    <div className="bg-[#C9A84C] rounded-full p-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                                        <svg className="w-8 h-8 text-[#0B1F3A]" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+                                                <div className="absolute inset-0 bg-[#07162B]/0 group-hover:bg-[#07162B]/35 transition-colors duration-300" />
                                             )}
                                             {(item.title || item.caption) && (
-                                                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                                                    {item.title && <p className="text-white text-sm font-semibold truncate">{item.title}</p>}
-                                                    {item.caption && <p className="text-slate-400 text-xs truncate">{item.caption}</p>}
+                                                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#07162B]/90 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                                    {item.title && <p className="text-white text-sm font-bold truncate">{item.title}</p>}
+                                                    {item.caption && <p className="text-white/75 text-xs truncate">{item.caption}</p>}
                                                 </div>
                                             )}
                                         </div>

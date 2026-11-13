@@ -4,10 +4,10 @@ import { User } from '@/types';
 
 const RuleSection: React.FC<{ title: string; id: string; defaultContent: string; user: User | null }> = ({ title, id, defaultContent, user }) => (
     <section className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4 border-b-2 border-sky-800 pb-2">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#DFC06B] mb-3 border-b border-[#C9A84C]/40 pb-2">
             <EditableContent id={`${id}_title`} defaultContent={title} type="text" user={user} />
         </h2>
-        <div className="space-y-3 text-slate-300 leading-relaxed">
+        <div className="space-y-3 text-white/85 leading-relaxed text-sm sm:text-base">
             <EditableContent id={`${id}_content`} defaultContent={defaultContent} type="textarea" user={user} />
         </div>
     </section>
@@ -17,14 +17,15 @@ interface RulesPageProps { user: User | null; }
 
 const RulesPage: React.FC<RulesPageProps> = ({ user }) => {
     return (
-        <div className="bg-black py-16 min-h-screen">
+        <div className="bg-[#0B1F3A] py-12 sm:py-16 min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 p-8 md:p-12 rounded-lg shadow-2xl">
-                    <div className="text-center mb-12">
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+                <div className="max-w-4xl mx-auto bg-[#132D52] border border-[#C9A84C]/35 p-6 sm:p-10 md:p-12 rounded-2xl shadow-2xl">
+                    <div className="text-center mb-10">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#DFC06B]">Student Code of Conduct</p>
+                        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white">
                             <EditableContent id="rules_main_title" defaultContent="Rules & Regulations" type="text" user={user} />
                         </h1>
-                        <div className="mt-4 text-lg text-slate-400">
+                        <div className="mt-3 text-base sm:text-lg text-white/80">
                             <EditableContent id="rules_intro" defaultContent="The following rules are established to guide students towards discipline, respect, and responsibility. Every student is expected to follow them strictly." type="textarea" user={user} />
                         </div>
                     </div>
@@ -51,11 +52,11 @@ const RulesPage: React.FC<RulesPageProps> = ({ user }) => {
                         defaultContent={`• All disciplinary actions will be recorded in the student's file.\n• Offenders may lose eligibility for examinations, leadership posts, and extracurricular activities.\n• The school reserves the right to update or add rules when necessary.`}
                     />
 
-                    <div className="mt-12 p-6 bg-amber-950/30 border-l-4 border-amber-500 rounded-r-lg">
-                        <h3 className="font-bold text-amber-300 text-lg">
-                            <EditableContent id="rules_footer_title" defaultContent="📌 Final Note for Parents & Guardians:" type="text" user={user} />
+                    <div className="mt-10 p-6 bg-[#07162B] border-l-4 border-[#C9A84C] rounded-r-xl">
+                        <h3 className="font-bold text-[#DFC06B] text-lg">
+                            <EditableContent id="rules_footer_title" defaultContent="Final Note for Parents & Guardians:" type="text" user={user} />
                         </h3>
-                        <div className="mt-2 text-amber-200/80">
+                        <div className="mt-2 text-white/85 text-sm sm:text-base">
                             <EditableContent id="rules_footer_content" defaultContent="Admission to Bethel Mission School implies full acceptance of these rules. Parents are expected to support the school in ensuring discipline and guiding their children." type="textarea" user={user} />
                         </div>
                     </div>

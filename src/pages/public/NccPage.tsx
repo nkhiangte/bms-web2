@@ -92,19 +92,26 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
         <>
             {/* Lightbox */}
             {lightboxIndex !== null && images[lightboxIndex] && (
-                <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={()=>setLightboxIndex(null)}>
+                <div className="fixed inset-0 bg-[#07162B]/95 z-50 flex items-center justify-center p-4" onClick={()=>setLightboxIndex(null)}>
                     <div className="relative max-w-5xl w-full flex flex-col items-center" onClick={e=>e.stopPropagation()}>
-                        <button onClick={()=>setLightboxIndex(null)} className="absolute -top-10 right-0 text-white/70 hover:text-white text-3xl font-light">✕</button>
-                        <img src={images[lightboxIndex].imageSrc} alt={images[lightboxIndex].title} className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl" />
+                        <button onClick={()=>setLightboxIndex(null)} className="absolute -top-10 right-0 text-white/80 hover:text-[#DFC06B] text-3xl font-light">&times;</button>
+                        <img
+                            src={images[lightboxIndex].imageSrc}
+                            alt={images[lightboxIndex].title}
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/school/campus.jpg'; }}
+                            className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl border border-[#C9A84C]/50"
+                        />
                         {(images[lightboxIndex].title||images[lightboxIndex].caption) && (
                             <div className="mt-4 text-center">
                                 {images[lightboxIndex].title && <p className="text-white font-semibold text-lg">{images[lightboxIndex].title}</p>}
-                                {images[lightboxIndex].caption && <p className="text-slate-300 text-sm mt-1">{images[lightboxIndex].caption}</p>}
+                                {images[lightboxIndex].caption && <p className="text-white/80 text-sm mt-1">{images[lightboxIndex].caption}</p>}
                             </div>
                         )}
-                        {lightboxIndex > 0 && <button onClick={()=>setLightboxIndex(i=>i!-1)} className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white/70 hover:text-white text-5xl">‹</button>}
-                        {lightboxIndex < images.length-1 && <button onClick={()=>setLightboxIndex(i=>i!+1)} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white/70 hover:text-white text-5xl">›</button>}
-                        <p className="text-slate-400 text-sm mt-3">{lightboxIndex+1} / {images.length}</p>
+                        {lightboxIndex > 0 && <button onClick={()=>setLightboxIndex(i=>i!-1)} className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-12 text-white/80 hover:text-[#DFC06B] text-5xl">&lsaquo;</button>}
+                        {lightboxIndex < images.length-1 && <button onClick={()=>setLightboxIndex(i=>i!+1)} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-12 text-white/80 hover:text-[#DFC06B] text-5xl">&rsaquo;</button>}
+                        <p className="text-[#DFC06B] text-sm mt-3 font-tabular">{lightboxIndex+1} / {images.length}</p>
                     </div>
                 </div>
             )}
@@ -114,24 +121,24 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
                 const img = images.find(i=>i.id===editingId);
                 if (!img) return null;
                 return (
-                    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={()=>setEditingId(null)}>
-                        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden" onClick={e=>e.stopPropagation()}>
-                            <div className="bg-black flex items-center justify-center" style={{maxHeight:'40vh'}}>
+                    <div className="fixed inset-0 bg-[#07162B]/90 z-50 flex items-center justify-center p-4" onClick={()=>setEditingId(null)}>
+                        <div className="bg-[#0B1F3A] border border-[#C9A84C]/50 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden" onClick={e=>e.stopPropagation()}>
+                            <div className="bg-[#07162B] flex items-center justify-center" style={{maxHeight:'40vh'}}>
                                 <img src={img.imageSrc} alt={img.title} className="max-h-64 max-w-full object-contain" />
                             </div>
                             <div className="p-6 space-y-4">
                                 <h3 className="font-bold text-white">Edit Image Details</h3>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-400 mb-1">Title</label>
-                                    <input type="text" value={editTitle} onChange={e=>setEditTitle(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" autoFocus />
+                                    <label className="block text-sm font-semibold text-[#DFC06B] mb-1">Title</label>
+                                    <input type="text" value={editTitle} onChange={e=>setEditTitle(e.target.value)} className="w-full bg-[#132D52] border border-[#C9A84C]/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C]" autoFocus />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-400 mb-1">Caption</label>
-                                    <textarea value={editCaption} onChange={e=>setEditCaption(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 resize-none" rows={3} />
+                                    <label className="block text-sm font-semibold text-[#DFC06B] mb-1">Caption</label>
+                                    <textarea value={editCaption} onChange={e=>setEditCaption(e.target.value)} className="w-full bg-[#132D52] border border-[#C9A84C]/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C9A84C] resize-none" rows={3} />
                                 </div>
                                 <div className="flex justify-end gap-3">
-                                    <button onClick={()=>setEditingId(null)} className="px-4 py-2 text-sm font-semibold border border-zinc-600 text-slate-300 rounded-lg hover:bg-zinc-800">Cancel</button>
-                                    <button onClick={handleSaveEdit} disabled={isSavingEdit} className="flex items-center gap-2 bg-sky-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50">
+                                    <button onClick={()=>setEditingId(null)} className="px-4 py-2 text-sm font-semibold border border-white/30 text-white rounded-lg hover:bg-[#132D52]">Cancel</button>
+                                    <button onClick={handleSaveEdit} disabled={isSavingEdit} className="flex items-center gap-2 bg-[#C9A84C] text-[#0B1F3A] px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#DFC06B] disabled:opacity-50">
                                         {isSavingEdit ? <SpinnerIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />} Save
                                     </button>
                                 </div>
@@ -141,19 +148,22 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
                 );
             })()}
 
-            <div className="relative py-16">
+            <div className="relative py-12 md:py-16 bg-[#0B1F3A]">
                 <div className="absolute inset-0">
-                    <EditableContent id="ncc_hero_bg" defaultContent="https://i.ibb.co/Pv7Ywf08/481219402-1045908077568568-4366507493258612299-n.jpg" type="image" user={user} className="w-full h-full object-cover bg-fixed" />
-                    <div className="absolute inset-0 bg-black/70 pointer-events-none"></div>
+                    <EditableContent id="ncc_hero_bg" defaultContent="/assets/school/campus.jpg" type="image" user={user} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#07162B]/85 pointer-events-none"></div>
                 </div>
                 <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-4xl mx-auto bg-zinc-900/90 backdrop-blur-sm border border-zinc-700 p-8 md:p-12 rounded-2xl shadow-2xl">
-                        <div className="text-center mb-12">
-                            <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+                    <div className="max-w-4xl mx-auto bg-white border-t-4 border-[#C9A84C] p-6 sm:p-8 md:p-12 rounded-2xl shadow-2xl">
+                        <div className="text-center mb-10">
+                            <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#8E6D1B] bg-[#FBF6E8] border border-[#C9A84C]/50 px-3 py-1 rounded-full mb-3">
+                                Discipline &amp; Leadership
+                            </span>
+                            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B1F3A]">
                                 <EditableContent id="ncc_title" defaultContent="National Cadet Corps (NCC)" type="text" user={user} />
                             </h1>
                         </div>
-                        <div className="space-y-6 text-slate-300 leading-relaxed">
+                        <div className="space-y-5 text-[#132D52] leading-relaxed">
                             <EditableContent id="ncc_content_p1" defaultContent="The National Cadet Corps (NCC) in our school serves as a platform for students who wish to cultivate discipline, leadership, and a spirit of service to the nation. Introduced in 2021, the NCC has become a preliminary training ground for young minds who aspire to contribute to society and the country with dedication and responsibility." type="textarea" user={user} />
                             <EditableContent id="ncc_content_p2" defaultContent="Since its establishment, the unit has successfully organized and participated in two training camps – in 2023 and 2025. These camps provided cadets with rigorous physical training, drills, and lessons in teamwork, all of which are essential qualities for shaping future leaders." type="textarea" user={user} />
                             <EditableContent id="ncc_content_p3" defaultContent="Our cadets have consistently excelled and brought recognition to the school. In the 2023 training camp, Pausawmdawngzela was awarded the title of Best Junior Cadet. In 2025, Thanglianzauva received the same honor." type="textarea" user={user} />
@@ -161,52 +171,52 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
                         </div>
 
                         {/* Gallery Section */}
-                        <div className="mt-12 pt-8 border-t border-zinc-700">
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-bold text-white">
+                        <div className="mt-12 pt-8 border-t border-[#C9A84C]/40">
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+                                <h2 className="text-2xl font-bold text-[#0B1F3A]">
                                     <EditableContent id="ncc_gallery_title" defaultContent="NCC in Pictures" type="text" user={user} />
                                 </h2>
                                 {isAdmin && (
-                                    <button onClick={()=>{setIsAdding(!isAdding);setUploadItems([]);}} className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 transition-colors">
-                                        <PlusIcon className="w-4 h-4" /> Add Images
+                                    <button onClick={()=>{setIsAdding(!isAdding);setUploadItems([]);}} className="flex items-center gap-2 bg-[#0B1F3A] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#132D52] transition-colors">
+                                        <PlusIcon className="w-4 h-4 text-[#DFC06B]" /> Add Images
                                     </button>
                                 )}
                             </div>
 
                             {/* Upload Panel */}
                             {isAdmin && isAdding && (
-                                <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 mb-6">
-                                    <h3 className="font-bold text-white mb-3 text-sm">Upload Images</h3>
-                                    <div className="border-2 border-dashed border-zinc-600 rounded-lg p-5 text-center cursor-pointer hover:bg-zinc-700 transition-colors mb-4" onClick={()=>fileInputRef.current?.click()}>
-                                        <p className="text-sky-400 font-semibold text-sm">Click to select images</p>
-                                        <p className="text-zinc-500 text-xs mt-1">Hold Ctrl/Shift to select multiple</p>
+                                <div className="bg-[#F4F7FB] border border-[#C9A84C]/50 rounded-xl p-5 mb-6">
+                                    <h3 className="font-bold text-[#0B1F3A] mb-3 text-sm">Upload Images</h3>
+                                    <div className="border-2 border-dashed border-[#0B1F3A]/30 rounded-lg p-5 text-center cursor-pointer hover:bg-white transition-colors mb-4" onClick={()=>fileInputRef.current?.click()}>
+                                        <p className="text-[#0B1F3A] font-semibold text-sm">Click to select images</p>
+                                        <p className="text-[#132D52]/70 text-xs mt-1">Hold Ctrl/Shift to select multiple</p>
                                         <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFilesChange} className="hidden" />
                                     </div>
                                     {uploadItems.length > 0 && (
                                         <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
                                             {uploadItems.map((item,i) => (
-                                                <div key={i} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${item.status==='done'?'bg-emerald-950/30 border-emerald-800':item.status==='error'?'bg-red-950/30 border-red-800':item.status==='uploading'?'bg-sky-950/30 border-sky-800':'bg-zinc-800 border-zinc-700'}`}>
+                                                <div key={i} className={`flex items-center gap-3 p-2 rounded-lg border text-sm ${item.status==='done'?'bg-[#FBF6E8] border-[#C9A84C]':item.status==='error'?'bg-white border-[#8E6D1B]':item.status==='uploading'?'bg-[#F4F7FB] border-[#0B1F3A]':'bg-white border-[#0B1F3A]/15'}`}>
                                                     <img src={item.preview} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
                                                     <div className="flex-1 flex flex-col gap-1 min-w-0">
-                                                        <input type="text" value={item.title} onChange={e=>setUploadItems(prev=>prev.map((it,idx)=>idx===i?{...it,title:e.target.value}:it))} className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-white focus:outline-none" disabled={item.status!=='pending'} placeholder="Title" />
-                                                        <input type="text" value={item.caption} onChange={e=>setUploadItems(prev=>prev.map((it,idx)=>idx===i?{...it,caption:e.target.value}:it))} className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-white focus:outline-none" disabled={item.status!=='pending'} placeholder="Caption (optional)" />
+                                                        <input type="text" value={item.title} onChange={e=>setUploadItems(prev=>prev.map((it,idx)=>idx===i?{...it,title:e.target.value}:it))} className="w-full bg-[#F4F7FB] border border-[#0B1F3A]/20 rounded px-2 py-1 text-xs text-[#0B1F3A] focus:outline-none" disabled={item.status!=='pending'} placeholder="Title" />
+                                                        <input type="text" value={item.caption} onChange={e=>setUploadItems(prev=>prev.map((it,idx)=>idx===i?{...it,caption:e.target.value}:it))} className="w-full bg-[#F4F7FB] border border-[#0B1F3A]/20 rounded px-2 py-1 text-xs text-[#0B1F3A] focus:outline-none" disabled={item.status!=='pending'} placeholder="Caption (optional)" />
                                                     </div>
                                                     <div className="w-16 text-center flex-shrink-0 text-xs font-semibold">
-                                                        {item.status==='pending'&&<span className="text-zinc-400">Ready</span>}
-                                                        {item.status==='uploading'&&<SpinnerIcon className="w-4 h-4 text-sky-400 mx-auto" />}
-                                                        {item.status==='done'&&<span className="text-emerald-400">✓ Done</span>}
-                                                        {item.status==='error'&&<span className="text-red-400">✕ Failed</span>}
+                                                        {item.status==='pending'&&<span className="text-[#132D52]">Ready</span>}
+                                                        {item.status==='uploading'&&<SpinnerIcon className="w-4 h-4 text-[#0B1F3A] mx-auto" />}
+                                                        {item.status==='done'&&<span className="text-[#8E6D1B]">Done</span>}
+                                                        {item.status==='error'&&<span className="text-[#0B1F3A]">Failed</span>}
                                                     </div>
-                                                    {item.status==='pending'&&<button onClick={()=>setUploadItems(prev=>prev.filter((_,idx)=>idx!==i))} className="text-zinc-500 hover:text-red-400 flex-shrink-0"><XIcon className="w-4 h-4" /></button>}
+                                                    {item.status==='pending'&&<button onClick={()=>setUploadItems(prev=>prev.filter((_,idx)=>idx!==i))} className="text-[#132D52] hover:text-[#8E6D1B] flex-shrink-0"><XIcon className="w-4 h-4" /></button>}
                                                 </div>
                                             ))}
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs text-zinc-500">{pendingCount} image(s) ready</span>
+                                        <span className="text-xs text-[#132D52]/70 font-tabular">{pendingCount} image(s) ready</span>
                                         <div className="flex gap-2">
-                                            <button onClick={()=>{setIsAdding(false);setUploadItems([]);}} className="px-3 py-1.5 text-sm font-semibold border border-zinc-600 text-slate-300 rounded-lg hover:bg-zinc-700" disabled={isUploading}>Cancel</button>
-                                            <button onClick={handleUploadAll} className="flex items-center gap-2 bg-sky-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50" disabled={isUploading||pendingCount===0}>
+                                            <button onClick={()=>{setIsAdding(false);setUploadItems([]);}} className="px-3 py-1.5 text-sm font-semibold border border-[#0B1F3A]/30 text-[#0B1F3A] rounded-lg hover:bg-white" disabled={isUploading}>Cancel</button>
+                                            <button onClick={handleUploadAll} className="flex items-center gap-2 bg-[#C9A84C] text-[#0B1F3A] px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-[#DFC06B] disabled:opacity-50" disabled={isUploading||pendingCount===0}>
                                                 {isUploading?<SpinnerIcon className="w-4 h-4" />:<CheckIcon className="w-4 h-4" />}
                                                 {isUploading?uploadProgress:`Upload ${pendingCount} image(s)`}
                                             </button>
@@ -217,31 +227,38 @@ const NccPage: React.FC<NccPageProps> = ({ user }) => {
 
                             {/* Image Grid */}
                             {isLoadingImages ? (
-                                <div className="flex justify-center py-12"><SpinnerIcon className="w-8 h-8 text-sky-500" /></div>
+                                <div className="flex justify-center py-12"><SpinnerIcon className="w-8 h-8 text-[#C9A84C]" /></div>
                             ) : images.length === 0 ? (
-                                <div className="text-center py-16 border-2 border-dashed border-zinc-800 rounded-xl text-zinc-500">
+                                <div className="text-center py-14 border-2 border-dashed border-[#0B1F3A]/20 bg-[#F4F7FB] rounded-xl text-[#132D52]">
                                     <p className="font-semibold">No photos yet.</p>
-                                    {isAdmin && <p className="text-sm mt-1">Click "Add Images" above to upload.</p>}
+                                    {isAdmin && <p className="text-sm mt-1">Click &quot;Add Images&quot; above to upload.</p>}
                                 </div>
                             ) : (
                                 <>
-                                    <p className="text-xs text-zinc-500 mb-3">{images.length} photo{images.length!==1?'s':''}</p>
+                                    <p className="text-xs text-[#132D52]/70 mb-3 font-tabular">{images.length} photo{images.length!==1?'s':''}</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                                         {images.map((img,idx) => (
-                                            <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden shadow-md cursor-pointer group border border-zinc-800" onClick={()=>setLightboxIndex(idx)}>
-                                                <img src={img.imageSrc} alt={img.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                                            <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden shadow-md cursor-pointer group border border-[#0B1F3A]/15 bg-[#F4F7FB]" onClick={()=>setLightboxIndex(idx)}>
+                                                <img
+                                                    src={img.imageSrc}
+                                                    alt={img.title}
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/school/campus.jpg'; }}
+                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
                                                 {(img.title||img.caption) && (
-                                                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-[#07162B]/90 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                                                         {img.title && <p className="text-white text-sm font-semibold truncate">{img.title}</p>}
-                                                        {img.caption && <p className="text-slate-300 text-xs truncate">{img.caption}</p>}
+                                                        {img.caption && <p className="text-white/80 text-xs truncate">{img.caption}</p>}
                                                     </div>
                                                 )}
                                                 {isAdmin && (
                                                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e=>e.stopPropagation()}>
-                                                        <button onClick={()=>handleStartEdit(img)} className="bg-sky-600 text-white p-1.5 rounded-full hover:bg-sky-700 shadow">
+                                                        <button onClick={()=>handleStartEdit(img)} className="bg-[#0B1F3A] text-[#DFC06B] p-1.5 rounded-full hover:bg-[#132D52] shadow">
                                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                         </button>
-                                                        <button onClick={()=>handleDelete(img.id)} className="bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 shadow"><TrashIcon className="w-3 h-3" /></button>
+                                                        <button onClick={()=>handleDelete(img.id)} className="bg-[#8E6D1B] text-white p-1.5 rounded-full hover:bg-[#0B1F3A] shadow"><TrashIcon className="w-3 h-3" /></button>
                                                     </div>
                                                 )}
                                             </div>

@@ -19,27 +19,29 @@ interface HolderImage {
 }
 
 const HolderCard: React.FC<{ holder: HolderImage }> = ({ holder }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-2 hover:border-sky-500/50 hover:shadow-sky-900/20 group">
-        <div className="w-full bg-zinc-950 flex flex-col items-center justify-center overflow-hidden">
+    <div className="bg-white border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] rounded-2xl shadow-md overflow-hidden transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl group">
+        <div className="w-full bg-[#F4F7FB] flex flex-col items-center justify-center overflow-hidden">
             <img 
                 src={holder.imageUrl} 
                 alt={holder.name} 
-                className="w-full h-auto block transition-transform duration-700 group-hover:scale-105" 
+                loading="lazy"
+                decoding="async"
+                className="w-full h-auto block transition-transform duration-500 group-hover:scale-105" 
                 referrerPolicy="no-referrer"
-                onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-zinc-900'); (e.target as HTMLImageElement).style.display = 'none'; }} 
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/school/bms-logo-color.png'; }} 
             />
         </div>
-        <div className="p-4 border-t border-zinc-800/50 bg-black/60 backdrop-blur-sm">
-            <div className="flex justify-between items-start gap-2 mb-2">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider line-clamp-1 flex-1">{holder.name}</h3>
+        <div className="p-4 border-t border-[#0B1F3A]/10 bg-white">
+            <div className="flex justify-between items-start gap-2 mb-1.5">
+                <h3 className="text-sm font-bold text-[#0B1F3A] uppercase tracking-wider line-clamp-1 flex-1">{holder.name}</h3>
                 {holder.percentage !== undefined && holder.percentage > 0 && (
-                    <span className="flex-shrink-0 bg-sky-500 text-white text-[11px] font-black px-2 py-0.5 rounded shadow-[0_0_10px_rgba(14,165,233,0.3)] border border-sky-400/50">
+                    <span className="flex-shrink-0 bg-[#FBF6E8] text-[#8E6D1B] text-[11px] font-extrabold px-2 py-0.5 rounded border border-[#C9A84C] font-tabular">
                         {holder.percentage}%
                     </span>
                 )}
             </div>
             {holder.caption && (
-                <p className="text-[11px] text-zinc-400 line-clamp-2 leading-tight uppercase font-medium italic">
+                <p className="text-[11px] text-[#132D52]/80 line-clamp-2 leading-tight uppercase font-medium italic">
                     {holder.caption}
                 </p>
             )}
@@ -96,7 +98,6 @@ const DistinctionHoldersPage: React.FC = () => {
                         .filter((item: any) => {
                             const itemYear = String(item.year || '').trim();
                             const targetYear = String(year).trim();
-                            // If it matches the target year OR if it was found in a year-specific doc
                             return itemYear === targetYear; 
                         })
                         .filter((item: any) => item.imageSrc && (item.type === 'image' || !item.type))
@@ -105,7 +106,6 @@ const DistinctionHoldersPage: React.FC = () => {
                             const caption = item.caption || '';
                             const combinedText = `${title} ${caption} ${item.year || ''}`;
                             
-                            // More robust percentage parsing: find all numbers followed by % and take the max
                             const matches = combinedText.matchAll(/(\d+(?:\.\d+)?)\s*%/g);
                             let maxPercent = 0;
                             for (const match of matches) {
@@ -122,10 +122,7 @@ const DistinctionHoldersPage: React.FC = () => {
                         });
 
                     if (filteredHolders.length > 0) {
-                        // Remove duplicates by imageUrl
                         const uniqueHolders = Array.from(new Map(filteredHolders.map(h => [h.imageUrl, h])).values());
-                        
-                        // Sort by percentage descending, then by name
                         uniqueHolders.sort((a, b) => {
                             const pA = a.percentage || 0;
                             const pB = b.percentage || 0;
@@ -178,38 +175,41 @@ const DistinctionHoldersPage: React.FC = () => {
     }, [year]);
 
     return (
-        <div className="bg-black py-16 min-h-screen">
+        <div className="bg-[#F4F7FB] py-12 md:py-16 min-h-screen">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="max-w-5xl mx-auto">
-                    <div className="mb-8">
-                        <button onClick={() => navigate('/achievements/academic')} className="flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors">
+                    <div className="mb-6">
+                        <button onClick={() => navigate('/achievements/academic')} className="inline-flex items-center gap-2 text-sm font-bold text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors">
                             <BackIcon className="w-5 h-5" />Back to Academic Achievements
                         </button>
                     </div>
-                    <div className="text-center mb-12">
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Distinction Holders ({year})</h1>
-                        <p className="mt-2 text-lg text-slate-400">Celebrating the academic excellence of our top students.</p>
+                    <div className="text-center mb-10">
+                        <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#8E6D1B] bg-[#FBF6E8] border border-[#C9A84C]/50 px-3 py-1 rounded-full mb-3">
+                            HSLC Roll of Honour
+                        </span>
+                        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B1F3A] font-tabular">Distinction Holders ({year})</h1>
+                        <p className="mt-2 text-base sm:text-lg text-[#132D52]/80">Celebrating the academic excellence of our top students.</p>
                     </div>
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-24 gap-4">
-                            <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-slate-500 text-sm">Loading distinction holders...</p>
+                            <div className="w-12 h-12 border-4 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
+                            <p className="text-[#132D52] text-sm font-medium">Loading distinction holders...</p>
                         </div>
                     ) : error ? (
-                        <div className="bg-zinc-900 border border-zinc-800 py-16 text-center rounded-lg shadow-md">
-                            <UserIcon className="w-16 h-16 mx-auto text-zinc-600" />
-                            <h2 className="text-2xl font-bold text-white mt-4">Something went wrong</h2>
-                            <p className="text-slate-400 mt-2">{error}</p>
+                        <div className="bg-white border border-[#0B1F3A]/15 py-16 text-center rounded-2xl shadow-md">
+                            <UserIcon className="w-16 h-16 mx-auto text-[#0B1F3A]/40" />
+                            <h2 className="text-2xl font-bold text-[#0B1F3A] mt-4">Something went wrong</h2>
+                            <p className="text-[#132D52]/80 mt-2">{error}</p>
                         </div>
                     ) : holders.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                             {holders.map((holder, index) => <HolderCard key={index} holder={holder} />)}
                         </div>
                     ) : (
-                        <div className="bg-zinc-900 border border-zinc-800 py-16 text-center rounded-lg shadow-md">
-                            <UserIcon className="w-16 h-16 mx-auto text-zinc-600" />
-                            <h2 className="text-2xl font-bold text-white mt-4">Information Coming Soon</h2>
-                            <p className="text-slate-400 mt-2">Details for the distinction holders of {year} are not yet available.</p>
+                        <div className="bg-white border border-[#0B1F3A]/15 py-16 text-center rounded-2xl shadow-md">
+                            <UserIcon className="w-16 h-16 mx-auto text-[#0B1F3A]/40" />
+                            <h2 className="text-2xl font-bold text-[#0B1F3A] mt-4">Information Coming Soon</h2>
+                            <p className="text-[#132D52]/80 mt-2">Details for the distinction holders of <span className="font-tabular">{year}</span> are not yet available.</p>
                         </div>
                     )}
                 </div>

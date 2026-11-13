@@ -1,293 +1,723 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { AcademicCapIcon, UsersIcon, BuildingOfficeIcon, InstagramIcon, YouTubeIcon, FacebookIcon } from '@/components/Icons';
-import { NewsItem, User } from '@/types';
+import { Download, Award, ShieldCheck, BookOpen, Trophy, ArrowRight, Calendar, Atom, Calculator, Sparkles } from 'lucide-react';
+import { db } from '@/firebaseConfig';
+import { WhatsappIcon, UserIcon } from '@/components/Icons';
+import { NewsItem, User, Staff, Grade, GradeDefinition } from '@/types';
 import { formatDateForNews, stripHtml } from '@/utils';
-import EditableContent from '@/components/EditableContent';
 import HomeResultPopup from '@/components/HomeResultPopup';
-import SiteVisitorCounter from '@/components/SiteVisitorCounter';
 
 const { Link } = ReactRouterDOM as any;
 
-const VIDEO_URL = 'https://res.cloudinary.com/dso9smw8g/video/upload/v1773516439/Aerial_View_720P_esp3qw.mp4';
+const CAMPUS_PHOTO_LOCAL = '/assets/school/campus.jpg';
+const WHATSAPP_ADMISSION_URL =
+    'https://wa.me/919862148342?text=' +
+    encodeURIComponent('Hello, I want admission for Class ___ at Bethel Mission School');
 
-// ── Feature Card ──────────────────────────────────────────────────────────────
-const FeatureCard: React.FC<{
-    icon: React.ReactNode;
+interface GalleryPhoto {
+    id: string;
+    src: string;
     title: string;
-    description: string;
-    link: string;
-}> = ({ icon, title, description, link }) => (
-    <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100">
-        <div className="text-sky-600 mb-4">{icon}</div>
-        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-        <p className="mt-2 text-slate-600 text-sm leading-relaxed">{description}</p>
-        <Link to={link} className="mt-4 inline-block font-semibold text-sky-600 hover:text-sky-800 text-sm">
-            Learn More &rarr;
-        </Link>
-    </div>
-);
+    caption?: string;
+}
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+const FALLBACK_GALLERY_PHOTOS: GalleryPhoto[] = [
+    {
+        id: 'campus-1',
+        src: '/assets/school/campus.jpg',
+        title: 'Champhai Campus & Assembly',
+        caption: 'Bethel Veng, Champhai',
+    },
+    {
+        id: 'ranker-esther',
+        src: '/assets/school/esther.jpg',
+        title: 'MBSE HSLC 4th Rank Holder',
+        caption: 'Esther Tingbiakmuani (2023)',
+    },
+    {
+        id: 'ranker-manngaih',
+        src: '/assets/school/manngaih.jpg',
+        title: 'MBSE HSLC 10th Rank Holder',
+        caption: 'Manngaihsangi (2020)',
+    },
+];
+
 interface PublicHomePageProps {
     news: NewsItem[];
     user: User | null;
+    staff?: Staff[];
+    gradeDefinitions?: Record<Grade, GradeDefinition>;
 }
 
-const PublicHomePage: React.FC<PublicHomePageProps> = ({ news, user }) => {
-    const latestNews = useMemo(() =>
-        [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2),
-    [news]);
+const PublicHomePage: React.FC<PublicHomePageProps> = ({
+    news,
+    user,
+    staff = [],
+}) => {
+    const [prospectusUrl, setProspectusUrl] = useState<string | null>(null);
+    const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>(FALLBACK_GALLERY_PHOTOS);
+    const [lightboxPhoto, setLightboxPhoto] = useState<GalleryPhoto | null>(null);
+    const [principalImgError, setPrincipalImgError] = useState(false);
 
-    // Clear any leftover body background styles from previous versions
+    const latestNews = useMemo(
+        () => [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3),
+        [news]
+    );
+
+    const principalMember = useMemo(() => {
+        return (staff || []).find(
+            s =>
+                s &&
+                (s.designation?.toLowerCase().includes('principal') ||
+                    `${s.firstName} ${s.lastName}`.toLowerCase().includes('malsawmdawngi'))
+        );
+    }, [staff]);
+
+    useEffect(() => {
+        db.collection('website_content')
+            .doc('about_documents')
+            .get()
+            .then(doc => {
+                if (doc.exists && Array.isArray(doc.data()?.items)) {
+                    const items = doc.data()!.items as Array<{ category?: string; title?: string; url?: string }>;
+                    const found = items.find(
+                        item =>
+                            item.url &&
+                            (item.category === 'School Prospectus' ||
+                                (item.title || '').toLowerCase().includes('prospectus'))
+                    );
+                    if (found?.url) setProspectusUrl(found.url);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadGalleryPhotos = async () => {
+            try {
+                const candidateDocIds = [
+                    'gallery_by_event_occasion_annual_day',
+                    'gallery_by_event_occasion_sports_day',
+                    'gallery_by_category_campus___infrastructure',
+                    'gallery_by_category_classrooms',
+                    'gallery_by_category_achievements',
+                    'gallery_by_category_activities',
+                ];
+                const collected: GalleryPhoto[] = [];
+
+                for (const docId of candidateDocIds) {
+                    if (collected.length >= 3) break;
+                    try {
+                        const snap = await db.collection('website_content').doc(docId).get();
+                        if (snap.exists && Array.isArray(snap.data()?.items)) {
+                            const items = snap.data()!.items as Array<{
+                                id?: string;
+                                title?: string;
+                                caption?: string;
+                                imageSrc?: string;
+                                type?: string;
+                            }>;
+                            for (const item of items) {
+                                if (item.type !== 'video' && item.imageSrc && collected.length < 3) {
+                                    collected.push({
+                                        id: item.id || `${docId}-${collected.length}`,
+                                        src: item.imageSrc,
+                                        title: item.title || 'School Memory',
+                                        caption: item.caption || '',
+                                    });
+                                }
+                            }
+                        }
+                    } catch {
+                        // Skip individual doc errors on slow networks
+                    }
+                }
+
+                if (!cancelled && collected.length > 0) {
+                    const merged = [...collected];
+                    for (const fb of FALLBACK_GALLERY_PHOTOS) {
+                        if (merged.length >= 3) break;
+                        if (!merged.some(p => p.src === fb.src)) merged.push(fb);
+                    }
+                    setGalleryPhotos(merged.slice(0, 3));
+                }
+            } catch {
+                // Keep real local fallback photos
+            }
+        };
+
+        loadGalleryPhotos();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const handleDownloadProspectus = () => {
+        if (prospectusUrl) {
+            const link = document.createElement('a');
+            link.href = prospectusUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.download = 'BMS_Champhai_Prospectus_2027.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+        }
+
+        const prospectusHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bethel Mission School, Champhai - Prospectus 2027</title>
+<style>
+  body { font-family: Arial, sans-serif; color: #0B1F3A; max-width: 780px; margin: 32px auto; padding: 24px; line-height: 1.6; }
+  .header { background: #0B1F3A; color: #FFFFFF; padding: 24px; border-bottom: 4px solid #C9A84C; text-align: center; }
+  .header h1 { margin: 0; font-size: 24px; }
+  .motto { color: #DFC06B; font-style: italic; margin: 6px 0 0; }
+  h2 { color: #0B1F3A; border-bottom: 2px solid #C9A84C; padding-bottom: 4px; margin-top: 24px; font-size: 18px; }
+  ul { padding-left: 20px; }
+  .box { background: #F4F7FB; border: 1px solid #C9A84C; padding: 14px; border-radius: 6px; margin-top: 12px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Bethel Mission School, Champhai</h1>
+    <p>Nursery to Class X | English Medium | Est. 1996 | MBSE Affiliated</p>
+    <p class="motto">"Service to God &amp; Men"</p>
+  </div>
+  <h2>About Our School</h2>
+  <p>Established in 1996 in Bethel Veng, Champhai, Mizoram, Bethel Mission School is an MBSE-affiliated co-educational English medium school committed to academic excellence, discipline, and Christian character formation.</p>
+  <h2>Academic Programs</h2>
+  <ul>
+    <li><strong>Pre-Primary:</strong> Nursery &amp; Kindergarten</li>
+    <li><strong>Primary:</strong> Class I to Class V</li>
+    <li><strong>Middle School:</strong> Class VI to Class VIII</li>
+    <li><strong>High School:</strong> Class IX &amp; Class X (MBSE HSLC)</li>
+  </ul>
+  <h2>Campus &amp; Facilities</h2>
+  <ul>
+    <li>29 Years of Educational Service in Champhai</li>
+    <li>Residential Hostel Facility Available</li>
+    <li>Spacious Classrooms, Science Labs, Library &amp; Sports Courts</li>
+  </ul>
+  <h2>Documents Required for Admission</h2>
+  <ul>
+    <li>Birth Certificate (mandatory for Nursery &amp; Primary)</li>
+    <li>Transfer Certificate &amp; Last Report Card (Class II onwards)</li>
+    <li>3 Passport-Size Photographs &amp; Aadhaar Copy (Student &amp; Parent)</li>
+  </ul>
+  <div class="box">
+    <strong>Admissions &amp; Office Contact:</strong><br/>
+    Bethel Veng, Champhai, Mizoram - 796321<br/>
+    Phone / WhatsApp: +91 9862148342 | Email: bms@bms04.com
+  </div>
+</body>
+</html>`;
+        const blob = new Blob([prospectusHtml], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = 'BMS_Champhai_Prospectus_2027.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    };
+
     useEffect(() => {
         document.body.style.backgroundImage = '';
         document.body.style.backgroundAttachment = '';
         document.body.style.backgroundSize = '';
         document.body.style.backgroundPosition = '';
         document.body.style.backgroundRepeat = '';
-        document.body.style.backgroundColor = '#f8fafc';
-        return () => { document.body.style.backgroundColor = ''; };
+        document.body.style.backgroundColor = '#FFFFFF';
+        return () => {
+            document.body.style.backgroundColor = '';
+        };
     }, []);
 
+    const whyBethelItems = [
+        {
+            title: 'Experienced Teachers',
+            description: 'Dedicated MBSE-trained educators giving individual care from Nursery to Class X.',
+            icon: Award,
+        },
+        {
+            title: 'Hostel & Discipline',
+            description: 'Safe supervised hostel routines nurturing strong study habits and self-discipline.',
+            icon: ShieldCheck,
+        },
+        {
+            title: 'Christian Values',
+            description: 'Character formation anchored in faith, integrity, and service to God and neighbours.',
+            icon: BookOpen,
+        },
+        {
+            title: 'Sports & Activities',
+            description: 'Basketball, volleyball, NCC, science fairs, and cultural programs for all-round growth.',
+            icon: Trophy,
+        },
+    ];
+
     return (
-        <>
+        <div className="bg-white text-[#0B1F3A]">
             <HomeResultPopup user={user} />
-            {/* ── HERO — MP4 Video Background ── */}
-            <section
-                className="relative w-full overflow-hidden"
-                style={{ height: 'calc(100vh - 130px)', minHeight: '520px' }}
-            >
-                {/* Native video tag — autoplays on ALL browsers including iOS/Android */}
-                <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    src={VIDEO_URL}
-                />
 
-                {/* Dark overlay for text legibility */}
-                <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-
-                {/* Hero text */}
-                <div className="relative z-10 flex items-center justify-center h-full">
-                    <div className="text-center px-4 max-w-4xl mx-auto">
-                        <p className="text-sky-300 uppercase tracking-widest text-sm font-bold mb-4">
-                            Champhai, Mizoram · Est. 1996
-                        </p>
-                        <EditableContent
-                            id="home_hero_title"
-                            defaultContent="Bethel Mission School"
-                            type="text"
-                            user={user}
-                            tagName="h1"
-                            className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight text-white tracking-tight"
-                            style={{ textShadow: '2px 4px 12px rgba(0,0,0,0.7)' }}
+            {/* Lightbox Modal for Gallery */}
+            {lightboxPhoto && (
+                <div
+                    className="fixed inset-0 z-50 bg-[#07162B]/95 flex items-center justify-center p-4"
+                    onClick={() => setLightboxPhoto(null)}
+                >
+                    <div
+                        className="relative max-w-3xl w-full bg-[#0B1F3A] border border-[#C9A84C] rounded-2xl overflow-hidden shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setLightboxPhoto(null)}
+                            aria-label="Close photo"
+                            className="absolute top-3 right-3 w-10 h-10 rounded-lg bg-[#07162B]/90 text-white hover:text-[#DFC06B] text-2xl flex items-center justify-center border border-[#C9A84C]/50 cursor-pointer"
+                        >
+                            &times;
+                        </button>
+                        <img
+                            src={lightboxPhoto.src}
+                            alt={lightboxPhoto.title}
+                            className="w-full max-h-[75vh] object-contain bg-[#07162B]"
+                            onError={e => {
+                                (e.currentTarget as HTMLImageElement).src = CAMPUS_PHOTO_LOCAL;
+                            }}
                         />
-                        <div className="w-24 h-1 bg-sky-400 mx-auto my-6 rounded-full" />
-                        <EditableContent
-                            id="home_hero_subtitle"
-                            defaultContent='"Service to God & Men"'
-                            type="text"
-                            user={user}
-                            tagName="p"
-                            className="text-xl md:text-2xl text-white/85 font-medium tracking-wide italic"
-                            style={{ textShadow: '1px 2px 6px rgba(0,0,0,0.6)' }}
-                        />
-                        <div className="mt-10 flex flex-wrap gap-4 justify-center">
-                            <Link
-                                to="/about"
-                                className="px-7 py-3 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-lg transition-colors shadow-xl text-sm tracking-wide"
-                            >
-                                About Us
-                            </Link>
-                            <Link
-                                to="/admissions/online"
-                                className="px-7 py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-lg transition-colors shadow-xl border border-sky-400 text-sm tracking-wide"
-                            >
-                                Apply Now →
-                            </Link>
+                        <div className="p-4 text-center border-t border-[#C9A84C]/30">
+                            <p className="text-base font-bold text-white">{lightboxPhoto.title}</p>
+                            {lightboxPhoto.caption && (
+                                <p className="text-xs text-[#DFC06B] mt-1">{lightboxPhoto.caption}</p>
+                            )}
                         </div>
                     </div>
                 </div>
+            )}
 
-                {/* Scroll arrow */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
-                    <svg className="w-7 h-7 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+            {/* ── 1. HERO — Compressed Campus Photo + High-Contrast Dark Blue Overlay ── */}
+            <section className="relative w-full overflow-hidden bg-[#07162B] min-h-[500px] sm:min-h-[560px] flex items-center">
+                <div className="absolute inset-0">
+                    <picture className="block w-full h-full">
+                        <source srcSet="/assets/school/campus.webp" type="image/webp" />
+                        <img
+                            src={CAMPUS_PHOTO_LOCAL}
+                            alt="Bethel Mission School Campus, Champhai, Mizoram"
+                            loading="eager"
+                            decoding="async"
+                            className="w-full h-full object-cover object-center"
+                        />
+                    </picture>
+                    <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                            background: 'linear-gradient(180deg, rgba(7,22,43,0.84) 0%, rgba(11,31,58,0.74) 50%, rgba(7,22,43,0.92) 100%)',
+                        }}
+                    />
                 </div>
-            </section>
 
-            {/* ── STATS STRIP ── */}
-            <section className="bg-sky-700 text-white py-8">
-                <div className="container mx-auto px-4 space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                        {[
-                            { value: '1996', label: 'Est. Year' },
-                            { value: '450+', label: 'Students' },
-                            { value: '30+', label: 'Faculty' },
-                            { value: '100%', label: 'HSLC Pass Rate' },
-                        ].map(stat => (
-                            <div key={stat.label}>
-                                <div className="text-3xl font-extrabold">{stat.value}</div>
-                                <div className="text-sky-200 text-sm mt-1 font-medium uppercase tracking-wide">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
+                <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+                    <div className="max-w-3xl mx-auto text-center">
+                        <div className="flex justify-center mb-4">
+                            <img
+                                src="/assets/school/bms-logo-color.png"
+                                alt="Bethel Mission School Crest"
+                                className="h-20 sm:h-24 w-auto object-contain drop-shadow-lg"
+                            />
+                        </div>
 
-                    {/* Live Site Visitor Counter Strip */}
-                    <div className="pt-4 border-t border-sky-600/60">
-                        <SiteVisitorCounter variant="stats-strip" />
-                    </div>
-                </div>
-            </section>
+                        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-white tracking-tight drop-shadow-sm">
+                            Bethel Mission School, Champhai
+                        </h1>
 
-            {/* ── LATEST NEWS ── */}
-            <section className="py-20 bg-slate-50">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-slate-800">Latest News &amp; Announcements</h2>
-                        <p className="mt-3 max-w-2xl mx-auto text-slate-500">
-                            Stay updated with the latest happenings at Bethel Mission School.
+                        <p className="mt-3 text-sm sm:text-lg font-bold text-[#DFC06B] tracking-wide">
+                            Nursery to Class X | English Medium | Est. 1996
                         </p>
+
+                        <div className="w-20 h-1 bg-[#C9A84C] mx-auto my-4 rounded-full" />
+
+                        <p className="text-lg sm:text-2xl text-white font-semibold italic">
+                            &ldquo;Service to God &amp; Men&rdquo;
+                        </p>
+
+                        {/* 2 CTAs: Stacked Full-Width on Mobile, Side-by-Side on Desktop */}
+                        <div className="mt-7 flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto sm:justify-center items-stretch sm:items-center max-w-md sm:max-w-none mx-auto">
+                            <Link
+                                to="/admissions/online"
+                                className="w-full sm:w-auto inline-flex items-center justify-center min-h-[50px] px-7 py-3.5 bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold rounded-lg transition-colors shadow-lg text-sm sm:text-base"
+                            >
+                                Apply for Admission 2027
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={handleDownloadProspectus}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[50px] px-7 py-3.5 bg-white hover:bg-[#F4F7FB] text-[#0B1F3A] font-bold rounded-lg transition-colors shadow-lg text-sm sm:text-base cursor-pointer"
+                            >
+                                <Download className="w-4 h-4 flex-shrink-0" />
+                                <span>Download Prospectus</span>
+                            </button>
+                        </div>
+
+                        {/* 3 Key Highlights */}
+                        <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-semibold text-white">
+                            <span className="inline-flex items-center px-3.5 py-2 rounded-md bg-[#07162B]/85 border border-[#C9A84C]/60 font-tabular">
+                                29 Years in Champhai
+                            </span>
+                            <span className="hidden sm:inline text-[#C9A84C]" aria-hidden="true">|</span>
+                            <span className="inline-flex items-center px-3.5 py-2 rounded-md bg-[#07162B]/85 border border-[#C9A84C]/60">
+                                Hostel Available
+                            </span>
+                            <span className="hidden sm:inline text-[#C9A84C]" aria-hidden="true">|</span>
+                            <span className="inline-flex items-center px-3.5 py-2 rounded-md bg-[#07162B]/85 border border-[#C9A84C]/60 font-bold text-[#DFC06B]">
+                                MBSE
+                            </span>
+                        </div>
                     </div>
-                    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {latestNews.length > 0 ? latestNews.map(item => (
-                            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100 flex flex-col group">
-                                {item.imageUrls && item.imageUrls.length > 0 && (
-                                    <img src={item.imageUrls[0]} alt={item.title} className="w-full h-40 object-cover rounded-lg mb-4" />
-                                )}
-                                <p className="text-xs font-semibold text-sky-600 uppercase tracking-wide">{formatDateForNews(item.date)}</p>
-                                <h3 className="mt-2 text-lg font-bold text-slate-800">{item.title}</h3>
-                                <p className="mt-2 text-slate-600 text-sm leading-relaxed flex-grow">
-                                    {stripHtml(item.content).substring(0, 150)}{stripHtml(item.content).length > 150 ? '...' : ''}
+                </div>
+            </section>
+
+            {/* ── 2. LATEST NEWS — Moved to Top (Latest 3 with Date) ── */}
+            <section className="py-14 sm:py-20 bg-[#F4F7FB] border-b border-[#0B1F3A]/10">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-10">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B] mb-2">
+                            Announcements
+                        </p>
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0B1F3A]">
+                            Latest News
+                        </h2>
+                        <div className="gold-rule mt-4" />
+                    </div>
+
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {latestNews.length > 0 ? (
+                            latestNews.map(item => (
+                                <div
+                                    key={item.id}
+                                    className="bg-white p-6 rounded-xl border border-[#0B1F3A]/15 hover:border-[#C9A84C] shadow-sm transition-all flex flex-col justify-between"
+                                >
+                                    <div>
+                                        <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8E6D1B] uppercase tracking-wider font-tabular">
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            <span>{formatDateForNews(item.date)}</span>
+                                        </div>
+                                        <h3 className="mt-2.5 text-lg font-extrabold text-[#0B1F3A] leading-snug">
+                                            {item.title}
+                                        </h3>
+                                        <p className="mt-2.5 text-[#0B1F3A]/75 text-sm leading-relaxed">
+                                            {stripHtml(item.content).substring(0, 120)}
+                                            {stripHtml(item.content).length > 120 ? '...' : ''}
+                                        </p>
+                                    </div>
+                                    <Link
+                                        to={`/news/${item.id}`}
+                                        className="mt-5 inline-flex items-center gap-1.5 min-h-[40px] font-bold text-[#0B1F3A] hover:text-[#8E6D1B] text-sm self-start transition-colors"
+                                    >
+                                        <span>Read Notice</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="md:col-span-3 text-center py-12 border border-dashed border-[#0B1F3A]/25 rounded-xl bg-white">
+                                <p className="text-[#0B1F3A]/75 text-sm sm:text-base font-medium">
+                                    No news notices posted yet. Check back soon.
                                 </p>
-                                <Link to={`/news/${item.id}`} className="mt-4 font-semibold text-sky-600 hover:text-sky-800 text-sm self-start group-hover:translate-x-1 transition-transform">
-                                    Read More &rarr;
-                                </Link>
-                            </div>
-                        )) : (
-                            <div className="md:col-span-2 text-center py-16 border-2 border-dashed border-slate-200 rounded-xl bg-white">
-                                <p className="text-slate-500 text-base">No news articles yet. Check back soon.</p>
                             </div>
                         )}
                     </div>
-                    {news.length > 2 && (
+
+                    {news.length > 3 && (
                         <div className="text-center mt-10">
-                            <Link to="/news" className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors shadow">
-                                View All News
+                            <Link
+                                to="/news"
+                                className="inline-flex items-center justify-center gap-2 min-h-[46px] px-6 py-2.5 bg-[#0B1F3A] hover:bg-[#132D52] text-white font-bold rounded-lg transition-colors text-sm"
+                            >
+                                <span>View All News</span>
+                                <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* ── WHY CHOOSE US ── */}
-            <section className="py-20 bg-white">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-slate-800">
-                            <EditableContent id="home_choose_title" defaultContent="Why Choose Us?" type="text" user={user} />
+            {/* ── 3. WHY BETHEL MISSION SCHOOL — 4 Clean Boxes with Icons & Short Text ── */}
+            <section className="py-16 sm:py-24 bg-white">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-12">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B] mb-2">
+                            Trusted Since 1996
+                        </p>
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0B1F3A]">
+                            Why Bethel Mission School
                         </h2>
-                        <div className="mt-3 max-w-3xl mx-auto text-slate-500 text-sm leading-relaxed">
-                            <EditableContent
-                                id="home_choose_desc"
-                                defaultContent="At Bethel Mission School, we are dedicated to providing a nurturing yet challenging educational environment that fosters academic excellence, strong moral character, and a lifelong passion for learning."
-                                type="textarea"
-                                user={user}
-                            />
-                        </div>
+                        <div className="gold-rule mt-4" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <FeatureCard
-                            icon={<AcademicCapIcon className="w-12 h-12" />}
-                            title="Academic Excellence"
-                            description="A comprehensive curriculum that challenges students and promotes critical thinking, preparing them for future success."
-                            link="/academics"
-                        />
-                        <FeatureCard
-                            icon={<UsersIcon className="w-12 h-12" />}
-                            title="Holistic Development"
-                            description="Emphasis on extracurricular activities, sports, and arts to ensure the all-round development of every child."
-                            link="/student-life"
-                        />
-                        <FeatureCard
-                            icon={<BuildingOfficeIcon className="w-12 h-12" />}
-                            title="Modern Facilities"
-                            description="State-of-the-art classrooms, labs, and library to provide a conducive environment for learning and growth."
-                            link="/facilities"
-                        />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                        {whyBethelItems.map(item => {
+                            const Icon = item.icon;
+                            return (
+                                <div
+                                    key={item.title}
+                                    className="bg-[#F4F7FB] rounded-xl border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] p-6 sm:p-7 flex flex-col items-start shadow-sm"
+                                >
+                                    <div className="w-12 h-12 rounded-lg bg-[#0B1F3A] text-[#DFC06B] flex items-center justify-center mb-5 flex-shrink-0">
+                                        <Icon className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-lg font-extrabold text-[#0B1F3A]">{item.title}</h3>
+                                    <p className="mt-2.5 text-sm text-[#0B1F3A]/75 leading-relaxed">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
-            {/* ── LIVE SITE VISITOR COUNTER BANNER ── */}
-            <SiteVisitorCounter variant="banner" />
-
-            {/* ── CONNECT WITH US ── */}
-            <section className="py-20 bg-slate-50">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-slate-800">Connect With Us</h2>
-                        <p className="mt-3 max-w-2xl mx-auto text-slate-500">
-                            Follow us on social media to stay updated with our latest news, events, and student achievements.
+            {/* ── 2B. SCIENCE & MATHS ACHIEVEMENTS ── */}
+            <section className="py-16 sm:py-24 bg-[#F4F7FB] border-t border-[#0B1F3A]/10">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-12">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B] mb-2">
+                            STEM &amp; Olympiad Honours
+                        </p>
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0B1F3A]">
+                            Science &amp; Maths Achievements
+                        </h2>
+                        <div className="gold-rule mt-4 mb-4" />
+                        <p className="text-sm sm:text-base text-[#0B1F3A]/75">
+                            Consistent state and national recognition across Science Congresses, INSPIRE MANAK, and Mizoram Mathematics Society competitions.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl mx-auto">
-                        <div className="bg-white p-8 rounded-xl shadow-md border border-slate-100">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Find Us On</h3>
-                            <div className="flex flex-col gap-5">
-                                <a href="https://www.facebook.com/bethel.ms" target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-4 hover:translate-x-1 transition-transform">
-                                    <FacebookIcon className="w-8 h-8 text-blue-600 flex-shrink-0" />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                        {[
+                            {
+                                title: 'INSPIRE Award MANAK',
+                                highlight: 'National Exhibition, New Delhi',
+                                detail: 'State 1st & 2nd Prize winners (2012, 2015, 2021, 2024) representing Mizoram nationally.',
+                                link: '/achievements/science/inspire-award',
+                                icon: Sparkles,
+                            },
+                            {
+                                title: "National Children's Science Congress",
+                                highlight: 'National Level Selection',
+                                detail: 'District 1st Prize & State winners presenting in Bengaluru, Chandigarh, Pune, and Bhubaneswar.',
+                                link: '/achievements/science/ncsc',
+                                icon: Atom,
+                            },
+                            {
+                                title: 'State Mathematics Competition',
+                                highlight: '1st Prize Winners (2022 & 2023)',
+                                detail: 'Paumuansanga (2023) and Esther Tingbiakmuani (2022) won 1st Prize in the MMS State Contest.',
+                                link: '/achievements/science/mathematics-competition',
+                                icon: Calculator,
+                            },
+                            {
+                                title: 'SLSMEE & Incentive Awards',
+                                highlight: 'Board Science & Maths Honours',
+                                detail: 'Recognised in State Level Science & Maths Exhibitions plus annual Incentive Awards since 2007.',
+                                link: '/achievements/science',
+                                icon: Award,
+                            },
+                        ].map(item => {
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.title}
+                                    to={item.link}
+                                    className="group bg-white rounded-xl border border-[#0B1F3A]/15 hover:border-[#C9A84C] p-6 flex flex-col justify-between shadow-sm transition-all"
+                                >
                                     <div>
-                                        <span className="text-base font-bold text-slate-800">Facebook</span>
-                                        <p className="text-sm text-slate-500">@bethel.ms</p>
+                                        <div className="w-11 h-11 rounded-lg bg-[#0B1F3A] text-[#DFC06B] flex items-center justify-center mb-4">
+                                            <Icon className="w-5 h-5" />
+                                        </div>
+                                        <p className="text-xs font-bold text-[#8E6D1B] uppercase tracking-wide font-tabular">
+                                            {item.highlight}
+                                        </p>
+                                        <h3 className="mt-1.5 text-lg font-extrabold text-[#0B1F3A] group-hover:text-[#8E6D1B] transition-colors leading-snug">
+                                            {item.title}
+                                        </h3>
+                                        <p className="mt-2.5 text-sm text-[#0B1F3A]/75 leading-relaxed">
+                                            {item.detail}
+                                        </p>
                                     </div>
-                                </a>
-                                <a href="https://www.instagram.com/bms_champhai/" target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-4 hover:translate-x-1 transition-transform">
-                                    <InstagramIcon className="w-8 h-8 flex-shrink-0" />
-                                    <div>
-                                        <span className="text-base font-bold text-slate-800">Instagram</span>
-                                        <p className="text-sm text-slate-500">@bms_champhai</p>
-                                    </div>
-                                </a>
-                                <a href="https://www.youtube.com/@BethelMissionSchoolChamphai" target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-4 hover:translate-x-1 transition-transform">
-                                    <YouTubeIcon className="w-8 h-8 flex-shrink-0" />
-                                    <div>
-                                        <span className="text-base font-bold text-slate-800">YouTube</span>
-                                        <p className="text-sm text-slate-500">@BethelMissionSchoolChamphai</p>
-                                    </div>
-                                </a>
-                            </div>
+                                    <span className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1F3A] group-hover:text-[#8E6D1B] transition-colors">
+                                        <span>Explore Details</span>
+                                        <ArrowRight className="w-3.5 h-3.5" />
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    <div className="text-center mt-10">
+                        <Link
+                            to="/achievements/science"
+                            className="inline-flex items-center justify-center gap-2 min-h-[46px] px-6 py-2.5 bg-[#0B1F3A] hover:bg-[#132D52] text-white font-bold text-sm rounded-lg transition-colors"
+                        >
+                            <span>View All Science &amp; Maths Achievements</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── 3. ADMISSIONS OPEN BANNER — With WhatsApp Apply Button ── */}
+            <section className="py-12 sm:py-16 bg-[#0B1F3A] text-white border-y-2 border-[#C9A84C]">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
+                        <div className="space-y-2">
+                            <p className="text-xs font-bold uppercase tracking-widest text-[#DFC06B]">
+                                Enrollment Open
+                            </p>
+                            <h2 className="text-xl sm:text-3xl font-extrabold text-white leading-snug">
+                                Admissions Open Nursery - Class XI, Session 2026-27. Limited Seats.
+                            </h2>
                         </div>
-                        <div className="bg-white p-4 rounded-xl shadow-md border border-slate-100 flex justify-center overflow-hidden">
-                            <div
-                                className="fb-page"
-                                data-href="https://www.facebook.com/bethel.ms"
-                                data-tabs="timeline"
-                                data-width="320"
-                                data-height="400"
-                                data-small-header="true"
-                                data-adapt-container-width="true"
-                                data-hide-cover="false"
-                                data-show-facepile="false"
+
+                        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-shrink-0">
+                            <a
+                                href={WHATSAPP_ADMISSION_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 min-h-[50px] px-6 py-3.5 bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold rounded-lg transition-colors shadow-lg text-sm sm:text-base whitespace-nowrap"
                             >
-                                <blockquote cite="https://www.facebook.com/bethel.ms" className="fb-xfbml-parse-ignore">
-                                    <a href="https://www.facebook.com/bethel.ms">Bethel Mission School, Champhai</a>
-                                </blockquote>
+                                <WhatsappIcon className="w-5 h-5 flex-shrink-0" />
+                                <span>WhatsApp Apply</span>
+                            </a>
+                            <Link
+                                to="/admissions/online"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[50px] px-6 py-3.5 bg-white hover:bg-[#F4F7FB] text-[#0B1F3A] font-bold rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
+                            >
+                                <span>Online Form</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── 4. GALLERY — 3 Real Photos ── */}
+            <section className="py-16 sm:py-24 bg-[#F4F7FB]">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-2xl mx-auto mb-12">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B] mb-2">
+                            Campus Life
+                        </p>
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0B1F3A]">
+                            Gallery
+                        </h2>
+                        <div className="gold-rule mt-4" />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                        {galleryPhotos.map(photo => (
+                            <button
+                                key={photo.id}
+                                type="button"
+                                onClick={() => setLightboxPhoto(photo)}
+                                className="group text-left bg-white rounded-xl overflow-hidden border border-[#0B1F3A]/15 hover:border-[#C9A84C] shadow-sm transition-all cursor-pointer"
+                            >
+                                <div className="aspect-[4/3] w-full overflow-hidden bg-[#07162B]">
+                                    <img
+                                        src={photo.src}
+                                        alt={photo.title}
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={e => {
+                                            (e.currentTarget as HTMLImageElement).src = CAMPUS_PHOTO_LOCAL;
+                                        }}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                </div>
+                                <div className="p-4">
+                                    <h3 className="font-bold text-[#0B1F3A] text-sm sm:text-base truncate">
+                                        {photo.title}
+                                    </h3>
+                                    {photo.caption && (
+                                        <p className="text-xs text-[#8E6D1B] font-semibold mt-0.5 truncate">
+                                            {photo.caption}
+                                        </p>
+                                    )}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="text-center mt-10">
+                        <Link
+                            to="/gallery"
+                            className="inline-flex items-center justify-center gap-2 min-h-[46px] px-6 py-2.5 border border-[#0B1F3A] text-[#0B1F3A] hover:bg-[#0B1F3A] hover:text-white font-bold text-sm rounded-lg transition-colors bg-white"
+                        >
+                            <span>View Full Gallery</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── 5. PRINCIPAL'S MESSAGE — Photo + 3 Lines ── */}
+            <section className="py-16 sm:py-24 bg-white border-t border-[#0B1F3A]/10">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-4xl mx-auto bg-[#F4F7FB] rounded-2xl border border-[#0B1F3A]/15 border-t-4 border-t-[#C9A84C] p-6 sm:p-10 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-10">
+                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl overflow-hidden border-2 border-[#C9A84C] bg-[#0B1F3A] flex-shrink-0 flex items-center justify-center shadow-md">
+                                {principalMember?.photographUrl && !principalImgError ? (
+                                    <img
+                                        src={principalMember.photographUrl}
+                                        alt="K. Malsawmdawngi, Principal"
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={() => setPrincipalImgError(true)}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : !principalImgError ? (
+                                    <img
+                                        src="/assets/school/bms-logo-color.png"
+                                        alt="Principal, Bethel Mission School"
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={() => setPrincipalImgError(true)}
+                                        className="w-24 h-24 object-contain p-2"
+                                    />
+                                ) : (
+                                    <UserIcon className="w-16 h-16 text-[#DFC06B]" />
+                                )}
+                            </div>
+
+                            <div className="text-center sm:text-left">
+                                <p className="text-xs font-bold uppercase tracking-widest text-[#8E6D1B]">
+                                    Leadership Desk
+                                </p>
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B1F3A] mt-1">
+                                    Principal&apos;s Message
+                                </h2>
+                                <div className="mt-4 space-y-1.5 text-sm sm:text-base text-[#0B1F3A]/85 leading-relaxed">
+                                    <p>Since 1996, Bethel Mission School has nurtured young minds in Champhai with strong discipline and faith-anchored learning.</p>
+                                    <p>Our dedicated teachers partner closely with parents so every child grows in wisdom, confidence, and board readiness.</p>
+                                    <p>Guided by &ldquo;Service to God &amp; Men,&rdquo; we welcome your family into a caring and focused school community.</p>
+                                </div>
+                                <div className="mt-5 pt-4 border-t border-[#0B1F3A]/10">
+                                    <p className="font-extrabold text-[#0B1F3A]">K. Malsawmdawngi</p>
+                                    <p className="text-xs font-semibold text-[#8E6D1B]">
+                                        Principal, Bethel Mission School, Champhai
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
-        </>
+        </div>
     );
 };
 

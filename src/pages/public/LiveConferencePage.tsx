@@ -22,18 +22,18 @@ const LiveConferencePage: React.FC<LiveConferencePageProps> = ({ user }) => {
   }, [user, navigate, roomId]);
 
   if (!user || !roomId) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <p className="text-white">Connecting...</p>
+    return <div className="min-h-screen flex items-center justify-center bg-[#07162B]">
+        <p className="text-white font-semibold">Connecting...</p>
     </div>;
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 w-full overflow-hidden">
-        <div className="bg-slate-800 p-4 shrink-0 flex items-center justify-between shadow-md">
-            <h1 className="text-slate-100 font-bold text-lg hidden sm:block">Live Podcast Session</h1>
+    <div className="flex flex-col h-screen bg-[#07162B] w-full overflow-hidden">
+        <div className="bg-[#0B1F3A] border-b border-[#C9A84C]/40 p-4 shrink-0 flex items-center justify-between shadow-md">
+            <h1 className="text-white font-bold text-lg hidden sm:block">Live Podcast Session</h1>
             <button 
                 onClick={() => navigate('/podcasts')} 
-                className="btn btn-secondary bg-slate-700 text-slate-200 border-none hover:bg-slate-600 ml-auto"
+                className="px-4 py-2 rounded-lg bg-[#C9A84C] text-[#0B1F3A] font-bold text-sm hover:bg-[#DFC06B] transition-colors ml-auto"
             >
                 Back to Podcasts
             </button>
@@ -54,9 +54,7 @@ const LiveConferencePage: React.FC<LiveConferencePageProps> = ({ user }) => {
                     displayName: user.displayName || 'Guest User',
                     email: user.email || ''
                 }}
-                onApiReady={(externalApi) => {
-                    // console.log("Jitsi Meet API ready");
-                }}
+                onApiReady={() => {}}
                 getIFrameRef={(iframeRef) => {
                     iframeRef.style.height = '100%';
                     iframeRef.style.width = '100%';

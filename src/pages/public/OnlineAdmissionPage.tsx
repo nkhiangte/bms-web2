@@ -37,19 +37,19 @@ const STEP_LABELS = ['Student Info', 'Parent Info', 'Documents'];
 const ProgressBar: React.FC<{ currentStep: number; lastSaved: Date | null }> = ({ currentStep, lastSaved }) => (
     <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500">Step {currentStep} of 3</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#0B1F3A]/75">Step {currentStep} of 3</p>
             {lastSaved && (
-                <p className="text-xs text-slate-400 flex items-center gap-1">
-                    💾 Last saved at {formatTime(lastSaved)}
+                <p className="text-xs text-[#8E6D1B] font-medium flex items-center gap-1 font-tabular">
+                    Saved at {formatTime(lastSaved)}
                 </p>
             )}
         </div>
         <div className="relative">
             {/* Track */}
-            <div className="absolute top-4 left-0 right-0 h-1 bg-slate-200 z-0" />
+            <div className="absolute top-4 left-0 right-0 h-1 bg-[#0B1F3A]/15 z-0" />
             {/* Fill */}
             <div
-                className="absolute top-4 left-0 h-1 bg-sky-500 z-0 transition-all duration-500"
+                className="absolute top-4 left-0 h-1 bg-[#C9A84C] z-0 transition-all duration-500"
                 style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
             />
             {/* Steps */}
@@ -59,15 +59,15 @@ const ProgressBar: React.FC<{ currentStep: number; lastSaved: Date | null }> = (
                     const active = i + 1 === currentStep;
                     return (
                         <div key={label} className="flex flex-col items-center gap-2" style={{ width: '33%' }}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
-                                done ? 'bg-sky-500 border-sky-500 text-white'
-                                : active ? 'bg-white border-sky-500 text-sky-600'
-                                : 'bg-white border-slate-300 text-slate-400'
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all font-tabular ${
+                                done ? 'bg-[#0B1F3A] border-[#C9A84C] text-[#DFC06B]'
+                                : active ? 'bg-[#C9A84C] border-[#0B1F3A] text-[#0B1F3A]'
+                                : 'bg-white border-[#0B1F3A]/25 text-[#0B1F3A]/50'
                             }`}>
                                 {done ? <CheckIcon className="w-4 h-4" /> : i + 1}
                             </div>
-                            <span className={`text-xs font-semibold text-center ${
-                                active ? 'text-sky-600' : done ? 'text-sky-400' : 'text-slate-400'
+                            <span className={`text-xs font-bold text-center ${
+                                active ? 'text-[#0B1F3A]' : done ? 'text-[#8E6D1B]' : 'text-[#0B1F3A]/50'
                             }`}>{label}</span>
                         </div>
                     );
@@ -81,14 +81,14 @@ const ProgressBar: React.FC<{ currentStep: number; lastSaved: Date | null }> = (
 const SectionDivider: React.FC<{ icon: string; title: string }> = ({ icon, title }) => (
     <div className="flex items-center gap-3 mt-8 mb-5">
         <span className="text-xl">{icon}</span>
-        <h3 className="text-base font-bold text-slate-700 whitespace-nowrap">{title}</h3>
-        <div className="flex-1 h-px bg-slate-200" />
+        <h3 className="text-base font-extrabold text-[#0B1F3A] whitespace-nowrap">{title}</h3>
+        <div className="flex-1 h-px bg-[#0B1F3A]/15" />
     </div>
 );
 
 // ── Field Error ───────────────────────────────────────────────────────────────
 const FieldError: React.FC<{ message?: string }> = ({ message }) =>
-    message ? <p className="text-red-500 text-xs mt-1">{message}</p> : null;
+    message ? <p className="text-[#8E6D1B] font-semibold text-xs mt-1">{message}</p> : null;
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlineAdmissionSubmit }) => {
@@ -405,13 +405,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
     // ─── Draft Prompt Overlay ─────────────────────────────────────────────────
     const DraftPrompt = () => (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-                <p className="text-3xl mb-3">📝</p>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">Unsaved Draft Found</h3>
-                <p className="text-sm text-slate-500 mb-6">
+        <div className="fixed inset-0 bg-[#07162B]/80 z-50 flex items-center justify-center p-4">
+            <div className="bg-white border-t-4 border-[#C9A84C] rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+                <h3 className="text-lg font-extrabold text-[#0B1F3A] mb-2">Unsaved Draft Found</h3>
+                <p className="text-sm text-[#0B1F3A]/75 mb-6">
                     You have an unfinished application for{' '}
-                    <strong>{pendingDraft?.studentName || 'a student'}</strong>.
+                    <strong className="text-[#0B1F3A]">{pendingDraft?.studentName || 'a student'}</strong>.
                     Would you like to continue where you left off?
                 </p>
                 <div className="flex gap-3">
@@ -463,27 +462,26 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         return (
             <>
                 {showDraftPrompt && <DraftPrompt />}
-                <div className="bg-slate-50 py-12 min-h-screen">
+                <div className="bg-[#F4F7FB] py-10 sm:py-12 min-h-screen">
                     <div className="container mx-auto px-4 max-w-3xl">
-                        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                            <div className="bg-slate-800 px-8 py-5 text-white">
-                                <h2 className="text-xl font-bold">Review Your Application</h2>
-                                <p className="text-slate-300 text-sm mt-1">Please verify all details before submitting. You cannot edit after submission without contacting the school.</p>
+                        <div className="bg-white border border-[#0B1F3A]/10 rounded-2xl shadow-lg overflow-hidden">
+                            <div className="bg-[#0B1F3A] border-b-4 border-[#C9A84C] px-6 sm:px-8 py-5 text-white">
+                                <h2 className="text-xl font-extrabold">Review Your Application</h2>
+                                <p className="text-white/80 text-sm mt-1">Please verify all details before submitting. You cannot edit after submission without contacting the school.</p>
                             </div>
 
-                            <div className="p-8">
+                            <div className="p-6 sm:p-8">
                                 {/* Summary table */}
-                                <div className="rounded-xl border overflow-hidden mb-6">
-                                    <div className="bg-slate-50 px-5 py-3 border-b flex items-center gap-2">
-                                        <span>👤</span>
-                                        <p className="font-bold text-slate-700 text-sm">Application Details</p>
+                                <div className="rounded-xl border border-[#0B1F3A]/15 overflow-hidden mb-6">
+                                    <div className="bg-[#F4F7FB] px-5 py-3 border-b border-[#0B1F3A]/10 flex items-center gap-2">
+                                        <p className="font-bold text-[#0B1F3A] text-sm">Application Details</p>
                                     </div>
                                     <table className="w-full text-sm">
                                         <tbody>
                                             {rows.map(([k, v]) => (
-                                                <tr key={k} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
-                                                    <td className="px-5 py-2.5 text-slate-500 font-medium w-44 flex-shrink-0">{k}</td>
-                                                    <td className="px-5 py-2.5 font-semibold text-slate-800 break-words">{v}</td>
+                                                <tr key={k} className="border-b border-[#0B1F3A]/10 last:border-0 hover:bg-[#F4F7FB] transition-colors">
+                                                    <td className="px-4 sm:px-5 py-2.5 text-[#0B1F3A]/70 font-medium w-40 sm:w-44 flex-shrink-0">{k}</td>
+                                                    <td className="px-4 sm:px-5 py-2.5 font-semibold text-[#0B1F3A] break-words">{v}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -494,8 +492,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 {(formData.birthCertificateUrl || formData.transferCertificateUrl || formData.reportCardUrl) && (
                                     <div className="mb-6">
                                         <div className="flex items-center gap-2 mb-3">
-                                            <span>📄</span>
-                                            <p className="font-bold text-slate-700 text-sm">Uploaded Documents</p>
+                                            <p className="font-bold text-[#0B1F3A] text-sm">Uploaded Documents</p>
                                         </div>
                                         <div className="flex gap-4 flex-wrap">
                                             {([
@@ -504,8 +501,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 ['Report Card', formData.reportCardUrl],
                                             ] as [string, string | undefined][]).filter(([, url]) => url).map(([label, url]) => (
                                                 <div key={label} className="text-center">
-                                                    <img src={url} alt={label} className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-sm" />
-                                                    <p className="text-xs text-slate-500 mt-1 font-medium">{label}</p>
+                                                    <img src={url} alt={label} className="w-20 h-20 object-cover rounded-xl border-2 border-[#C9A84C]/50 shadow-sm" />
+                                                    <p className="text-xs text-[#0B1F3A]/75 mt-1 font-medium">{label}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -513,9 +510,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 )}
 
                                 {/* Warning */}
-                                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                                    <span className="text-xl mt-0.5 flex-shrink-0">⚠️</span>
-                                    <p className="text-sm text-amber-800">
+                                <div className="flex items-start gap-3 bg-[#FBF6E8] border border-[#C9A84C] rounded-xl p-4 mb-6">
+                                    <p className="text-sm text-[#0B1F3A]">
                                         Once submitted, your application status becomes <strong>Pending</strong> and you will be redirected to the payment page. Please review carefully before confirming.
                                     </p>
                                 </div>
@@ -526,18 +522,18 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                         disabled={isSubmitting}
                                         className="btn btn-primary flex-1 !py-3 flex items-center justify-center gap-2"
                                     >
-                                        {isSubmitting ? <SpinnerIcon className="w-5 h-5" /> : '✅'}
+                                        {isSubmitting ? <SpinnerIcon className="w-5 h-5" /> : null}
                                         {isSubmitting ? 'Submitting…' : 'Confirm & Submit Application'}
                                     </button>
                                     <button
                                         onClick={() => setShowReviewPage(false)}
                                         className="btn btn-secondary flex-1 !py-3"
                                     >
-                                        ← Edit Application
+                                        &larr; Edit Application
                                     </button>
                                 </div>
 
-                                <p className="text-xs text-center text-slate-400 mt-4">🔒 Your data is secure and encrypted</p>
+                                <p className="text-xs text-center text-[#0B1F3A]/60 mt-4">Your data is securely stored with Bethel Mission School</p>
                             </div>
                         </div>
                     </div>
@@ -551,13 +547,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
         return (
             <>
                 {showDraftPrompt && <DraftPrompt />}
-                <div className="bg-slate-50 py-16 min-h-screen flex items-center justify-center">
+                <div className="bg-[#F4F7FB] py-10 sm:py-16 min-h-screen flex items-center justify-center">
                     <div className="container mx-auto px-4 max-w-4xl">
-                        <div className="bg-white p-8 rounded-2xl shadow-xl">
+                        <div className="bg-white border-t-4 border-[#C9A84C] p-6 sm:p-10 rounded-2xl shadow-xl">
                             <div className="mb-6">
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                                    className="inline-flex items-center gap-2 min-h-[44px] text-sm font-bold text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors"
                                 >
                                     <BackIcon className="w-5 h-5" />
                                     Back to Admission Guidelines
@@ -568,66 +564,66 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                 <>
                                     {/* ── School banner ── */}
                                     <div className="text-center mb-6">
-                                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Online Admission Portal</h1>
-                                        <p className="text-slate-500 text-sm">Academic Session 2026-27</p>
+                                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8E6D1B]">Nursery to Class X &middot; Champhai</p>
+                                        <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[#0B1F3A] mb-2">Online Admission Portal</h1>
+                                        <p className="text-[#0B1F3A]/70 text-sm font-medium">Academic Session 2026-27</p>
                                     </div>
 
                                     {/* ── Deadline banner ── */}
-                                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-8 text-amber-800">
-                                        <span className="text-2xl flex-shrink-0">⏰</span>
+                                    <div className="flex items-center justify-center gap-3 bg-[#FBF6E8] border border-[#C9A84C] rounded-xl px-5 py-3 mb-8 text-[#0B1F3A]">
                                         <p className="text-sm font-semibold">
                                             Applications open until <strong>{ADMISSION_DEADLINE}</strong>
                                         </p>
                                     </div>
 
                                     <div className="text-center mb-8">
-                                        <p className="text-lg text-slate-600">Please select an option to begin.</p>
+                                        <p className="text-base sm:text-lg text-[#0B1F3A]/80 font-medium">Please select an option to begin.</p>
                                     </div>
 
                                     {/* ── Cards ── */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                                         <button
                                             onClick={() => { setFormData(prev => ({ ...prev, studentType: 'Newcomer' })); setStep(1); }}
-                                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-sky-500 hover:shadow-2xl transition-all group text-left"
+                                            className="bg-white p-7 rounded-2xl shadow-md border-2 border-[#0B1F3A]/15 hover:border-[#C9A84C] hover:shadow-xl transition-all group text-left"
                                         >
-                                            <div className="bg-sky-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
-                                                🎓
+                                            <div className="bg-[#0B1F3A] text-[#DFC06B] w-14 h-14 rounded-xl flex items-center justify-center mb-5 text-2xl font-extrabold group-hover:bg-[#C9A84C] group-hover:text-[#0B1F3A] transition-colors">
+                                                New
                                             </div>
-                                            <h3 className="text-2xl font-bold text-slate-800 mb-2">New Student</h3>
-                                            <p className="text-slate-600">For children seeking admission for the first time.</p>
+                                            <h3 className="text-2xl font-bold text-[#0B1F3A] mb-2">New Student</h3>
+                                            <p className="text-[#0B1F3A]/75 text-sm">For children seeking admission for the first time (Nursery – Class IX).</p>
                                         </button>
                                         <button
                                             onClick={() => setShowIdInput('existing')}
-                                            className="bg-white p-8 rounded-2xl shadow-lg border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all group text-left"
+                                            className="bg-white p-7 rounded-2xl shadow-md border-2 border-[#0B1F3A]/15 hover:border-[#C9A84C] hover:shadow-xl transition-all group text-left"
                                         >
-                                            <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform">
-                                                🔄
+                                            <div className="bg-[#FBF6E8] border border-[#C9A84C] text-[#0B1F3A] w-14 h-14 rounded-xl flex items-center justify-center mb-5 text-xl font-extrabold group-hover:bg-[#0B1F3A] group-hover:text-[#DFC06B] transition-colors">
+                                                BMS
                                             </div>
-                                            <h3 className="text-2xl font-bold text-slate-800 mb-2">Existing Student</h3>
-                                            <p className="text-slate-600">For current students applying for re-admission or promotion.</p>
+                                            <h3 className="text-2xl font-bold text-[#0B1F3A] mb-2">Existing Student</h3>
+                                            <p className="text-[#0B1F3A]/75 text-sm">For current students applying for re-admission or promotion.</p>
                                         </button>
                                     </div>
 
                                     <div className="text-center mt-10 flex flex-col items-center gap-3">
-                                        <button onClick={() => setShowIdInput('continue')} className="font-semibold text-sky-700 hover:underline">
+                                        <button onClick={() => setShowIdInput('continue')} className="min-h-[44px] font-bold text-[#0B1F3A] hover:text-[#8E6D1B] hover:underline">
                                             Continue a Saved Application &rarr;
                                         </button>
-                                        <button onClick={() => setShowIdInput('resubmit')} className="font-semibold text-amber-600 hover:underline">
+                                        <button onClick={() => setShowIdInput('resubmit')} className="min-h-[44px] font-bold text-[#8E6D1B] hover:text-[#0B1F3A] hover:underline">
                                             Resubmit Payment Screenshot &rarr;
                                         </button>
-                                        <Link to="/admissions/status" className="font-semibold text-emerald-700 hover:underline">
+                                        <Link to="/admissions/status" className="min-h-[44px] inline-flex items-center font-bold text-[#0B1F3A] hover:text-[#8E6D1B] hover:underline">
                                             Check Application Status &rarr;
                                         </Link>
                                     </div>
                                 </>
                             ) : (
                                 <div className="max-w-lg mx-auto">
-                                    <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
+                                    <h2 className="text-2xl font-bold text-[#0B1F3A] text-center mb-2">
                                         {showIdInput === 'existing' ? 'Existing Student'
                                         : showIdInput === 'resubmit' ? 'Resubmit Payment'
                                         : 'Continue Application'}
                                     </h2>
-                                    <p className="text-slate-600 text-center mb-6">
+                                    <p className="text-[#0B1F3A]/75 text-center mb-6 text-sm sm:text-base">
                                         {showIdInput === 'existing'
                                             ? 'Enter your Student ID to auto-fill the form.'
                                             : showIdInput === 'resubmit'
@@ -637,7 +633,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                                     <form onSubmit={handleFetchStudent}>
                                         <div className="mb-4">
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                            <label className="block text-sm font-bold text-[#0B1F3A] mb-2">
                                                 {showIdInput === 'existing' ? 'Student ID' : 'Reference / Application ID'}
                                             </label>
                                             <input
@@ -649,12 +645,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                         : e.target.value
                                                 )}
                                                 className="form-input w-full"
-                                                placeholder={showIdInput === 'existing' ? "e.g. BMS240101" : "e.g. BMSAPPxxxx..."}
+                                                placeholder={showIdInput === 'existing' ? "e.g. BMS260101" : "e.g. BMSAPPxxxx..."}
                                                 autoFocus
                                             />
-                                            {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
+                                            {fetchError && <p className="text-[#8E6D1B] font-semibold text-sm mt-2">{fetchError}</p>}
                                             {(showIdInput === 'continue' || showIdInput === 'resubmit') && (
-                                                <p className="text-xs text-slate-400 mt-1">The ID is case-sensitive. Copy and paste it for best results.</p>
+                                                <p className="text-xs text-[#0B1F3A]/60 mt-1">The ID is case-sensitive. Copy and paste it for best results.</p>
                                             )}
                                         </div>
                                         <button
@@ -669,7 +665,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                                     {showIdInput === 'existing' && (
                                         <>
-                                            <hr className="my-4" />
+                                            <hr className="my-4 border-[#0B1F3A]/15" />
                                             <button
                                                 onClick={() => {
                                                     setFormData(prev => ({ ...prev, studentType: 'Existing', lastSchoolAttended: 'Bethel Mission School' }));
@@ -677,13 +673,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 }}
                                                 className="w-full btn btn-secondary"
                                             >
-                                                Skip & Fill Manually
+                                                Skip &amp; Fill Manually
                                             </button>
                                         </>
                                     )}
                                     <button
                                         onClick={() => { setShowIdInput(null); setFetchError(''); setExistingId(''); }}
-                                        className="w-full mt-4 text-slate-500 hover:text-slate-800 text-sm"
+                                        className="w-full min-h-[44px] mt-4 text-[#0B1F3A]/70 hover:text-[#0B1F3A] text-sm font-semibold"
                                     >
                                         &larr; Back to Selection
                                     </button>
@@ -700,21 +696,21 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
     return (
         <>
             {showDraftPrompt && <DraftPrompt />}
-            <div className="bg-slate-50 py-12">
+            <div className="bg-[#F4F7FB] py-10 sm:py-12 min-h-screen">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 relative">
+                    <div className="max-w-4xl mx-auto bg-white border-t-4 border-[#C9A84C] rounded-2xl shadow-lg p-6 sm:p-8 relative">
 
                         {/* Saved draft overlay */}
                         {savedApplicationId && (
-                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-xl">
-                                <div className="bg-white p-8 rounded-lg shadow-xl text-center border animate-fade-in">
-                                    <h3 className="text-2xl font-bold text-emerald-600">Application Saved!</h3>
-                                    <p className="mt-2 text-slate-600">Please save this ID to continue your application later:</p>
-                                    <div className="my-4 p-3 bg-slate-100 border-2 border-dashed rounded font-mono text-xl font-bold text-slate-800">
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl">
+                                <div className="bg-white border-2 border-[#C9A84C] p-8 rounded-xl shadow-xl text-center animate-fade-in max-w-sm w-full mx-4">
+                                    <h3 className="text-2xl font-extrabold text-[#0B1F3A]">Application Saved!</h3>
+                                    <p className="mt-2 text-sm text-[#0B1F3A]/75">Please save this ID to continue your application later:</p>
+                                    <div className="my-4 p-3 bg-[#FBF6E8] border-2 border-dashed border-[#C9A84C] rounded-lg font-tabular text-xl font-extrabold text-[#0B1F3A]">
                                         {savedApplicationId}
                                     </div>
                                     <button onClick={() => navigator.clipboard.writeText(savedApplicationId)} className="btn btn-secondary w-full">Copy ID</button>
-                                    <button onClick={() => setSavedApplicationId(null)} className="mt-4 text-sm text-slate-500 hover:underline">Close and Continue Editing</button>
+                                    <button onClick={() => setSavedApplicationId(null)} className="mt-4 min-h-[44px] text-sm font-semibold text-[#8E6D1B] hover:underline">Close and Continue Editing</button>
                                 </div>
                             </div>
                         )}
@@ -723,7 +719,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         <div className="mb-6">
                             <button
                                 onClick={() => { setErrors({}); step > 1 ? setStep(step - 1) : setStep(0); }}
-                                className="flex items-center gap-2 text-sm font-semibold text-sky-600 hover:text-sky-800 transition-colors"
+                                className="inline-flex items-center gap-2 min-h-[44px] text-sm font-bold text-[#0B1F3A] hover:text-[#8E6D1B] transition-colors"
                             >
                                 <BackIcon className="w-5 h-5" />
                                 Back
@@ -731,17 +727,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                         </div>
 
                         {/* Deadline note */}
-                        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6 text-amber-800">
-                            <span className="flex-shrink-0">⏰</span>
+                        <div className="flex items-center gap-2 bg-[#FBF6E8] border border-[#C9A84C] rounded-xl px-4 py-2.5 mb-6 text-[#0B1F3A]">
                             <p className="text-xs font-semibold">Applications open until <strong>{ADMISSION_DEADLINE}</strong></p>
                         </div>
 
                         {/* Title */}
                         <div className="text-center mb-6">
-                            <h1 className="text-3xl font-bold text-slate-800">Online Admission Form</h1>
-                            <p className="text-slate-600 mt-2">Academic Session 2026-27</p>
-                            <p className="text-xs text-slate-400 mt-1">
-                                <span className="text-red-500 font-bold">*</span> Required fields
+                            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B1F3A]">Online Admission Form</h1>
+                            <p className="text-[#0B1F3A]/75 mt-1 text-sm sm:text-base">Academic Session 2026-27</p>
+                            <p className="text-xs text-[#0B1F3A]/60 mt-1">
+                                <span className="text-[#8E6D1B] font-bold">*</span> Required fields
                             </p>
                         </div>
 
@@ -765,8 +760,8 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <SectionDivider icon="👤" title="Student Information" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold">Full Name*</label>
-                                            <input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.studentName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Full Name*</label>
+                                            <input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.studentName ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`} />
                                             <FieldError message={errors.studentName} />
                                             {errors.studentName && <span className="field-error" />}
                                         </div>
@@ -776,13 +771,13 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                             {errors.dateOfBirth && <span className="field-error" />}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Gender*</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Gender*</label>
                                             <select name="gender" value={formData.gender} onChange={handleChange} className="form-select w-full mt-1">
                                                 {GENDER_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Aadhaar No. (Optional)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Aadhaar No. (Optional)</label>
                                             <input
                                                 type="text"
                                                 name="studentAadhaar"
@@ -794,43 +789,43 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 }}
                                                 placeholder="XXXX-XXXX-1234"
                                                 maxLength={14}
-                                                className={`form-input w-full mt-1 ${errors.studentAadhaar ? 'border-red-400 focus:ring-red-300' : ''}`}
+                                                className={`form-input w-full mt-1 font-tabular ${errors.studentAadhaar ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`}
                                             />
-                                            <p className="text-xs text-slate-400 mt-0.5">12 digits — masked for security</p>
+                                            <p className="text-xs text-[#0B1F3A]/60 mt-0.5">12 digits — masked for security</p>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">PEN No. (Optional)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">PEN No. (Optional)</label>
                                             <input type="text" name="penNumber" value={formData.penNumber || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Mother Tongue (Optional)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Mother Tongue (Optional)</label>
                                             <input type="text" name="motherTongue" value={formData.motherTongue || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Blood Group (Optional)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Blood Group (Optional)</label>
                                             <select name="bloodGroup" value={formData.bloodGroup || ''} onChange={handleChange} className="form-select w-full mt-1">
                                                 <option value="">-- Select --</option>
                                                 {BLOOD_GROUP_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">CWSN*</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">CWSN*</label>
                                             <select name="cwsn" value={formData.cwsn} onChange={handleChange} className="form-select w-full mt-1">
                                                 <option value="No">No</option>
                                                 <option value="Yes">Yes</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Category*</label>
-                                            <select name="category" value={formData.category} onChange={handleChange} className={`form-select w-full mt-1 ${errors.category ? 'border-red-400' : ''}`}>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Category*</label>
+                                            <select name="category" value={formData.category} onChange={handleChange} className={`form-select w-full mt-1 ${errors.category ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`}>
                                                 {CATEGORY_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                                             </select>
                                             <FieldError message={errors.category} />
                                             {errors.category && <span className="field-error" />}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Religion*</label>
-                                            <input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.religion ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Religion*</label>
+                                            <input type="text" name="religion" value={formData.religion || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.religion ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`} />
                                             <FieldError message={errors.religion} />
                                             {errors.religion && <span className="field-error" />}
                                         </div>
@@ -844,27 +839,27 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <SectionDivider icon="👨‍👩‍👦" title="Parent / Guardian Information" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold">Father's Name*</label>
-                                            <input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.fatherName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Father's Name*</label>
+                                            <input type="text" name="fatherName" value={formData.fatherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.fatherName ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`} />
                                             <FieldError message={errors.fatherName} />
                                             {errors.fatherName && <span className="field-error" />}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Mother's Name*</label>
-                                            <input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.motherName ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Mother's Name*</label>
+                                            <input type="text" name="motherName" value={formData.motherName || ''} onChange={handleChange} className={`form-input w-full mt-1 ${errors.motherName ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`} />
                                             <FieldError message={errors.motherName} />
                                             {errors.motherName && <span className="field-error" />}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Father's Occupation</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Father's Occupation</label>
                                             <input type="text" name="fatherOccupation" value={formData.fatherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Mother's Occupation</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Mother's Occupation</label>
                                             <input type="text" name="motherOccupation" value={formData.motherOccupation || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold">Father's/Mother's Aadhaar No.</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Father's/Mother's Aadhaar No.</label>
                                             <input
                                                 type="text"
                                                 name="parentAadhaar"
@@ -875,16 +870,16 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 }}
                                                 placeholder="XXXX-XXXX-1234"
                                                 maxLength={14}
-                                                className="form-input w-full mt-1"
+                                                className="form-input w-full mt-1 font-tabular"
                                             />
-                                            <p className="text-xs text-slate-400 mt-0.5">12 digits — masked for security</p>
+                                            <p className="text-xs text-[#0B1F3A]/60 mt-0.5">12 digits — masked for security</p>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Guardian's Name (if any)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Guardian's Name (if any)</label>
                                             <input type="text" name="guardianName" value={formData.guardianName || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Relationship with Guardian</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Relationship with Guardian</label>
                                             <input type="text" name="guardianRelationship" value={formData.guardianRelationship || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                     </div>
@@ -892,9 +887,9 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <SectionDivider icon="📞" title="Contact Details" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold">Contact No.*</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Contact No.*</label>
                                             <div className="flex mt-1">
-                                                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-sm font-semibold select-none">
+                                                <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-[#0B1F3A]/20 bg-[#F4F7FB] text-[#0B1F3A] text-sm font-bold select-none font-tabular">
                                                     +91
                                                 </span>
                                                 <input
@@ -909,19 +904,19 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                     placeholder="10-digit number"
                                                     maxLength={10}
                                                     inputMode="numeric"
-                                                    className={`block w-full rounded-r-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 ${errors.contactNumber ? 'border-red-400' : ''}`}
+                                                    className={`block w-full min-h-[44px] rounded-r-lg border border-[#0B1F3A]/20 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-[#C9A84C] font-tabular ${errors.contactNumber ? '!border-[#C9A84C]' : ''}`}
                                                 />
                                             </div>
                                             <FieldError message={errors.contactNumber} />
                                             {errors.contactNumber && <span className="field-error" />}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Email</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Email</label>
                                             <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold">Permanent Address*</label>
-                                            <textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className={`form-textarea w-full mt-1 ${errors.permanentAddress ? 'border-red-400 focus:ring-red-300' : ''}`} rows={2}></textarea>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Permanent Address*</label>
+                                            <textarea name="permanentAddress" value={formData.permanentAddress || ''} onChange={handleChange} className={`form-textarea w-full mt-1 ${errors.permanentAddress ? '!border-[#C9A84C] ring-2 ring-[#C9A84C]/30' : ''}`} rows={2}></textarea>
                                             <FieldError message={errors.permanentAddress} />
                                             {errors.permanentAddress && <span className="field-error" />}
                                         </div>
@@ -935,15 +930,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                     <SectionDivider icon="🏫" title="Previous School Details" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold">Last School Attended</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Last School Attended</label>
                                             <input type="text" name="lastSchoolAttended" value={formData.lastSchoolAttended || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Division in which he/she passed</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Division in which he/she passed</label>
                                             <input type="text" name="lastDivision" value={formData.lastDivision || ''} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">General Behaviour</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">General Behaviour</label>
                                             <select name="generalBehaviour" value={formData.generalBehaviour || 'Normal'} onChange={handleChange} className="form-select w-full mt-1">
                                                 <option value="Mild">Mild</option>
                                                 <option value="Normal">Normal</option>
@@ -951,15 +946,15 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold">Siblings in this school</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Siblings in this school</label>
                                             <input type="number" name="siblingsInSchool" value={formData.siblingsInSchool || 0} onChange={handleChange} className="form-input w-full mt-1" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold">Achievements (Academics/Extra-curricular)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Achievements (Academics/Extra-curricular)</label>
                                             <textarea name="achievements" value={formData.achievements || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={3}></textarea>
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold">Health Issues (if any)</label>
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">Health Issues (if any)</label>
                                             <textarea name="healthIssues" value={formData.healthIssues || ''} onChange={handleChange} className="form-textarea w-full mt-1" rows={3}></textarea>
                                         </div>
                                     </div>
@@ -968,26 +963,26 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                                     {/* ── FIX: Show correct notice based on student type ── */}
                                     {isNewStudent && (
-                                        <p className="text-sm text-slate-600 my-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                        <p className="text-sm text-[#0B1F3A] my-4 bg-[#FBF6E8] p-3.5 rounded-xl border border-[#C9A84C]">
                                             <span className="font-bold">Important:</span> For new students, the Birth Certificate is mandatory.
                                             {!isNursery && " The Last Report Card is also mandatory."}
                                         </p>
                                     )}
                                     {isExistingStudent && (
-                                        <p className="text-sm text-slate-600 my-4 bg-sky-50 p-3 rounded-lg border border-sky-200">
-                                            <span className="font-bold">Note:</span> Document uploads are <span className="font-bold text-sky-700">optional</span> for existing / returning students. Your records are already on file.
+                                        <p className="text-sm text-[#0B1F3A] my-4 bg-[#F4F7FB] p-3.5 rounded-xl border border-[#0B1F3A]/20">
+                                            <span className="font-bold">Note:</span> Document uploads are <span className="font-bold text-[#8E6D1B]">optional</span> for existing / returning students. Your records are already on file.
                                         </p>
                                     )}
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {/* Birth Certificate — required only for new students */}
                                         <div>
-                                            <label className="block text-sm font-bold">
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">
                                                 Birth Certificate
-                                                {isNewStudent && <span className="text-red-500">*</span>}
-                                                {isExistingStudent && <span className="text-slate-400 font-normal text-xs ml-1">(optional)</span>}
+                                                {isNewStudent && <span className="text-[#8E6D1B]">*</span>}
+                                                {isExistingStudent && <span className="text-[#0B1F3A]/60 font-normal text-xs ml-1">(optional)</span>}
                                             </label>
-                                            <div className="flex items-center gap-3 mt-2 p-3 border rounded-xl bg-slate-50">
+                                            <div className="flex items-center gap-3 mt-2 p-3 border border-[#0B1F3A]/15 rounded-xl bg-[#F4F7FB]">
                                                 <label className="btn btn-secondary cursor-pointer flex items-center gap-2 min-h-[44px]">
                                                     {uploadingDoc === 'birthCertificateUrl' ? <SpinnerIcon className="w-5 h-5" /> : <UploadIcon className="w-5 h-5" />}
                                                     <input type="file" onChange={(e) => handleFileChange(e, 'birthCertificateUrl')} className="hidden" accept="image/*" />
@@ -995,7 +990,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 </label>
                                                 {formData.birthCertificateUrl && (
                                                     <a href={formData.birthCertificateUrl} target="_blank" rel="noreferrer">
-                                                        <img src={formData.birthCertificateUrl} alt="Birth Cert" className="w-12 h-12 rounded-lg object-cover border" />
+                                                        <img src={formData.birthCertificateUrl} alt="Birth Cert" className="w-12 h-12 rounded-lg object-cover border border-[#C9A84C]" />
                                                     </a>
                                                 )}
                                             </div>
@@ -1005,11 +1000,11 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                                         {/* Transfer Certificate — always optional */}
                                         <div>
-                                            <label className="block text-sm font-bold">
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">
                                                 Transfer Certificate
-                                                <span className="text-slate-400 font-normal text-xs ml-1">(if applicable)</span>
+                                                <span className="text-[#0B1F3A]/60 font-normal text-xs ml-1">(if applicable)</span>
                                             </label>
-                                            <div className="flex items-center gap-3 mt-2 p-3 border rounded-xl bg-slate-50">
+                                            <div className="flex items-center gap-3 mt-2 p-3 border border-[#0B1F3A]/15 rounded-xl bg-[#F4F7FB]">
                                                 <label className="btn btn-secondary cursor-pointer flex items-center gap-2 min-h-[44px]">
                                                     {uploadingDoc === 'transferCertificateUrl' ? <SpinnerIcon className="w-5 h-5" /> : <UploadIcon className="w-5 h-5" />}
                                                     <input type="file" onChange={(e) => handleFileChange(e, 'transferCertificateUrl')} className="hidden" accept="image/*" />
@@ -1017,7 +1012,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 </label>
                                                 {formData.transferCertificateUrl && (
                                                     <a href={formData.transferCertificateUrl} target="_blank" rel="noreferrer">
-                                                        <img src={formData.transferCertificateUrl} alt="TC" className="w-12 h-12 rounded-lg object-cover border" />
+                                                        <img src={formData.transferCertificateUrl} alt="TC" className="w-12 h-12 rounded-lg object-cover border border-[#C9A84C]" />
                                                     </a>
                                                 )}
                                             </div>
@@ -1025,12 +1020,12 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
 
                                         {/* Last Report Card — required only for new non-nursery students */}
                                         <div>
-                                            <label className="block text-sm font-bold">
+                                            <label className="block text-sm font-bold text-[#0B1F3A]">
                                                 Last Report Card
-                                                {isNewStudent && !isNursery && <span className="text-red-500">*</span>}
-                                                {(isExistingStudent || isNursery) && <span className="text-slate-400 font-normal text-xs ml-1">(optional)</span>}
+                                                {isNewStudent && !isNursery && <span className="text-[#8E6D1B]">*</span>}
+                                                {(isExistingStudent || isNursery) && <span className="text-[#0B1F3A]/60 font-normal text-xs ml-1">(optional)</span>}
                                             </label>
-                                            <div className="flex items-center gap-3 mt-2 p-3 border rounded-xl bg-slate-50">
+                                            <div className="flex items-center gap-3 mt-2 p-3 border border-[#0B1F3A]/15 rounded-xl bg-[#F4F7FB]">
                                                 <label className="btn btn-secondary cursor-pointer flex items-center gap-2 min-h-[44px]">
                                                     {uploadingDoc === 'reportCardUrl' ? <SpinnerIcon className="w-5 h-5" /> : <UploadIcon className="w-5 h-5" />}
                                                     <input type="file" onChange={(e) => handleFileChange(e, 'reportCardUrl')} className="hidden" accept="image/*" />
@@ -1038,7 +1033,7 @@ const OnlineAdmissionPage: React.FC<OnlineAdmissionPageProps> = ({ user, onOnlin
                                                 </label>
                                                 {formData.reportCardUrl && (
                                                     <a href={formData.reportCardUrl} target="_blank" rel="noreferrer">
-                                                        <img src={formData.reportCardUrl} alt="Report Card" className="w-12 h-12 rounded-lg object-cover border" />
+                                                        <img src={formData.reportCardUrl} alt="Report Card" className="w-12 h-12 rounded-lg object-cover border border-[#C9A84C]" />
                                                     </a>
                                                 )}
                                             </div>

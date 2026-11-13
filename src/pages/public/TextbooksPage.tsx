@@ -5,13 +5,11 @@ import { db } from '@/firebaseConfig';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface TextbookLink {
     name: string;
     url: string;
 }
 
-// Old format saved by previous admin page
 interface TextbookSubject {
     subject: string;
     textbook: string;
@@ -21,13 +19,10 @@ interface TextbookFolder {
     id: string;
     label: string;
     order: number;
-    // new format
     links?: TextbookLink[];
-    // old format
     subjects?: TextbookSubject[];
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
 const FolderIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
         <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
@@ -52,13 +47,11 @@ const ExternalIcon = () => (
     </svg>
 );
 
-// ─── Helper: get item count regardless of format ──────────────────────────────
 const getItemCount = (folder: TextbookFolder): number => {
     if (folder.subjects?.length) return folder.subjects.length;
     return folder.links?.length || 0;
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 const TextbooksPage: React.FC = () => {
     const navigate = useNavigate();
     const [folders, setFolders] = useState<TextbookFolder[]>([]);
@@ -79,101 +72,92 @@ const TextbooksPage: React.FC = () => {
         setOpenFolder(prev => prev === id ? null : id);
 
     return (
-        <div className="bg-zinc-950 min-h-screen py-14">
+        <div className="bg-[#0B1F3A] min-h-screen py-12 sm:py-14">
             <div className="container mx-auto px-4 max-w-3xl">
 
-                {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300 transition-colors"
+                        className="flex items-center gap-2 min-h-[44px] text-sm font-bold text-[#DFC06B] hover:text-white transition-colors"
                     >
                         <BackIcon className="w-5 h-5" /> Back
                     </button>
-                    <Link to="/" className="text-sm font-semibold text-slate-400 hover:text-slate-200">
-                        🏠 Home
+                    <Link to="/" className="text-sm font-semibold text-white/80 hover:text-white">
+                        Home
                     </Link>
                 </div>
 
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-14 h-14 bg-sky-900/50 rounded-2xl mb-4">
-                        <span className="text-3xl">📚</span>
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#DFC06B]">Nursery to Class X</p>
+                    <h1 className="mt-1 text-3xl sm:text-4xl font-extrabold text-white">
                         Prescribed Textbooks
                     </h1>
-                    <p className="mt-3 text-slate-400 text-base max-w-md mx-auto">
+                    <p className="mt-3 text-white/75 text-base max-w-md mx-auto">
                         Select your class to view the list of prescribed textbooks and resources.
                     </p>
                 </div>
 
-                {/* Content */}
                 {loading ? (
                     <div className="flex justify-center py-20">
-                        <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-4 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : folders.length === 0 ? (
-                    <div className="text-center py-20 border-2 border-dashed border-zinc-700 rounded-2xl bg-zinc-900">
-                        <span className="text-5xl">📂</span>
-                        <p className="mt-4 text-white font-semibold text-lg">No textbook lists available yet.</p>
-                        <p className="text-slate-400 text-sm mt-1">Please check back later.</p>
+                    <div className="text-center py-20 border-2 border-dashed border-[#C9A84C]/35 rounded-2xl bg-[#132D52]">
+                        <p className="text-white font-bold text-lg">No textbook lists available yet.</p>
+                        <p className="text-white/70 text-sm mt-1">Please check back later.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {folders.map(folder => {
                             const isOpen = openFolder === folder.id;
                             const itemCount = getItemCount(folder);
-                            // Determine which format this folder uses
                             const hasSubjects = (folder.subjects?.length || 0) > 0;
                             const hasLinks = (folder.links?.length || 0) > 0;
 
                             return (
                                 <div
                                     key={folder.id}
-                                    className="bg-zinc-900 rounded-2xl border border-zinc-700 overflow-hidden transition-all"
+                                    className="bg-[#132D52] rounded-2xl border border-[#C9A84C]/35 overflow-hidden transition-all"
                                 >
-                                    {/* Folder header */}
                                     <button
                                         onClick={() => toggleFolder(folder.id)}
-                                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-zinc-800 transition-colors group"
+                                        className="w-full flex items-center justify-between px-5 py-4 min-h-[56px] hover:bg-[#07162B]/60 transition-colors group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className={`text-sky-400 transition-colors ${isOpen ? 'text-sky-300' : ''}`}>
+                                            <span className="text-[#DFC06B]">
                                                 <FolderIcon />
                                             </span>
-                                            <span className={`font-bold text-white text-base group-hover:text-sky-300 transition-colors ${isOpen ? 'text-sky-300' : ''}`}>
+                                            <span className={`font-bold text-white text-base group-hover:text-[#DFC06B] transition-colors ${isOpen ? 'text-[#DFC06B]' : ''}`}>
                                                 {folder.label}
                                             </span>
-                                            <span className="text-xs text-slate-500 font-normal">
+                                            <span className="font-tabular text-xs text-white/65 font-medium">
                                                 {itemCount} item{itemCount !== 1 ? 's' : ''}
                                             </span>
                                         </div>
                                         <svg
-                                            className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180 text-sky-400' : ''}`}
+                                            className={`w-5 h-5 text-white/60 transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#DFC06B]' : ''}`}
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                         >
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
 
-                                    {/* Content when open */}
                                     {isOpen && (
-                                        <div className="border-t border-zinc-700">
+                                        <div className="border-t border-white/15 bg-[#07162B]/60">
                                             {itemCount === 0 ? (
-                                                <p className="px-6 py-4 text-sm text-slate-500 italic">No items in this folder.</p>
+                                                <p className="px-6 py-4 text-sm text-white/55 italic">No items in this folder.</p>
                                             ) : hasSubjects ? (
-                                                // ── OLD FORMAT: subjects list (no links) ──
-                                                <div className="divide-y divide-zinc-800">
+                                                <div className="divide-y divide-white/10">
                                                     {folder.subjects!.map((item, i) => (
                                                         <div key={i} className="flex items-center gap-4 px-6 py-3.5">
-                                                            <span className="text-sky-400 shrink-0">
+                                                            <span className="text-[#DFC06B] shrink-0">
                                                                 <BookIcon />
                                                             </span>
                                                             <div className="flex-1 min-w-0">
-                                                                <span className="text-xs font-bold text-sky-400 uppercase tracking-wide block">
+                                                                <span className="text-xs font-bold text-[#DFC06B] uppercase tracking-wide block">
                                                                     {item.subject}
                                                                 </span>
-                                                                <span className="text-sm font-medium text-slate-200">
+                                                                <span className="text-sm font-medium text-white">
                                                                     {item.textbook}
                                                                 </span>
                                                             </div>
@@ -181,25 +165,24 @@ const TextbooksPage: React.FC = () => {
                                                     ))}
                                                 </div>
                                             ) : hasLinks ? (
-                                                // ── NEW FORMAT: links with URLs ──
-                                                <div className="divide-y divide-zinc-800">
+                                                <div className="divide-y divide-white/10">
                                                     {folder.links!.map((link, i) => (
                                                         <a
                                                             key={i}
                                                             href={link.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center justify-between px-6 py-3.5 hover:bg-zinc-800 transition-colors group"
+                                                            className="flex items-center justify-between px-6 py-3.5 hover:bg-[#132D52] transition-colors group"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <span className="text-sky-400 group-hover:text-sky-300">
+                                                                <span className="text-[#DFC06B]">
                                                                     <LinkIcon />
                                                                 </span>
-                                                                <span className="text-sm font-medium text-slate-200 group-hover:text-sky-300">
+                                                                <span className="text-sm font-medium text-white group-hover:text-[#DFC06B]">
                                                                     {link.name}
                                                                 </span>
                                                             </div>
-                                                            <span className="text-slate-500 group-hover:text-sky-400">
+                                                            <span className="text-white/60 group-hover:text-[#DFC06B]">
                                                                 <ExternalIcon />
                                                             </span>
                                                         </a>

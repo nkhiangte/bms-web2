@@ -90,7 +90,7 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleClose}
-                        className="fixed inset-0 w-full h-full bg-black/85 backdrop-blur-sm cursor-pointer"
+                        className="fixed inset-0 w-full h-full bg-[#07162B]/90 backdrop-blur-sm cursor-pointer"
                     />
 
                     {/* Modal Content */}
@@ -99,38 +99,35 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.92 }}
                         transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                        className="relative z-10 m-auto w-full max-w-[88vw] sm:max-w-md md:max-w-xl lg:max-w-2xl max-h-[85vh] sm:max-h-[88vh] bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-800 self-center origin-center"
+                        className="relative z-10 m-auto w-full max-w-[90vw] sm:max-w-md md:max-w-xl lg:max-w-2xl max-h-[85vh] sm:max-h-[88vh] bg-[#0B1F3A] rounded-2xl shadow-2xl overflow-hidden flex flex-col border-2 border-[#C9A84C] self-center origin-center"
                     >
                         {/* Close Button */}
                         <button 
                             onClick={handleClose}
                             aria-label="Close popup"
-                            className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-[130] bg-black/80 hover:bg-black text-white p-2 sm:p-2.5 rounded-full backdrop-blur-md transition-all border border-white/20 shadow-xl group focus:outline-none"
+                            className="absolute top-3 right-3 z-[130] bg-[#0B1F3A] hover:bg-[#132D52] text-white w-10 h-10 flex items-center justify-center rounded-full transition-all border border-[#C9A84C] shadow-xl group focus:outline-none"
                         >
-                            <XIcon className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300" />
+                            <XIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
 
-                        <div className="flex-grow overflow-y-auto overflow-x-hidden w-full bg-slate-950 flex flex-col items-center justify-start">
+                        <div className="flex-grow overflow-y-auto overflow-x-hidden w-full bg-[#07162B] flex flex-col items-center justify-start">
                             <div className="relative w-full flex justify-center items-center overflow-x-hidden p-0">
                                 <EditableContent 
                                     id="home_popup_image" 
-                                    defaultContent="https://placehold.jp/24/0f172a/ffffff/1200x1600.png?text=HSLC+2026+Distinction+List\n(Click+the+blue+pencil+on+top+left+to+upload)" 
+                                    defaultContent="/assets/school/campus.jpg" 
                                     type="image" 
                                     user={user}
                                     className="w-full max-w-full flex justify-center items-center overflow-hidden"
                                     imgClassName="w-full h-auto max-w-full object-contain block mx-auto select-none"
                                     buttonClassName="top-4 left-4"
                                     alwaysShowButton={true}
-                                    imgAlt="HSLC 2026 Distinction Results"
+                                    imgAlt="Bethel Mission School Announcement"
                                 />
                                 
                                 {user?.role === 'admin' && (
-                                    <div className="absolute bottom-4 left-4 z-[110] bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 text-[11px] text-white/90 uppercase tracking-widest font-black pointer-events-none flex flex-col gap-0.5 shadow-lg">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                                            Admin Edit Mode
-                                        </div>
-                                        <div className="text-[9px] text-slate-300 font-normal">Popup will only show to visitors if Active</div>
+                                    <div className="absolute bottom-4 left-4 z-[110] bg-[#0B1F3A]/90 px-3 py-1.5 rounded-lg border border-[#C9A84C]/60 text-[11px] text-[#DFC06B] uppercase tracking-wider font-bold pointer-events-none flex flex-col gap-0.5 shadow-lg">
+                                        <div>Admin Edit Mode</div>
+                                        <div className="text-[10px] text-white/80 font-normal">Popup shows to visitors only when Active</div>
                                     </div>
                                 )}
                             </div>
@@ -138,28 +135,30 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
 
                         {/* Admin toggle for enabling/disabling the popup */}
                         {user?.role === 'admin' && (
-                            <div className="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                            <div className="p-3 sm:p-4 bg-[#0B1F3A] border-t border-[#C9A84C]/40 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
                                 <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
                                     <div className="flex flex-col">
-                                        <span className="text-xs sm:text-sm font-bold text-slate-200">Visitor Popup Status</span>
-                                        <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-bold tracking-tight">Admin control</span>
+                                        <span className="text-xs sm:text-sm font-bold text-white">Visitor Popup Status</span>
+                                        <span className="text-[10px] text-[#DFC06B] uppercase font-bold tracking-tight">Admin control</span>
                                     </div>
                                     <button 
                                         onClick={handleTogglePopup}
-                                        className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-                                            isEnabled ? 'bg-sky-500 text-white hover:bg-sky-600' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                                        className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                                            isEnabled
+                                                ? 'bg-[#C9A84C] text-[#0B1F3A] hover:bg-[#DFC06B]'
+                                                : 'bg-[#132D52] text-white border border-[#C9A84C]/50 hover:bg-[#1C3D6E]'
                                         }`}
                                     >
                                         {isEnabled ? 'Active (Live for visitors)' : 'Inactive (Hidden from visitors)'}
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                     <p className="hidden md:block text-[10px] text-slate-400 italic max-w-[200px] text-right leading-tight">
-                                         Click the blue pencil button on top-left of image to upload a new banner.
+                                     <p className="hidden md:block text-[10px] text-white/75 italic max-w-[200px] text-right leading-tight">
+                                         Click the edit button on top-left of image to upload a new banner.
                                      </p>
                                      <button
                                          onClick={handleClose}
-                                         className="w-full sm:w-auto px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs sm:text-sm transition-colors shrink-0 border border-slate-700"
+                                         className="w-full sm:w-auto px-4 sm:px-5 py-2 bg-white hover:bg-[#F4F7FB] text-[#0B1F3A] font-bold rounded-lg text-xs sm:text-sm transition-colors shrink-0"
                                      >
                                          Close Preview
                                      </button>

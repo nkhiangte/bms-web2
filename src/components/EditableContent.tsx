@@ -188,7 +188,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                         href={match[2]} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-sky-600 hover:underline font-medium break-all"
+                        className="text-[#8E6D1B] hover:text-[#0B1F3A] underline font-semibold break-all"
                     >
                         {match[1]}
                     </a>
@@ -211,14 +211,20 @@ const EditableContent: React.FC<EditableContentProps> = ({
                 <img 
                     src={content} 
                     alt={imgAlt} 
+                    loading="lazy"
+                    decoding="async"
                     className={`${imgClassName || 'w-full h-full object-cover'} ${isSaving ? 'opacity-50' : ''}`} 
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.jp/24/0f172a/ffffff/800x600.png?text=HSLC+Result+List+Placeholder\n(Please+Upload+Real+Image)';
+                        const target = e.target as HTMLImageElement;
+                        if (!target.dataset.fallbackApplied) {
+                            target.dataset.fallbackApplied = 'true';
+                            target.src = '/assets/school/campus.jpg';
+                        }
                     }}
                 />
                 
                 {isSaving && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-[120]">
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#0B1F3A]/40 z-[120]">
                         <SpinnerIcon className="w-10 h-10 text-white" />
                     </div>
                 )}
@@ -230,10 +236,10 @@ const EditableContent: React.FC<EditableContentProps> = ({
                                 e.stopPropagation();
                                 fileInputRef.current?.click();
                             }}
-                            className="bg-sky-600 text-white p-3 rounded-full shadow-2xl border-2 border-white hover:bg-sky-700 transition-all hover:scale-125 flex items-center justify-center"
-                            title="Upload Results Image (Admin Only)"
+                            className="bg-[#0B1F3A] text-[#DFC06B] p-3 rounded-full shadow-2xl border-2 border-[#C9A84C] hover:bg-[#132D52] transition-all hover:scale-110 flex items-center justify-center"
+                            title="Upload Image (Admin Only)"
                         >
-                            <EditIcon className="w-6 h-6" />
+                            <EditIcon className="w-5 h-5" />
                         </button>
                         <input 
                             type="file" 
@@ -251,14 +257,14 @@ const EditableContent: React.FC<EditableContentProps> = ({
 
     if (isEditing && isAdmin) {
         return (
-            <div className="relative border-2 border-sky-500 rounded p-1 bg-white shadow-xl z-30">
+            <div className="relative border-2 border-[#C9A84C] rounded-lg p-2 bg-white shadow-xl z-30">
                 {type === 'textarea' ? (
                     <>
                         <div className="flex justify-end mb-1">
                              <button 
                                 type="button" 
                                 onClick={() => textImageInputRef.current?.click()}
-                                className="text-xs flex items-center gap-1 text-sky-600 hover:text-sky-800 font-semibold bg-sky-50 px-2 py-1 rounded"
+                                className="text-xs flex items-center gap-1 text-[#0B1F3A] hover:text-[#8E6D1B] font-semibold bg-[#FBF6E8] border border-[#C9A84C]/50 px-2.5 py-1 rounded"
                                 disabled={isSaving}
                             >
                                 <UploadIcon className="w-3 h-3"/> Insert Image
@@ -275,7 +281,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
                             ref={textareaRef}
                             value={tempContent} 
                             onChange={(e) => setTempContent(e.target.value)} 
-                            className="w-full form-textarea text-slate-800 text-base min-h-[150px]"
+                            className="w-full form-textarea text-[#0B1F3A] text-base min-h-[150px]"
                             rows={6}
                             autoFocus
                         />
@@ -285,16 +291,16 @@ const EditableContent: React.FC<EditableContentProps> = ({
                         type="text" 
                         value={tempContent} 
                         onChange={(e) => setTempContent(e.target.value)} 
-                        className="w-full form-input text-slate-800 text-lg font-bold"
+                        className="w-full form-input text-[#0B1F3A] text-lg font-bold"
                         autoFocus
                     />
                 )}
                 
                 <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={handleCancel} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Cancel">
+                    <button onClick={handleCancel} className="p-1.5 text-[#0B1F3A] hover:bg-[#F4F7FB] rounded" title="Cancel">
                         <XIcon className="w-5 h-5" />
                     </button>
-                    <button onClick={handleSave} disabled={isSaving} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Save">
+                    <button onClick={handleSave} disabled={isSaving} className="p-1.5 text-[#0B1F3A] bg-[#C9A84C] hover:bg-[#DFC06B] rounded" title="Save">
                         {isSaving ? <SpinnerIcon className="w-5 h-5" /> : <SaveIcon className="w-5 h-5" />}
                     </button>
                 </div>
@@ -304,7 +310,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
 
     return (
         <Root 
-            className={`relative group ${isAdmin ? 'hover:ring-2 hover:ring-sky-400/50 hover:bg-sky-50/20 rounded transition-all cursor-text' : ''} ${className}`} 
+            className={`relative group ${isAdmin ? 'hover:ring-2 hover:ring-[#C9A84C] hover:bg-[#FBF6E8]/20 rounded transition-all cursor-text' : ''} ${className}`} 
             style={style}
         >
             {type === 'textarea' ? (
@@ -318,7 +324,7 @@ const EditableContent: React.FC<EditableContentProps> = ({
             {isAdmin && (
                 <button 
                     onClick={handleEditClick}
-                    className="absolute -top-3 -right-3 bg-sky-600 text-white p-1.5 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sky-700 hover:scale-110"
+                    className="absolute -top-3 -right-3 bg-[#0B1F3A] text-[#DFC06B] border border-[#C9A84C] p-1.5 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#132D52] hover:scale-110"
                     title="Edit Content (Admin)"
                 >
                     <EditIcon className="w-3 h-3" />

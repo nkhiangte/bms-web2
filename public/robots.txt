@@ -8,4 +8,4 @@ Disallow: /signup
 Disallow: /forgot-password
 Disallow: /reset-password
 
-Sitemap: https://bms04.com/sitemap.xml
+Sitemap: https://www.bms04.com/sitemap.xml

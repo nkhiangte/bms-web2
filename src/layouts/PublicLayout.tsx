@@ -111,7 +111,7 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation }) => {
         };
 
         document.title = meta.title;
-        const canonicalUrl = `https://bms04.com${cleanPath === '/' ? '/' : cleanPath}`;
+        const canonicalUrl = `https://www.bms04.com${cleanPath === '/' ? '/' : cleanPath}`;
 
         let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
         if (!canonical) {

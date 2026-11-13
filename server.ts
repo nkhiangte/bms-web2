@@ -720,7 +720,7 @@ Curriculum & Syllabus Strictness Guidelines:
     if (fs.existsSync(robotsPath)) {
       return res.sendFile(robotsPath);
     }
-    return res.send("User-agent: *\nAllow: /\nDisallow: /portal/\nSitemap: https://bms04.com/sitemap.xml\n");
+    return res.send("User-agent: *\nAllow: /\nDisallow: /portal/\nSitemap: https://www.bms04.com/sitemap.xml\n");
   });
 
   app.get("/sitemap.xml", (_req, res) => {
@@ -732,7 +732,7 @@ Curriculum & Syllabus Strictness Guidelines:
       return res.sendFile(sitemapPath);
     }
     return res.send(
-      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://bms04.com/</loc><priority>1.0</priority></url><url><loc>https://bms04.com/admissions</loc><priority>0.9</priority></url><url><loc>https://bms04.com/academics</loc><priority>0.9</priority></url><url><loc>https://bms04.com/about</loc><priority>0.8</priority></url><url><loc>https://bms04.com/contact</loc><priority>0.8</priority></url></urlset>`
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://www.bms04.com/</loc><priority>1.0</priority></url><url><loc>https://www.bms04.com/admissions</loc><priority>0.9</priority></url><url><loc>https://www.bms04.com/academics</loc><priority>0.9</priority></url><url><loc>https://www.bms04.com/about</loc><priority>0.8</priority></url><url><loc>https://www.bms04.com/contact</loc><priority>0.8</priority></url></urlset>`
     );
   });
 

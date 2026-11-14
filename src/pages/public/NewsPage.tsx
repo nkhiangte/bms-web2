@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { NewsItem, User } from '@/types';
 import { formatDateForNews } from '@/utils';
 import EditableContent from '@/components/EditableContent';
+import { isPublishedNewsItem } from '@/components/LatestNewsBannerSection';
 
 interface NewsPageProps {
     news: NewsItem[];
@@ -11,7 +12,9 @@ interface NewsPageProps {
 
 const NewsPage: React.FC<NewsPageProps> = ({ news, user }) => {
     const sortedNews = useMemo(() => {
-        return [...news].sort((a, b) => b.date.localeCompare(a.date));
+        return [...news]
+            .filter(isPublishedNewsItem)
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }, [news]);
 
     const renderContent = (content: string) => {

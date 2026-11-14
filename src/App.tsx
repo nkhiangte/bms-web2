@@ -1104,7 +1104,7 @@ const App: React.FC = () => {
       />
 
       <Routes>
-        <Route path="/" element={<PublicLayout user={user} navigation={navigation} />}>
+        <Route path="/" element={<PublicLayout user={user} navigation={navigation} news={news} admissionSettings={admissionSettings} />}>
           <Route index element={<PublicHomePage news={news} user={user} staff={staff} gradeDefinitions={gradeDefinitions} />} />
           <Route path="about" element={<AboutPage user={user} />} />
           <Route path="history" element={<HistoryPage user={user} />} />

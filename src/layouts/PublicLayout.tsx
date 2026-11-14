@@ -3,7 +3,8 @@ import * as ReactRouterDOM from 'react-router-dom';
 import PublicHeader from '@/components/PublicHeader';
 import PublicFooter from '@/components/PublicFooter';
 import { WhatsappIcon } from '@/components/Icons';
-import { User, NavMenuItem } from '@/types';
+import AdmissionAnnouncementPopup from '@/components/AdmissionAnnouncementPopup';
+import { User, NavMenuItem, NewsItem, AdmissionSettings } from '@/types';
 
 const { Outlet, useLocation } = ReactRouterDOM as any;
 
@@ -93,13 +94,15 @@ function upsertMeta(selector: string, attrName: 'name' | 'property', attrValue: 
 interface PublicLayoutProps {
     user: User | null;
     navigation: NavMenuItem[];
+    news?: NewsItem[];
+    admissionSettings?: AdmissionSettings;
 }
 
 const FLOATING_WHATSAPP_URL =
     'https://wa.me/919862148342?text=' +
     encodeURIComponent('Hello, I want admission for Class ___ at Bethel Mission School');
 
-const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation }) => {
+const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation, news = [], admissionSettings }) => {
     const location = useLocation();
 
     useEffect(() => {
@@ -137,6 +140,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation }) => {
                 <Outlet />
             </main>
             <PublicFooter />
+
+            {/* Dismissible Admission Announcement Popup (once per session, 1.5s delay) */}
+            <AdmissionAnnouncementPopup news={news} admissionSettings={admissionSettings} />
 
             {/* Persistent Floating WhatsApp Admission Button on Every Public Page */}
             <a

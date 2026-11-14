@@ -83,7 +83,10 @@ const HomeResultPopup: React.FC<HomeResultPopupProps> = ({ user }) => {
     const popupContent = (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 w-full h-[100dvh] min-h-screen overflow-x-hidden overflow-y-auto">
+                <div
+                    data-home-result-popup="open"
+                    className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 w-full h-[100dvh] min-h-screen overflow-x-hidden overflow-y-auto"
+                >
                     {/* Backdrop */}
                     <motion.div 
                         initial={{ opacity: 0 }}

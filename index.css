@@ -59,9 +59,14 @@ html {
   --text-muted-css:rgba(11, 31, 58, 0.65);
   --border-color:  rgba(11, 31, 58, 0.16);
 
-  /* Single Clean Font Throughout */
+  /* Editorial Serif + Clean Sans-Serif Typography */
   --font-display:  'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-body:     'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif:    'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
+  --bms-navy:      #142B49;
+  --bms-ivory:     #F8F6F0;
+  --bms-gold:      #C5A46D;
+  --bms-charcoal:  #252A32;
 }
 
 /* ─── Base ─── */
@@ -70,17 +75,21 @@ html {
 body {
   font-family:      var(--font-body);
   background-color: #FFFFFF;
-  color:            var(--navy-900);
+  color:            var(--bms-charcoal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure public site & login strictly enforce single font without second monospace face */
+/* Ensure public site & login maintain clean sans-serif body typography while allowing explicit editorial serif headings */
 .bms-public-site,
-.bms-public-site *,
+.bms-public-site *:not(.font-serif-editorial),
 .bms-login-page,
 .bms-login-page * {
   font-family: var(--font-body);
+}
+
+.font-serif-editorial {
+  font-family: var(--font-serif) !important;
 }
 
 .font-tabular {
@@ -126,7 +135,35 @@ body {
 }
 
 .animate-fade-in    { animation: fadeIn 0.4s ease-out forwards; }
-.animate-fade-in-up { animation: fadeInUp 0.55s ease-out forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+.bms-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bms-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fade-in,
+  .animate-fade-in-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .bms-reveal,
+  .bms-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
 
 /* ─── Buttons ─── */
 .btn {

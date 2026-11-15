@@ -134,7 +134,7 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation, news = []
     }, [location.pathname]);
 
     return (
-        <div className="bms-public-site min-h-screen flex flex-col bg-white text-[#0B1F3A]">
+        <div className="bms-public-site min-h-screen flex flex-col bg-white text-[#252A32]">
             <PublicHeader user={user} navigation={navigation} />
             <main className="flex-grow">
                 <Outlet />
@@ -150,9 +150,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ user, navigation, news = []
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Chat on WhatsApp for Admission"
-                className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 inline-flex items-center gap-2 min-h-[48px] px-4 py-3 rounded-full bg-[#C9A84C] hover:bg-[#DFC06B] text-[#0B1F3A] font-extrabold text-xs sm:text-sm border-2 border-[#0B1F3A] shadow-xl transition-transform hover:scale-105"
+                className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 inline-flex items-center gap-2 min-h-[46px] px-4 py-2.5 rounded-full bg-[#142B49] hover:bg-[#1C3B63] text-[#F8F6F0] font-bold text-xs sm:text-sm border border-[#C5A46D] shadow-lg transition-transform hover:scale-105"
             >
-                <WhatsappIcon className="w-5 h-5 flex-shrink-0" />
+                <WhatsappIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-[#C5A46D]" />
                 <span>WhatsApp Admission</span>
             </a>
         </div>

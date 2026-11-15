@@ -14,7 +14,7 @@ const MAIN_MENU_ITEMS = [
     { id: 'home', label: 'Home', path: '/', icon: Home },
     { id: 'about', label: 'About Us', path: '/about', icon: Info },
     { id: 'academics', label: 'Academics', path: '/academics', icon: GraduationCap },
-    { id: 'admissions', label: 'Admissions', path: '/admissions', icon: FileText },
+    { id: 'admissions', label: 'Admissions', path: '/admissions', icon: FileText, highlighted: true },
     { id: 'contact', label: 'Contact', path: '/contact', icon: Phone },
 ];
 
@@ -24,15 +24,14 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
     const dashboardLink = user?.role === 'parent' ? '/portal/parent-dashboard' : '/portal/dashboard';
 
     return (
-        <header className="bg-white sticky top-0 z-30 border-b-2 border-[#C9A84C] shadow-sm">
-            {/* Single-Line Top Bar: Brand | 5-Item Desktop Nav | Single Outline Login CTA + Mobile Hamburger */}
-            <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <header className="bg-white/95 backdrop-blur-md sticky top-0 z-30 border-t-2 border-t-[#C5A46D] border-b border-[#142B49]/12 shadow-sm">
+            <div className="container mx-auto px-3 sm:px-6 lg:px-8 max-w-7xl">
                 <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
                     {/* Brand: Crest + School Name + Motto */}
                     <Link
                         to="/"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink"
+                        className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-shrink"
                     >
                         <img
                             src="/assets/school/bms-logo-color.png"
@@ -40,46 +39,63 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                             className="h-10 sm:h-12 w-auto flex-shrink-0 object-contain"
                         />
                         <div className="min-w-0">
-                            <span className="block font-extrabold text-[#0B1F3A] text-sm sm:text-lg leading-tight tracking-tight truncate">
+                            <span className="font-serif-editorial block font-bold text-[#142B49] text-base sm:text-xl leading-tight tracking-tight truncate">
                                 Bethel Mission School
                             </span>
-                            <span className="block text-[11px] sm:text-xs font-semibold text-[#8E6D1B] tracking-wide truncate">
-                                Service to God &amp; Men
+                            <span className="block text-[11px] sm:text-xs font-medium text-[#8C6D3B] tracking-wide truncate">
+                                Service to God &amp; Men &middot; Est. 1996
                             </span>
                         </div>
                     </Link>
 
-                    {/* Desktop 5-Item Navigation (Title Case + Small Icons) */}
-                    <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                    {/* Desktop Navigation with Highlighted Admissions */}
+                    <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
                         {MAIN_MENU_ITEMS.map(item => {
                             const Icon = item.icon;
+                            if (item.highlighted) {
+                                return (
+                                    <NavLink
+                                        key={item.id}
+                                        to={item.path}
+                                        className={({ isActive }: any) =>
+                                            `inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap shrink-0 border transition-colors ${
+                                                isActive
+                                                    ? 'bg-[#142B49] text-[#F8F6F0] border-[#142B49]'
+                                                    : 'bg-[#F8F6F0] text-[#142B49] border-[#C5A46D] hover:bg-[#142B49] hover:text-[#F8F6F0] hover:border-[#142B49]'
+                                            }`
+                                        }
+                                    >
+                                        <Icon className="w-4 h-4 flex-shrink-0 text-[#C5A46D]" />
+                                        <span>{item.label}</span>
+                                    </NavLink>
+                                );
+                            }
                             return (
                                 <NavLink
                                     key={item.id}
                                     to={item.path}
                                     end={item.path === '/'}
                                     className={({ isActive }: any) =>
-                                        `inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap shrink-0 transition-colors ${
+                                        `inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold whitespace-nowrap shrink-0 transition-colors ${
                                             isActive
-                                                ? 'bg-[#0B1F3A] text-[#DFC06B]'
-                                                : 'text-[#0B1F3A] hover:bg-[#F4F7FB] hover:text-[#132D52]'
+                                                ? 'text-[#142B49] bg-[#F8F6F0] border-b-2 border-[#C5A46D]'
+                                                : 'text-[#252A32] hover:text-[#142B49] hover:bg-[#F8F6F0]/70'
                                         }`
                                     }
                                 >
-                                    <Icon className="w-4 h-4 flex-shrink-0" />
                                     <span>{item.label}</span>
                                 </NavLink>
                             );
                         })}
                     </nav>
 
-                    {/* Right Zone: ONLY ONE Top-Right Outline Login Button + Mobile Hamburger */}
+                    {/* Right Zone: Student / Staff Login CTA + Mobile Hamburger */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                         {user ? (
                             <Link
                                 to={dashboardLink}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 min-h-[38px] sm:min-h-[42px] bg-white hover:bg-[#0B1F3A] text-[#0B1F3A] hover:text-white font-semibold text-xs sm:text-sm rounded-lg border border-[#0B1F3A] transition-colors whitespace-nowrap shrink-0"
+                                className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 min-h-[38px] sm:min-h-[40px] bg-white hover:bg-[#142B49] text-[#142B49] hover:text-white font-semibold text-xs sm:text-sm rounded-md border border-[#142B49]/35 transition-colors whitespace-nowrap shrink-0"
                             >
                                 <LucideUser className="w-4 h-4 flex-shrink-0" />
                                 <span>Dashboard</span>
@@ -88,7 +104,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                             <Link
                                 to="/login"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 min-h-[38px] sm:min-h-[42px] bg-white hover:bg-[#0B1F3A] text-[#0B1F3A] hover:text-white font-semibold text-xs sm:text-sm rounded-lg border border-[#0B1F3A] transition-colors whitespace-nowrap shrink-0"
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 min-h-[38px] sm:min-h-[40px] bg-white hover:bg-[#142B49] text-[#142B49] hover:text-white font-semibold text-xs sm:text-sm rounded-md border border-[#142B49]/35 transition-colors whitespace-nowrap shrink-0"
                             >
                                 <LucideUser className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                                 <span>Student / Staff Login</span>
@@ -100,7 +116,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                             onClick={() => setIsMobileMenuOpen(prev => !prev)}
                             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                             aria-expanded={isMobileMenuOpen}
-                            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0B1F3A] text-white hover:bg-[#132D52] border border-[#0B1F3A] transition-colors flex-shrink-0"
+                            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-md bg-[#142B49] text-white hover:bg-[#1C3B63] transition-colors flex-shrink-0"
                         >
                             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                         </button>
@@ -108,10 +124,10 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                 </div>
             </div>
 
-            {/* Mobile Hamburger Drawer: ONLY the 5 Title Case Items with Small Icons (No Duplicate Login Button) */}
+            {/* Mobile Hamburger Drawer */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-[#0B1F3A] text-white border-t border-[#C9A84C]/40">
-                    <nav aria-label="Mobile navigation" className="container mx-auto px-3 py-3 space-y-1">
+                <div className="lg:hidden bg-[#142B49] text-white border-t border-[#C5A46D]/40">
+                    <nav aria-label="Mobile navigation" className="container mx-auto px-3 py-3 space-y-1.5">
                         {MAIN_MENU_ITEMS.map(item => {
                             const Icon = item.icon;
                             return (
@@ -121,15 +137,22 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({ user }) => {
                                     end={item.path === '/'}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className={({ isActive }: any) =>
-                                        `flex items-center gap-3 min-h-[48px] px-4 py-2.5 rounded-lg text-base font-semibold transition-colors ${
-                                            isActive
-                                                ? 'bg-[#132D52] text-[#DFC06B]'
-                                                : 'text-white hover:bg-[#132D52] hover:text-[#DFC06B]'
+                                        `flex items-center justify-between min-h-[48px] px-4 py-2.5 rounded-md text-base font-semibold transition-colors ${
+                                            item.highlighted
+                                                ? 'bg-[#C5A46D] text-[#142B49] font-bold'
+                                                : isActive
+                                                ? 'bg-[#1D3B62] text-[#F8F6F0] border-l-2 border-[#C5A46D]'
+                                                : 'text-white hover:bg-[#1D3B62] hover:text-[#F8F6F0]'
                                         }`
                                     }
                                 >
-                                    <Icon className="w-4 h-4 flex-shrink-0 text-[#DFC06B]" />
-                                    <span>{item.label}</span>
+                                    <span className="flex items-center gap-3">
+                                        <Icon className={`w-4 h-4 flex-shrink-0 ${item.highlighted ? 'text-[#142B49]' : 'text-[#C5A46D]'}`} />
+                                        <span>{item.label}</span>
+                                    </span>
+                                    {item.highlighted && (
+                                        <span className="text-xs font-extrabold uppercase tracking-wider">2027</span>
+                                    )}
                                 </NavLink>
                             );
                         })}

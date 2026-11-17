@@ -359,6 +359,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({
                         {isAdmin ? 'Change Global Year' : 'Change session Year'}
                     </button>
                 )}
+                {(isAdmin || user.role === 'user' || user.role === 'warden') && (
+                    <Link
+                        to="/portal/ai-assistant"
+                        className="flex items-center gap-1.5 px-3 py-1 bg-[#142B49] text-white text-xs font-semibold rounded-full shadow-sm hover:bg-[#1e3d66] transition"
+                    >
+                        <SparklesIcon className="w-4 h-4 text-amber-300" />
+                        <span>AI Data Assistant</span>
+                    </Link>
+                )}
             </p>
         </div>
 
@@ -465,6 +474,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({
                 icon={<AcademicCapIcon className="w-7 h-7" />}
                 color="rose"
                 action={<Link to="/portal/reports/academics">Manage Academics</Link>}
+            />
+            <DashboardCard
+                title="AI Data Assistant"
+                description="Ask natural questions about students, PEN counts, fees, staff, hostel & inventory."
+                icon={<SparklesIcon className="w-7 h-7" />}
+                color="indigo"
+                action={<Link to="/portal/ai-assistant">Ask School Data AI</Link>}
             />
             <DashboardCard
                 title="AI Student Insights"

@@ -5,6 +5,8 @@ import { User, Student, Staff, TcRecord, ServiceCertificateRecord } from '@/type
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import SchoolDataAiDrawer from '@/components/SchoolDataAiDrawer';
+import { SchoolAiSnapshotInput } from '@/utils/aiDataSnapshot';
 
 const { Outlet, useLocation } = ReactRouterDOM as any;
 
@@ -16,12 +18,21 @@ interface DashboardLayoutProps {
     tcRecords: TcRecord[];
     serviceCerts: ServiceCertificateRecord[];
     academicYear: string;
+    aiSnapshotInput?: SchoolAiSnapshotInput;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, students, staff, tcRecords, serviceCerts, academicYear }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, students, staff, tcRecords, serviceCerts, academicYear, aiSnapshotInput }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const location = useLocation();
     const isParentDashboard = location.pathname === '/portal/parent-dashboard';
+
+    const effectiveSnapshotInput: SchoolAiSnapshotInput = aiSnapshotInput || {
+        students,
+        staff,
+        tcRecords,
+        serviceCerts,
+        academicYear,
+    };
 
     return (
         <div className="relative flex h-screen print:h-auto print:block text-slate-900">
@@ -48,6 +59,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, onLogout, stude
                     <Outlet />
                 </main>
             </div>
+            <SchoolDataAiDrawer user={user} snapshotInput={effectiveSnapshotInput} />
         </div>
     );
 };

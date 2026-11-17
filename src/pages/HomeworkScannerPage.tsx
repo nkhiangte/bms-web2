@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// FIX: Corrected import to use GoogleGenAI from @google/genai.
-import { GoogleGenAI } from "@google/genai";
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon, XIcon, CameraIcon, UploadIcon } from '@/components/Icons';
 
 const { Link, useNavigate } = ReactRouterDOM as any;
@@ -112,19 +110,6 @@ const HomeworkScannerPage: React.FC = () => {
         };
     };
 
-    const getPromptForType = (type: ScanType): string => {
-        switch (type) {
-            case 'grammar':
-                return "Analyze the attached image of handwritten text. Identify and list any spelling and grammar mistakes in a markdown list. For each mistake, provide the original text and the correction. If there are no mistakes, respond with 'No mistakes found.'";
-            case 'math':
-                return "Analyze the attached image of a handwritten math problem and its solution. Verify the steps and the final answer. Provide a step-by-step explanation of the correct solution and point out any errors in the provided work. State clearly if the final answer is correct or incorrect. Format the response using markdown.";
-            case 'handwriting':
-                return "Analyze the handwriting in the attached image. Provide a qualitative assessment of its legibility and neatness. Your assessment should be one of: 'Excellent', 'Good', 'Readable but could be neater', or 'Needs Improvement'. Then, provide a short paragraph with two specific suggestions for improvement. Format the response using markdown.";
-            default:
-                return "Analyze this image.";
-        }
-    };
-
     const handleScan = async () => {
         if (!imageFile) {
             setError("Please upload or capture an image first.");
@@ -135,21 +120,24 @@ const HomeworkScannerPage: React.FC = () => {
         setAnalysisResult(null);
 
         try {
-            // FIX: Updated Gemini API initialization and call to follow latest guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             const imagePart = await fileToGenerativePart(imageFile);
-            const textPart = { text: getPromptForType(scanType) };
-            
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', // Assumes a vision-capable model
-                contents: { parts: [imagePart, textPart] },
+            const response = await fetch('/api/ai/scan-homework', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageBase64: imagePart.inlineData.data,
+                    mimeType: imagePart.inlineData.mimeType,
+                    scanType,
+                }),
             });
-
-            // FIX: Correctly access the text from the response object.
-            setAnalysisResult(response.text ?? 'No response from AI.');
-        } catch (err) {
-            console.error("Gemini API error:", err);
-            setError("Failed to get analysis from AI. Please try again.");
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.error || 'Failed to get analysis from AI.');
+            }
+            setAnalysisResult(data.result ?? 'No response from AI.');
+        } catch (err: any) {
+            console.error("Homework scan API error:", err);
+            setError(err?.message || "Failed to get analysis from AI. Please try again.");
         } finally {
             setIsLoading(false);
         }

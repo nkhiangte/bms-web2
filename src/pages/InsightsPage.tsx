@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// Fix: Use correct Gemini API imports and named parameters for initialization.
-import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Grade, GradeDefinition, User, ConductEntry } from '@/types';
 import { GRADES_LIST } from '@/constants';
 import { BackIcon, HomeIcon, SparklesIcon, SpinnerIcon } from '@/components/Icons';
@@ -25,18 +23,6 @@ interface AnalysisResult {
     strengths: string[];
     weaknesses: string[];
 }
-
-const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-        riskLevel: { type: Type.STRING, enum: ['Low Risk', 'Needs Monitoring', 'At Risk'] },
-        summary: { type: Type.STRING, description: "A 2-3 sentence summary of the student's performance and risk level." },
-        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
-    },
-    required: ['riskLevel', 'summary', 'strengths', 'weaknesses']
-};
-
 
 const AnalysisCard: React.FC<{ result: AnalysisResult }> = ({ result }) => {
     const riskStyles = {
@@ -110,45 +96,23 @@ const InsightsPage: React.FC<InsightsPageProps> = ({ students, gradeDefinitions,
             description: c.description.substring(0, 100)
         }));
 
-        const prompt = `
-            You are an expert academic advisor analyzing student data to identify academic risk.
-            The school follows these rules:
-            - For classes III-VIII, a student fails a subject if their exam marks (summative) are less than 20 out of 60. Failing in more than one subject means the student fails the term.
-            - For classes IX-X, a student fails a subject if their total marks are less than 33 out of 100. Failing in more than one subject means the student fails the term.
-            
-            **Student Data:**
-            ${JSON.stringify({ grade: studentToAnalyze.grade, academicPerformance: academicData, conductLog: conductData }, null, 2)}
-
-            **Class Curriculum (Full Marks):**
-            ${JSON.stringify(studentGradeDef, null, 2)}
-
-            **Analysis Instructions:**
-            1.  **Risk Level:** Determine the student's academic risk level. Choose one: 'Low Risk', 'Needs Monitoring', 'At Risk'. 'At Risk' is for students who are failing terms or showing a sharp decline. 'Needs Monitoring' is for students with borderline scores or a slight decline.
-            2.  **Summary:** Provide a concise, 2-3 sentence summary explaining the risk level. Mention performance trends (improving, declining, stable).
-            3.  **Strengths:** List 2-3 subjects where the student is performing well or showing improvement.
-            4.  **Areas for Improvement:** List 2-3 subjects where the student is struggling or has low scores. Be specific if they are failing subjects based on the rules.
-
-            Return your analysis ONLY in the specified JSON format.
-        `;
-
         try {
-            // Fix: Initialize GoogleGenAI inside the function with named parameters.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: responseSchema,
-                },
+            const response = await fetch('/api/ai/student-insights', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentData: { grade: studentToAnalyze.grade, academicPerformance: academicData, conductLog: conductData },
+                    gradeDefinition: studentGradeDef,
+                }),
             });
-            
-            // Fix: Access result text via .text property (property, not a function call).
-            const resultJson = JSON.parse(response.text ?? '{}');
+            const resultJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resultJson?.error || 'Failed to generate analysis.');
+            }
             setAnalyses(prev => ({...prev, [studentToAnalyze.id]: resultJson}));
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error generating analysis:", error);
-            setAnalyses(prev => ({...prev, [studentToAnalyze.id]: { error: "Failed to generate analysis. Please try again." }}));
+            setAnalyses(prev => ({...prev, [studentToAnalyze.id]: { error: error?.message || "Failed to generate analysis. Please try again." }}));
         } finally {
             setLoadingStates(prev => ({ ...prev, [studentToAnalyze.id]: false }));
         }

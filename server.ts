@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -203,7 +203,14 @@ function getGenAI(): GoogleGenAI {
     if (!key) {
       throw new Error("GEMINI_API_KEY environment variable is required");
     }
-    aiClient = new GoogleGenAI({ apiKey: key });
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          "User-Agent": "aistudio-build",
+        },
+      },
+    });
   }
   return aiClient;
 }
@@ -212,7 +219,7 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: "10mb" }));
+  app.use(express.json({ limit: "25mb" }));
 
   // Health check
   app.get("/api/health", (_req, res) => {
@@ -708,6 +715,225 @@ Curriculum & Syllabus Strictness Guidelines:
       return res.status(500).json({
         error: error?.message || "Failed to generate TTS audio",
       });
+    }
+  });
+
+  // Server-side AI School Data Query Assistant (Gemini 4 Hydrogen)
+  app.post("/api/ai/data-query", async (req, res) => {
+    try {
+      const { question, schoolData, history, scope } = req.body || {};
+
+      if (!question || typeof question !== "string" || !question.trim()) {
+        return res.status(400).json({ error: "A question is required." });
+      }
+      if (!schoolData || typeof schoolData !== "object") {
+        return res.status(400).json({ error: "Live schoolData snapshot is required." });
+      }
+
+      const ai = getGenAI();
+
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          answer: {
+            type: Type.STRING,
+            description:
+              "Clear, accurate, well-structured answer in plain text or light markdown bullet points. Always explicitly mention the scope (e.g. Academic Year and Active vs All records) when giving counts.",
+          },
+          metrics: {
+            type: Type.ARRAY,
+            description: "Up to 6 concise highlight KPI cards summarizing key numbers from the query.",
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                label: { type: Type.STRING },
+                value: { type: Type.STRING },
+                note: { type: Type.STRING },
+              },
+              required: ["label", "value"],
+            },
+          },
+          table: {
+            type: Type.OBJECT,
+            description:
+              "Optional structured table when listing breakdowns by class/department or listing matching students/staff/admissions/inventory. Omit or leave rows empty if a table is not helpful.",
+            properties: {
+              title: { type: Type.STRING },
+              columns: { type: Type.ARRAY, items: { type: Type.STRING } },
+              rows: {
+                type: Type.ARRAY,
+                items: { type: Type.ARRAY, items: { type: Type.STRING } },
+              },
+            },
+            required: ["columns", "rows"],
+          },
+          followUps: {
+            type: Type.ARRAY,
+            description: "Exactly 3 relevant follow-up questions the school staff member can ask next.",
+            items: { type: Type.STRING },
+          },
+        },
+        required: ["answer", "metrics", "followUps"],
+      };
+
+      const systemInstruction = `You are the Bethel Mission School Internal Data Assistant (Champhai, Mizoram).
+You help authorized school administrators, teachers, and hostel wardens query live operational records inside the school management portal.
+
+CRITICAL ACCURACY RULES:
+1. Answer STRICTLY from the provided LIVE SCHOOL DATA SNAPSHOT JSON below. NEVER invent, estimate, extrapolate, or hallucinate student names, numbers, PEN IDs, phone numbers, or fees.
+2. For all numeric counts, totals, percentages, and breakdowns (such as students with/without PEN, Aadhaar, APAAR ID, gender counts, category counts, fee payment counts, staff breakdowns, hostel counts, inventory alerts), ALWAYS read the pre-computed exact values in "aggregates" first so counts are 100% mathematically exact.
+3. For individual lookups, filtering, or listing specific people/items (e.g., "List Class IX students without PEN", "Find student with PEN 12345...", "Which inventory items need repair?", "List pending admissions"), inspect the corresponding arrays in "records" carefully.
+4. Keep tables practical (if a filtered list has more than 80 rows, show the first 80 rows in the table and explicitly state the exact total count in both "answer" and a metric tile).
+5. Always specify which scope your answer reflects: currently active academic year ("${schoolData?.meta?.activeAcademicYear || ""}") active students vs all-years/transferred/dropped records, depending on what the user asked and the selected scope ("${scope || "current_year"}").
+6. If asked about data not present in the snapshot (for example, individual subject exam marks or daily date-by-date attendance logs not included in the compact snapshot), state clearly what data is available and what isn't rather than guessing.
+7. Be concise, institutional, helpful, and direct.`;
+
+      const recentHistory = Array.isArray(history)
+        ? history
+            .slice(-6)
+            .map((m: any) => `${m.role === "user" ? "Staff Question" : "Assistant Answer"}: ${String(m.content || "").slice(0, 800)}`)
+            .join("\n")
+        : "";
+
+      const fullPrompt = `${recentHistory ? `RECENT CONVERSATION CONTEXT:\n${recentHistory}\n\n` : ""}LIVE SCHOOL DATA SNAPSHOT (JSON):
+${JSON.stringify(schoolData)}
+
+USER QUESTION:
+${question.trim()}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-4-hydrogen",
+        contents: fullPrompt,
+        config: {
+          systemInstruction,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.MEDIUM,
+          },
+          responseMimeType: "application/json",
+          responseSchema,
+        },
+      });
+
+      const rawText = response.text;
+      if (!rawText) {
+        return res.status(502).json({ error: "Model returned an empty response." });
+      }
+
+      const parsed = JSON.parse(rawText);
+      return res.json({
+        answer: parsed.answer || "",
+        metrics: Array.isArray(parsed.metrics) ? parsed.metrics : [],
+        table:
+          parsed.table && Array.isArray(parsed.table.columns) && Array.isArray(parsed.table.rows) && parsed.table.rows.length > 0
+            ? parsed.table
+            : null,
+        followUps: Array.isArray(parsed.followUps) ? parsed.followUps.slice(0, 3) : [],
+      });
+    } catch (error: any) {
+      console.error("AI data query error in server.ts:", error);
+      return res.status(500).json({
+        error: error?.message || "Failed to query school data with Gemini AI.",
+      });
+    }
+  });
+
+  // Server-side Student Academic Risk & Performance Insights
+  app.post("/api/ai/student-insights", async (req, res) => {
+    try {
+      const { studentData, gradeDefinition } = req.body || {};
+      if (!studentData) {
+        return res.status(400).json({ error: "studentData is required." });
+      }
+
+      const ai = getGenAI();
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          riskLevel: { type: Type.STRING, enum: ["Low Risk", "Needs Monitoring", "At Risk"] },
+          summary: { type: Type.STRING, description: "A 2-3 sentence summary of the student's performance and risk level." },
+          strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+          weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: ["riskLevel", "summary", "strengths", "weaknesses"],
+      };
+
+      const prompt = `
+        You are an expert academic advisor analyzing student data to identify academic risk.
+        The school follows these rules:
+        - For classes III-VIII, a student fails a subject if their exam marks (summative) are less than 20 out of 60. Failing in more than one subject means the student fails the term.
+        - For classes IX-X, a student fails a subject if their total marks are less than 33 out of 100. Failing in more than one subject means the student fails the term.
+
+        **Student Data:**
+        ${JSON.stringify(studentData, null, 2)}
+
+        **Class Curriculum (Full Marks):**
+        ${JSON.stringify(gradeDefinition || {}, null, 2)}
+
+        **Analysis Instructions:**
+        1. Risk Level: Determine 'Low Risk', 'Needs Monitoring', or 'At Risk'.
+        2. Summary: Concise 2-3 sentence summary explaining risk level and trends.
+        3. Strengths: List 2-3 subjects where the student performs well.
+        4. Areas for Improvement: List 2-3 subjects where the student needs support.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-4-hydrogen",
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: "application/json",
+          responseSchema,
+        },
+      });
+
+      if (!response.text) {
+        return res.status(502).json({ error: "Empty response from AI insights model." });
+      }
+      return res.json(JSON.parse(response.text));
+    } catch (error: any) {
+      console.error("Student insights error in server.ts:", error);
+      return res.status(500).json({ error: error?.message || "Failed to generate student analysis." });
+    }
+  });
+
+  // Server-side AI Homework Scanner
+  app.post("/api/ai/scan-homework", async (req, res) => {
+    try {
+      const { imageBase64, mimeType, scanType } = req.body || {};
+      if (!imageBase64 || !mimeType) {
+        return res.status(400).json({ error: "imageBase64 and mimeType are required." });
+      }
+
+      const ai = getGenAI();
+      let promptText = "Analyze this image.";
+      if (scanType === "grammar") {
+        promptText =
+          "Analyze the attached image of handwritten text. Identify and list any spelling and grammar mistakes in a markdown list. For each mistake, provide the original text and the correction. If there are no mistakes, respond with 'No mistakes found.'";
+      } else if (scanType === "math") {
+        promptText =
+          "Analyze the attached image of a handwritten math problem and its solution. Verify the steps and the final answer. Provide a step-by-step explanation of the correct solution and point out any errors in the provided work. State clearly if the final answer is correct or incorrect. Format the response using markdown.";
+      } else if (scanType === "handwriting") {
+        promptText =
+          "Analyze the handwriting in the attached image. Provide a qualitative assessment of its legibility and neatness. Your assessment should be one of: 'Excellent', 'Good', 'Readable but could be neater', or 'Needs Improvement'. Then, provide a short paragraph with two specific suggestions for improvement. Format the response using markdown.";
+      }
+
+      const response = await ai.models.generateContent({
+        model: "gemini-4-hydrogen",
+        contents: {
+          parts: [
+            { inlineData: { data: imageBase64, mimeType } },
+            { text: promptText },
+          ],
+        },
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        },
+      });
+
+      return res.json({ result: response.text ?? "No response from AI." });
+    } catch (error: any) {
+      console.error("Homework scanner error in server.ts:", error);
+      return res.status(500).json({ error: error?.message || "Failed to analyze homework image." });
     }
   });
 

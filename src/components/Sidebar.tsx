@@ -108,6 +108,7 @@ const sidebarCategories: CategoryData[] = [
         name: 'Tools',
         items: [
             { name: 'Visitor Analytics & Counter', path: '/portal/visitor-analytics', icon: <DocumentReportIcon className="w-5 h-5" />, roles: ['admin'] },
+            { name: 'AI Data Assistant', path: '/portal/ai-assistant', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user', 'warden'] },
             { name: 'AI Insights', path: '/portal/insights', icon: <SparklesIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Activity Log', path: '/portal/activity-log', icon: <ClipboardDocumentListIcon className="w-5 h-5" />, roles: ['admin', 'user'] },
             { name: 'Calendar', path: '/portal/calendar', icon: <CalendarDaysIcon className="w-5 h-5" />, roles: ['admin', 'user', 'parent'] },

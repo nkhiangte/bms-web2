@@ -22,6 +22,7 @@ import {
   SchoolAiSnapshotInput,
   SchoolDataScope,
 } from '@/utils/aiDataSnapshot';
+import { queryLocalSchoolSnapshot } from '@/utils/localDataQueryEngine';
 
 interface AiMetric {
   label: string;
@@ -39,6 +40,8 @@ interface AiMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  query?: string;
+  engine?: 'gemini' | 'local';
   metrics?: AiMetric[];
   table?: AiTable | null;
   followUps?: string[];
@@ -143,6 +146,21 @@ const SchoolDataAiPanel: React.FC<SchoolDataAiPanelProps> = ({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  const runBuiltInEngine = (question: string) => {
+    const localResult = queryLocalSchoolSnapshot(question, snapshot, scope);
+    const aiMsg: AiMessage = {
+      id: `a-local-${Date.now()}`,
+      role: 'assistant',
+      content: localResult.answer,
+      metrics: localResult.metrics,
+      table: localResult.table,
+      followUps: localResult.followUps,
+      engine: 'local',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages(prev => [...prev, aiMsg]);
+  };
+
   const askQuestion = async (rawQuestion?: string) => {
     const question = (rawQuestion ?? inputValue).trim();
     if (!question || isLoading) return;
@@ -174,7 +192,29 @@ const SchoolDataAiPanel: React.FC<SchoolDataAiPanelProps> = ({
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const rawText = await response.text();
+      let data: any = null;
+      if (rawText.trim().startsWith('{') || rawText.trim().startsWith('[')) {
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          data = null;
+        }
+      }
+
+      // If hosted on static CDN (405/404 HTML rewrite) or offline Capacitor without Express backend,
+      // automatically resolve using the built-in live snapshot query engine.
+      if (
+        response.status === 404 ||
+        response.status === 405 ||
+        contentType.includes('text/html') ||
+        (!response.ok && !data)
+      ) {
+        runBuiltInEngine(question);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data?.error || `Request failed with status ${response.status}`);
       }
@@ -182,19 +222,27 @@ const SchoolDataAiPanel: React.FC<SchoolDataAiPanelProps> = ({
       const aiMsg: AiMessage = {
         id: `a-${Date.now()}`,
         role: 'assistant',
-        content: data.answer || 'No response generated.',
-        metrics: Array.isArray(data.metrics) ? data.metrics : [],
-        table: data.table || null,
-        followUps: Array.isArray(data.followUps) ? data.followUps : [],
+        content: data?.answer || 'No response generated.',
+        metrics: Array.isArray(data?.metrics) ? data.metrics : [],
+        table: data?.table || null,
+        followUps: Array.isArray(data?.followUps) ? data.followUps : [],
+        engine: 'gemini',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages(prev => [...prev, aiMsg]);
     } catch (err: any) {
+      // Network unreachable (e.g. offline or Capacitor WebView without live server origin)
+      if (err instanceof TypeError) {
+        runBuiltInEngine(question);
+        return;
+      }
+
       const errMsg: AiMessage = {
         id: `e-${Date.now()}`,
         role: 'assistant',
         content: '',
+        query: question,
         error: err?.message || 'Unable to query school data. Please check your connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -413,13 +461,26 @@ const SchoolDataAiPanel: React.FC<SchoolDataAiPanelProps> = ({
                   {msg.error ? (
                     <div className="flex items-start gap-3 text-red-700 bg-red-50 border border-red-200 rounded-xl p-3.5 text-sm">
                       <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold">Query could not be completed</p>
+                      <div className="flex-1">
+                        <p className="font-semibold">AI server query returned an error</p>
                         <p className="text-xs mt-1 text-red-600">{msg.error}</p>
+                        {msg.query && (
+                          <button
+                            type="button"
+                            onClick={() => runBuiltInEngine(msg.query!)}
+                            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#142B49] hover:bg-[#1e3d66] text-white text-xs font-semibold transition"
+                          >
+                            <Database className="w-3.5 h-3.5" />
+                            <span>Run with Built-In Query Engine</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : (
                     <>
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                        <span>{msg.engine === 'local' ? 'Built-in Portal Data Engine' : 'Gemini AI Assistant'}</span>
+                      </div>
                       {/* Metrics Grid */}
                       {msg.metrics && msg.metrics.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
